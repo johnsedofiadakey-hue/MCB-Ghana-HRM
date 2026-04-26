@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
   Settings, Building2, LogOut,
   DollarSign, Target, Package, Zap,
-  ShieldAlert, BarChart3,
+  ShieldAlert, BarChart3, ShieldCheck,
   Clock, Wallet, GraduationCap,
   ClipboardList, PanelLeftClose, PanelLeftOpen,
   X, Briefcase, Network, Megaphone, BookOpen, AlertOctagon
@@ -268,7 +268,6 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               </NavGroup>
  
               <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
-                <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
                 {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
                 {(isIT && !isMD) && (
                   <NavItem to="/it-admin" icon={ShieldAlert} label={rank >= 85 ? 'Strategic IT Hub' : 'IT Administration'} isCollapsed={isCollapsed} />
@@ -284,12 +283,16 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 )}
               </NavGroup>
 
-              {(isFinance || isHR || isMD || isIT) && (
-                <NavGroup label={t('common.administration')} isCollapsed={isCollapsed}>
+              {(isFinance || isHR || isMD) && (
+                <NavGroup label="Financial Operations" isCollapsed={isCollapsed}>
                   <NavItem to="/payroll" icon={DollarSign} label={t('common.payroll_label')} isCollapsed={isCollapsed} />
-                  {(isMD || isHR || isIT) && (
-                    <NavItem to="/settings" icon={Settings} label={t('common.admin_settings')} isCollapsed={isCollapsed} />
-                  )}
+                  <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
+                </NavGroup>
+              )}
+
+              {(isHR || isMD || isIT) && (
+                <NavGroup label={t('common.administration')} isCollapsed={isCollapsed}>
+                  <NavItem to="/settings" icon={Settings} label={t('common.admin_settings')} isCollapsed={isCollapsed} />
                   {isMD && (
                     <NavItem to="/enterprise" icon={Zap} label={t('common.enterprise_suite_label')} isCollapsed={isCollapsed} />
                   )}

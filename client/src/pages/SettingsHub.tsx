@@ -4,7 +4,7 @@ import {
   CreditCard, Download, Save, ChevronRight,
   Lock, Languages, RefreshCw, Check, AlertTriangle,
   Mail, Smartphone, HardDrive, ShieldCheck, Sparkles,
-  Database, CheckCircle, Calendar
+  Database, CheckCircle, Calendar, Zap
 } from 'lucide-react';
 import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -119,7 +119,19 @@ const SettingsHub = () => {
     borrowingLimit: 5,
     ssnitRate: 0.055,
     employerSsnitRate: 0.13,
-    payeBands: []
+    payeBands: [
+      { limit: 490,      rate: 0.00  },
+      { limit: 110,      rate: 0.05  },
+      { limit: 130,      rate: 0.10  },
+      { limit: 3166.67,  rate: 0.175 },
+      { limit: 16000,    rate: 0.25  },
+      { limit: 30520,    rate: 0.30  },
+      { limit: 999999999, rate: 0.35  },
+    ],
+    idCardPrimaryColor: '#009EE3',
+    idCardAccentColor: '#EE7100',
+    idCardShowLogo: true,
+    idCardShowQrCode: true
   });
 
   useEffect(() => {
@@ -263,11 +275,15 @@ const SettingsHub = () => {
       const res = await api.post('/upload/logo', { image: optimizedBase64 });
       const logoUrl = res.data.logoUrl;
 
-      // 2. Update Local State
-      setFormData({ ...formData, companyLogoUrl: logoUrl });
+      // 2. Update Local State & Persist
+      const updatedData = { ...formData, companyLogoUrl: logoUrl };
+      setFormData(updatedData);
+      
+      // 🚀 PERSISTENCE SYNC: Immediately save to DB to avoid "disappearing" on refresh
+      await api.put('/settings', updatedData);
       toast.success(t('settings.identity_sync_success'));
 
-      // 3. Optional: Sync to Real-time Firestore if available
+      // 3. Identity broadcast to all devices
       if (currentUser?.organizationId) {
         await BrandingService.updateBranding(currentUser.organizationId, {
           companyLogoUrl: logoUrl
@@ -523,6 +539,95 @@ const SettingsHub = () => {
                           </div>
                         </div>
                       </div>
+                    </section>
+
+                    {/* Personnel ID Card Branding — EXCLUSIVE */}
+                    <section className="p-10 rounded-[2.5rem] border-2 border-[var(--primary)]/20 bg-[var(--primary)]/5 relative overflow-hidden group">
+                       <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-[var(--primary)]/10 blur-3xl rounded-full" />
+                       <div className="flex items-center gap-5 mb-10 relative z-10">
+                          <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)] shadow-lg">
+                             <ShieldCheck size={28} />
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Personnel ID Card Identity</h4>
+                            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mt-1">Template Configuration for Physical Tags</p>
+                          </div>
+                       </div>
+
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
+                          <div className="space-y-8">
+                             <ColorPicker 
+                               id="idCardPrimaryColor" 
+                               label="ID Card Primary Accent" 
+                               value={formData.idCardPrimaryColor || '#009EE3'} 
+                               onChange={val => setFormData({...formData, idCardPrimaryColor: val})} 
+                             />
+                             <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                                <div>
+                                   <p className="text-[13px] font-bold text-[var(--text-primary)]">Render Corporate Logo</p>
+                                   <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Display high-res logo on tag front.</p>
+                                </div>
+                                <input 
+                                  type="checkbox" 
+                                  className="toggle-checkbox" 
+                                  checked={formData.idCardShowLogo}
+                                  onChange={e => setFormData({...formData, idCardShowLogo: e.target.checked})}
+                                />
+                             </div>
+                          </div>
+                          <div className="space-y-8">
+                             <ColorPicker 
+                               id="idCardAccentColor" 
+                               label="ID Card Status Border" 
+                               value={formData.idCardAccentColor || '#EE7100'} 
+                               onChange={val => setFormData({...formData, idCardAccentColor: val})} 
+                             />
+                             <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                                <div>
+                                   <p className="text-[13px] font-bold text-[var(--text-primary)]">Enable Node QR Authentication</p>
+                                   <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Generate unique biometric sync codes.</p>
+                                </div>
+                                <input 
+                                  type="checkbox" 
+                                  className="toggle-checkbox" 
+                                  checked={formData.idCardShowQrCode}
+                                  onChange={e => setFormData({...formData, idCardShowQrCode: e.target.checked})}
+                                />
+                             </div>
+                          </div>
+                       </div>
+                    </section>
+
+                    {/* Official Identity — Logo Upload */}
+                    <section className="p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-10 transition-opacity"><Building2 size={120} /></div>
+                       <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] mb-10 flex items-center gap-3">
+                          <Globe size={16} className="text-[var(--primary)]" /> {t('settings.labels.company_logo', 'Corporate Identity (Logo)')}
+                       </h4>
+                       
+                       <div className="flex flex-col md:flex-row items-center gap-12">
+                          <div className="w-40 h-40 rounded-[2.5rem] bg-[var(--bg-card)] border-2 border-dashed border-[var(--border-subtle)] flex items-center justify-center relative group/logo overflow-hidden">
+                             {getLogoUrl(formData.companyLogoUrl) ? (
+                               <img src={getLogoUrl(formData.companyLogoUrl) as string} className="w-full h-full object-contain p-6" alt="Logo" />
+                             ) : (
+                               <Building2 size={40} className="text-[var(--text-muted)] opacity-20" />
+                             )}
+                             <label className="absolute inset-0 bg-black/60 opacity-0 group-hover/logo:opacity-100 flex items-center justify-center cursor-pointer transition-all">
+                                <Plus className="text-white" size={32} />
+                                <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                             </label>
+                          </div>
+                          <div className="flex-1 space-y-4">
+                             <p className="text-[14px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t('settings.upload_identity', 'Upload Official Identity')}</p>
+                             <p className="text-[11px] text-[var(--text-muted)] font-medium max-w-sm leading-relaxed">Ensure your logo has a transparent background for optimal rendering across all UI modes. Supported: SVG, PNG, WebP.</p>
+                             <div className="flex gap-4">
+                                <label className="px-6 py-2.5 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary)]/20 cursor-pointer hover:scale-105 transition-transform">
+                                   {t('settings.change_design', 'Select File')}
+                                   <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                                </label>
+                             </div>
+                          </div>
+                       </div>
                     </section>
                   </div>
                 )}
