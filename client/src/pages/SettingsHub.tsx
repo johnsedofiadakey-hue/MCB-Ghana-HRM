@@ -116,7 +116,10 @@ const SettingsHub = () => {
     allowLeaveCarryForward: true,
     allowLeaveBorrowing: false,
     carryForwardLimit: 10,
-    borrowingLimit: 5
+    borrowingLimit: 5,
+    ssnitRate: 0.055,
+    employerSsnitRate: 0.13,
+    payeBands: []
   });
 
   useEffect(() => {
@@ -159,7 +162,10 @@ const SettingsHub = () => {
         allowLeaveCarryForward: settings.allowLeaveCarryForward ?? true,
         allowLeaveBorrowing: settings.allowLeaveBorrowing ?? false,
         carryForwardLimit: settings.carryForwardLimit || 10,
-        borrowingLimit: settings.borrowingLimit || 5
+        borrowingLimit: settings.borrowingLimit || 5,
+        ssnitRate: settings.ssnitRate || 0.055,
+        employerSsnitRate: settings.employerSsnitRate || 0.13,
+        payeBands: settings.payeBands || []
       });
     }
   }, [settings]);
@@ -224,14 +230,14 @@ const SettingsHub = () => {
       setLanguage(formData.defaultLanguage || 'en');
       toast.success(t('settings.update_success'));
       
-      // Permanent Identity Sync to Firebase
+      // Permanent Identity Sync to Firebase (Non-blocking)
       if (currentUser?.organizationId) {
-        await BrandingService.updateBranding(currentUser.organizationId, {
+        BrandingService.updateBranding(currentUser.organizationId, {
           companyLogoUrl: formData.companyLogoUrl,
           primaryColor: formData.primaryColor,
           accentColor: formData.accentColor,
           themePreset: formData.themePreset
-        });
+        }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
       }
       
       await refreshSettings();
@@ -287,6 +293,7 @@ const SettingsHub = () => {
     { id: 'billing', label: t('settings.billing'), icon: CreditCard, description: t('settings.billing_description', 'Subscription plans and payment history.') },
     { id: 'data', label: t('settings.data_management'), icon: Download, description: t('settings.data_description', 'Export history, backups, and data privacy.') },
     { id: 'integrations', label: t('settings.integrations', 'API & Integrations'), icon: Sparkles, description: t('settings.integrations_desc', 'API Keys, Webhooks, and connected platforms.') },
+    { id: 'payroll', label: t('payroll.settings', 'Payroll Settings'), icon: CreditCard, description: t('payroll.settings_desc', 'Configure SSNIT rates, PAYE tax bands, and global payroll rules.') },
   ];
 
   return (
@@ -1125,6 +1132,139 @@ const SettingsHub = () => {
                         <AlertTriangle size={16} />
                         {t('settings.purge_button', 'Purge All Demo Data')}
                       </button>
+                    </section>
+                  </div>
+                )}
+
+                {activeTab === 'payroll' && (
+                  <div className="space-y-12 max-w-4xl">
+                    <section className="p-10 rounded-[2.5rem] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] relative overflow-hidden">
+                      <div className="absolute -top-10 -right-10 w-40 h-40 bg-[var(--primary)]/5 blur-3xl rounded-full" />
+                      
+                      <h4 className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] mb-10 flex items-center gap-3 relative z-10">
+                        <CreditCard size={16} className="text-[var(--primary)]" /> {t('payroll.tax_social_security', 'Tax & Social Security')}
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
+                        <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-6 shadow-sm hover:border-[var(--primary)]/20 transition-all">
+                           <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('payroll.ssnit_employee', 'Employee SSNIT Rate (%)')}</label>
+                           <div className="flex items-end gap-3">
+                             <input 
+                               type="number" step="0.001"
+                               className="bg-transparent border-b-2 border-[var(--primary)]/30 focus:border-[var(--primary)] outline-none text-4xl font-black w-full py-2 transition-all"
+                               value={Number(((formData.ssnitRate || 0) * 100).toFixed(3))}
+                               onChange={e => setFormData({...formData, ssnitRate: (parseFloat(e.target.value) || 0) / 100})}
+                             />
+                             <span className="text-2xl font-black text-[var(--primary)] mb-2">%</span>
+                           </div>
+                           <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest opacity-40">Standard: 5.50%</p>
+                        </div>
+
+                        <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-6 shadow-sm hover:border-[var(--primary)]/20 transition-all">
+                           <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('payroll.ssnit_employer', 'Employer SSNIT Rate (%)')}</label>
+                           <div className="flex items-end gap-3">
+                             <input 
+                               type="number" step="0.001"
+                               className="bg-transparent border-b-2 border-[var(--primary)]/30 focus:border-[var(--primary)] outline-none text-4xl font-black w-full py-2 transition-all"
+                               value={Number(((formData.employerSsnitRate || 0) * 100).toFixed(3))}
+                               onChange={e => setFormData({...formData, employerSsnitRate: (parseFloat(e.target.value) || 0) / 100})}
+                             />
+                             <span className="text-2xl font-black text-[var(--primary)] mb-2">%</span>
+                           </div>
+                           <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest opacity-40">Standard: 13.00%</p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="p-10 rounded-[2.5rem] bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
+                        <div>
+                          <h4 className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] flex items-center gap-3">
+                            <ShieldCheck size={16} className="text-[var(--primary)]" /> {t('payroll.paye_bands', 'Ghana PAYE Tax Bands')}
+                          </h4>
+                          <p className="text-[10px] text-[var(--text-muted)] font-bold mt-2 uppercase tracking-widest opacity-60">Monthly progressive taxation architecture</p>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            const standardBands = [
+                              { limit: 490,      rate: 0.00  },
+                              { limit: 110,      rate: 0.05  },
+                              { limit: 130,      rate: 0.10  },
+                              { limit: 3166.67,  rate: 0.175 },
+                              { limit: 16000,    rate: 0.25  },
+                              { limit: 30520,    rate: 0.30  },
+                              { limit: 999999999, rate: 0.35  },
+                            ];
+                            setFormData({...formData, payeBands: standardBands});
+                          }}
+                          className="text-[10px] font-black px-6 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all uppercase tracking-widest shadow-sm"
+                        >
+                          {t('payroll.reset_bands', 'Reset to 2024 Standards')}
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                         <div className="grid grid-cols-7 gap-4 px-6 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-40 mb-4">
+                            <span className="col-span-3">Cumulative Limit (GHS)</span>
+                            <span className="col-span-3">Marginal Rate (%)</span>
+                            <span className="text-center">Action</span>
+                         </div>
+                         {(formData.payeBands as any[] || []).map((band, idx) => (
+                           <motion.div 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            key={idx} 
+                            className="grid grid-cols-7 gap-4 items-center bg-[var(--bg-card)] p-5 rounded-[1.5rem] border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all shadow-sm"
+                           >
+                              <div className="col-span-3 relative">
+                                <input 
+                                  type="number" 
+                                  className="w-full bg-transparent border-b-2 border-transparent focus:border-[var(--primary)] outline-none text-sm font-black py-1 transition-all"
+                                  value={band.limit}
+                                  onChange={e => {
+                                    const newBands = [...(formData.payeBands as any[])];
+                                    newBands[idx].limit = parseFloat(e.target.value) || 0;
+                                    setFormData({...formData, payeBands: newBands});
+                                  }}
+                                />
+                                {band.limit >= 999999 ? (
+                                  <span className="absolute right-0 top-1 text-[10px] font-black text-[var(--primary)] opacity-40 uppercase tracking-tighter">MAX</span>
+                                ) : null}
+                              </div>
+                              <div className="col-span-3 flex items-center gap-3">
+                                <input 
+                                  type="number" step="0.01"
+                                  className="w-full bg-transparent border-b-2 border-transparent focus:border-[var(--primary)] outline-none text-sm font-black py-1 transition-all text-right"
+                                  value={Number((band.rate * 100).toFixed(2))}
+                                  onChange={e => {
+                                    const newBands = [...(formData.payeBands as any[])];
+                                    newBands[idx].rate = (parseFloat(e.target.value) || 0) / 100;
+                                    setFormData({...formData, payeBands: newBands});
+                                  }}
+                                />
+                                <span className="text-[11px] font-black opacity-20">%</span>
+                              </div>
+                              <div className="flex justify-center">
+                                <button 
+                                  onClick={() => {
+                                    const newBands = (formData.payeBands as any[]).filter((_, i) => i !== idx);
+                                    setFormData({...formData, payeBands: newBands});
+                                  }}
+                                  className="w-8 h-8 flex items-center justify-center text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                  <AlertTriangle size={14} />
+                                </button>
+                              </div>
+                           </motion.div>
+                         ))}
+                         <button 
+                           onClick={() => setFormData({...formData, payeBands: [...(formData.payeBands as any[] || []), { limit: 0, rate: 0 }]})}
+                           className="w-full py-5 border-2 border-dashed border-[var(--border-subtle)] rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all mt-6 flex items-center justify-center gap-3"
+                         >
+                           <Plus size={14} />
+                           {t('payroll.add_tax_band', 'Add Custom Tax Band')}
+                         </button>
+                      </div>
                     </section>
                   </div>
                 )}

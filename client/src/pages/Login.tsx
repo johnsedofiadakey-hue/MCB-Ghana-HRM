@@ -31,12 +31,12 @@ const Login = () => {
         setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
         
         const hour = new Date().getHours();
-        if (hour < 12) setGreeting('Good Morning');
-        else if (hour < 18) setGreeting('Good Afternoon');
-        else setGreeting('Good Evening');
+        if (hour < 12) setGreeting(t('auth.greeting_morning', 'Good Morning'));
+        else if (hour < 18) setGreeting(t('auth.greeting_afternoon', 'Good Afternoon'));
+        else setGreeting(t('auth.greeting_evening', 'Good Evening'));
 
         if (storage.getItem(StorageKey.AUTH_TOKEN, null)) navigate('/dashboard');
-    }, [navigate]);
+    }, [navigate, t]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,10 +53,10 @@ const Login = () => {
             if (user?.role === 'DEV') navigate('/nexus-master-console');
             else navigate('/dashboard');
             
-            toast.success('Sign in successful');
+            toast.success(t('auth.sign_in_success', 'Sign in successful'));
         } catch (err: any) {
-            setError(err?.response?.data?.error || 'Invalid email or password.');
-            toast.error('Sign in failed');
+            setError(err?.response?.data?.error || t('auth.error_invalid', 'Invalid email or password.'));
+            toast.error(t('auth.sign_in_failed', 'Sign in failed'));
         } finally {
             setLoading(false);
         }
@@ -106,7 +106,7 @@ const Login = () => {
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">{companyName}.</span>
                             </h1>
                             <p className="text-lg font-medium text-[var(--text-muted)] max-w-md italic">
-                                Sign in to manage your work, view your payroll, and track your progress.
+                                {t('auth.intro_desc', 'Access your employee portal to manage work, view payslips, and track your performance.')}
                             </p>
                         </div>
                     </div>
@@ -128,15 +128,15 @@ const Login = () => {
 
                     <div className="flex items-center gap-10">
                         <div className="flex flex-col gap-1">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">Data Protection</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">{t('auth.data_protection', 'Data Protection')}</p>
                             <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                <ShieldCheck size={14} className="text-emerald-500" /> Secure Encryption
+                                <ShieldCheck size={14} className="text-emerald-500" /> {t('auth.secure_encryption', 'Secure Encryption')}
                             </p>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">System Location</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">{t('auth.system_location', 'System Location')}</p>
                             <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                <Globe size={14} className="text-blue-500" /> West Africa Central
+                                <Globe size={14} className="text-blue-500" /> {t('auth.west_africa', 'West Africa Central')}
                             </p>
                         </div>
                     </div>
@@ -165,8 +165,8 @@ const Login = () => {
                     <div className="bg-[var(--bg-card)] rounded-[3.5rem] border border-[var(--border-subtle)] p-10 md:p-14 shadow-2xl relative overflow-hidden">
                         
                         <div className="mb-12 text-left">
-                            <h2 className="text-3xl font-black text-[var(--text-primary)] tracking-tight uppercase italic leading-none mb-3">Sign In</h2>
-                            <p className="text-[var(--text-muted)] text-sm font-medium">Please enter your details to access Nexus HR.</p>
+                            <h2 className="text-3xl font-black text-[var(--text-primary)] tracking-tight uppercase italic leading-none mb-3">{t('auth.sign_in', 'Sign In')}</h2>
+                            <p className="text-[var(--text-muted)] text-sm font-medium">{t('auth.sign_in_desc', 'Please enter your details to access your account.')}</p>
                         </div>
 
                         <AnimatePresence mode="wait">
@@ -185,7 +185,7 @@ const Login = () => {
 
                         <form onSubmit={handleLogin} className="space-y-8">
                              <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2">Work Email</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2">{t('auth.email_label', 'Email Address')}</label>
                                 <div className="relative group">
                                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors">
                                         <Mail size={20} strokeWidth={2.5} />
@@ -195,7 +195,7 @@ const Login = () => {
                                         value={formData.email}
                                         onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
                                         className="nx-input !h-[72px] !pl-16 !bg-[var(--bg-elevated)]/50 !rounded-[1.8rem] !text-base focus:!ring-[var(--primary)]/10"
-                                        placeholder="Enter your email"
+                                        placeholder={t('auth.email_placeholder', 'Enter your email')}
                                         required
                                     />
                                 </div>
@@ -203,8 +203,8 @@ const Login = () => {
 
                              <div className="space-y-3">
                                 <div className="flex justify-between items-center px-2">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Password</label>
-                                    <button type="button" className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline decoration-2 underline-offset-4">Forgot Password?</button>
+                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('auth.password_label', 'Password')}</label>
+                                    <button type="button" className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline decoration-2 underline-offset-4">{t('auth.forgot_password', 'Forgot Password?')}</button>
                                 </div>
                                 <div className="relative group">
                                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors">
@@ -215,7 +215,7 @@ const Login = () => {
                                         value={formData.password}
                                         onChange={e => setFormData(f => ({ ...f, password: e.target.value }))}
                                         className="nx-input !h-[72px] !pl-16 !pr-16 !bg-[var(--bg-elevated)]/50 !rounded-[1.8rem] !text-base focus:!ring-[var(--primary)]/10 tracking-[0.3em]"
-                                        placeholder="••••••••"
+                                        placeholder={t('auth.password_placeholder', '••••••••')}
                                         required
                                     />
                                     <button
@@ -239,7 +239,7 @@ const Login = () => {
                                     <Loader2 size={24} className="animate-spin" />
                                 ) : (
                                      <div className="flex items-center gap-4">
-                                        <span>Sign In</span>
+                                        <span>{t('auth.sign_in', 'Sign In')}</span>
                                         <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
                                     </div>
                                 )}

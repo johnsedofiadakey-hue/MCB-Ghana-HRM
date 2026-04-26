@@ -57,6 +57,10 @@ export interface Settings {
   allowLeaveBorrowing?: boolean;
   carryForwardLimit?: number;
   borrowingLimit?: number;
+  // Payroll Settings
+  ssnitRate?: number;
+  employerSsnitRate?: number;
+  payeBands?: string | any[];
 }
 
 // Contrast utilities removed as they are currently handled by theme tokens
