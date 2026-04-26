@@ -271,27 +271,45 @@ export class LeaveService {
       throw new Error('A rejection reason is required for the HR audit trail.');
     }
 
-    const nextStatus = approve ? 'MD_REVIEW' : 'HR_REJECTED';
+    const employeeRank = getRoleRank(leave.employee.role);
+    const isTerminalAtHR = employeeRank < 85;
+    const nextStatus = approve ? (isTerminalAtHR ? 'APPROVED' : 'MD_REVIEW') : 'HR_REJECTED';
 
-    const updated = await prisma.leaveRequest.update({
-      where: { id: leaveId },
-      data: {
-        status: nextStatus as any,
-        hrReviewerId: hrId,
-        hrComment: comment || 'Validated by HR'
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.leaveRequest.update({
+        where: { id: leaveId },
+        data: {
+          status: nextStatus as any,
+          hrReviewerId: hrId,
+          hrComment: comment || 'Validated by HR'
+        }
+      });
+
+      if (approve && isTerminalAtHR) {
+        const user = await tx.user.findUnique({ where: { id: leave.employeeId } });
+        if (user) {
+          const metrics = getEffectiveLeaveMetrics(user);
+          const newBalance = metrics.balance - Number(leave.leaveDays || 0);
+          await tx.user.update({
+            where: { id: user.id },
+            data: { leaveBalance: newBalance }
+          });
+        }
       }
+
+      await notify(leave.employeeId, 
+        approve ? (isTerminalAtHR ? '🎉 Leave Fully Approved' : '🛡️ HR Validated') : '❌ HR Rejected',
+        approve 
+          ? (isTerminalAtHR 
+              ? `Your leave has been finalized and fully approved by HR (${actor.fullName}).` 
+              : `HR has validated your leave request. It now moves to the MD for final institutional approval.`)
+          : `HR has rejected your leave validation. Reason: ${comment}`,
+        approve ? 'SUCCESS' : 'ERROR',
+        '/leave'
+      );
+
+      return updated;
     });
-
-    await notify(leave.employeeId, 
-      approve ? '🛡️ HR Validated' : '❌ HR Rejected',
-      approve 
-        ? `HR has validated your leave request. It now moves to the MD for final institutional approval.`
-        : `HR has rejected your leave validation. Reason: ${comment}`,
-      approve ? 'SUCCESS' : 'ERROR',
-      '/leave'
-    );
-
-    return updated;
   }
 
   /**

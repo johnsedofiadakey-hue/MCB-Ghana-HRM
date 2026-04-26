@@ -175,7 +175,7 @@ const SettingsHub = () => {
       previewSettings(formData as any);
     }
     const currentRank = currentUser?.rank || 0;
-    if (activeTab === 'data' && currentRank >= 90) {
+    if (activeTab === 'data' && currentRank >= 85) {
       fetchBackups();
     }
   }, [formData, activeTab, previewSettings, currentUser]);

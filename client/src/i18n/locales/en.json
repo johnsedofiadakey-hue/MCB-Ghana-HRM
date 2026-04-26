@@ -121,6 +121,7 @@
     "greeting_afternoon": "Good Afternoon",
     "greeting_evening": "Good Evening"
   },
+  "department_details": {
     "no_manager": "No Manager",
     "members": "Staff",
     "sub_units": "Sub-Units",

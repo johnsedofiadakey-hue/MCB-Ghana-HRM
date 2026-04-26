@@ -95,9 +95,9 @@ export const finalSignOff = async (req: Request, res: Response) => {
     const organizationId = getOrgId(req) || 'default-tenant';
     const user = (req as any).user;
     
-    // Only MD can perform final signoff
-    if (getRoleRank(user.role) < 90) {
-      return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
+    // Only HR Manager or higher (Rank 85+) can perform final signoff
+    if (getRoleRank(user.role) < 85) {
+      return res.status(403).json({ error: 'Only HR Managers or MD can perform final appraisal sign-off' });
     }
     
     const packet = await AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore, arbitrationLogic, assignedTargets);

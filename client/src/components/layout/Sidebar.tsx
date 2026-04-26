@@ -281,14 +281,14 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 )}
               </NavGroup>
 
-              {(isFinance || isHR || isMD) && (
+              {(isFinance || isHR || isMD || isIT) && (
                 <NavGroup label={t('common.administration')} isCollapsed={isCollapsed}>
                   <NavItem to="/payroll" icon={DollarSign} label={t('common.payroll')} isCollapsed={isCollapsed} />
+                  {(isMD || isHR || isIT) && (
+                    <NavItem to="/settings" icon={Settings} label={t('common.admin_settings')} isCollapsed={isCollapsed} />
+                  )}
                   {isMD && (
-                    <>
-                      <NavItem to="/settings" icon={Settings} label={t('common.admin_settings')} isCollapsed={isCollapsed} />
-                      <NavItem to="/enterprise" icon={Zap} label={t('common.enterprise_suite')} isCollapsed={isCollapsed} />
-                    </>
+                    <NavItem to="/enterprise" icon={Zap} label={t('common.enterprise_suite')} isCollapsed={isCollapsed} />
                   )}
                 </NavGroup>
               )}
