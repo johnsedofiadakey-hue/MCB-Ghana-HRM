@@ -14,7 +14,10 @@ const ai = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 export const generateInsight = async (req: Request, res: Response) => {
   if (!ai) {
-    return res.status(503).json({ error: 'AI service unavailable. No API key configured.' });
+    return res.status(503).json({ 
+      error: 'AI service unavailable.', 
+      details: 'GEMINI_API_KEY is missing from environment variables. Please add it to Render dashboard.' 
+    });
   }
 
   try {
@@ -66,7 +69,10 @@ ${JSON.stringify(sanitizedData, null, 2)}
  * Supports Autonomous Tool Execution via Function Calling.
  */
 export const chat = async (req: Request, res: Response) => {
-  if (!ai) return res.status(503).json({ error: 'AI Assistant unavailable.' });
+  if (!ai) return res.status(503).json({ 
+    error: 'Cortex AI Assistant unavailable.',
+    details: 'GEMINI_API_KEY is missing from environment variables. Please add it to Render dashboard.'
+  });
 
   try {
     const { message, history } = req.body;
@@ -181,7 +187,10 @@ Always refer to the user by name if appropriate and make them feel like they are
 };
 
 export const parseResumeViaAI = async (req: Request, res: Response) => {
-  if (!ai) return res.status(503).json({ error: 'AI parsing unavailable.' });
+  if (!ai) return res.status(503).json({ 
+    error: 'AI parsing unavailable.',
+    details: 'GEMINI_API_KEY is missing from environment variables. Please add it to Render dashboard.'
+  });
 
   try {
     const { candidateId } = req.body;
