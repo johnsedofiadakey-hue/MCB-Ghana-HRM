@@ -228,10 +228,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     if (isLightHeadingTheme && (currentSidebarBg === oldDarkNavy || !currentSidebarBg)) {
       // Force professional Light Aero Gray if the database still holds the old default
-      const aeroGray = '#f8fafc';
+      const aeroGray = '#ffffff'; // Use pure white for MCB professional look
       tokens.push(['bg-sidebar', aeroGray]);
       tokens.push(['sidebarText', '#64748b']);
       tokens.push(['sidebarActive', 'rgba(0, 158, 227, 0.08)']);
+      tokens.push(['border-subtle', 'rgba(0,0,0,0.05)']);
+    }
+
+    // --- MCB BRAND HARDENER: Enforce Blue/Orange balance in Canvas ---
+    if (themeName === 'premium-canvas') {
+       const mcbBlue = '#009EE3';
+       const mcbOrange = '#EE7100';
+       tokens.push(['primary', mcbBlue]);
+       tokens.push(['accent', mcbOrange]);
+       tokens.push(['growth', mcbOrange]);
+       tokens.push(['bg-main', '#f8fafc']);
+       tokens.push(['bg-card', '#ffffff']);
+       tokens.push(['text-primary', '#0f172a']);
     }
 
 
@@ -305,6 +318,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         html[data-theme="${themeName}"] .text-slate-300, html[data-theme="${themeName}"] .text-gray-300 { color: var(--text-muted) !important; }
         html[data-theme="${themeName}"] .text-slate-100, html[data-theme="${themeName}"] .text-gray-100 { color: var(--text-primary) !important; }
         html[data-theme="${themeName}"] .text-slate-50, html[data-theme="${themeName}"] .text-gray-50 { color: var(--text-primary) !important; }
+
+        /* Button Hardening: Ensure Growth/Secondary color applies to primary-style buttons if needed */
+        html[data-theme="${themeName}"] .btn-growth { background-color: var(--growth) !important; color: white !important; }
+        html[data-theme="${themeName}"] .hover\:bg-indigo-700:hover { background-color: var(--primary) !important; filter: brightness(0.9); }
+
 
         /* Print Override System: Force Browser Print to use Brand Identity */
         @media print {
