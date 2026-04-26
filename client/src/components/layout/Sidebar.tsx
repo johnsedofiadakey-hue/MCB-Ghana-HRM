@@ -262,13 +262,16 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/policies" icon={BookOpen} label="Policies" isCollapsed={isCollapsed} />
                 {(rank >= 60 || isHR) && <NavItem to="/disciplinary" icon={AlertOctagon} label="Disciplinary" isCollapsed={isCollapsed} />}
                 {(rank >= 70 || isHR) && <NavItem to="/probation" icon={Clock} label="Probation" isCollapsed={isCollapsed} />}
+                {(isIT || isHR) && (
+                   <NavItem to="/it-admin" icon={ShieldCheck} label="ID Card Registry" isCollapsed={isCollapsed} />
+                )}
               </NavGroup>
  
               <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
                 <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
                 {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
                 {(isIT && !isMD) && (
-                  <NavItem to="/it-admin" icon={ShieldAlert} label={rank >= 85 && role.includes('MANAGER') ? 'IT Systems Hub' : t('common.it_admin_label')} isCollapsed={isCollapsed} />
+                  <NavItem to="/it-admin" icon={ShieldAlert} label={rank >= 85 ? 'Strategic IT Hub' : 'IT Administration'} isCollapsed={isCollapsed} />
                 )}
                 <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />

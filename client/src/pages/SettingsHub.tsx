@@ -19,7 +19,7 @@ import { optimizeImage } from '../utils/image';
 import api from '../services/api';
 import { ApiIntegrations } from '../components/settings/ApiIntegrations';
 
-type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations';
+type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations' | 'payroll';
 
 const isValidHex = (hex: string) => /^#[0-9A-Fa-f]{6}$/.test(hex);
 
@@ -1021,7 +1021,7 @@ const SettingsHub = () => {
                     </section>
 
                     {/* Secure Data Vault — MD Exclusive */}
-                    {((currentUser?.rank ?? 0) >= 90 || currentUser?.role === 'DEV') && (
+                    {((currentUser?.rank ?? 0) >= 85 || currentUser?.role === 'DEV') && (
                       <section className="p-12 rounded-[2rem] border border-[var(--primary)]/20 bg-[var(--primary)]/5 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-10 transition-all duration-700">
                            <Database size={200} className="rotate-12" />
@@ -1280,6 +1280,21 @@ const SettingsHub = () => {
                 <div className="hidden md:block">
                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">{t('settings.auto_sync_enabled', 'System Auto-sync Enabled')}</p>
                 </div>
+                <button
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      // Force a global refresh and broadcast
+                      await handleSave();
+                      toast.success('Global Identity Pulse Sent: All dashboards will sync shortly.');
+                    } catch (e) { toast.error('Sync failed'); }
+                    finally { setLoading(false); }
+                  }}
+                  className="px-8 py-5 rounded-2xl bg-indigo-600/10 text-indigo-600 font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-3"
+                >
+                  <Zap size={18} />
+                  <span>Sync to All Devices</span>
+                </button>
                 <button
                   onClick={handleSave}
                   disabled={loading}

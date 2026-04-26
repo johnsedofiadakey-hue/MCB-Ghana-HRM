@@ -435,13 +435,13 @@ const AppContent = () => {
             <Route path="/employees/history" element={<RoleGuard minRank={70}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/assets" element={<AssetManagement />} />
-            <Route path="/audit" element={<RoleGuard minRank={88}><AuditLogs /></RoleGuard>} />
+            <Route path="/audit" element={<RoleGuard minRank={85}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
-            <Route path="/settings" element={<RoleGuard minRank={95}><SettingsHub /></RoleGuard>} />
+            <Route path="/settings" element={<RoleGuard minRank={85}><SettingsHub /></RoleGuard>} />
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
-            <Route path="/payroll" element={<RoleGuard minRank={87}><Payroll /></RoleGuard>} />
+            <Route path="/payroll" element={<RoleGuard minRank={85}><Payroll /></RoleGuard>} />
             <Route path="/finance" element={<FinanceHub />} />
             <Route path="/attendance" element={<AttendanceDashboard />} />
             <Route path="/org-chart" element={<RoleGuard minRank={85}><OrgChart /></RoleGuard>} />

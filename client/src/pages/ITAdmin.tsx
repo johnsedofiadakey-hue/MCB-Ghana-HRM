@@ -42,7 +42,10 @@ const ITAdmin = () => {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [resettingId, setResettingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets' | 'integrations'>('overview');
+  const currentUser = getStoredUser();
+  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets' | 'integrations'>(
+    (currentUser?.rank || 0) >= 85 ? 'accounts' : 'overview'
+  );
 
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showIdModal, setShowIdModal] = useState(false);
@@ -59,6 +62,9 @@ const ITAdmin = () => {
       setOverview(oRes.data || null);
       setUsers(Array.isArray(uRes.data) ? uRes.data : []);
       setOrgSettings(sRes.data || null);
+      
+      // DIAGNOSTIC LOG
+      console.log('[ITAdmin] Active Org Context:', sRes.data?.organizationId || 'default');
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
