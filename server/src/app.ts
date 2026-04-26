@@ -1,6 +1,7 @@
 // Nexus HR Platform - Production Sync: 2026-04-26
 const APP_VERSION = require('../package.json').version || '4.0.0';
 console.log(`[Startup] ${new Date().toISOString()} - Nexus HR Platform v${APP_VERSION} Initializing...`);
+// 🚀 DEPLOYMENT HEARTBEAT: 2026-04-26T16:21:00Z
 import express, { Application, Request, Response, NextFunction } from 'express';
 import http from 'http';
 import cors from 'cors';
