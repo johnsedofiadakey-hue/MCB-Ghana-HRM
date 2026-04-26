@@ -262,7 +262,7 @@ const AppContent = () => {
   const { settings } = useTheme();
   const { t } = useTranslation();
 
-  const isCentralDomain = window.location.hostname === 'nexus-hr-platform.web.app' || window.location.hostname === 'nexus-hr-platform.firebaseapp.com';
+  const isCentralDomain = window.location.hostname === 'nexus-hr-platform.web.app' || window.location.hostname === 'nexus-hr-platform.firebaseapp.com' || window.location.hostname === 'mcb-hrm-ghana.web.app';
 
   useEffect(() => {
     // Legacy Token Cleanup: Standardizing on nexus_* prefix
