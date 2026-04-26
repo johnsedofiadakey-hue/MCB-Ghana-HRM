@@ -1,14 +1,6 @@
 {
   "common": {
-    "dashboard": "Dashboard",
-    "employees": "Employees",
-    "inbox": "Inbox",
-    "leave": "Leave",
-    "performance": "Performance",
-    "assets": "Assets",
-    "payroll": "Payroll",
     "unassigned_dept": "Headquarters",
-    "settings": "Settings",
     "logout": "Logout",
     "save": "Save Changes",
     "cancel": "Cancel",
@@ -21,43 +13,32 @@
     "save_changes": "Save Changes",
     "admin": "Admin",
     "personal": "Personal",
-    "profile": "My Profile",
     "organization": "Organization",
-    "attendance": "Attendance",
     "export_csv": "Download CSV",
     "export_pdf": "Download PDF",
     "error_sync": "Connection error",
     "users": "Users",
-    "finance": "Money & Loans",
     "my_targets": "My Targets",
     "departmental_goals": "Dept Goals",
     "team_targets": "Team Goals",
     "my_appraisals": "My Reviews",
     "team_appraisals": "Team Reviews",
     "executive_sign_off": "Final Approval",
-    "final_verdict": "Final Decision",
     "appraisal_cycles": "Review Periods",
     "calibration": "Final Check",
     "operations": "Operations",
-    "training": "Training",
-    "holidays": "Holidays",
-    "onboarding": "New Starters",
     "offboarding": "Staff Leaving",
     "recruitment": "Recruitment",
     "expenses": "Expenses",
-    "it_admin": "IT Admin",
     "support": "Support",
-    "org_chart": "Company Chart",
     "management": "Management",
     "leave_approvals": "Leave Approvals",
     "administration": "Admin",
-    "departments": "Departments",
     "my_department": "My Department",
     "announcements": "Announcements",
     "dept_kpis": "Dept KPIs",
     "strategic_goals": "Main Goals",
     "admin_settings": "Admin Settings",
-    "enterprise_suite": "Business Tools",
     "company_settings": "Company Settings",
     "audit_logs": "System Logs",
     "subscription": "Subscription",
@@ -81,14 +62,53 @@
     "medium": "Medium",
     "low": "Low",
     "months": {
-      "jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "may": "May", "jun": "Jun",
-      "jul": "Jul", "aug": "Aug", "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Dec"
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
     },
     "full_months": {
-      "jan": "January", "feb": "February", "mar": "March", "apr": "April", "may": "May", "jun": "June",
-      "jul": "July", "aug": "August", "sep": "September", "oct": "October", "nov": "November", "dec": "December"
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
     },
-    "all_departments": "All Departments"
+    "all_departments": "All Departments",
+    "departments_label": "Departments",
+    "employees_label": "Employees",
+    "leave_label": "Leave",
+    "performance_label": "Performance",
+    "onboarding_label": "New Starters",
+    "holidays_label": "Holidays",
+    "payroll_label": "Payroll",
+    "dashboard_label": "Dashboard",
+    "settings_label": "Settings",
+    "org_chart_label": "Company Chart",
+    "inbox_label": "Inbox",
+    "assets_label": "Assets",
+    "finance_label": "Money & Loans",
+    "attendance_label": "Attendance",
+    "training_label": "Training",
+    "it_admin_label": "IT Admin",
+    "profile_label": "My Profile",
+    "enterprise_suite_label": "Business Tools",
+    "final_verdict_label": "Final Decision"
   },
   "departments": {
     "title": "Departments",
@@ -612,20 +632,62 @@
         "leadership": "Leadership"
       },
       "competencies": {
-        "goal_achievement": { "name": "Goal Results", "desc": "Meets or beats the targets and goals set for them." },
-        "quality_of_work": { "name": "Work Quality", "desc": "Produces accurate and good work." },
-        "productivity": { "name": "Efficiency", "desc": "Uses time well and gets a lot done." },
-        "reliability": { "name": "Reliability", "desc": "Does what they say they will do." },
-        "job_knowledge": { "name": "Job Knowledge", "desc": "Knows how to do their job well." },
-        "problem_solving": { "name": "Problem Solving", "desc": "Finds ways to fix issues." },
-        "innovation": { "name": "New Ideas", "desc": "Brings new and better ways of doing things." },
-        "teamwork": { "name": "Teamwork", "desc": "Works well with others." },
-        "communication": { "name": "Communication", "desc": "Speaks and writes clearly." },
-        "customer_focus": { "name": "Customer Care", "desc": "Helpful to customers and team members." },
-        "ownership": { "name": "Responsibility", "desc": "Takes responsibility for their work." },
-        "adaptability": { "name": "Adaptability", "desc": "Changes well when things change at work." },
-        "development": { "name": "Learning", "desc": "Tries to learn new skills." },
-        "punctuality": { "name": "Punctuality", "desc": "Comes to work and meetings on time." }
+        "goal_achievement": {
+          "name": "Goal Results",
+          "desc": "Meets or beats the targets and goals set for them."
+        },
+        "quality_of_work": {
+          "name": "Work Quality",
+          "desc": "Produces accurate and good work."
+        },
+        "productivity": {
+          "name": "Efficiency",
+          "desc": "Uses time well and gets a lot done."
+        },
+        "reliability": {
+          "name": "Reliability",
+          "desc": "Does what they say they will do."
+        },
+        "job_knowledge": {
+          "name": "Job Knowledge",
+          "desc": "Knows how to do their job well."
+        },
+        "problem_solving": {
+          "name": "Problem Solving",
+          "desc": "Finds ways to fix issues."
+        },
+        "innovation": {
+          "name": "New Ideas",
+          "desc": "Brings new and better ways of doing things."
+        },
+        "teamwork": {
+          "name": "Teamwork",
+          "desc": "Works well with others."
+        },
+        "communication": {
+          "name": "Communication",
+          "desc": "Speaks and writes clearly."
+        },
+        "customer_focus": {
+          "name": "Customer Care",
+          "desc": "Helpful to customers and team members."
+        },
+        "ownership": {
+          "name": "Responsibility",
+          "desc": "Takes responsibility for their work."
+        },
+        "adaptability": {
+          "name": "Adaptability",
+          "desc": "Changes well when things change at work."
+        },
+        "development": {
+          "name": "Learning",
+          "desc": "Tries to learn new skills."
+        },
+        "punctuality": {
+          "name": "Punctuality",
+          "desc": "Comes to work and meetings on time."
+        }
       },
       "ratings": {
         "1": "Below Expectations",

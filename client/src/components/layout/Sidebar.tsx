@@ -221,15 +221,15 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         <nav className="flex-1 py-8 overflow-y-auto custom-scrollbar overflow-x-hidden">
             <>
               <NavGroup label={t('common.personal')} isCollapsed={isCollapsed}>
-                <NavItem to="/dashboard" icon={LayoutDashboard} label={t('common.dashboard')} isCollapsed={isCollapsed} />
-                <NavItem to="/inbox" icon={Megaphone} label="Inbox" isCollapsed={isCollapsed} />
-                <NavItem to="/profile" icon={Users} label={t('common.profile')} isCollapsed={isCollapsed} />
-                <NavItem to="/attendance" icon={Clock} label={t('common.attendance')} isCollapsed={isCollapsed} />
-                <NavItem to="/leave" icon={Calendar} label={t('common.leave')} isCollapsed={isCollapsed} />
-                <NavItem to="/finance" icon={Wallet} label={t('common.finance')} isCollapsed={isCollapsed} />
+                <NavItem to="/dashboard" icon={LayoutDashboard} label={t('common.dashboard_label')} isCollapsed={isCollapsed} />
+                <NavItem to="/inbox" icon={Megaphone} label={t('common.inbox_label')} isCollapsed={isCollapsed} />
+                <NavItem to="/profile" icon={Users} label={t('common.profile_label')} isCollapsed={isCollapsed} />
+                <NavItem to="/attendance" icon={Clock} label={t('common.attendance_label')} isCollapsed={isCollapsed} />
+                <NavItem to="/leave" icon={Calendar} label={t('common.leave_label')} isCollapsed={isCollapsed} />
+                <NavItem to="/finance" icon={Wallet} label={t('common.finance_label')} isCollapsed={isCollapsed} />
               </NavGroup>
 
-              <NavGroup label={t('common.performance')} isCollapsed={isCollapsed}>
+              <NavGroup label={t('common.performance_label')} isCollapsed={isCollapsed}>
                 <NavItem to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} isCollapsed={isCollapsed} />
                 {rank >= 80 && (
                   <NavItem to="/kpi/my-targets" icon={Building2} label={t('common.departmental_goals')} isCollapsed={isCollapsed} />
@@ -253,10 +253,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               </NavGroup>
 
                  <NavGroup label={t('common.organization')} isCollapsed={isCollapsed}>
-                <NavItem to="/departments" icon={Briefcase} label={rank < 70 ? t('common.my_department') : t('departments.title')} isCollapsed={isCollapsed} />
-                {(rank >= 70 || isHR) && <NavItem to="/employees" icon={Users} label={t('common.employees')} isCollapsed={isCollapsed} />}
+                <NavItem to="/departments" icon={Briefcase} label={rank < 70 ? t('common.my_department') : t('common.departments_label')} isCollapsed={isCollapsed} />
+                {(rank >= 70 || isHR) && <NavItem to="/employees" icon={Users} label={t('common.employees_label')} isCollapsed={isCollapsed} />}
                 <NavItem to="/announcements" icon={Megaphone} label={t('common.announcements')} isCollapsed={isCollapsed} />
-                {(rank >= 85 || isHR) && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />}
+                {(rank >= 85 || isHR) && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart_label')} isCollapsed={isCollapsed} />}
                 {(rank >= 85 || isHR) && !isMD && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment')} isCollapsed={isCollapsed} />}
                 {/* New modules */}
                 <NavItem to="/policies" icon={BookOpen} label="Policies" isCollapsed={isCollapsed} />
@@ -266,16 +266,16 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
  
               <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
                 <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
-                {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets')} isCollapsed={isCollapsed} />}
+                {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
                 {(isIT && !isMD) && (
-                  <NavItem to="/it-admin" icon={ShieldAlert} label={t('common.it_admin')} isCollapsed={isCollapsed} />
+                  <NavItem to="/it-admin" icon={ShieldAlert} label={t('common.it_admin_label')} isCollapsed={isCollapsed} />
                 )}
                 <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
-                <NavItem to="/training" icon={GraduationCap} label={t('common.training')} isCollapsed={isCollapsed} />
-                <NavItem to="/holidays" icon={Calendar} label={t('common.holidays')} isCollapsed={isCollapsed} />
+                <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />
+                <NavItem to="/holidays" icon={Calendar} label={t('common.holidays_label')} isCollapsed={isCollapsed} />
                 {(rank >= 85 || isHR) && !isMD && (
                   <>
-                    <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding')} isCollapsed={isCollapsed} />
+                    <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding_label')} isCollapsed={isCollapsed} />
                     <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding')} isCollapsed={isCollapsed} />
                   </>
                 )}
@@ -283,12 +283,12 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
               {(isFinance || isHR || isMD || isIT) && (
                 <NavGroup label={t('common.administration')} isCollapsed={isCollapsed}>
-                  <NavItem to="/payroll" icon={DollarSign} label={t('common.payroll')} isCollapsed={isCollapsed} />
+                  <NavItem to="/payroll" icon={DollarSign} label={t('common.payroll_label')} isCollapsed={isCollapsed} />
                   {(isMD || isHR || isIT) && (
                     <NavItem to="/settings" icon={Settings} label={t('common.admin_settings')} isCollapsed={isCollapsed} />
                   )}
                   {isMD && (
-                    <NavItem to="/enterprise" icon={Zap} label={t('common.enterprise_suite')} isCollapsed={isCollapsed} />
+                    <NavItem to="/enterprise" icon={Zap} label={t('common.enterprise_suite_label')} isCollapsed={isCollapsed} />
                   )}
                 </NavGroup>
               )}
