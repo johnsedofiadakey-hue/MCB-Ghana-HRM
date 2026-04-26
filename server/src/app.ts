@@ -290,6 +290,9 @@ app.use('/api/hr', hrFeaturesRoutes);
 app.use('/api/public/v1', publicApiRoutes);
 app.use('/api/integrations', integrationsRoutes);
 app.use('/api/bot', aiLimiter, botRoutes);
+import biometricRoutes from './routes/biometric.routes';
+app.use('/api/biometric', biometricRoutes);
+
 import aiRoutes from './routes/ai.routes';
 app.use('/api/ai', aiLimiter, aiRoutes);
 

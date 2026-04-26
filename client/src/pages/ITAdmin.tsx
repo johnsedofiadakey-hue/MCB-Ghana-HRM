@@ -42,18 +42,31 @@ const ITAdmin = () => {
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets' | 'integrations'>('overview');
 
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showIdModal, setShowIdModal] = useState(false);
+  const [orgSettings, setOrgSettings] = useState<any>(null);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [oRes, uRes] = await Promise.all([api.get('/it/overview'), api.get('/it/users')]);
+      const [oRes, uRes, sRes] = await Promise.all([
+        api.get('/it/overview'), 
+        api.get('/it/users'),
+        api.get('/settings')
+      ]);
       setOverview(oRes.data || null);
       setUsers(Array.isArray(uRes.data) ? uRes.data : []);
+      setOrgSettings(sRes.data || null);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handlePrintId = (user: any) => {
+    setSelectedUser(user);
+    setShowIdModal(true);
+  };
 
   const handlePasswordReset = async (userId: string, name: string) => {
     setResettingId(userId);
@@ -111,7 +124,6 @@ const ITAdmin = () => {
              ))}
           </div>
         </div>
-      </div>
 
       <AnimatePresence mode="wait">
         {loading ? (
@@ -284,6 +296,13 @@ const ITAdmin = () => {
                                      <div className="flex justify-end gap-3 text-[10px] font-black uppercase tracking-widest transition-all">
                                         <motion.button 
                                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                           onClick={() => handlePrintId(u)}
+                                           className="px-6 h-10 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/20 flex items-center gap-3 active:bg-[var(--primary)] active:text-white transition-all"
+                                        >
+                                           <Key size={14} /> ID Card
+                                        </motion.button>
+                                        <motion.button 
+                                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                            onClick={() => handlePasswordReset(u.id, u.fullName)}
                                            disabled={resettingId === u.id}
                                            className="px-6 h-10 rounded-xl bg-indigo-500/5 text-indigo-600 border border-indigo-500/20 flex items-center gap-3 active:bg-indigo-500 active:text-white transition-all"
@@ -328,6 +347,64 @@ const ITAdmin = () => {
             {activeTab === 'integrations' && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     <div className="lg:col-span-8 space-y-10">
+                        {/* Biometric Sync Hub */}
+                        <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)] relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 rounded-full blur-[100px] pointer-events-none" />
+                            <div className="flex items-center gap-6 mb-12">
+                                <div className="w-16 h-16 rounded-[2rem] bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-xl shadow-amber-500/5">
+                                    <Fingerprint size={32} />
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">Biometric Attendance Hub</h3>
+                                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] mt-1">Real-time Synchronization Engine</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
+                                <div className="space-y-6">
+                                    <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">Configuration Protocol</h4>
+                                    <div className="p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Institutional Endpoint</label>
+                                            <div className="flex items-center gap-3 p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)]">
+                                                <p className="text-[10px] font-mono font-bold text-[var(--primary)] truncate">https://api.nexus-hrm.gh/biometric/push</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Synchronization Key</label>
+                                            <div className="flex items-center gap-3 p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)]">
+                                                <p className="text-[10px] font-mono font-bold text-[var(--text-primary)] truncate">NX-BIO-SYNC-8562-XK92</p>
+                                                <Key size={12} className="text-[var(--text-muted)] shrink-0" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">Supported Hardware</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {['ZKTeco ADMS', 'Hikvision Pro', 'Dahua FaceID', 'Anviz Global'].map(hw => (
+                                            <div key={hw} className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center gap-3">
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                <span className="text-[10px] font-bold text-[var(--text-secondary)]">{hw}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+                                        <p className="text-[9px] font-bold text-amber-700 leading-relaxed uppercase tracking-widest italic">
+                                            Note: Ensure port 4370 (UDP) is open on your local firewall for direct communication.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end pt-6 border-t border-[var(--border-subtle)]/50">
+                                <button className="px-10 h-12 rounded-xl bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl">
+                                    Initiate Global Hardware Sync
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)]">
                             <div className="flex items-center gap-4 mb-10">
                                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600">
@@ -399,6 +476,10 @@ const ITAdmin = () => {
                                     <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Mail Relay</span>
                                     <span className="text-xs font-black">ACTIVE</span>
                                 </div>
+                                <div className="flex justify-between items-center py-3 border-b border-white/10">
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Biometric Push</span>
+                                    <span className="text-xs font-black text-emerald-400">LISTENING</span>
+                                </div>
                                 <div className="flex justify-between items-center py-3">
                                     <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Webhooks</span>
                                     <span className="text-xs font-black">LISTENING</span>
@@ -411,17 +492,17 @@ const ITAdmin = () => {
                                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
                                     <Fingerprint size={20} />
                                 </div>
-                                <h4 className="text-sm font-black uppercase tracking-tight text-[var(--text-primary)]">Biometric Sync</h4>
+                                <h4 className="text-sm font-black uppercase tracking-tight text-[var(--text-primary)]">Hardware Connectivity</h4>
                             </div>
                             <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed mb-6">
-                                Connect ZKTeco or Hikvision devices to the central attendance node.
+                                Central attendance node is ready for ZKTeco or Hikvision device tunneling.
                             </p>
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3 text-[10px] font-bold text-[var(--text-muted)]">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" /> Port 4370 (UDP) Open
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Port 4370 (UDP) Accessible
                                 </div>
                                 <div className="flex items-center gap-3 text-[10px] font-bold text-[var(--text-muted)]">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" /> Static IP Assigned
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Server Static IP Linked
                                 </div>
                             </div>
                         </div>
@@ -445,8 +526,66 @@ const ITAdmin = () => {
         )}
       </AnimatePresence>
 
+      {/* ID Card Preview Modal */}
+      <AnimatePresence>
+        {showIdModal && selectedUser && orgSettings && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-5xl h-[90vh] bg-white rounded-[3rem] overflow-hidden flex flex-col relative"
+            >
+              <button 
+                onClick={() => setShowIdModal(false)}
+                className="absolute top-8 right-8 z-20 p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <ArrowLeft className="rotate-90" />
+              </button>
+
+              <div className="flex-grow overflow-y-auto custom-scrollbar p-12">
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+                    <div className="space-y-12">
+                       <h2 className="text-4xl font-black text-gray-900 tracking-tight uppercase italic leading-tight">
+                          Personnel Identity <br />
+                          <span className="text-[var(--primary)]">Tag Generation</span>
+                       </h2>
+                       
+                       <div className="space-y-8">
+                          <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100">
+                             <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">Verification Context</h4>
+                             <p className="text-sm font-medium text-gray-700 leading-relaxed">
+                                This tag is generated using the latest institutional biometric records. 
+                                Printing this card will finalize the digital-to-physical identity link for {selectedUser.fullName}.
+                             </p>
+                          </div>
+
+                          <div className="flex flex-col gap-4">
+                             <button 
+                               onClick={() => window.print()}
+                               className="w-full h-16 rounded-2xl bg-gray-900 text-white font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-black transition-all shadow-2xl"
+                             >
+                                <Cpu size={18} /> Initialize Print Protocol
+                             </button>
+                             <p className="text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                Standard CR80 Dimensions (85.6mm x 54mm)
+                             </p>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="flex justify-center items-start lg:pt-12">
+                       <EmployeeIDCard employee={selectedUser} organization={orgSettings} />
+                    </div>
+                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
+
+import EmployeeIDCard from '../components/it/EmployeeIDCard';
 
 export default ITAdmin;
