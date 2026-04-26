@@ -136,7 +136,14 @@ export const login = async (req: Request, res: Response) => {
       status: user.status || 'ACTIVE',
       organizationId: orgId
     });
-    const refreshToken = await issueRefreshToken(user.id, orgId, req);
+    let refreshToken;
+    try {
+      refreshToken = await issueRefreshToken(user.id, orgId, req);
+    } catch (tokenErr: any) {
+      console.error('[Auth] Refresh token issuance failed:', tokenErr.message);
+      // We still allow login but without a refresh token? No, better to fail and log.
+      throw new Error(`Session security initialization failed: ${tokenErr.message}`);
+    }
 
     await safeLogSecurityEvent({ email: normalizedEmail, success: true, organizationId: orgId, reason: 'LOGIN_OK', req });
 
@@ -159,9 +166,12 @@ export const login = async (req: Request, res: Response) => {
         refreshExpiresInHours: REFRESH_TOKEN_WINDOW_HOURS,
       },
     });
-  } catch (error) {
-    console.error('[Auth] Login error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (error: any) {
+    console.error('[Auth] Login CRITICAL error:', error.message, error.stack);
+    return res.status(500).json({ 
+      error: 'Internal Server Error',
+      message: error.message
+    });
   }
 };
 

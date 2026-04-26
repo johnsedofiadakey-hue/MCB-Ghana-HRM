@@ -132,15 +132,16 @@ export const itSystemOverview = async (req: Request, res: Response) => {
 // Get all users (no salary data) for IT management
 export const itGetUsers = async (req: Request, res: Response) => {
   try {
-  const users = await prisma.user.findMany({
-    orderBy: { fullName: 'asc' },
-    select: {
-      id: true, fullName: true, email: true, role: true, status: true,
-      jobTitle: true, employeeCode: true, departmentObj: { select: { name: true } },
-      createdAt: true, avatarUrl: true, contactNumber: true
-      // NOTE: salary, passwordHash deliberately excluded
-    }
-  });
+    const organizationId = (req as any).user?.organizationId || 'default-tenant';
+    const users = await prisma.user.findMany({
+      where: { organizationId },
+      orderBy: { fullName: 'asc' },
+      select: {
+        id: true, fullName: true, email: true, role: true, status: true,
+        jobTitle: true, employeeCode: true, departmentObj: { select: { name: true } },
+        createdAt: true, avatarUrl: true, contactNumber: true
+      }
+    });
   res.json(users);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 };

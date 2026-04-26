@@ -97,7 +97,7 @@ const SettingsHub = () => {
     sidebarBg: '',
     sidebarActive: '',
     sidebarText: '',
-    defaultLanguage: 'fr',
+    defaultLanguage: 'en',
     currency: 'GHS',
     successColor: 'var(--success)',
     warningColor: 'var(--warning)',
@@ -177,7 +177,11 @@ const SettingsHub = () => {
         borrowingLimit: settings.borrowingLimit || 5,
         ssnitRate: settings.ssnitRate || 0.055,
         employerSsnitRate: settings.employerSsnitRate || 0.13,
-        payeBands: settings.payeBands || []
+        payeBands: settings.payeBands || [],
+        idCardPrimaryColor: settings.idCardPrimaryColor || '#009EE3',
+        idCardAccentColor: settings.idCardAccentColor || '#EE7100',
+        idCardShowLogo: settings.idCardShowLogo ?? true,
+        idCardShowQrCode: settings.idCardShowQrCode ?? true
       });
     }
   }, [settings]);

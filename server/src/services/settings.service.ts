@@ -57,6 +57,11 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       ssnitRate: true,
       employerSsnitRate: true,
       payeBands: true,
+      vatRate: true,
+      idCardPrimaryColor: true,
+      idCardAccentColor: true,
+      idCardShowLogo: true,
+      idCardShowQrCode: true,
       settings: {
         select: {
           isMaintenanceMode: true,

@@ -19,11 +19,18 @@ interface EmployeeIDCardProps {
     logoUrl?: string;
     primaryColor?: string;
     address?: string;
+    idCardPrimaryColor?: string;
+    idCardAccentColor?: string;
+    idCardShowLogo?: boolean;
+    idCardShowQrCode?: boolean;
   };
 }
 
 const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization }) => {
-  const primaryColor = organization.primaryColor || '#4F46E5';
+  const primaryColor = organization.idCardPrimaryColor || organization.primaryColor || '#009EE3';
+  const accentColor = organization.idCardAccentColor || '#EE7100';
+  const showLogo = organization.idCardShowLogo ?? true;
+  const showQr = organization.idCardShowQrCode ?? true;
 
   return (
     <div className="flex flex-col gap-10 items-center bg-gray-50 p-10 min-h-screen font-sans">
@@ -45,11 +52,11 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
         <div className="relative z-10 flex flex-col items-center pt-8 px-6 text-center">
           {/* Logo */}
           <div className="h-10 mb-8 flex items-center justify-center">
-            {organization.logoUrl ? (
+            {showLogo && (organization.logoUrl ? (
               <img src={organization.logoUrl} alt="Logo" className="h-full object-contain" />
             ) : (
               <span className="text-white font-black text-xl tracking-tighter uppercase italic">{organization.name}</span>
-            )}
+            ))}
           </div>
 
           {/* Photo */}
@@ -70,7 +77,7 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
 
           {/* Name & Title */}
           <h2 className="text-2xl font-black text-gray-900 leading-tight uppercase mb-1">{employee.fullName}</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: primaryColor }}>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: accentColor }}>
             {employee.jobTitle}
           </p>
 
@@ -90,10 +97,14 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
 
           {/* Footer QR */}
           <div className="absolute bottom-8 flex flex-col items-center">
-             <div className="p-2 bg-white rounded-xl shadow-md border border-gray-100">
-                <QRCodeSVG value={`EMP:${employee.employeeCode}|${employee.fullName}`} size={60} />
-             </div>
-             <p className="text-[7px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-3">Identity Verified</p>
+             {showQr && (
+               <>
+                 <div className="p-2 bg-white rounded-xl shadow-md border border-gray-100">
+                    <QRCodeSVG value={`EMP:${employee.employeeCode}|${employee.fullName}`} size={60} />
+                 </div>
+                 <p className="text-[7px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-3">Identity Verified</p>
+               </>
+             )}
           </div>
         </div>
       </div>

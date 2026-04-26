@@ -32,6 +32,10 @@ export interface Settings {
   currency: string;
   trialDays: number;
   vatRate: number;
+  idCardPrimaryColor?: string;
+  idCardAccentColor?: string;
+  idCardShowLogo?: boolean;
+  idCardShowQrCode?: boolean;
   allowSelfRegistration: boolean;
   themePreset: ThemeName;
   // Billing & Subscription
