@@ -365,79 +365,59 @@ const ITAdmin = () => {
                  </div>
             )}
 
-            {activeTab === 'integrations' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    <div className="lg:col-span-8 space-y-10">
-                        {/* Biometric Sync Hub */}
-                        <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)] relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 rounded-full blur-[100px] pointer-events-none" />
-                            <div className="flex items-center gap-6 mb-12">
-                                <div className="w-16 h-16 rounded-[2rem] bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-xl shadow-amber-500/5">
-                                    <Fingerprint size={32} />
-                                </div>
-                                <div>
-                                    <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">Biometric Attendance Hub</h3>
-                                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] mt-1">Real-time Synchronization Engine</p>
-                                </div>
+                        {/* Registered Biometric Nodes */}
+                        <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                            <div className="flex items-center justify-between mb-8">
+                                <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)]">Active Hardware Nodes</h4>
+                                <button className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline">Register New Device</button>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
-                                <div className="space-y-6">
-                                    <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">Configuration Protocol</h4>
-                                    <div className="p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Institutional Endpoint</label>
-                                            <div className="flex items-center gap-3 p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)]">
-                                                <p className="text-[10px] font-mono font-bold text-[var(--primary)] truncate">https://api.nexus-hrm.gh/biometric/push</p>
+                            <div className="space-y-4">
+                                {[
+                                    { id: 'BIO-01', location: 'Main Reception', type: 'FaceID + Fingerprint', status: 'ONLINE', lastSync: '2 mins ago' },
+                                    { id: 'BIO-02', location: 'Executive Floor', type: 'FaceID Only', status: 'ONLINE', lastSync: '5 mins ago' },
+                                    { id: 'BIO-03', location: 'Staff Exit B', type: 'Fingerprint Only', status: 'OFFLINE', lastSync: '1 hour ago' },
+                                ].map(node => (
+                                    <div key={node.id} className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20">
+                                        <div className="flex items-center gap-4">
+                                            <div className={cn("w-2 h-2 rounded-full", node.status === 'ONLINE' ? 'bg-emerald-500' : 'bg-rose-500')} />
+                                            <div>
+                                                <p className="text-[11px] font-black text-[var(--text-primary)] uppercase">{node.location}</p>
+                                                <p className="text-[9px] text-[var(--text-muted)] font-bold">{node.type} • {node.id}</p>
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Synchronization Key</label>
-                                            <div className="flex items-center gap-3 p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)]">
-                                                <p className="text-[10px] font-mono font-bold text-[var(--text-primary)] truncate">NX-BIO-SYNC-8562-XK92</p>
-                                                <Key size={12} className="text-[var(--text-muted)] shrink-0" />
-                                            </div>
+                                        <div className="text-right">
+                                            <p className="text-[9px] font-black text-[var(--text-secondary)] uppercase">{node.status}</p>
+                                            <p className="text-[8px] text-[var(--text-muted)] italic">Last: {node.lastSync}</p>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">Infrastructure Integrity</h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {[
-                                          { name: 'API Gateway', status: 'ACTIVE', color: 'bg-emerald-500' },
-                                          { name: 'Socket Hub', status: 'CONNECTED', color: 'bg-emerald-500' },
-                                          { name: 'Prisma Node', status: 'STABLE', color: 'bg-indigo-500' },
-                                          { name: 'Worker Pool', status: 'READY', color: 'bg-emerald-500' },
-                                        ].map(hw => (
-                                            <div key={hw.name} className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center gap-3">
-                                                <div className={cn("w-2 h-2 rounded-full animate-pulse", hw.color)} />
-                                                <span className="text-[10px] font-bold text-[var(--text-secondary)]">{hw.name}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="p-5 rounded-2xl bg-[var(--warning)]/5 border border-[var(--warning)]/10">
-                                        <p className="text-[9px] font-bold text-[var(--warning)] leading-relaxed uppercase tracking-widest italic">
-                                            Network Note: Ensure port 4370 (UDP) is open for ADMS/Cloud biometric device tunneling.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end gap-4 pt-6 border-t border-[var(--border-subtle)]/50">
-                                <button 
-                                    onClick={() => refreshSettings()}
-                                    className="px-10 h-12 rounded-xl bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--bg-card)] transition-all"
-                                >
-                                    Synchronize Brand Identity
-                                </button>
-                                <button className="px-10 h-12 rounded-xl bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl">
-                                    Initiate Global Hardware Sync
-                                </button>
+                                ))}
                             </div>
                         </div>
+                    </div>
 
+                    <div className="lg:col-span-4 space-y-10">
+                        {/* Audit Summary Mini */}
                         <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                            <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-8">System Access Audit</h4>
+                            <div className="space-y-6">
+                                {[
+                                    { user: 'MD Admin', action: 'Theme Updated', time: '10m ago' },
+                                    { user: 'IT Manager', action: 'Registry Audited', time: '25m ago' },
+                                    { user: 'System', action: 'Cloud Sync Success', time: '1h ago' },
+                                ].map((log, i) => (
+                                    <div key={i} className="flex gap-4 items-start">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] mt-1.5" />
+                                        <div>
+                                            <p className="text-[10px] font-bold text-[var(--text-primary)]">{log.action}</p>
+                                            <p className="text-[9px] text-[var(--text-muted)]">{log.user} • {log.time}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
                             <div className="flex items-center gap-4 mb-10">
                                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600">
                                     <Server size={28} />

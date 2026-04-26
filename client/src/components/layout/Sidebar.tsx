@@ -268,7 +268,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
                 {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
                 {(isIT && !isMD) && (
-                  <NavItem to="/it-admin" icon={ShieldAlert} label={t('common.it_admin_label')} isCollapsed={isCollapsed} />
+                  <NavItem to="/it-admin" icon={ShieldAlert} label={rank >= 85 && role.includes('MANAGER') ? 'IT Systems Hub' : t('common.it_admin_label')} isCollapsed={isCollapsed} />
                 )}
                 <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />
