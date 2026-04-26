@@ -59,7 +59,7 @@ const MDDashboard = () => {
              <div className="px-3 py-1 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black text-[var(--primary)] uppercase tracking-widest flex items-center gap-2">
                 <Globe size={12} className="animate-pulse" /> {t('common.admin')} {t('dashboard.console')}
              </div>
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{greeting}</span>
           </div>
           <h1 className="font-black text-5xl text-[var(--text-primary)] tracking-tight leading-none">

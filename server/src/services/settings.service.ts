@@ -219,6 +219,11 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       if (typeof org.payeBands !== 'string') return org.payeBands;
       try { return JSON.parse(org.payeBands); } catch(e) { return []; }
     })(),
+    vatRate: Number(org.vatRate || 0),
+    idCardPrimaryColor: org.idCardPrimaryColor || '#009EE3',
+    idCardAccentColor: org.idCardAccentColor || '#EE7100',
+    idCardShowLogo: org.idCardShowLogo ?? true,
+    idCardShowQrCode: org.idCardShowQrCode ?? true,
     ...(org.settings || {}),
     ...pricing
   };
@@ -247,7 +252,8 @@ export const updateSettings = async (
           allowLeaveCarryForward, allowLeaveBorrowing, carryForwardLimit, borrowingLimit,
           ssnitRate, employerSsnitRate, payeBands,
           successColor, warningColor, errorColor, infoColor,
-          address, phone, email, city, country,
+          address, phone, email, city, country, vatRate,
+          idCardPrimaryColor, idCardAccentColor, idCardShowLogo, idCardShowQrCode,
           ...rest } = data;
 
   const orgUpdate: any = {};
@@ -310,6 +316,11 @@ export const updateSettings = async (
   if (ssnitRate !== undefined) orgUpdate.ssnitRate = safeNum(ssnitRate);
   if (employerSsnitRate !== undefined) orgUpdate.employerSsnitRate = safeNum(employerSsnitRate);
   if (payeBands !== undefined) orgUpdate.payeBands = typeof payeBands === 'string' ? payeBands : JSON.stringify(payeBands);
+  if (vatRate !== undefined) orgUpdate.vatRate = safeNum(vatRate);
+  if (idCardPrimaryColor !== undefined) orgUpdate.idCardPrimaryColor = idCardPrimaryColor;
+  if (idCardAccentColor !== undefined) orgUpdate.idCardAccentColor = idCardAccentColor;
+  if (idCardShowLogo !== undefined) orgUpdate.idCardShowLogo = !!idCardShowLogo;
+  if (idCardShowQrCode !== undefined) orgUpdate.idCardShowQrCode = !!idCardShowQrCode;
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

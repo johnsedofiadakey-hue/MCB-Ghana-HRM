@@ -171,7 +171,7 @@ const DirectorDashboard = () => {
             {[
               { label: t('dashboard.institutional_verdict'), href: '/reviews/final', icon: Zap, color: 'var(--primary)' },
               { label: t('dashboard.team_targets'), href: '/kpi/team', icon: Target, color: 'var(--accent)' },
-              { label: t('dashboard.dept_config'), href: '/departments', icon: Building2, color: '#f59e0b' },
+              { label: t('dashboard.dept_config'), href: '/departments', icon: Building2, color: 'var(--warning)' },
             ].map((item, i) => (
               <Link key={i} to={item.href} className="premium-glass border-glow-premium p-6 flex items-center justify-between group hover:border-[var(--primary)]/30 transition-all no-underline shadow-lg hover-float">
                 <div className="flex items-center gap-4">

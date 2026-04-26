@@ -694,6 +694,11 @@ model Organization {
   employerSsnitRate      Decimal               @default(0.13)
   payeBands              String?               @default("[{\"rate\": 0, \"limit\": 490}, {\"rate\": 0.05, \"limit\": 110}, {\"rate\": 0.10, \"limit\": 130}, {\"rate\": 0.175, \"limit\": 3166.67}, {\"rate\": 0.25, \"limit\": 16000}, {\"rate\": 0.30, \"limit\": 30520}, {\"rate\": 0.35, \"limit\": 999999999}]")
   ssnitRate              Decimal               @default(0.055)
+  vatRate                Decimal               @default(0)
+  idCardPrimaryColor     String?               @default("#009EE3")
+  idCardAccentColor      String?               @default("#EE7100")
+  idCardShowLogo         Boolean               @default(true)
+  idCardShowQrCode       Boolean               @default(true)
   apiKeys                ApiKey[]
   securityEvents         LoginSecurityEvent[]
   settings               SystemSettings?

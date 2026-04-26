@@ -53,7 +53,7 @@ const ManagerDashboard = () => {
                 <Shield size={14} className="animate-pulse text-[var(--primary)]" /> 
                 {t('common.management')} {t('dashboard.intelligence')}
              </div>
-             <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
+             <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 rounded-full bg-[var(--success)] shadow-[0_0_12px_var(--success)]" />
              <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{greeting}</span>
           </div>
           <h1 className="font-black text-fluid-h1 text-[var(--text-primary)] tracking-ultra leading-[0.9]">
