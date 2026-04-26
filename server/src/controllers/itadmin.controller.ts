@@ -79,19 +79,34 @@ export const itResetPassword = async (req: Request, res: Response) => {
 };
 
 // Get system overview for IT dashboard
-export const itSystemOverview = async (_req: Request, res: Response) => {
+export const itSystemOverview = async (req: Request, res: Response) => {
   try {
-    const [totalUsers, activeUsers, assets, availableAssets, assignedAssets, vaultStatus] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { status: 'ACTIVE' } }),
-      prisma.asset.count(),
-      prisma.asset.count({ where: { status: 'AVAILABLE' } }),
-      prisma.asset.count({ where: { status: 'ASSIGNED' } }),
-      GoogleWorkspaceService.checkHealth()
+    const organizationId = req.user?.organizationId || 'default-tenant';
+
+    const [
+      totalUsers, 
+      activeUsers, 
+      assets, 
+      availableAssets, 
+      assignedAssets, 
+      vaultStatus,
+      totalAuditLogs,
+      biometricLogCount
+    ] = await Promise.all([
+      prisma.user.count({ where: { organizationId } }),
+      prisma.user.count({ where: { status: 'ACTIVE', organizationId } }),
+      prisma.asset.count({ where: { organizationId } }),
+      prisma.asset.count({ where: { status: 'AVAILABLE', organizationId } }),
+      prisma.asset.count({ where: { status: 'ASSIGNED', organizationId } }),
+      GoogleWorkspaceService.checkHealth(),
+      prisma.auditLog.count({ where: { organizationId } }),
+      prisma.attendanceLog.count({ where: { organizationId, source: 'BIOMETRIC' } })
     ]);
 
     const recentAccounts = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' }, take: 10,
+      where: { organizationId },
+      orderBy: { createdAt: 'desc' }, 
+      take: 10,
       select: { id: true, fullName: true, email: true, role: true, status: true, createdAt: true, jobTitle: true }
     });
 
@@ -99,7 +114,10 @@ export const itSystemOverview = async (_req: Request, res: Response) => {
       nodeVersion: process.version,
       platform: process.platform,
       uptime: Math.floor(process.uptime()),
-      dbConnectivity: true // If code reaches here, DB is up
+      dbConnectivity: true,
+      totalAuditLogs,
+      biometricLogCount,
+      syncState: biometricLogCount > 0 ? 'ACTIVE' : 'IDLE'
     };
 
     res.json({ 

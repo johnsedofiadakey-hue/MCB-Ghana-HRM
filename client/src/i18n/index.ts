@@ -21,6 +21,10 @@ i18n
     },
     interpolation: {
       escapeValue: false
+    },
+    parseMissingKeyHandler: (key) => {
+      // Professionalization: Get rid of dots in raw keys
+      return key.split('.').join(' ');
     }
   });
 

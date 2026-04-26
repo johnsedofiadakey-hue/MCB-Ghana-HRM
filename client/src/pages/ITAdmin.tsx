@@ -10,6 +10,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
+import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
 const roleLabel: Record<string, string> = {
@@ -34,6 +35,7 @@ const emptyForm = {
 const ITAdmin = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { refreshSettings } = useTheme();
   const [overview, setOverview] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,11 +108,11 @@ const ITAdmin = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic">
-            Identity & System Audit
+            IT Systems & Infrastructure Hub
           </h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <ShieldCheck size={18} className="text-[var(--primary)] opacity-60" />
-            Audit organization workforce nodes and maintain system identity integrity.
+            Managing organizational identity nodes and technical infrastructure for {orgSettings?.companyName || 'the institution'}.
           </p>
         </motion.div>
 
@@ -119,7 +121,7 @@ const ITAdmin = () => {
                 <button key={tab} onClick={() => setActiveTab(tab)}
                    className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                    activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                  {tab === 'overview' ? 'Network' : tab === 'accounts' ? 'Personnel' : tab === 'assets' ? 'Hardware' : 'Integrations'}
+                  {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'ID Cards & Registry' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
                 </button>
              ))}
           </div>
@@ -137,10 +139,10 @@ const ITAdmin = () => {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {[
-                      { label: 'Total Staff', value: overview.totalUsers, icon: Users, color: 'text-[var(--primary)] bg-[var(--primary)]/5' },
-                      { label: 'Active Identity', value: overview.activeUsers, icon: Zap, color: 'text-[var(--success)] bg-[var(--success)]/5' },
-                      { label: 'Inventory', value: overview.assets, icon: Package, color: 'text-[var(--info)] bg-[var(--info)]/5' },
-                      { label: 'Unassigned Assets', value: overview.availableAssets, icon: Cpu, color: 'text-[var(--warning)] bg-[var(--warning)]/5' },
+                      { label: 'Total Personnel', value: overview.totalUsers, icon: Users, color: 'text-[var(--primary)] bg-[var(--primary)]/5' },
+                      { label: 'Active Sessions', value: overview.activeUsers, icon: Zap, color: 'text-[var(--success)] bg-[var(--success)]/5' },
+                      { label: 'Hardware Assets', value: overview.assets, icon: Package, color: 'text-[var(--info)] bg-[var(--info)]/5' },
+                      { label: 'Audit Log Volume', value: overview.systemHealth?.totalAuditLogs || 0, icon: Activity, color: 'text-[var(--warning)] bg-[var(--warning)]/5' },
                     ].map((s, idx) => (
                       <motion.div 
                         key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
@@ -172,12 +174,12 @@ const ITAdmin = () => {
                        
                        <div className="space-y-6">
                          <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">Encryption State</span>
-                           <span className="text-[12px] font-black text-[var(--text-primary)]">{overview.vaultStatus?.status === 'Healthy' ? 'ACTIVE' : 'OFFLINE'}</span>
+                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">Core Engine Status</span>
+                           <span className="text-[12px] font-black text-[var(--text-primary)]">{overview.systemHealth?.dbConnectivity ? 'READY' : 'DEGRADED'}</span>
                          </div>
                          <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">Security Keys</span>
-                           <span className="text-[12px] font-black text-[var(--text-primary)]">{overview.vaultStatus?.status === 'Disconnected' ? 'MISSING' : 'SECURED'}</span>
+                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">Biometric Link</span>
+                           <span className="text-[12px] font-black text-[var(--text-primary)] uppercase">{overview.systemHealth?.syncState} ({overview.systemHealth?.biometricLogCount || 0} Logs)</span>
                          </div>
                          {overview.vaultStatus?.message && (
                            <p className="text-[10px] text-rose-500 font-bold italic pt-2">! {overview.vaultStatus.message}</p>
@@ -198,13 +200,32 @@ const ITAdmin = () => {
                            <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Database</p>
                            <p className="text-[14px] font-black text-emerald-500">OPTIMAL</p>
                          </div>
-                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] col-span-2">
+                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
                            <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Architecture</p>
-                           <p className="text-[12px] font-black text-[var(--text-primary)]">{overview.systemHealth?.platform?.toUpperCase()} · Running for {Math.floor(overview.systemHealth?.uptime / 3600)} hours</p>
+                           <p className="text-[12px] font-black text-[var(--text-primary)]">{overview.systemHealth?.platform?.toUpperCase()} · Uptime: {Math.floor(overview.systemHealth?.uptime / 3600)}h {Math.floor((overview.systemHealth?.uptime % 3600) / 60)}m</p>
                          </div>
                        </div>
                     </motion.div>
                   </div>
+
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="nx-card p-10 bg-indigo-900 text-white border-none relative overflow-hidden shadow-2xl shadow-indigo-900/20">
+                     <div className="absolute top-0 right-0 w-1/3 h-full bg-white/5 skew-x-[-20deg] translate-x-20" />
+                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                        <div className="w-24 h-24 rounded-[2.5rem] bg-white/10 flex items-center justify-center backdrop-blur-xl border border-white/20">
+                           <ShieldCheck size={40} className="text-indigo-200" />
+                        </div>
+                        <div className="flex-1">
+                           <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-4">The IT Manager Mandate</h3>
+                           <p className="text-[13px] text-indigo-100 leading-relaxed max-w-3xl font-medium opacity-80">
+                              Unlike a standard IT Admin who handles routine support, the <span className="text-white font-bold">IT Manager (Rank 85)</span> is the strategic custodian of the organization's digital backbone. 
+                              Your mandate includes the absolute verification of personnel identity, management of high-value hardware assets, and the integration of real-time biometric synchronization vectors.
+                           </p>
+                        </div>
+                        <button onClick={() => setActiveTab('accounts')} className="px-8 h-14 rounded-2xl bg-white text-indigo-900 font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl whitespace-nowrap">
+                           Audit Identity Registry
+                        </button>
+                     </div>
+                  </motion.div>
 
                   <div className="nx-card border-[var(--border-subtle)] overflow-hidden">
                     <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex items-center justify-between">
@@ -250,7 +271,7 @@ const ITAdmin = () => {
                          <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
                             <Database size={20} />
                          </div>
-                         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Personnel Registry</h3>
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Personnel Identity Registry</h3>
                       </div>
                       <div className="relative w-full max-w-sm group">
                         <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
@@ -381,24 +402,35 @@ const ITAdmin = () => {
                                 </div>
 
                                 <div className="space-y-6">
-                                    <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">Supported Hardware</h4>
+                                    <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">Infrastructure Integrity</h4>
                                     <div className="grid grid-cols-2 gap-4">
-                                        {['ZKTeco ADMS', 'Hikvision Pro', 'Dahua FaceID', 'Anviz Global'].map(hw => (
-                                            <div key={hw} className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center gap-3">
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                                <span className="text-[10px] font-bold text-[var(--text-secondary)]">{hw}</span>
+                                        {[
+                                          { name: 'API Gateway', status: 'ACTIVE', color: 'bg-emerald-500' },
+                                          { name: 'Socket Hub', status: 'CONNECTED', color: 'bg-emerald-500' },
+                                          { name: 'Prisma Node', status: 'STABLE', color: 'bg-indigo-500' },
+                                          { name: 'Worker Pool', status: 'READY', color: 'bg-emerald-500' },
+                                        ].map(hw => (
+                                            <div key={hw.name} className="p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center gap-3">
+                                                <div className={cn("w-2 h-2 rounded-full animate-pulse", hw.color)} />
+                                                <span className="text-[10px] font-bold text-[var(--text-secondary)]">{hw.name}</span>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                                        <p className="text-[9px] font-bold text-amber-700 leading-relaxed uppercase tracking-widest italic">
-                                            Note: Ensure port 4370 (UDP) is open on your local firewall for direct communication.
+                                    <div className="p-5 rounded-2xl bg-[var(--warning)]/5 border border-[var(--warning)]/10">
+                                        <p className="text-[9px] font-bold text-[var(--warning)] leading-relaxed uppercase tracking-widest italic">
+                                            Network Note: Ensure port 4370 (UDP) is open for ADMS/Cloud biometric device tunneling.
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex justify-end pt-6 border-t border-[var(--border-subtle)]/50">
+                            <div className="flex justify-end gap-4 pt-6 border-t border-[var(--border-subtle)]/50">
+                                <button 
+                                    onClick={() => refreshSettings()}
+                                    className="px-10 h-12 rounded-xl bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--bg-card)] transition-all"
+                                >
+                                    Synchronize Brand Identity
+                                </button>
                                 <button className="px-10 h-12 rounded-xl bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl">
                                     Initiate Global Hardware Sync
                                 </button>
@@ -466,23 +498,23 @@ const ITAdmin = () => {
                         <div className="nx-card p-8 bg-[var(--primary)] text-[var(--text-inverse)] border-none relative overflow-hidden shadow-2xl shadow-[var(--primary)]/30">
                             <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
                             <Shield className="mb-6 opacity-40" size={32} />
-                            <h4 className="text-lg font-black uppercase tracking-tight mb-4">API Node Status</h4>
+                            <h4 className="text-lg font-black uppercase tracking-tight mb-4">Node Runtime Stats</h4>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Auth Engine</span>
-                                    <span className="text-xs font-black">ENCRYPTED</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Engine</span>
+                                    <span className="text-xs font-black">NODE {overview.systemHealth?.nodeVersion?.replace('v', '')}</span>
                                 </div>
                                 <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Mail Relay</span>
-                                    <span className="text-xs font-black">ACTIVE</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Uptime</span>
+                                    <span className="text-xs font-black">{Math.floor(overview.systemHealth?.uptime / 3600)}H ACTIVE</span>
                                 </div>
                                 <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Biometric Push</span>
-                                    <span className="text-xs font-black text-emerald-400">LISTENING</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Biometric Sync</span>
+                                    <span className="text-xs font-black text-emerald-400">{overview.systemHealth?.syncState}</span>
                                 </div>
                                 <div className="flex justify-between items-center py-3">
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Webhooks</span>
-                                    <span className="text-xs font-black">LISTENING</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Audit Trail</span>
+                                    <span className="text-xs font-black">{overview.systemHealth?.totalAuditLogs} LOGS</span>
                                 </div>
                             </div>
                         </div>
