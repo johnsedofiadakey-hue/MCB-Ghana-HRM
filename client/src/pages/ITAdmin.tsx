@@ -4,7 +4,7 @@ import { toast } from '../utils/toast';
 import { 
   Users, Package, Plus, RotateCcw, Shield, 
   Search, Loader2, AlertTriangle, 
-  ShieldCheck, Zap, Activity,
+  ShieldCheck, Zap, Activity, Fingerprint,
   Database, Key, Lock, Server, Cpu, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import api from '../services/api';
@@ -12,6 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { getStoredUser } from '../utils/session';
+import EmployeeIDCard from '../components/it/EmployeeIDCard';
 
 const roleLabel: Record<string, string> = {
   DEV: 'Sys Developer (L100)', MD: 'Managing Director (L90)', DIRECTOR: 'Director (L80)',
@@ -26,12 +28,6 @@ const statusBadge: Record<string, string> = {
   TERMINATED: 'bg-rose-500/5 text-rose-600 border-rose-500/10'
 };
 
-const emptyForm = {
-  fullName: '', email: '', role: 'STAFF', department: '', jobTitle: '',
-  employeeCode: '', password: '', joinDate: '', employmentType: 'Permanent',
-  gender: '', contactNumber: '', supervisorId: ''
-};
-
 const ITAdmin = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -40,7 +36,6 @@ const ITAdmin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [error, setError] = useState('');
   const [resettingId, setResettingId] = useState<string | null>(null);
   const currentUser = getStoredUser();
   const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets' | 'integrations'>(
@@ -63,7 +58,6 @@ const ITAdmin = () => {
       setUsers(Array.isArray(uRes.data) ? uRes.data : []);
       setOrgSettings(sRes.data || null);
       
-      // DIAGNOSTIC LOG
       console.log('[ITAdmin] Active Org Context:', sRes.data?.organizationId || 'default');
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -99,7 +93,6 @@ const ITAdmin = () => {
 
   return (
     <div className="space-y-12 pb-32">
-      {/* Navigation Return */}
       <div className="flex items-center gap-4">
         <button 
           onClick={() => navigate('/dashboard')}
@@ -110,28 +103,27 @@ const ITAdmin = () => {
         </button>
       </div>
 
-      {/* Header Architecture */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic">
-            IT Systems & Infrastructure Hub
+            {currentUser?.rank >= 85 ? 'Strategic Systems Hub' : 'IT Infrastructure Admin'}
           </h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <ShieldCheck size={18} className="text-[var(--primary)] opacity-60" />
-            Managing organizational identity nodes and technical infrastructure for {orgSettings?.companyName || 'the institution'}.
+            Managing identity nodes and technical infrastructure for {orgSettings?.companyName || 'the institution'}.
           </p>
         </motion.div>
 
-          <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
-             {(['overview', 'accounts', 'assets', 'integrations'] as const).map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)}
-                   className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                   activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                  {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'ID Cards & Registry' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
-                </button>
-             ))}
-          </div>
+        <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
+           {(['overview', 'accounts', 'assets', 'integrations'] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                 className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'ID Registry' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
+              </button>
+           ))}
         </div>
+      </div>
 
       <AnimatePresence mode="wait">
         {loading ? (
@@ -140,7 +132,7 @@ const ITAdmin = () => {
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Accessing Identity Grid</p>
              </motion.div>
         ) : (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
+          <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
             {activeTab === 'overview' && overview && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -150,12 +142,8 @@ const ITAdmin = () => {
                       { label: 'Hardware Assets', value: overview.assets, icon: Package, color: 'text-[var(--info)] bg-[var(--info)]/5' },
                       { label: 'Audit Log Volume', value: overview.systemHealth?.totalAuditLogs || 0, icon: Activity, color: 'text-[var(--warning)] bg-[var(--warning)]/5' },
                     ].map((s, idx) => (
-                      <motion.div 
-                        key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-                        className="nx-card p-8 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group"
-                      >
-                         <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[var(--primary)]/5 blur-[40px] group-hover:scale-125 transition-transform" />
-                         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-6 border border-[var(--border-subtle)]/50 shadow-sm", s.color)}>
+                      <motion.div key={s.label} className="nx-card p-8 bg-[var(--bg-card)] border-[var(--border-subtle)] group">
+                         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-6 border border-[var(--border-subtle)]", s.color)}>
                              <s.icon size={20} />
                          </div>
                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1 opacity-60">{s.label}</p>
@@ -164,107 +152,60 @@ const ITAdmin = () => {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 relative overflow-hidden group">
-                       <div className="flex items-center justify-between mb-8">
-                         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                           <Database className="text-blue-500" size={16} /> Cloud Vault Security
-                         </h3>
-                         <span className={cn(
-                           "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                           overview.vaultStatus?.status === 'Healthy' ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-rose-500/5 text-rose-500 border-rose-500/10"
-                         )}>
-                           {overview.vaultStatus?.status || 'Unknown'}
-                         </span>
-                       </div>
-                       
-                       <div className="space-y-6">
-                         <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">Core Engine Status</span>
-                           <span className="text-[12px] font-black text-[var(--text-primary)]">{overview.systemHealth?.dbConnectivity ? 'READY' : 'DEGRADED'}</span>
-                         </div>
-                         <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">Biometric Link</span>
-                           <span className="text-[12px] font-black text-[var(--text-primary)] uppercase">{overview.systemHealth?.syncState} ({overview.systemHealth?.biometricLogCount || 0} Logs)</span>
-                         </div>
-                         {overview.vaultStatus?.message && (
-                           <p className="text-[10px] text-rose-500 font-bold italic pt-2">! {overview.vaultStatus.message}</p>
-                         )}
-                       </div>
-                    </motion.div>
-
-                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 relative overflow-hidden group">
-                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3 mb-8">
-                         <Cpu className="text-amber-500" size={16} /> Operations Heartbeat
-                       </h3>
-                       <div className="grid grid-cols-2 gap-4">
-                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                           <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Infrastructure</p>
-                           <p className="text-[14px] font-black text-[var(--text-primary)]">Node {overview.systemHealth?.nodeVersion}</p>
-                         </div>
-                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                           <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Database</p>
-                           <p className="text-[14px] font-black text-emerald-500">OPTIMAL</p>
-                         </div>
-                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                           <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Architecture</p>
-                           <p className="text-[12px] font-black text-[var(--text-primary)]">{overview.systemHealth?.platform?.toUpperCase()} · Uptime: {Math.floor(overview.systemHealth?.uptime / 3600)}h {Math.floor((overview.systemHealth?.uptime % 3600) / 60)}m</p>
-                         </div>
-                       </div>
-                    </motion.div>
-                  </div>
-
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="nx-card p-10 bg-indigo-900 text-white border-none relative overflow-hidden shadow-2xl shadow-indigo-900/20">
-                     <div className="absolute top-0 right-0 w-1/3 h-full bg-white/5 skew-x-[-20deg] translate-x-20" />
-                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-                        <div className="w-24 h-24 rounded-[2.5rem] bg-white/10 flex items-center justify-center backdrop-blur-xl border border-white/20">
-                           <ShieldCheck size={40} className="text-indigo-200" />
-                        </div>
-                        <div className="flex-1">
-                           <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-4">The IT Manager Mandate</h3>
-                           <p className="text-[13px] text-indigo-100 leading-relaxed max-w-3xl font-medium opacity-80">
-                              Unlike a standard IT Admin who handles routine support, the <span className="text-white font-bold">IT Manager (Rank 85)</span> is the strategic custodian of the organization's digital backbone. 
-                              Your mandate includes the absolute verification of personnel identity, management of high-value hardware assets, and the integration of real-time biometric synchronization vectors.
-                           </p>
-                        </div>
-                        <button onClick={() => setActiveTab('accounts')} className="px-8 h-14 rounded-2xl bg-white text-indigo-900 font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl whitespace-nowrap">
-                           Audit Identity Registry
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div className="lg:col-span-8 space-y-8">
+                      <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)] relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-10 opacity-[0.03] rotate-12"><ShieldCheck size={160} /></div>
+                        <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-8">IT Manager Mandate</h3>
+                        <p className="text-sm font-medium text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
+                          As the Strategic Systems Hub controller, you are the final arbiter of organizational identity. 
+                          Your mandate includes the verification of biometric nodes, the issuance of official personnel tags, and the absolute security of the cloud data vault.
+                        </p>
+                        <button onClick={() => setActiveTab('accounts')} className="px-8 h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 hover:scale-[1.02] transition-transform">
+                          Initialize Identity Registry
                         </button>
-                     </div>
-                  </motion.div>
+                      </div>
 
-                  <div className="nx-card border-[var(--border-subtle)] overflow-hidden">
-                    <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex items-center justify-between">
-                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                          <Activity className="text-indigo-500" size={16} /> Recently Added Personnel
-                       </h3>
+                      <div className="nx-card border-[var(--border-subtle)] overflow-hidden">
+                        <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20">
+                           <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Recently Added Personnel</h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                           <table className="nx-table">
+                              <thead>
+                                 <tr><th className="px-10 py-6">Name</th><th>Level</th><th>Status</th><th className="px-10 text-right">Date</th></tr>
+                              </thead>
+                              <tbody>
+                                 {overview.recentAccounts?.map((u: any) => (
+                                    <tr key={u.id} className="border-b border-[var(--border-subtle)]/30 hover:bg-[var(--bg-elevated)]/10">
+                                       <td className="px-10 py-6 font-bold text-[13px]">{u.fullName}</td>
+                                       <td><span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase bg-[var(--bg-elevated)]">{u.role}</span></td>
+                                       <td><span className={cn("px-3 py-1 rounded-lg text-[9px] font-black uppercase border", statusBadge[u.status])}>{u.status}</span></td>
+                                       <td className="px-10 text-right font-mono text-[10px]">{new Date(u.createdAt).toLocaleDateString()}</td>
+                                    </tr>
+                                 ))}
+                              </tbody>
+                           </table>
+                        </div>
+                      </div>
                     </div>
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="nx-table nexus-responsive-table">
-                           <thead>
-                              <tr className="bg-[var(--bg-elevated)]/10">
-                                 <th className="px-10 py-6">Staff Name</th>
-                                 <th className="py-6">Access Level</th>
-                                 <th className="py-6">Current Status</th>
-                                 <th className="px-10 py-6 text-right">Deployment Date</th>
-                              </tr>
-                           </thead>
-                           <tbody className="divide-y divide-[var(--border-subtle)]/30">
-                              {overview.recentAccounts?.map((u: any, i: number) => (
-                                 <motion.tr key={u.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity:1, x: 0 }} transition={{ delay: i*0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group text-left">
-                                    <td className="px-10 py-6">
-                                       <div>
-                                          <p className="text-[13px] font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors uppercase">{u.fullName}</p>
-                                          <p className="text-[10px] font-mono tracking-widest text-[var(--text-muted)] mt-1 italic">{u.email}</p>
-                                       </div>
-                                    </td>
-                                    <td className="py-6"><span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">{roleLabel[u.role] || u.role}</span></td>
-                                    <td className="py-6"><span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[u.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>{u.status}</span></td>
-                                    <td className="px-10 py-6 text-right font-mono text-[11px] font-bold text-[var(--text-muted)] tracking-wider">{new Date(u.createdAt).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })}</td>
-                                 </motion.tr>
-                              ))}
-                           </tbody>
-                        </table>
+
+                    <div className="lg:col-span-4 space-y-8">
+                       <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-8 flex items-center gap-3"><Activity size={16} className="text-[var(--primary)]" /> System Pulse</h4>
+                          <div className="space-y-6">
+                             {[
+                               { label: 'DB Engine', value: overview.systemHealth?.dbConnectivity ? 'READY' : 'DEGRADED', color: 'text-emerald-500' },
+                               { label: 'Sync State', value: overview.systemHealth?.syncState || 'STABLE', color: 'text-emerald-500' },
+                               { label: 'Uptime', value: `${Math.floor(overview.systemHealth?.uptime / 3600)}h Active`, color: 'text-[var(--text-primary)]' }
+                             ].map(item => (
+                               <div key={item.label} className="flex justify-between items-center py-3 border-b border-[var(--border-subtle)]/50 last:border-0">
+                                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{item.label}</span>
+                                  <span className={cn("text-[11px] font-black uppercase", item.color)}>{item.value}</span>
+                               </div>
+                             ))}
+                          </div>
+                       </div>
                     </div>
                   </div>
                 </>
@@ -283,7 +224,7 @@ const ITAdmin = () => {
                         <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                         <input 
                            type="text" 
-                           className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-2.5 text-[11px] font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none" 
+                           className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-2.5 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
                            placeholder="Search registry..." 
                            value={search} 
                            onChange={e => setSearch(e.target.value)} 
@@ -291,68 +232,40 @@ const ITAdmin = () => {
                       </div>
                    </div>
 
-                   <div className="overflow-x-auto custom-scrollbar flex-grow">
-                      <table className="nx-table nexus-responsive-table">
+                   <div className="overflow-x-auto flex-grow">
+                      <table className="nx-table">
                          <thead>
-                            <tr className="bg-[var(--bg-elevated)]/10">
+                            <tr className="bg-[var(--bg-elevated)]/10 text-left">
                                <th className="px-10 py-6">Staff Name</th>
-                               <th className="py-6">Access Level</th>
-                               <th className="py-6">Status</th>
-                               <th className="py-6">Strategic Unit</th>
+                               <th>Access Level</th>
+                               <th>Status</th>
+                               <th>Strategic Unit</th>
                                <th className="px-10 py-6 text-right">Actions</th>
                             </tr>
                          </thead>
-                         <tbody className="divide-y divide-[var(--border-subtle)]/30">
-                            {filtered.map((u: any, i: number) => (
-                               <motion.tr key={u.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i*0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group text-left">
+                         <tbody>
+                            {filtered.map((u: any) => (
+                               <tr key={u.id} className="border-b border-[var(--border-subtle)]/30 hover:bg-[var(--bg-elevated)]/10">
                                   <td className="px-10 py-6">
-                                     <div className="flex items-center gap-4">
-                                        <div className="w-11 h-11 rounded-3xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-sm shadow-xl group-hover:scale-105 transition-transform">
-                                           {u.fullName[0]}
-                                        </div>
+                                     <div className="flex items-center gap-4 text-left">
+                                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-xs uppercase">{u.fullName[0]}</div>
                                         <div>
-                                           <p className="text-[13px] font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors uppercase">{u.fullName}</p>
-                                           <p className="text-[10px] font-mono tracking-widest text-[var(--text-muted)] mt-1 italic">{u.email}</p>
+                                           <p className="text-[13px] font-black text-[var(--text-primary)] uppercase">{u.fullName}</p>
+                                           <p className="text-[9px] font-bold text-[var(--text-muted)] italic">{u.email}</p>
                                         </div>
                                      </div>
                                   </td>
-                                  <td className="py-6"><span className="px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--primary)] border border-[var(--primary)]/20 shadow-sm">{roleLabel[u.role] || u.role}</span></td>
-                                  <td className="py-6"><span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[u.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>{u.status}</span></td>
-                                  <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic">{u.departmentObj?.name || 'CENTRAL_HUB'}</td>
+                                  <td><span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase bg-[var(--bg-elevated)] text-[var(--primary)] border border-[var(--primary)]/10">{roleLabel[u.role] || u.role}</span></td>
+                                  <td><span className={cn("px-3 py-1 rounded-lg text-[9px] font-black uppercase border", statusBadge[u.status])}>{u.status}</span></td>
+                                  <td className="text-[11px] font-bold uppercase text-[var(--text-secondary)]">{u.departmentObj?.name || 'CENTRAL_HUB'}</td>
                                   <td className="px-10 py-6 text-right">
-                                     <div className="flex justify-end gap-3 text-[10px] font-black uppercase tracking-widest transition-all">
-                                        <motion.button 
-                                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                           onClick={() => handlePrintId(u)}
-                                           className="px-6 h-10 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/20 flex items-center gap-3 active:bg-[var(--primary)] active:text-white transition-all"
-                                        >
-                                           <Key size={14} /> ID Card
-                                        </motion.button>
-                                        <motion.button 
-                                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                           onClick={() => handlePasswordReset(u.id, u.fullName)}
-                                           disabled={resettingId === u.id}
-                                           className="px-6 h-10 rounded-xl bg-indigo-500/5 text-indigo-600 border border-indigo-500/20 flex items-center gap-3 active:bg-indigo-500 active:text-white transition-all"
-                                        >
-                                           {resettingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                                           Reset Access
-                                        </motion.button>
-                                        {u.status === 'ACTIVE' && (
-                                           <motion.button 
-                                              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                              onClick={() => handleDeactivate(u.id, u.fullName)}
-                                              className="px-6 h-10 rounded-xl bg-rose-500/5 text-rose-600 border border-rose-500/20 flex items-center gap-3 active:bg-rose-500 active:text-white transition-all"
-                                           >
-                                              <Lock size={14} /> Deactivate
-                                           </motion.button>
-                                        )}
+                                     <div className="flex justify-end gap-3">
+                                        <button onClick={() => handlePrintId(u)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><Key size={14} /></button>
+                                        <button onClick={() => handlePasswordReset(u.id, u.fullName)} className="p-2.5 rounded-xl bg-indigo-500/5 text-indigo-600 border border-indigo-500/10 hover:bg-indigo-600 hover:text-white transition-all"><RotateCcw size={14} /></button>
                                      </div>
                                   </td>
-                                </motion.tr>
+                                </tr>
                             ))}
-                            {filtered.length === 0 && (
-                               <tr><td colSpan={5} className="py-40 text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30 italic">No identity nodes detected in registry</td></tr>
-                            )}
                          </tbody>
                       </table>
                    </div>
@@ -360,250 +273,105 @@ const ITAdmin = () => {
             )}
 
             {activeTab === 'assets' && (
-                 <div className="nx-card p-24 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] text-center relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 w-1/2 h-full bg-[var(--primary)]/5 blur-[120px] pointer-events-none" />
-                   <Server size={80} className="mx-auto mb-10 text-[var(--primary)] opacity-20 group-hover:scale-110 transition-transform duration-700" />
-                   <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4">Hardware Management</h3>
-                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-12 max-w-sm mx-auto opacity-60">Manage company laptops, biometric devices, and server hardware.</p>
-                   <Link to="/assets" className="inline-flex items-center gap-4 px-10 h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:gap-6 transition-all">
-                      Go to Hardware Hub <ArrowRight size={18} />
-                   </Link>
-                 </div>
-            )}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                   <div className="lg:col-span-8">
+                      <div className="nx-card p-24 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] text-center relative overflow-hidden group">
+                        <Server size={80} className="mx-auto mb-10 text-[var(--primary)] opacity-20" />
+                        <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4">Hardware Management</h3>
+                        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-12 max-w-sm mx-auto opacity-60">Manage company laptops, biometric devices, and server hardware.</p>
+                        <Link to="/assets" className="inline-flex items-center gap-4 px-10 h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/30 hover:gap-6 transition-all">
+                           Go to Hardware Hub <ArrowRight size={18} />
+                        </Link>
+                      </div>
+                   </div>
 
-                        {/* Registered Biometric Nodes */}
-                        <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)]">
-                            <div className="flex items-center justify-between mb-8">
-                                <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)]">Active Hardware Nodes</h4>
-                                <button className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline">Register New Device</button>
-                            </div>
-                            <div className="space-y-4">
-                                {[
-                                    { id: 'BIO-01', location: 'Main Reception', type: 'FaceID + Fingerprint', status: 'ONLINE', lastSync: '2 mins ago' },
-                                    { id: 'BIO-02', location: 'Executive Floor', type: 'FaceID Only', status: 'ONLINE', lastSync: '5 mins ago' },
-                                    { id: 'BIO-03', location: 'Staff Exit B', type: 'Fingerprint Only', status: 'OFFLINE', lastSync: '1 hour ago' },
-                                ].map(node => (
-                                    <div key={node.id} className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20">
-                                        <div className="flex items-center gap-4">
-                                            <div className={cn("w-2 h-2 rounded-full", node.status === 'ONLINE' ? 'bg-emerald-500' : 'bg-rose-500')} />
-                                            <div>
-                                                <p className="text-[11px] font-black text-[var(--text-primary)] uppercase">{node.location}</p>
-                                                <p className="text-[9px] text-[var(--text-muted)] font-bold">{node.type} • {node.id}</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[9px] font-black text-[var(--text-secondary)] uppercase">{node.status}</p>
-                                            <p className="text-[8px] text-[var(--text-muted)] italic">Last: {node.lastSync}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="lg:col-span-4 space-y-10">
-                        {/* Audit Summary Mini */}
-                        <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)]">
-                            <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-8">System Access Audit</h4>
-                            <div className="space-y-6">
-                                {[
-                                    { user: 'MD Admin', action: 'Theme Updated', time: '10m ago' },
-                                    { user: 'IT Manager', action: 'Registry Audited', time: '25m ago' },
-                                    { user: 'System', action: 'Cloud Sync Success', time: '1h ago' },
-                                ].map((log, i) => (
-                                    <div key={i} className="flex gap-4 items-start">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] mt-1.5" />
-                                        <div>
-                                            <p className="text-[10px] font-bold text-[var(--text-primary)]">{log.action}</p>
-                                            <p className="text-[9px] text-[var(--text-muted)]">{log.user} • {log.time}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                   <div className="lg:col-span-4 space-y-8">
+                       <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-8">Active Hardware Nodes</h4>
+                          <div className="space-y-4">
+                             {[
+                                { loc: 'Main Reception', type: 'FaceID + Finger', id: 'BIO-01' },
+                                { loc: 'Executive Floor', type: 'FaceID Only', id: 'BIO-02' }
+                             ].map(n => (
+                                <div key={n.id} className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex items-center justify-between">
+                                   <div>
+                                      <p className="text-[11px] font-black text-[var(--text-primary)] uppercase">{n.loc}</p>
+                                      <p className="text-[9px] text-[var(--text-muted)] font-bold">{n.type} • {n.id}</p>
+                                   </div>
+                                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+                   </div>
                 </div>
             )}
-                            <div className="flex items-center gap-4 mb-10">
-                                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600">
-                                    <Server size={28} />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight">Company Email Integration</h3>
-                                    <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">SMTP Gateway Configuration Guide</p>
-                                </div>
-                            </div>
 
-                            <div className="space-y-12">
-                                <div className="flex gap-8 relative">
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-10 h-10 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-black text-sm relative z-10">1</div>
-                                        <div className="w-0.5 flex-1 bg-[var(--border-subtle)] my-2" />
-                                    </div>
-                                    <div className="flex-1 pb-10">
-                                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">SMTP Infrastructure Preparation</h4>
-                                        <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-6">Gather your corporate mail server credentials. If using Microsoft 365 or Google Workspace, we recommend creating a dedicated "App Password" or a Service Account for maximum security.</p>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-1">
-                                                <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">TLS Port</p>
-                                                <p className="text-xs font-black text-[var(--text-primary)]">587 (Recommended)</p>
-                                            </div>
-                                            <div className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-1">
-                                                <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">SSL Port</p>
-                                                <p className="text-xs font-black text-[var(--text-primary)]">465</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+            {activeTab === 'integrations' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
+                   <div className="lg:col-span-8 nx-card p-12 border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                      <div className="flex items-center gap-4 mb-10">
+                          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600"><Server size={28} /></div>
+                          <div>
+                              <h3 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight">Email Integration</h3>
+                              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">SMTP Gateway Configuration</p>
+                          </div>
+                      </div>
+                      <div className="space-y-10">
+                         {[
+                           { step: 1, title: 'SMTP Preparation', desc: 'Gather corporate mail server credentials. We recommend a dedicated app password.' },
+                           { step: 2, title: 'Deploy in Settings', desc: 'Navigate to Admin Settings and input your host (e.g., smtp.office365.com) and user credentials.' }
+                         ].map(s => (
+                           <div key={s.step} className="flex gap-8">
+                              <div className="w-10 h-10 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-black flex-shrink-0">{s.step}</div>
+                              <div>
+                                 <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-2">{s.title}</h4>
+                                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{s.desc}</p>
+                              </div>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
 
-                                <div className="flex gap-8 relative">
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-10 h-10 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-black text-sm relative z-10">2</div>
-                                        <div className="w-0.5 flex-1 bg-[var(--border-subtle)] my-2" />
-                                    </div>
-                                    <div className="flex-1 pb-10">
-                                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">Deployment in Settings</h4>
-                                        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">Navigate to <Link to="/settings" className="text-[var(--primary)] font-bold hover:underline">Admin Settings</Link>. Locate the "Email & SMTP" section. Input your host (e.g., smtp.office365.com), user credentials, and the preferred 'From' address that staff will see in their inboxes.</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-8">
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-sm relative z-10">3</div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">Diagnostic Validation</h4>
-                                        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">After saving, click "Test Connection" to fire a test packet to your administrative email. Once successful, all system notifications (Payslips, Leave Approvals, Appraisals) will flow through your company domain.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="lg:col-span-4 space-y-8">
-                        <div className="nx-card p-8 bg-[var(--primary)] text-[var(--text-inverse)] border-none relative overflow-hidden shadow-2xl shadow-[var(--primary)]/30">
-                            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-                            <Shield className="mb-6 opacity-40" size={32} />
-                            <h4 className="text-lg font-black uppercase tracking-tight mb-4">Node Runtime Stats</h4>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Engine</span>
-                                    <span className="text-xs font-black">NODE {overview.systemHealth?.nodeVersion?.replace('v', '')}</span>
-                                </div>
-                                <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Uptime</span>
-                                    <span className="text-xs font-black">{Math.floor(overview.systemHealth?.uptime / 3600)}H ACTIVE</span>
-                                </div>
-                                <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Biometric Sync</span>
-                                    <span className="text-xs font-black text-emerald-400">{overview.systemHealth?.syncState}</span>
-                                </div>
-                                <div className="flex justify-between items-center py-3">
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Audit Trail</span>
-                                    <span className="text-xs font-black">{overview.systemHealth?.totalAuditLogs} LOGS</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-card)]">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-                                    <Fingerprint size={20} />
-                                </div>
-                                <h4 className="text-sm font-black uppercase tracking-tight text-[var(--text-primary)]">Hardware Connectivity</h4>
-                            </div>
-                            <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed mb-6">
-                                Central attendance node is ready for ZKTeco or Hikvision device tunneling.
-                            </p>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3 text-[10px] font-bold text-[var(--text-muted)]">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Port 4370 (UDP) Accessible
-                                </div>
-                                <div className="flex items-center gap-3 text-[10px] font-bold text-[var(--text-muted)]">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Server Static IP Linked
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20">
-                            <div className="flex items-center gap-3 mb-6">
-                                <Activity size={18} className="text-amber-500" />
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">System Logs</h4>
-                            </div>
-                            <div className="space-y-4">
-                                <p className="text-[10px] text-[var(--text-secondary)] italic leading-relaxed">Identity Hub is currently operating at peak performance with zero reported latency on authentication nodes.</p>
-                                <button onClick={() => navigate('/audit')} className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-all">
-                                    View full audit trails <ArrowRight size={14} />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                   <div className="lg:col-span-4 space-y-8">
+                      <div className="nx-card p-8 bg-[var(--primary)] text-white border-none shadow-2xl">
+                         <Shield className="mb-6 opacity-40" size={32} />
+                         <h4 className="text-lg font-black uppercase tracking-tight mb-4">Node Runtime</h4>
+                         <div className="space-y-4">
+                            <div className="flex justify-between py-2 border-b border-white/10 text-[10px] uppercase font-black"><span>Engine</span><span>NODE {overview.systemHealth?.nodeVersion?.replace('v','')}</span></div>
+                            <div className="flex justify-between py-2 border-b border-white/10 text-[10px] uppercase font-black"><span>Sync</span><span className="text-emerald-300">ACTIVE</span></div>
+                         </div>
+                      </div>
+                   </div>
                 </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ID Card Preview Modal */}
       <AnimatePresence>
         {showIdModal && selectedUser && orgSettings && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-5xl h-[90vh] bg-white rounded-[3rem] overflow-hidden flex flex-col relative"
-            >
-              <button 
-                onClick={() => setShowIdModal(false)}
-                className="absolute top-8 right-8 z-20 p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                <ArrowLeft className="rotate-90" />
-              </button>
-
-              <div className="flex-grow overflow-y-auto custom-scrollbar p-12">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="w-full max-w-5xl h-[90vh] bg-white rounded-[3rem] overflow-hidden flex flex-col relative text-left">
+              <button onClick={() => setShowIdModal(false)} className="absolute top-8 right-8 z-20 p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><ArrowLeft className="rotate-90" /></button>
+              <div className="flex-grow overflow-y-auto p-12">
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
                     <div className="space-y-12">
-                       <h2 className="text-4xl font-black text-gray-900 tracking-tight uppercase italic leading-tight">
-                          Personnel Identity <br />
-                          <span className="text-[var(--primary)]">Tag Generation</span>
-                       </h2>
-                       
+                       <h2 className="text-4xl font-black text-gray-900 tracking-tight uppercase italic leading-tight">Personnel Identity <br /><span className="text-[var(--primary)]">Tag Generation</span></h2>
                        <div className="space-y-8">
-                          <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100">
-                             <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">Verification Context</h4>
-                             <p className="text-sm font-medium text-gray-700 leading-relaxed">
-                                This tag is generated using the latest institutional biometric records. 
-                                Printing this card will finalize the digital-to-physical identity link for {selectedUser.fullName}.
-                             </p>
-                          </div>
-
-                          <div className="flex flex-col gap-4">
-                             <button 
-                               onClick={() => window.print()}
-                               className="w-full h-16 rounded-2xl bg-gray-900 text-white font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-black transition-all shadow-2xl"
-                             >
-                                <Cpu size={18} /> Initialize Print Protocol
-                             </button>
-                             <p className="text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                                Standard CR80 Dimensions (85.6mm x 54mm)
-                             </p>
-                          </div>
+                          <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100"><p className="text-sm font-medium text-gray-700 leading-relaxed">Printing this card will finalize the digital-to-physical identity link for {selectedUser.fullName}. Standard CR80 Dimensions.</p></div>
+                          <button onClick={() => window.print()} className="w-full h-16 rounded-2xl bg-gray-900 text-white font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-4">Initialize Print Protocol</button>
                        </div>
                     </div>
-
-                    <div className="flex justify-center items-start lg:pt-12">
-                       <EmployeeIDCard employee={selectedUser} organization={orgSettings} />
-                    </div>
+                    <div className="flex justify-center items-start lg:pt-12"><EmployeeIDCard employee={selectedUser} organization={orgSettings} /></div>
                  </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };
-
-import EmployeeIDCard from '../components/it/EmployeeIDCard';
 
 export default ITAdmin;
