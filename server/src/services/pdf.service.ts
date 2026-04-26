@@ -82,16 +82,16 @@ export class PdfExportService {
           case 'TARGET_ROADMAP':
             const targets = content as PdfTargetContent[];
             this.renderRoadmapSummary(doc, targets, primaryColor);
-            targets.forEach((target: PdfTargetContent) => {
+            for (const target of targets) {
               doc.addPage();
               this.renderTargetContent(doc, target, primaryColor);
-            });
+            }
             break;
           case 'APPRAISAL':
-            this.renderAppraisalContent(doc, content as PdfAppraisalContent, primaryColor);
+            await this.renderAppraisalContent(doc, content as PdfAppraisalContent, primaryColor);
             break;
           case 'LEAVE':
-            this.renderLeaveContent(doc, content as PdfLeaveContent, primaryColor);
+            await this.renderLeaveContent(doc, content as PdfLeaveContent, primaryColor);
             break;
           case 'PAYSLIP':
             this.renderPayslipContent(doc, content as PdfPayslipContent, primaryColor);
@@ -123,13 +123,18 @@ export class PdfExportService {
       if (org?.logoUrl) {
         if (org.logoUrl.startsWith('data:image')) {
           const b64 = org.logoUrl.split(',')[1];
-          if (b64) doc.image(Buffer.from(b64, 'base64'), 50, 40, { width: 70 });
+          if (b64) doc.image(Buffer.from(b64, 'base64'), 50, 35, { width: 100 });
         } else {
-          const response = await axios.get(org.logoUrl, { 
-            responseType: 'arraybuffer',
-            timeout: 5000 
-          });
-          doc.image(response.data, 50, 40, { width: 70 });
+          try {
+            const response = await axios.get(org.logoUrl, { 
+              responseType: 'arraybuffer',
+              timeout: 10000 
+            });
+            doc.image(response.data, 50, 35, { width: 100 });
+          } catch (e) {
+            console.warn('[PdfExportService] Logo fetch failed, fallback to name');
+            throw e;
+          }
         }
       }
     } catch (err) {
@@ -300,7 +305,7 @@ export class PdfExportService {
     doc.fillColor('#475569').fontSize(10).font('Helvetica').text('The above roadmap encapsulates the prioritized strategic vectors. All phases are synchronized with departmental goals.', 65, summaryTop + 35, { width: 470, lineGap: 4 });
   }
 
-  private static renderAppraisalContent(doc: PDFKit.PDFDocument, packet: PdfAppraisalContent, brandColor: string) {
+  private static async renderAppraisalContent(doc: PDFKit.PDFDocument, packet: PdfAppraisalContent, brandColor: string) {
     const idTop = doc.y;
     doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, idTop, this.CONTENT_WIDTH, 65).fill();
     
@@ -399,29 +404,41 @@ export class PdfExportService {
     if (sanctionTop + boxHeight + 80 > 750) { doc.addPage(); doc.moveDown(2); } else { doc.y = sanctionTop + boxHeight + 45; }
     
     const sigY = doc.y;
-    if (packet.employee?.signatureUrl) this.renderSignature(doc, packet.employee.signatureUrl, 70, sigY, 165);
+    if (packet.employee?.signatureUrl) await this.renderSignature(doc, packet.employee.signatureUrl, 70, sigY, 165);
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(235, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('EMPLOYEE SIGN-OFF', 70, sigY + 8);
     
     const managementSig = packet.finalReviewer?.signatureUrl || packet.reviews?.find((r) => r.reviewStage === 'MANAGER')?.reviewer?.signatureUrl;
-    if (managementSig) this.renderSignature(doc, managementSig, 365, sigY, 165);
+    if (managementSig) await this.renderSignature(doc, managementSig, 365, sigY, 165);
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(365, sigY).lineTo(530, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('AUTHORIZED MANAGEMENT', 365, sigY + 8);
   }
 
-  private static renderSignature(doc: PDFKit.PDFDocument, sigUrl: string | null | undefined, xPos: number, yPos: number, lineWidth: number) {
+  private static async renderSignature(doc: PDFKit.PDFDocument, sigUrl: string | null | undefined, xPos: number, yPos: number, lineWidth: number) {
      try {
-       if (sigUrl && sigUrl.startsWith('data:image')) {
+       if (!sigUrl) return;
+       
+       const imgWidth = 110; 
+       const centeredX = xPos + (lineWidth - imgWidth) / 2;
+
+       if (sigUrl.startsWith('data:image')) {
          const b64 = sigUrl.split(',')[1];
          const img = Buffer.from(b64, 'base64');
-         const imgWidth = 110; 
-         const centeredX = xPos + (lineWidth - imgWidth) / 2;
          doc.image(img, centeredX, yPos - 35, { width: imgWidth, height: 40, fit: [imgWidth, 40] });
+       } else {
+         // Support for external signature URLs (Cloudinary/Firestore)
+         const response = await axios.get(sigUrl, { 
+           responseType: 'arraybuffer',
+           timeout: 5000 
+         });
+         doc.image(response.data, centeredX, yPos - 35, { width: imgWidth, height: 40, fit: [imgWidth, 40] });
        }
-     } catch (e) { }
+     } catch (e) { 
+        console.warn('[PdfExportService] Signature render failed', e);
+     }
   }
 
-  private static renderLeaveContent(doc: PDFKit.PDFDocument, leave: PdfLeaveContent, brandColor: string) {
+  private static async renderLeaveContent(doc: PDFKit.PDFDocument, leave: PdfLeaveContent, brandColor: string) {
     doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text('LEAVE AUTHORIZATION SANCTION', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, characterSpacing: 2 });
     doc.moveDown(0.5);
     
@@ -462,12 +479,12 @@ export class PdfExportService {
 
     doc.moveDown(4);
     const sigY = doc.y;
-    if (leave.employee?.signatureUrl) this.renderSignature(doc, leave.employee.signatureUrl, 70, sigY, 160);
+    if (leave.employee?.signatureUrl) await this.renderSignature(doc, leave.employee.signatureUrl, 70, sigY, 160);
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 70, sigY + 8);
 
     const reviewerSig = leave.hrReviewer?.signatureUrl || leave.manager?.signatureUrl;
-    if (reviewerSig) this.renderSignature(doc, reviewerSig, 370, sigY, 160);
+    if (reviewerSig) await this.renderSignature(doc, reviewerSig, 370, sigY, 160);
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('MANAGEMENT / HR SIGNATURE', 370, sigY + 8);
   }
