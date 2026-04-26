@@ -3,7 +3,7 @@ import { storage, StorageKey } from './storage';
 import type { User } from '../types/models';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://nexus-hr-platform-api.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://mcb-ghana-hrm-api.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
