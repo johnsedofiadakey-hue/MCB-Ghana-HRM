@@ -67,6 +67,15 @@ export interface Settings {
 
 export const getOrgIdFromToken = () => {
   try {
+    // 1. Primary: Resolve from hostname (The most reliable for white-labeling)
+    const host = window.location.hostname;
+    if (host && !host.includes('localhost') && !host.includes('nexus-hr-platform')) {
+       // mcb-hrm-ghana.web.app -> mcb-hrm-ghana
+       const parts = host.split('.');
+       if (parts.length >= 2) return parts[0];
+    }
+
+    // 2. Secondary: Resolve from Auth Token
     const token = localStorage.getItem('nexus_auth_token');
     if (!token) return 'default';
     const payload = token.split('.')[1];

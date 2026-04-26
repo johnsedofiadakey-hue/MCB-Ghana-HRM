@@ -8,7 +8,7 @@ export const getSettings = async (req: Request, res: Response) => {
     const user = (req as any).user;
     const resolvedOrgId = (req as any).organizationId;
     
-    // Priority: Resolved from domain/header > Authenticated user's org > Default
+    // CRITICAL: Prioritize the ID resolved from the domain/subdomain context
     const orgId = resolvedOrgId || user?.organizationId || 'default-tenant';
 
     const isAdmin = user ? getRoleRank(user.role) >= 85 : false; 
@@ -33,10 +33,13 @@ export const getSettings = async (req: Request, res: Response) => {
 export const updateSettings = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+    const resolvedOrgId = (req as any).organizationId;
+
     if (getRoleRank(user.role) < 85) {
       return res.status(403).json({ error: 'Only IT/HR Managers or MD can update admin settings' });
     }
-    const orgId = user?.organizationId || 'default-tenant';
+
+    const orgId = resolvedOrgId || user?.organizationId || 'default-tenant';
     const settings = await settingsService.updateSettings(orgId, req.body);
     res.json(settings);
   } catch (error: any) {

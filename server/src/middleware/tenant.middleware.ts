@@ -13,7 +13,7 @@ export const resolveTenant = async (req: Request, res: Response, next: NextFunct
 
     if (!domainToMatch) {
       // Try resolving from host if it's not our main domain
-      const mainDomains = ['nexus-hr-platform-api.onrender.com', 'localhost'];
+      const mainDomains = ['nexus-hr-platform-api.onrender.com', 'mcb-ghana-hrm-api.onrender.com', 'localhost'];
       if (!mainDomains.some(d => host.includes(d))) {
         domainToMatch = host.replace('www.', '');
       }
@@ -31,6 +31,7 @@ export const resolveTenant = async (req: Request, res: Response, next: NextFunct
       });
 
       if (organization) {
+        console.log('[SettingsService] Fetching settings for OrgID:', organization.id);
         (req as any).organizationId = organization.id;
         (req as any).organization = organization;
       }

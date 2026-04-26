@@ -9,6 +9,7 @@ const isValidHex = (hex: string) => /^#([A-Fa-f0-9]{3}){1,2}$/.test(hex);
  * Branding lives on Organization; security/email/payment config on SystemSettings.
  */
 export const getSettings = async (organizationId = 'default-tenant', isAdmin = false) => {
+  console.log('[SettingsService] Attempting to fetch settings for OrgID:', organizationId, '| Admin:', isAdmin);
   const org = await (prisma.organization.findUnique({
     where: { id: organizationId },
     select: {
@@ -331,6 +332,13 @@ export const updateSettings = async (
   if (data.loginNotice !== undefined) settingsUpdate.loginNotice = loginNotice;
   if (data.loginSubtitle !== undefined) settingsUpdate.loginSubtitle = loginSubtitle;
   if (data.loginBullets !== undefined) settingsUpdate.loginBullets = loginBullets;
+
+  // 1. Update Organization Branding & Identity Tokens
+  const org = await prisma.organization.findUnique({ where: { id: organizationId } });
+  if (!org) {
+    console.error('[SettingsService] Cannot update: Organization not found:', organizationId);
+    throw new Error(`Organization identity context lost: ${organizationId}`);
+  }
 
   await Promise.all([
     Object.keys(orgUpdate).length > 0
