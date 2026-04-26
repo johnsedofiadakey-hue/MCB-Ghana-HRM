@@ -12,7 +12,7 @@ import { analyzeContext, type StrategicVerdict, type StrategicInsight } from '..
 import { getStoredUser } from '../../utils/session';
 import api from '../../services/api';
 
-interface NexusAIInsightProps {
+interface MCBAIInsightProps {
     isOpen: boolean;
     onClose: () => void;
     contextData?: any;
@@ -23,7 +23,7 @@ interface ChatMessage {
     text: string;
 }
 
-const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contextData }) => {
+const MCBAIInsight: React.FC<MCBAIInsightProps> = ({ isOpen, onClose, contextData }) => {
     const location = useLocation();
     const { contextData: globalContextData, isEnabled } = useAI();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -91,7 +91,7 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
             const detail = error.response?.data?.details || error.response?.data?.error || "Connection synchronization error";
             setMessages(prev => [...prev, { 
                 role: 'model', 
-                text: `I'm currently unable to synchronize with the intelligence layer (${detail}). Please try again shortly.` 
+                text: `I'm currently unable to synchronize with the MCB HRM Ghana intelligence layer (${detail}). Please try again shortly.` 
             }]);
         } finally {
             setIsTyping(false);
@@ -128,7 +128,7 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
                                 </div>
                                 <div>
                                     <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
-                                        {isStrategicMode ? 'Strategic Intelligence' : 'Cortex Assistant'}
+                                        {isStrategicMode ? 'MCB HRM Ghana Strategic Intelligence' : 'Cortex Assistant'}
                                     </h2>
                                     <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
                                         <Sparkles size={10} className={cn(isStrategicMode ? "text-amber-500" : "text-[var(--primary)]")} /> 
@@ -183,7 +183,7 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
                                             </div>
                                             <div className="space-y-1 text-center">
                                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] ai-gradient-text">Analyzing Context</p>
-                                                <p className="text-[9px] font-bold text-[var(--text-muted)] animate-pulse">Scanning multidimensional data points...</p>
+                                                <p className="text-[9px] font-bold text-[var(--text-muted)] animate-pulse">Scanning MCB HRM Ghana multidimensional data points...</p>
                                             </div>
                                         </div>
                                     ) : verdict ? (
@@ -210,7 +210,7 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
                                                 </p>
                                                 <div className={cn("p-4 rounded-xl border transition-all", isStrategicMode ? "bg-amber-500/10 border-amber-500/20" : "bg-[var(--primary)]/5 border-border-[var(--primary)]/10")}>
                                                     <p className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-2", isStrategicMode ? "text-amber-600" : "text-[var(--primary)]")}>
-                                                        {isStrategicMode ? 'Institutional Advisory' : 'Strategic Verdict'}
+                                                        {isStrategicMode ? 'MCB HRM Ghana Advisory' : 'Strategic Verdict'}
                                                     </p>
                                                     <p className="text-xs font-medium text-[var(--text-secondary)] italic leading-relaxed">
                                                         "{verdict.recommendation}"
@@ -263,7 +263,7 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
                                         {messages.length === 0 && (
                                             <div className="text-center py-10 opacity-50">
                                                 <Bot size={48} className="mx-auto mb-4 text-[var(--primary)]" />
-                                                <p className="text-sm font-bold text-[var(--text-primary)]">I am Cortex, your AI Assistant.</p>
+                                                <p className="text-sm font-bold text-[var(--text-primary)]">I am Cortex, your MCB HRM Ghana Assistant.</p>
                                                 <p className="text-xs text-[var(--text-muted)] mt-2">Ask me anything about HR policies, system analytics, or employee performance.</p>
                                             </div>
                                         )}
@@ -336,4 +336,4 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
     );
 };
 
-export default NexusAIInsight;
+export default MCBAIInsight;

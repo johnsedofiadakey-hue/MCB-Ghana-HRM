@@ -39,7 +39,7 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     }, []);
 
     const handleLogout = () => {
-        // Clear standard Nexus tokens
+        // Clear MCB HRM Ghana session tokens
         localStorage.removeItem('nexus_auth_token');
         localStorage.removeItem('nexus_refresh_token');
         localStorage.removeItem('nexus_user');
@@ -92,7 +92,7 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
 
             {/* Identity & Actions */}
             <div className="flex items-center gap-3 sm:gap-6 lg:gap-10">
-                {/* Nexus AI Insight Trigger */}
+                {/* MCB AI Intelligence Trigger */}
                 {isAIEnabled && (user?.rank || 0) >= 70 && (
                     <button 
                         onClick={() => setIsAIOpen(true)}

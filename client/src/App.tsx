@@ -20,7 +20,7 @@ import FirstRunWelcome from './components/layout/FirstRunWelcome';
 import CoreGuide from './components/layout/CoreGuide';
 import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
-import NexusAIInsight from './components/layout/NexusAIInsight';
+import MCBAIInsight from './components/layout/MCBAIInsight';
 import { getLogoUrl } from './utils/logo';
 import { getStoredUser, getRankFromRole } from './utils/session';
 import SandboxHUD from './components/layout/SandboxHUD';

@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 const QUOTES = [
     { text: "The first 90 minutes of your day dictate your success. The first 5 minutes dictate how much coffee you need.", author: "Institutional Wisdom", icon: <Coffee className="text-orange-500" size={16} /> },
-    { text: "Great things in business are never done by one person. They're done by a team of people... and several spreadsheets.", author: "Nexus HR", icon: <Users className="text-blue-500" size={16} /> },
+    { text: "Great things in business are never done by one person. They're done by a team of people... and several spreadsheets.", author: "MCB HRM Ghana", icon: <Users className="text-blue-500" size={16} /> },
     { text: "Success is best when it's shared. But the office snacks? That's a different story.", author: "Corporate Reality", icon: <Sparkles className="text-amber-500" size={16} /> },
     { text: "The only way to do great work is to love what you do. Or at least have a really comfortable ergonomic chair.", author: "Office Ergonomics", icon: <Heart className="text-rose-500" size={16} /> },
     { text: "Your growth is our priority. Your password security is your responsibility.", author: "IT Security", icon: <Shield className="text-emerald-500" size={16} /> }
@@ -50,7 +50,7 @@ const Login = () => {
             if (refreshToken) storage.setItem(StorageKey.REFRESH_TOKEN, refreshToken);
             storage.setItem(StorageKey.USER, user || {});
 
-            if (user?.role === 'DEV') navigate('/nexus-master-console');
+            if (user?.role === 'DEV') navigate('/mcb-master-console');
             else navigate('/dashboard');
             
             toast.success(t('auth.sign_in_success', 'Sign in successful'));

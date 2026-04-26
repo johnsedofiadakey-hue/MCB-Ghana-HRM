@@ -1,7 +1,7 @@
 {
-  "name": "personnel-hrm",
+  "name": "mcb-hrm-ghana",
   "version": "5.1.0",
-  "description": "Enterprise Personnel HRM — Advanced Workforce Management System",
+  "description": "MCB HRM Ghana — Advanced Workforce Management System",
   "scripts": {
     "install:all": "cd server && npm install && cd ../client && npm install",
     "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",

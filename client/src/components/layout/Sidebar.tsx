@@ -185,7 +185,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               </div>
               <div className="truncate">
                 <h1 className="text-[14px] font-bold tracking-tight text-[var(--text-primary)] leading-none">
-                  {settings?.companyName || 'SYSTEM'}
+                  {settings?.companyName || 'MCB HRM GHANA'}
                 </h1>
                 <p className="text-[10px] font-medium text-[var(--text-sidebar)] mt-1.5 opacity-60 tracking-wide uppercase italic">
                   {settings?.subtitle || 'Enterprise OS'}

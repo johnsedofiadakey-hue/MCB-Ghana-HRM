@@ -1,7 +1,7 @@
 {
-  "name": "nexus-hr-platform-server",
+  "name": "mcb-hrm-ghana-server",
   "version": "4.2.0",
-  "description": "Nexus HR Platform — Enterprise Multi-Tenant HRM API (Fortress)",
+  "description": "MCB HRM Ghana — Enterprise Multi-Tenant HRM API (Fortress)",
   "main": "src/app.ts",
   "scripts": {
     "dev": "TS_NODE_TRANSPILE_ONLY=true nodemon --exec 'node --max-old-space-size=4096 -r ts-node/register -r dotenv/config' src/app.ts",
