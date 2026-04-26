@@ -53,6 +53,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       allowLeaveBorrowing: true,
       carryForwardLimit: true,
       borrowingLimit: true,
+      ssnitRate: true,
+      employerSsnitRate: true,
+      payeBands: true,
       settings: {
         select: {
           isMaintenanceMode: true,
@@ -209,6 +212,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     allowLeaveBorrowing: org.allowLeaveBorrowing ?? false,
     carryForwardLimit: Number(org.carryForwardLimit || 10),
     borrowingLimit: Number(org.borrowingLimit || 5),
+    ssnitRate: Number(org.ssnitRate || 0.055),
+    employerSsnitRate: Number(org.employerSsnitRate || 0.13),
+    payeBands: typeof org.payeBands === 'string' ? JSON.parse(org.payeBands) : org.payeBands,
     ...(org.settings || {}),
     ...pricing
   };
@@ -235,6 +241,7 @@ export const updateSettings = async (
           isAiEnabled,
           defaultLeaveAllowance,
           allowLeaveCarryForward, allowLeaveBorrowing, carryForwardLimit, borrowingLimit,
+          ssnitRate, employerSsnitRate, payeBands,
           successColor, warningColor, errorColor, infoColor,
           address, phone, email, city, country,
           ...rest } = data;
@@ -296,6 +303,9 @@ export const updateSettings = async (
   if (allowLeaveBorrowing !== undefined) orgUpdate.allowLeaveBorrowing = !!allowLeaveBorrowing;
   if (carryForwardLimit !== undefined) orgUpdate.carryForwardLimit = safeNum(carryForwardLimit);
   if (borrowingLimit !== undefined) orgUpdate.borrowingLimit = safeNum(borrowingLimit);
+  if (ssnitRate !== undefined) orgUpdate.ssnitRate = safeNum(ssnitRate);
+  if (employerSsnitRate !== undefined) orgUpdate.employerSsnitRate = safeNum(employerSsnitRate);
+  if (payeBands !== undefined) orgUpdate.payeBands = typeof payeBands === 'string' ? payeBands : JSON.stringify(payeBands);
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

@@ -8,9 +8,10 @@ const SSNIT_EMPLOYEE_RATE = 0.055;   // 5.5%
 const SSNIT_EMPLOYER_RATE = 0.13;    // 13%
 
 // ── GHANA PAYE (2024 GRA Monthly Bands) ────────────────────────────────────────
-export const calculateGhanaPAYE = (taxableIncome: number): number => {
+// ── GHANA PAYE (GRA Monthly Bands) ──────────────────────────────────────────
+export const calculateGhanaPAYE = (taxableIncome: number, customBands?: any[]): number => {
   if (taxableIncome <= 0) return 0;
-  const bands = [
+  const bands = customBands || [
     { limit: 490,      rate: 0.00  },
     { limit: 110,      rate: 0.05  },
     { limit: 130,      rate: 0.10  },
@@ -29,9 +30,9 @@ export const calculateGhanaPAYE = (taxableIncome: number): number => {
 };
 
 // ── GHANA SSNIT ─────────────────────────────────────────────────────────────────
-export const calculateGhanaSSNIT = (grossSalary: number) => {
-  const employeeSSNIT = Math.round(grossSalary * 0.055 * 100) / 100;
-  const employerSSNIT = Math.round(grossSalary * 0.13  * 100) / 100;
+export const calculateGhanaSSNIT = (grossSalary: number, employeeRate = 0.055, employerRate = 0.13) => {
+  const employeeSSNIT = Math.round(grossSalary * employeeRate * 100) / 100;
+  const employerSSNIT = Math.round(grossSalary * employerRate * 100) / 100;
   return { employeeSSNIT, employerSSNIT };
 };
 
@@ -39,13 +40,15 @@ export const calculateGhanaSSNIT = (grossSalary: number) => {
 export const calculateGhanaPayroll = (params: {
   grossSalary: number; bonus?: number; allowances?: number;
   overtime?: number; loanDeductions?: number; otherDeductions?: number;
+  ssnitRate?: number; employerSsnitRate?: number; payeBands?: any[];
 }) => {
   const { grossSalary, bonus=0, allowances=0, overtime=0,
-          loanDeductions=0, otherDeductions=0 } = params;
+          loanDeductions=0, otherDeductions=0, 
+          ssnitRate, employerSsnitRate, payeBands } = params;
   const totalGross = grossSalary + bonus + allowances + overtime;
-  const { employeeSSNIT, employerSSNIT } = calculateGhanaSSNIT(totalGross);
+  const { employeeSSNIT, employerSSNIT } = calculateGhanaSSNIT(totalGross, ssnitRate, employerSsnitRate);
   const taxableIncome = Math.max(0, totalGross - employeeSSNIT);
-  const payeTax = calculateGhanaPAYE(taxableIncome);
+  const payeTax = calculateGhanaPAYE(taxableIncome, payeBands);
   const totalDeductions = employeeSSNIT + payeTax + loanDeductions + otherDeductions;
   const netPay = Math.max(0, Math.round((totalGross - totalDeductions) * 100) / 100);
   return { grossPay: Math.round(totalGross*100)/100, employeeSSNIT,
@@ -75,6 +78,14 @@ export const createPayrollRun = async (
   const period = `${year}-${String(month).padStart(2, '0')}`;
   const existing = await prisma.payrollRun.findFirst({ where: { period, organizationId } });
   if (existing) throw new Error(`Payroll run for ${period} already exists. Delete or void it first.`);
+
+  const org = await prisma.organization.findUnique({ 
+    where: { id: organizationId },
+    select: { ssnitRate: true, employerSsnitRate: true, payeBands: true }
+  });
+  const ssnitRate = Number(org?.ssnitRate ?? 0.055);
+  const employerSsnitRate = Number(org?.employerSsnitRate ?? 0.13);
+  const payeBands = typeof org?.payeBands === 'string' ? JSON.parse(org.payeBands) : (org?.payeBands as any[]);
 
   const employees = await prisma.user.findMany({
     where: {
@@ -142,6 +153,9 @@ export const createPayrollRun = async (
       overtime:       overtime,
       loanDeductions: autoInstallment,
       otherDeductions:adj?.otherDeductions ?? 0,
+      ssnitRate,
+      employerSsnitRate,
+      payeBands
     });
 
     const item = await prisma.payrollItem.create({
@@ -325,6 +339,14 @@ export const updatePayrollItem = async (
     throw new Error('Can only edit items in a DRAFT run');
   }
 
+  const org = await prisma.organization.findUnique({ 
+    where: { id: organizationId },
+    select: { ssnitRate: true, employerSsnitRate: true, payeBands: true }
+  });
+  const ssnitRate = Number(org?.ssnitRate ?? 0.055);
+  const employerSsnitRate = Number(org?.employerSsnitRate ?? 0.13);
+  const payeBands = typeof org?.payeBands === 'string' ? JSON.parse(org.payeBands) : (org?.payeBands as any[]);
+
   const base = Number(item.baseSalary);
   const overtime = data.overtime ?? Number(item.overtime);
   const bonus = data.bonus ?? Number(item.bonus);
@@ -337,6 +359,9 @@ export const updatePayrollItem = async (
     overtime,
     loanDeductions: otherDeductions, // Assuming otherDeductions here includes loan installments as in createPayrollRun
     otherDeductions: 0, 
+    ssnitRate,
+    employerSsnitRate,
+    payeBands
   });
 
   await prisma.payrollItem.updateMany({

@@ -694,6 +694,9 @@ model Organization {
   allowLeaveCarryForward Boolean              @default(true)
   borrowingLimit         Decimal              @default(5)
   carryForwardLimit      Decimal              @default(10)
+  ssnitRate              Decimal              @default(0.055)
+  employerSsnitRate      Decimal              @default(0.13)
+  payeBands              Json?                @default("[{\"limit\": 490, \"rate\": 0}, {\"limit\": 110, \"rate\": 0.05}, {\"limit\": 130, \"rate\": 0.10}, {\"limit\": 3166.67, \"rate\": 0.175}, {\"limit\": 16000, \"rate\": 0.25}, {\"limit\": 30520, \"rate\": 0.30}, {\"limit\": 999999999, \"rate\": 0.35}]")
   securityEvents         LoginSecurityEvent[]
   settings               SystemSettings?
   users                  User[]

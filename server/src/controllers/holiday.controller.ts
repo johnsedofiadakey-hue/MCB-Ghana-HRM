@@ -1,21 +1,21 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 
-// Default Guinea public holidays 2026
-const GUINEA_HOLIDAYS_2026 = [
+// Default Ghana public holidays 2026
+const GHANA_HOLIDAYS_2026 = [
   { name: "New Year's Day", date: '2026-01-01' },
-  { name: "Lailat al-Qadr", date: '2026-03-17' },
-  { name: "Eid al-Fitr (Korité)", date: '2026-03-20' },
+  { name: "Constitution Day", date: '2026-01-07' },
+  { name: "Independence Day", date: '2026-03-06' },
+  { name: "Eid al-Fitr", date: '2026-03-20' }, // Approximate
+  { name: "Good Friday", date: '2026-04-03' },
   { name: "Easter Monday", date: '2026-04-06' },
   { name: "Labour Day", date: '2026-05-01' },
-  { name: "Africa Day", date: '2026-05-25' },
-  { name: "Eid al-Adha (Tabaski)", date: '2026-05-27' },
-  { name: "Eid al-Adha Day 2", date: '2026-05-28' },
-  { name: "Assumption of Mary", date: '2026-08-15' },
-  { name: "The Prophet's Birthday", date: '2026-08-25' },
-  { name: "Independence Day", date: '2026-10-02' },
-  { name: "All Saints' Day", date: '2026-11-01' },
+  { name: "Eid al-Adha", date: '2026-05-27' }, // Approximate
+  { name: "Founders' Day", date: '2026-08-04' },
+  { name: "Kwame Nkrumah Memorial Day", date: '2026-09-21' },
+  { name: "Farmer's Day", date: '2026-12-04' },
   { name: "Christmas Day", date: '2026-12-25' },
+  { name: "Boxing Day", date: '2026-12-26' },
 ];
 
 export const getHolidays = async (req: Request, res: Response) => {
@@ -49,17 +49,17 @@ export const deleteHoliday = async (req: Request, res: Response) => {
   }
 };
 
-export const seedGuineaHolidays = async (req: Request, res: Response) => {
+export const seedGhanaHolidays = async (req: Request, res: Response) => {
   try {
     const created = await prisma.publicHoliday.createMany({
-      data: GUINEA_HOLIDAYS_2026.map(h => ({
+      data: GHANA_HOLIDAYS_2026.map(h => ({
         name: h.name,
         date: new Date(h.date),
-        country: 'GN',
+        country: 'GH',
         isRecurring: false,
         year: 2026
       }))
     });
-    res.json({ created: created.count, message: 'Guinea 2026 public holidays seeded' });
+    res.json({ created: created.count, message: 'Ghana 2026 public holidays seeded' });
   } catch (e: any) { res.status(400).json({ error: e.message }); }
 };
