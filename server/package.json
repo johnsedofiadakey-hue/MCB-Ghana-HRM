@@ -1,6 +1,6 @@
 {
   "name": "mcb-hrm-ghana-server",
-  "version": "4.2.0",
+  "version": "5.1.0",
   "description": "MCB HRM Ghana — Enterprise Multi-Tenant HRM API (Fortress)",
   "main": "src/app.ts",
   "scripts": {

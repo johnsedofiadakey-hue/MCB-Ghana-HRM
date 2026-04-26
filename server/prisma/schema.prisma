@@ -19,9 +19,9 @@ model KpiSheet {
   totalScore         Decimal?
   status             String?   @default("DRAFT")
   isLocked           Boolean   @default(false)
-  createdAt          DateTime  @default(now())
   isTemplate         Boolean   @default(false)
   targetDepartmentId Int?
+  createdAt          DateTime  @default(now())
   items              KpiItem[]
   employee           User?     @relation("EmployeeKPIs", fields: [employeeId], references: [id], onDelete: Cascade)
   reviewer           User?     @relation("ReviewerKPIs", fields: [reviewerId], references: [id], onDelete: Cascade)
@@ -35,20 +35,20 @@ model KpiSheet {
 model KpiItem {
   id             String      @id @default(uuid())
   organizationId String?     @default("default-tenant")
-  targetValue    Decimal
-  weight         Decimal     @default(1.0)
-  actualValue    Decimal     @default(0)
-  sheetId        String
   name           String
-  category       String      @default("General")
   description    String      @default("")
-  score          Decimal?
-  createdAt      DateTime    @default(now())
-  lastEntryDate  DateTime?
-  endDate        DateTime?
-  frequency      String      @default("MONTHLY")
+  category       String      @default("General")
   metricType     String      @default("NUMERIC")
+  targetValue    Decimal
+  actualValue    Decimal     @default(0)
+  weight         Decimal     @default(1.0)
+  score          Decimal?
+  frequency      String      @default("MONTHLY")
   startDate      DateTime?
+  endDate        DateTime?
+  lastEntryDate  DateTime?
+  sheetId        String
+  createdAt      DateTime    @default(now())
   sheet          KpiSheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
   updates        KpiUpdate[]
 
@@ -65,6 +65,8 @@ model Target {
   status             String                  @default("DRAFT")
   dueDate            DateTime?
   weight             Decimal                 @default(1.0)
+  progress           Decimal                 @default(0)
+  contributionWeight Decimal                 @default(0)
   parentTargetId     String?
   departmentId       Int?
   assigneeId         String?
@@ -73,10 +75,8 @@ model Target {
   reviewerId         String?
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
-  contributionWeight Decimal                 @default(0)
-  progress           Decimal                 @default(0)
-  archivedAt         DateTime?
   isArchived         Boolean                 @default(false)
+  archivedAt         DateTime?
   assignee           User?                   @relation("TargetAssignee", fields: [assigneeId], references: [id])
   department         Department?             @relation(fields: [departmentId], references: [id])
   lineManager        User?                   @relation("TargetLineManager", fields: [lineManagerId], references: [id])
@@ -228,8 +228,8 @@ model AssetAssignment {
   userId            String?
   assetId           String?
   assignedAt        DateTime  @default(now())
-  handoverSignature String?   // Base64 or URL to signed image
-  returnSignature   String?   // Base64 or URL to return signature
+  handoverSignature String?
+  returnSignature   String?
   asset             Asset?    @relation(fields: [assetId], references: [id], onDelete: Cascade)
   loggedBy          User?     @relation("LoggedByAssignments", fields: [loggedById], references: [id], onDelete: Cascade)
   user              User?     @relation("UserAssignments", fields: [userId], references: [id], onDelete: Cascade)
@@ -238,127 +238,124 @@ model AssetAssignment {
 }
 
 model User {
-  id                      String                  @id @default(uuid())
-  email                   String                  @unique
-  passwordHash            String
-  fullName                String
-  role                    String                  @default("STAFF")
-  employeeCode            String?
-  status                  String                  @default("ACTIVE")
-  position                String?
-  departmentId            Int?
-  jobTitle                String
-  joinDate                DateTime?
-  employmentType          String?
-  dob                     DateTime?
-  gender                  String?
-  nationalId              String?
-  contactNumber           String?
-  address                 String?
-  profilePhoto            String?
-  nextOfKinName           String?
-  nextOfKinRelation       String?
-  nextOfKinContact        String?
-  avatarUrl               String?
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
-  salary                  Decimal?
-  currency                String                  @default("GHS")
-  bankName                String?
-  bankAccountNumber       String?
-  bankBranch              String?
-  ssnitNumber             String?
-  bankAccountEnc          String?
-  ghanaCardEnc            String?
-  ssnitEnc                String?
-  salaryEnc               String?
-  nationalIdDocUrl        String?
-  leaveBalance            Decimal?                @default(30)
-  leaveAllowance          Decimal?                @default(30)
-  hasManualLeaveOverride  Boolean                 @default(false)
+  id                          String                  @id @default(uuid())
+  email                       String                  @unique
+  passwordHash                String
+  fullName                    String
+  role                        String                  @default("STAFF")
+  employeeCode                String?
+  status                      String                  @default("ACTIVE")
+  position                    String?
+  departmentId                Int?
+  subUnitId                   String?
+  jobTitle                    String
+  joinDate                    DateTime?
+  employmentType              String?
+  dob                         DateTime?
+  gender                      String?
+  education                   String?
+  nationalId                  String?
+  contactNumber               String?
+  address                     String?
+  profilePhoto                String?
+  nextOfKinName               String?
+  nextOfKinRelation           String?
+  nextOfKinContact            String?
+  maritalStatus               String?
+  bloodGroup                  String?
+  emergencyContactName        String?
+  emergencyContactPhone       String?
+  certifications              String?
+  avatarUrl                   String?
+  createdAt                   DateTime                @default(now())
+  updatedAt                   DateTime                @updatedAt
+  salary                      Decimal?
+  currency                    String                  @default("GHS")
+  bankName                    String?
+  bankAccountNumber           String?
+  bankBranch                  String?
+  ssnitNumber                 String?
+  bankAccountEnc              String?
+  ghanaCardEnc                String?
+  ssnitEnc                    String?
+  salaryEnc                   String?
+  nationalIdDocUrl            String?
+  leaveBalance                Decimal?                @default(30)
+  leaveAllowance              Decimal?                @default(30)
+  leaveAccruedAt              DateTime?
+  supervisorId                String?
+  isArchived                  Boolean                 @default(false)
+  archivedDate                DateTime?
+  organizationId              String?                 @default("default-tenant")
+  biometricId                 String?
+  countryOfOrigin             String?
+  hasManualLeaveOverride      Boolean                 @default(false)
   lastManualLeaveAdjustmentAt DateTime?
-  leaveAccruedAt          DateTime?
-  supervisorId            String?
-  isArchived              Boolean                 @default(false)
-  archivedDate            DateTime?
-  organizationId          String?                 @default("default-tenant")
-  subUnitId               String?
-  education               String?
-  bloodGroup              String?
-  certifications          String?
-  emergencyContactName    String?
-  emergencyContactPhone   String?
-  maritalStatus           String?
-  biometricId             String?
-  countryOfOrigin         String?
-  nationality             String?
-  signatureUrl            String?
-  createdAnnouncements    Announcement[]          @relation("CreatedAnnouncements")
-  appraisalPackets        AppraisalPacket[]       @relation("EmployeeAppraisalPackets")
-  resolvedAppraisals      AppraisalPacket[]       @relation("ResolvedAppraisals")
-  appraisalReviewsByMe    AppraisalReview[]       @relation("ReviewerAppraisalReviews")
-  loggedByAssignments     AssetAssignment[]       @relation("LoggedByAssignments")
-  userAssignments         AssetAssignment[]       @relation("UserAssignments")
-  attendanceLogs          AttendanceLog[]         @relation("EmployeeAttendance")
-  auditLogs               AuditLog[]
-  compensationHistory     CompensationHistory[]   @relation("EmployeeCompensation")
-  managesDepartment       Department[]            @relation("DepartmentManager")
-  documents               EmployeeDocument[]      @relation("EmployeeDocuments")
-  createdHistory          EmployeeHistory[]       @relation("CreatedHistory")
-  historyLogs             EmployeeHistory[]       @relation("EmployeeHistory")
-  loggedByHistory         EmployeeHistory[]       @relation("LoggedByHistory")
-  queriesReceived         EmployeeQuery[]         @relation("QueryRecipient")
-  queriesIssued           EmployeeQuery[]         @relation("QueryIssuer")
-  employeeReportingLines  EmployeeReporting[]     @relation("EmployeeReportingLines")
-  managedReportingLines   EmployeeReporting[]     @relation("ManagerReportingLines")
-  interviewsConducted     ExitInterview[]         @relation("ExitInterviewer")
-  approvedExpenses        ExpenseClaim[]          @relation("ApprovedExpenses")
-  expenses                ExpenseClaim[]          @relation("EmployeeExpenses")
-  handoverWorkAccepted    HandoverRecord[]        @relation("HandoverReliever")
-  handoverRequestsSent    HandoverRecord[]        @relation("HandoverRequester")
-  interviewFeedbackByMe   InterviewFeedback[]     @relation("ReviewerFeedback")
-  assignedInterviewStages InterviewStage[]        @relation("InterviewerStage")
-  kpiSheets               KpiSheet[]              @relation("EmployeeKPIs")
-  kpiReviews              KpiSheet[]              @relation("ReviewerKPIs")
-  leaves                  LeaveRequest[]          @relation("EmployeeLeaves")
-  hrReviewLeaves          LeaveRequest[]          @relation("HRReviewLeaves")
-  managerLeaves           LeaveRequest[]          @relation("ManagerLeaves")
-  reliefRequests          LeaveRequest[]          @relation("RelieverLeaves")
-  approvedLoans           Loan[]                  @relation("ApprovedLoans")
-  loans                   Loan[]                  @relation("EmployeeLoans")
-  notifications           Notification[]          @relation("UserNotifications")
-  employeeOffboarding     OffboardingProcess[]    @relation("EmployeeOffboarding")
-  onboardingSessions      OnboardingSession[]     @relation("EmployeeOnboarding")
-  resetTokens             PasswordResetToken[]    @relation("UserResetTokens")
-  payrollItems            PayrollItem[]           @relation("EmployeePayroll")
-  RefreshToken            RefreshToken[]
-  saasSubscriptions       SaasSubscription[]      @relation("ClientSaasSubscription")
-  managesSubUnits         SubUnit[]               @relation("SubUnitManager")
-  subscriptions           Subscription[]          @relation("ClientSubscription")
-  assignedTickets         SupportTicket[]         @relation("AssignedTickets")
-  employeeTickets         SupportTicket[]         @relation("EmployeeTickets")
-  targetsAssignedToMe     Target[]                @relation("TargetAssignee")
-  targetsManagedByMe      Target[]                @relation("TargetLineManager")
-  targetsByMe             Target[]                @relation("TargetOriginator")
-  targetsReviewedByMe     Target[]                @relation("TargetReviewer")
-  targetAcknowledgements  TargetAcknowledgement[]
-  targetUpdates           TargetUpdate[]
-  ticketComments          TicketComment[]
-  trainingEnrollments     TrainingEnrollment[]    @relation("EmployeeTraining")
-  // Disciplinary
-  disciplinaryCases       DisciplinaryCase[]      @relation("EmployeeDisciplinary")
-  issuedDisciplinaryCases DisciplinaryCase[]      @relation("IssuedByDisciplinary")
-  // Policy Library
-  createdPolicies         PolicyDocument[]        @relation("PolicyCreatedBy")
-  policyAcknowledgments   PolicyAcknowledgment[]  @relation("PolicyAcknowledgedBy")
-  // Probation
-  probationRecord         ProbationRecord?        @relation("EmployeeProbation")
-  probationReviews        ProbationRecord[]       @relation("ProbationReviewer")
-  departmentObj           Department?             @relation("DepartmentEmployees", fields: [departmentId], references: [id])
-  organization            Organization?           @relation(fields: [organizationId], references: [id])
-  subUnit                 SubUnit?                @relation("SubUnitEmployees", fields: [subUnitId], references: [id])
-  supervisor              User?                   @relation("Hierarchy", fields: [supervisorId], references: [id])
-  subordinates            User[]                  @relation("Hierarchy")
+  nationality                 String?
+  signatureUrl                String?
+  createdAnnouncements        Announcement[]          @relation("CreatedAnnouncements")
+  appraisalPackets            AppraisalPacket[]       @relation("EmployeeAppraisalPackets")
+  resolvedAppraisals          AppraisalPacket[]       @relation("ResolvedAppraisals")
+  appraisalReviewsByMe        AppraisalReview[]       @relation("ReviewerAppraisalReviews")
+  loggedByAssignments         AssetAssignment[]       @relation("LoggedByAssignments")
+  userAssignments             AssetAssignment[]       @relation("UserAssignments")
+  attendanceLogs              AttendanceLog[]         @relation("EmployeeAttendance")
+  auditLogs                   AuditLog[]
+  compensationHistory         CompensationHistory[]   @relation("EmployeeCompensation")
+  managesDepartment           Department[]            @relation("DepartmentManager")
+  disciplinaryCases           DisciplinaryCase[]      @relation("EmployeeDisciplinary")
+  issuedDisciplinaryCases     DisciplinaryCase[]      @relation("IssuedByDisciplinary")
+  documents                   EmployeeDocument[]      @relation("EmployeeDocuments")
+  createdHistory              EmployeeHistory[]       @relation("CreatedHistory")
+  historyLogs                 EmployeeHistory[]       @relation("EmployeeHistory")
+  loggedByHistory             EmployeeHistory[]       @relation("LoggedByHistory")
+  queriesReceived             EmployeeQuery[]         @relation("QueryRecipient")
+  queriesIssued               EmployeeQuery[]         @relation("QueryIssuer")
+  employeeReportingLines      EmployeeReporting[]     @relation("EmployeeReportingLines")
+  managedReportingLines       EmployeeReporting[]     @relation("ManagerReportingLines")
+  interviewsConducted         ExitInterview[]         @relation("ExitInterviewer")
+  approvedExpenses            ExpenseClaim[]          @relation("ApprovedExpenses")
+  expenses                    ExpenseClaim[]          @relation("EmployeeExpenses")
+  handoverWorkAccepted        HandoverRecord[]        @relation("HandoverReliever")
+  handoverRequestsSent        HandoverRecord[]        @relation("HandoverRequester")
+  interviewFeedbackByMe       InterviewFeedback[]     @relation("ReviewerFeedback")
+  assignedInterviewStages     InterviewStage[]        @relation("InterviewerStage")
+  kpiSheets                   KpiSheet[]              @relation("EmployeeKPIs")
+  kpiReviews                  KpiSheet[]              @relation("ReviewerKPIs")
+  leaves                      LeaveRequest[]          @relation("EmployeeLeaves")
+  hrReviewLeaves              LeaveRequest[]          @relation("HRReviewLeaves")
+  managerLeaves               LeaveRequest[]          @relation("ManagerLeaves")
+  reliefRequests              LeaveRequest[]          @relation("RelieverLeaves")
+  approvedLoans               Loan[]                  @relation("ApprovedLoans")
+  loans                       Loan[]                  @relation("EmployeeLoans")
+  notifications               Notification[]          @relation("UserNotifications")
+  employeeOffboarding         OffboardingProcess[]    @relation("EmployeeOffboarding")
+  onboardingSessions          OnboardingSession[]     @relation("EmployeeOnboarding")
+  resetTokens                 PasswordResetToken[]    @relation("UserResetTokens")
+  payrollItems                PayrollItem[]           @relation("EmployeePayroll")
+  policyAcknowledgments       PolicyAcknowledgment[]  @relation("PolicyAcknowledgedBy")
+  createdPolicies             PolicyDocument[]        @relation("PolicyCreatedBy")
+  probationRecord             ProbationRecord?        @relation("EmployeeProbation")
+  probationReviews            ProbationRecord[]       @relation("ProbationReviewer")
+  RefreshToken                RefreshToken[]
+  saasSubscriptions           SaasSubscription[]      @relation("ClientSaasSubscription")
+  managesSubUnits             SubUnit[]               @relation("SubUnitManager")
+  subscriptions               Subscription[]          @relation("ClientSubscription")
+  assignedTickets             SupportTicket[]         @relation("AssignedTickets")
+  employeeTickets             SupportTicket[]         @relation("EmployeeTickets")
+  targetsAssignedToMe         Target[]                @relation("TargetAssignee")
+  targetsManagedByMe          Target[]                @relation("TargetLineManager")
+  targetsByMe                 Target[]                @relation("TargetOriginator")
+  targetsReviewedByMe         Target[]                @relation("TargetReviewer")
+  targetAcknowledgements      TargetAcknowledgement[]
+  targetUpdates               TargetUpdate[]
+  ticketComments              TicketComment[]
+  trainingEnrollments         TrainingEnrollment[]    @relation("EmployeeTraining")
+  departmentObj               Department?             @relation("DepartmentEmployees", fields: [departmentId], references: [id])
+  organization                Organization?           @relation(fields: [organizationId], references: [id])
+  subUnit                     SubUnit?                @relation("SubUnitEmployees", fields: [subUnitId], references: [id])
+  supervisor                  User?                   @relation("Hierarchy", fields: [supervisorId], references: [id])
+  subordinates                User[]                  @relation("Hierarchy")
 
   @@unique([employeeCode, organizationId])
   @@index([role, status])
@@ -473,24 +470,24 @@ model LeaveRequest {
   startDate                  DateTime
   endDate                    DateTime
   leaveDays                  Decimal          @default(0)
+  leaveType                  String           @default("Annual")
   reason                     String
   relieverId                 String?
-  status                     String           @default("DRAFT")
-  managerComment             String?
-  createdAt                  DateTime         @default(now())
-  hrComment                  String?
-  hrReviewerId               String?
-  managerId                  String?
-  relieverComment            String?
-  relieverRespondedAt        DateTime?
   relieverStatus             String           @default("PENDING")
-  updatedAt                  DateTime         @updatedAt
-  leaveType                  String           @default("Annual")
-  handoverAcknowledged       Boolean          @default(false)
+  relieverRespondedAt        DateTime?
+  relieverComment            String?
   handoverNotes              String?
-  archivedAt                 DateTime?
-  isArchived                 Boolean          @default(false)
   relieverAcceptanceRequired Boolean          @default(false)
+  handoverAcknowledged       Boolean          @default(false)
+  managerId                  String?
+  managerComment             String?
+  hrReviewerId               String?
+  hrComment                  String?
+  status                     String           @default("DRAFT")
+  createdAt                  DateTime         @default(now())
+  updatedAt                  DateTime         @updatedAt
+  isArchived                 Boolean          @default(false)
+  archivedAt                 DateTime?
   handoverRecords            HandoverRecord[]
   employee                   User             @relation("EmployeeLeaves", fields: [employeeId], references: [id], onDelete: Cascade)
   hrReviewer                 User?            @relation("HRReviewLeaves", fields: [hrReviewerId], references: [id])
@@ -588,20 +585,20 @@ model AppraisalPacket {
   currentStage       String            @default("SELF_REVIEW")
   status             String            @default("OPEN")
   supervisorId       String?
+  matrixSupervisorId String?
   managerId          String?
   hrReviewerId       String?
   finalReviewerId    String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  matrixSupervisorId String?
+  gapDetected        Boolean           @default(false)
+  isDisputed         Boolean           @default(false)
   disputeReason      String?
   disputeResolution  String?
   disputeResolvedAt  DateTime?
-  gapDetected        Boolean           @default(false)
-  isDisputed         Boolean           @default(false)
   resolvedById       String?
   finalScore         Decimal?
   finalVerdict       String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   arbitrationLogic   String?
   cycle              AppraisalCycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   employee           User              @relation("EmployeeAppraisalPackets", fields: [employeeId], references: [id], onDelete: Cascade)
@@ -637,7 +634,7 @@ model AppraisalReview {
 }
 
 model Organization {
-  id                     String               @id @default(uuid())
+  id                     String                @id @default(uuid())
   name                   String
   logoUrl                String?
   email                  String?
@@ -645,62 +642,62 @@ model Organization {
   address                String?
   city                   String?
   country                String?
-  currency               String               @default("GHS")
-  subscriptionPlan       String               @default("FREE")
-  subscriptionAmount     Decimal              @default(0)
-  billingStatus          String               @default("FREE")
-  isSuspended            Boolean              @default(false)
-  nextBillingDate        DateTime?
-  primaryColor           String               @default("#4F46E5")
-  secondaryColor         String               @default("#1E293B")
-  accentColor            String               @default("#F59E0B")
-  textColor              String               @default("#FFFFFF")
-  sidebarColor           String               @default("#080c16")
-  subtitle               String               @default("HRM OS")
-  themePreset            String               @default("nexus-dark")
-  lightMode              Boolean              @default(false)
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
-  customDomain           String?              @unique
-  subdomain              String?              @unique
-  domainStatus           String               @default("PENDING")
-  maintenanceMode        Boolean              @default(false)
-  discountFixed          Decimal?             @default(0)
-  discountPercentage     Decimal?             @default(0)
-  features               String               @default("{}")
-  isEnterprise           Boolean              @default(false)
+  currency               String                @default("GHS")
+  subscriptionPlan       String                @default("FREE")
+  subscriptionAmount     Decimal               @default(0)
+  billingStatus          String                @default("FREE")
+  isEnterprise           Boolean               @default(false)
+  features               String                @default("{}")
+  isSuspended            Boolean               @default(false)
+  trialStartDate         DateTime              @default(now())
   trialEndsAt            DateTime?
-  trialStartDate         DateTime             @default(now())
-  language               String               @default("en")
-  bgCard                 String?              @default("#ffffff")
-  bgMain                 String?              @default("#f8fafc")
-  sidebarActive          String?              @default("#1e293b")
-  sidebarBg              String?              @default("#080c16")
-  sidebarText            String?              @default("#ffffff")
-  textMuted              String?              @default("#94a3b8")
-  textPrimary            String?              @default("#0f172a")
-  textSecondary          String?              @default("#475569")
-  isAiEnabled            Boolean              @default(false)
-  bgElevated             String?              @default("#f1f5f9")
-  bgInput                String?              @default("#ffffff")
-  borderSubtle           String?              @default("#e2e8f0")
-  textInverse            String?              @default("#ffffff")
-  errorColor             String?              @default("#ef4444")
-  infoColor              String?              @default("#06b6d4")
-  successColor           String?              @default("#10b981")
-  warningColor           String?              @default("#f59e0b")
-  defaultLeaveAllowance  Decimal              @default(30)
-  allowLeaveBorrowing    Boolean              @default(false)
-  allowLeaveCarryForward Boolean              @default(true)
-  borrowingLimit         Decimal              @default(5)
-  carryForwardLimit      Decimal              @default(10)
-  ssnitRate              Decimal              @default(0.055)
-  employerSsnitRate      Decimal              @default(0.13)
-  payeBands              Json?                @default("[{\"limit\": 490, \"rate\": 0}, {\"limit\": 110, \"rate\": 0.05}, {\"limit\": 130, \"rate\": 0.10}, {\"limit\": 3166.67, \"rate\": 0.175}, {\"limit\": 16000, \"rate\": 0.25}, {\"limit\": 30520, \"rate\": 0.30}, {\"limit\": 999999999, \"rate\": 0.35}]")
+  nextBillingDate        DateTime?
+  customDomain           String?               @unique
+  primaryColor           String                @default("#4F46E5")
+  secondaryColor         String                @default("#1E293B")
+  accentColor            String                @default("#F59E0B")
+  textColor              String                @default("#FFFFFF")
+  sidebarColor           String                @default("#080c16")
+  bgMain                 String?               @default("#f8fafc")
+  bgCard                 String?               @default("#ffffff")
+  textPrimary            String?               @default("#0f172a")
+  textSecondary          String?               @default("#475569")
+  textMuted              String?               @default("#94a3b8")
+  sidebarBg              String?               @default("#080c16")
+  sidebarActive          String?               @default("#1e293b")
+  sidebarText            String?               @default("#ffffff")
+  subtitle               String                @default("HRM OS")
+  themePreset            String                @default("nexus-dark")
+  lightMode              Boolean               @default(false)
+  language               String                @default("en")
+  discountPercentage     Decimal?              @default(0)
+  discountFixed          Decimal?              @default(0)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  allowLeaveBorrowing    Boolean               @default(false)
+  allowLeaveCarryForward Boolean               @default(true)
+  bgElevated             String?               @default("#f1f5f9")
+  bgInput                String?               @default("#ffffff")
+  borderSubtle           String?               @default("#e2e8f0")
+  borrowingLimit         Decimal               @default(5)
+  carryForwardLimit      Decimal               @default(10)
+  defaultLeaveAllowance  Decimal               @default(30)
+  domainStatus           String                @default("PENDING")
+  errorColor             String?               @default("#ef4444")
+  infoColor              String?               @default("#06b6d4")
+  isAiEnabled            Boolean               @default(false)
+  maintenanceMode        Boolean               @default(false)
+  subdomain              String?               @unique
+  successColor           String?               @default("#10b981")
+  textInverse            String?               @default("#ffffff")
+  warningColor           String?               @default("#f59e0b")
+  employerSsnitRate      Decimal               @default(0.13)
+  payeBands              Json?                 @default("[{\"rate\": 0, \"limit\": 490}, {\"rate\": 0.05, \"limit\": 110}, {\"rate\": 0.10, \"limit\": 130}, {\"rate\": 0.175, \"limit\": 3166.67}, {\"rate\": 0.25, \"limit\": 16000}, {\"rate\": 0.30, \"limit\": 30520}, {\"rate\": 0.35, \"limit\": 999999999}]")
+  ssnitRate              Decimal               @default(0.055)
+  apiKeys                ApiKey[]
   securityEvents         LoginSecurityEvent[]
   settings               SystemSettings?
   users                  User[]
-  apiKeys                ApiKey[]
   webhooks               WebhookSubscription[]
 }
 
@@ -708,7 +705,9 @@ model SystemSettings {
   id                      String        @id @default(uuid())
   organizationId          String?       @unique
   isMaintenanceMode       Boolean       @default(false)
+  maintenanceNotice       String?
   securityLockdown        Boolean       @default(false)
+  securityLockdownMessage String?
   smtpHost                String?
   smtpPort                Int?
   smtpUser                String?
@@ -716,23 +715,21 @@ model SystemSettings {
   smtpFrom                String?
   paystackPublicKey       String?
   paystackSecretKey       String?
+  paystackPayLink         String?
   monthlyPriceGHS         Decimal?
   annualPriceGHS          Decimal?
+  currency                String        @default("GHS")
+  monthlyPrice            Decimal?
+  annualPrice             Decimal?
   trialDays               Int           @default(14)
   loginNotice             String?
   loginSubtitle           String?
   loginBullets            String?
-  updatedAt               DateTime      @updatedAt
   backupFrequencyDays     Int           @default(7)
-  maintenanceNotice       String?
-  paystackPayLink         String?
-  securityLockdownMessage String?
-  annualPrice             Decimal?
-  currency                String        @default("GHS")
-  monthlyPrice            Decimal?
-  googleDriveFolderId     String?
-  domainExpiryDate        DateTime?
+  updatedAt               DateTime      @updatedAt
   databaseExpiryDate      DateTime?
+  domainExpiryDate        DateTime?
+  googleDriveFolderId     String?
   organization            Organization? @relation(fields: [organizationId], references: [id])
 }
 
@@ -760,14 +757,14 @@ model PayrollRun {
   status         String        @default("DRAFT")
   totalGross     Decimal       @default(0)
   totalNet       Decimal       @default(0)
-  reviewedById   String?
-  reviewedAt     DateTime?
-  approvedById   String?       // Director/HR Manager final sign-off
   approvedAt     DateTime?
-  mdApprovedById String?       // Managing Director final seal
-  mdApprovedAt   DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  approvedById   String?
+  mdApprovedAt   DateTime?
+  mdApprovedById String?
+  reviewedAt     DateTime?
+  reviewedById   String?
   items          PayrollItem[]
 
   @@index([organizationId, year, month, status])
@@ -915,6 +912,8 @@ model Subscription {
   clientId           String
   plan               String    @default("MONTHLY")
   priceGHS           Decimal?
+  price              Decimal?
+  currency           String    @default("GHS")
   status             String    @default("TRIAL")
   orgName            String?
   contactEmail       String?
@@ -926,8 +925,6 @@ model Subscription {
   cancelledAt        DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
-  currency           String    @default("GHS")
-  price              Decimal?
   client             User      @relation("ClientSubscription", fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
@@ -986,8 +983,8 @@ model ExpenseClaim {
   submittedAt     DateTime  @default(now())
   approvedAt      DateTime?
   approvedById    String?
-  paidInRunId     String?
   rejectionReason String?
+  paidInRunId     String?
   approver        User?     @relation("ApprovedExpenses", fields: [approvedById], references: [id])
   employee        User      @relation("EmployeeExpenses", fields: [employeeId], references: [id], onDelete: Cascade)
 
@@ -1002,12 +999,12 @@ model AttendanceLog {
   clockIn        DateTime?
   clockOut       DateTime?
   status         String    @default("PRESENT")
+  source         String    @default("WEB")
   notes          String?
   locationIn     String?
   locationOut    String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  source         String    @default("WEB")
   employee       User      @relation("EmployeeAttendance", fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, date])
@@ -1101,6 +1098,7 @@ model TeamTarget {
   id                String           @id @default(uuid())
   organizationId    String
   departmentKpiId   String
+  originKPIId       String?
   managerId         String
   teamName          String?
   title             String
@@ -1111,7 +1109,6 @@ model TeamTarget {
   status            String           @default("ACTIVE")
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  originKPIId       String?
   employeeTargets   EmployeeTarget[]
   departmentKpi     DepartmentKPI    @relation(fields: [departmentKpiId], references: [id], onDelete: Cascade)
 
@@ -1123,6 +1120,8 @@ model EmployeeTarget {
   id                String     @id @default(uuid())
   organizationId    String
   teamTargetId      String
+  originKPIId       String?
+  managerId         String?
   employeeId        String
   title             String
   description       String?
@@ -1134,8 +1133,6 @@ model EmployeeTarget {
   status            String     @default("ACTIVE")
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
-  managerId         String?
-  originKPIId       String?
   teamTarget        TeamTarget @relation(fields: [teamTargetId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, employeeId, measurementPeriod])
@@ -1492,17 +1489,17 @@ model ShiftAttendanceRule {
 }
 
 model TaxRule {
-  id             String    @id @default(uuid())
+  id             String       @id @default(uuid())
   organizationId String
   countryCode    String
   taxType        String
   name           String
-  appliesTo      String?   @default("PAYROLL")
-  isActive       Boolean   @default(true)
+  appliesTo      String?      @default("PAYROLL")
+  isActive       Boolean      @default(true)
   effectiveFrom  DateTime
   effectiveTo    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   brackets       TaxBracket[]
 
   @@index([organizationId, countryCode, taxType, isActive])
@@ -1525,17 +1522,17 @@ model TaxBracket {
 
 model SystemLog {
   id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  type           String?
+  message        String?
   action         String?
   details        String?
+  source         String?
   operatorId     String?
   operatorEmail  String?
   ipAddress      String?
   userAgent      String?
   createdAt      DateTime @default(now())
-  message        String?
-  organizationId String?  @default("default-tenant")
-  source         String?
-  type           String?
 
   @@index([organizationId, createdAt])
   @@index([type, createdAt])
@@ -1624,26 +1621,24 @@ model Lead {
   @@index([createdAt])
 }
 
-// ── Disciplinary & Grievance ───────────────────────────────────────────────
 model DisciplinaryCase {
   id             String    @id @default(uuid())
   organizationId String?   @default("default-tenant")
   employeeId     String
   issuedById     String
-  type           String    // WARNING | FINAL_WARNING | SUSPENSION | DISMISSAL | GRIEVANCE
-  category       String    @default("CONDUCT")  // CONDUCT | PERFORMANCE | ATTENDANCE | POLICY | SAFETY | GRIEVANCE
+  type           String
+  category       String    @default("CONDUCT")
   reason         String
   details        String?
-  evidence       String?   // file URL(s), comma-separated
-  status         String    @default("OPEN")  // OPEN | ACKNOWLEDGED | APPEALED | CLOSED
+  evidence       String?
+  status         String    @default("OPEN")
   outcome        String?
   hearingDate    DateTime?
   resolvedAt     DateTime?
   acknowledgedAt DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-
-  employee       User      @relation("EmployeeDisciplinary",  fields: [employeeId], references: [id], onDelete: Cascade)
+  employee       User      @relation("EmployeeDisciplinary", fields: [employeeId], references: [id], onDelete: Cascade)
   issuedBy       User      @relation("IssuedByDisciplinary", fields: [issuedById], references: [id])
 
   @@index([organizationId, employeeId])
@@ -1651,26 +1646,24 @@ model DisciplinaryCase {
   @@index([organizationId, type])
 }
 
-// ── Policy & Handbook Library ──────────────────────────────────────────────
 model PolicyDocument {
-  id             String                  @id @default(uuid())
-  organizationId String?                 @default("default-tenant")
-  title          String
-  description    String?
-  content        String?                 // Rich text / markdown body
-  fileUrl        String?                 // Optional uploaded PDF
-  category       String                  @default("GENERAL") // GENERAL | HR | IT | SAFETY | FINANCE | CONDUCT
-  version        String                  @default("1.0")
-  status         String                  @default("DRAFT")  // DRAFT | PUBLISHED | ARCHIVED
-  isRequired     Boolean                 @default(true)     // Must employees acknowledge?
-  targetRoles    String?                 // JSON array of roles, null = all
-  publishedAt    DateTime?
-  createdById    String
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @updatedAt
-
-  createdBy      User                    @relation("PolicyCreatedBy", fields: [createdById], references: [id])
+  id              String                 @id @default(uuid())
+  organizationId  String?                @default("default-tenant")
+  title           String
+  description     String?
+  content         String?
+  fileUrl         String?
+  category        String                 @default("GENERAL")
+  version         String                 @default("1.0")
+  status          String                 @default("DRAFT")
+  isRequired      Boolean                @default(true)
+  targetRoles     String?
+  publishedAt     DateTime?
+  createdById     String
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
   acknowledgments PolicyAcknowledgment[]
+  createdBy       User                   @relation("PolicyCreatedBy", fields: [createdById], references: [id])
 
   @@index([organizationId, status])
   @@index([organizationId, category])
@@ -1683,41 +1676,37 @@ model PolicyAcknowledgment {
   employeeId     String
   acknowledgedAt DateTime       @default(now())
   ipAddress      String?
-
-  policy         PolicyDocument @relation(fields: [policyId], references: [id], onDelete: Cascade)
   employee       User           @relation("PolicyAcknowledgedBy", fields: [employeeId], references: [id], onDelete: Cascade)
+  policy         PolicyDocument @relation(fields: [policyId], references: [id], onDelete: Cascade)
 
   @@unique([policyId, employeeId])
   @@index([organizationId, policyId])
   @@index([organizationId, employeeId])
 }
 
-// ── Probation Tracker ──────────────────────────────────────────────────────
 model ProbationRecord {
-  id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
-  employeeId     String   @unique   // One active probation per employee
+  id             String    @id @default(uuid())
+  organizationId String?   @default("default-tenant")
+  employeeId     String    @unique
   startDate      DateTime
-  endDate        DateTime           // Probation end date — basis for reminders
-  period         Int      @default(90)    // days
-  status         String   @default("IN_PROGRESS") // IN_PROGRESS | PASSED | EXTENDED | FAILED
-  reviewDate     DateTime?          // Scheduled review meeting date
+  endDate        DateTime
+  period         Int       @default(90)
+  status         String    @default("IN_PROGRESS")
+  reviewDate     DateTime?
   reviewedById   String?
-  outcome        String?            // Free text outcome
-  goals          String?            // JSON array of probation goals
+  outcome        String?
+  goals          String?
   notes          String?
-  alertSentAt    DateTime?          // Tracks when the near-end alert was sent
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  employee       User     @relation("EmployeeProbation",  fields: [employeeId], references: [id], onDelete: Cascade)
-  reviewedBy     User?    @relation("ProbationReviewer", fields: [reviewedById], references: [id])
+  alertSentAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  employee       User      @relation("EmployeeProbation", fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewedBy     User?     @relation("ProbationReviewer", fields: [reviewedById], references: [id])
 
   @@index([organizationId, status])
   @@index([organizationId, endDate])
 }
 
-// ── API & Integrations ───────────────────────────────────────────────────────
 model ApiKey {
   id             String       @id @default(uuid())
   organizationId String
@@ -1726,7 +1715,6 @@ model ApiKey {
   lastUsedAt     DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
@@ -1736,15 +1724,12 @@ model WebhookSubscription {
   id             String       @id @default(uuid())
   organizationId String
   url            String
-  events         String       // Comma separated list of event types (e.g. EMPLOYEE_CREATED, LEAVE_APPROVED)
+  events         String
   isActive       Boolean      @default(true)
-  secret         String?      // For payload signature verification
+  secret         String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
 }
-
-
