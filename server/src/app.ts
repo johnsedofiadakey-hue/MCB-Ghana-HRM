@@ -72,6 +72,8 @@ import integrationsRoutes from './routes/integrations.routes';
 import botRoutes from './routes/bot.routes';
 import settingsRoutes from './routes/settings.routes';
 import maintenanceRoutes from './routes/maintenance.routes';
+import aiRoutes from './routes/ai.routes';
+import biometricRoutes from './routes/biometric.routes';
 
 // Config already loaded at top level
 
@@ -290,10 +292,7 @@ app.use('/api/hr', hrFeaturesRoutes);
 app.use('/api/public/v1', publicApiRoutes);
 app.use('/api/integrations', integrationsRoutes);
 app.use('/api/bot', aiLimiter, botRoutes);
-import biometricRoutes from './routes/biometric.routes';
 app.use('/api/biometric', biometricRoutes);
-
-import aiRoutes from './routes/ai.routes';
 app.use('/api/ai', aiLimiter, aiRoutes);
 
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
