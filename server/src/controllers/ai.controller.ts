@@ -179,9 +179,10 @@ Always refer to the user by name if appropriate and make them feel like they are
     res.json({ reply: response.text() });
   } catch (err: any) {
     console.error('[Cortex Agent] Critical synchronization fault:', err.stack || err.message);
+    const errorMessage = err.message || 'Unknown error';
     res.status(500).json({ 
       error: 'Elite Intelligence layer experienced a synchronization fault.',
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined 
+      details: errorMessage
     });
   }
 };

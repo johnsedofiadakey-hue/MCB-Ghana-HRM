@@ -86,9 +86,13 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
                 history: messages
             });
             setMessages(prev => [...prev, { role: 'model', text: data.reply }]);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Chat error:', error);
-            setMessages(prev => [...prev, { role: 'model', text: "I'm currently experiencing neural interference. Please try again later." }]);
+            const detail = error.response?.data?.details || error.response?.data?.error || "Connection synchronization error";
+            setMessages(prev => [...prev, { 
+                role: 'model', 
+                text: `I'm currently unable to synchronize with the intelligence layer (${detail}). Please try again shortly.` 
+            }]);
         } finally {
             setIsTyping(false);
         }
