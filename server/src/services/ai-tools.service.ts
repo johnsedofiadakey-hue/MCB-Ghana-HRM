@@ -3,6 +3,7 @@ import prisma from '../prisma/client';
 import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 import { GoogleWorkspaceService } from './workspace.service';
 import { SlackService } from './slack.service';
+import { LeaveService } from './leave.service';
 
 /**
  * AI Tool Registry - Phase 4 Agentic Intelligence
@@ -132,29 +133,18 @@ export const executeTool = async (name: string, args: any, user: any) => {
       };
 
     case 'request_leave':
-      // Safety: Calculate days
-      const start = new Date(args.startDate);
-      const end = new Date(args.endDate);
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-      const newLeave = await prisma.leaveRequest.create({
-        data: {
-          employeeId: user.id,
-          organizationId,
-          leaveType: args.leaveType,
-          startDate: start,
-          endDate: end,
-          leaveDays: diffDays,
-          reason: args.reason || 'Requested via Cortex AI',
-          status: 'PENDING'
-        }
+      const newLeave = await LeaveService.requestLeave(organizationId, user.id, {
+        startDate: args.startDate,
+        endDate: args.endDate,
+        leaveType: args.leaveType,
+        reason: args.reason || 'Requested via Cortex AI',
+        relieverId: args.relieverId || null
       });
       return { 
         status: 'SUCCESS', 
         message: 'Leave request created and pending approval',
         requestId: newLeave.id,
-        days: diffDays 
+        days: newLeave.leaveDays 
       };
 
     case 'schedule_calendar_event':

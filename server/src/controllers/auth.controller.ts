@@ -523,7 +523,7 @@ export const signup = async (req: Request, res: Response) => {
       const user = await tx.user.create({
         data: {
           organizationId: org.id,
-          fullName,
+          fullName: fullName.trim().replace(/\./g, ' '),
           email: normalizedEmail,
           passwordHash,
           role: 'MD',

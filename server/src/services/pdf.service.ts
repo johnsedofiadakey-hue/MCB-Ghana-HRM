@@ -496,7 +496,7 @@ export class PdfExportService {
 
   private static renderPayslipContent(doc: PDFKit.PDFDocument, item: PdfPayslipContent, brandColor: string) {
     const currency = item.currency || 'GHS';
-    const formatAmount = (val: number) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+    const formatAmount = (val: number) => val.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     const headerTop = doc.y;
     doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, headerTop, this.CONTENT_WIDTH, 70).fill();
     doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text(item.employee?.fullName?.toUpperCase() || 'OFFICIAL PAYSLIP', this.SAFE_MARGIN + 15, headerTop + 15);

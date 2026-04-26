@@ -38,9 +38,6 @@ const ITAdmin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets' | 'integrations'>('overview');
@@ -57,15 +54,6 @@ const ITAdmin = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault(); setSaving(true); setError('');
-    try {
-      const res = await api.post('/it/users', form);
-      toast.success(res.data.message || t('it_admin.success_create'));
-      setShowCreate(false); setForm(emptyForm); fetchData();
-    } catch (err: any) { setError(err?.response?.data?.message || t('common.error')); }
-    finally { setSaving(false); }
-  };
 
   const handlePasswordReset = async (userId: string, name: string) => {
     setResettingId(userId);
@@ -105,15 +93,14 @@ const ITAdmin = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic">
-            Identity Hub
+            Identity & System Audit
           </h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <ShieldCheck size={18} className="text-[var(--primary)] opacity-60" />
-            Manage your organization workforce and workforce access nodes.
+            Audit organization workforce nodes and maintain system identity integrity.
           </p>
         </motion.div>
 
-        <div className="flex items-center gap-4">
           <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
              {(['overview', 'accounts', 'assets', 'integrations'] as const).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
@@ -123,13 +110,6 @@ const ITAdmin = () => {
                 </button>
              ))}
           </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus size={18} /> Add New Personnel
-          </motion.button>
         </div>
       </div>
 
@@ -465,81 +445,6 @@ const ITAdmin = () => {
         )}
       </AnimatePresence>
 
-      {/* Identity Modals */}
-      <AnimatePresence>
-        {showCreate && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreate(false)} className="absolute inset-0" />
-                <motion.div 
-                   initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} 
-                   className="nx-card w-full max-w-3xl bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-12 relative max-h-[90vh]"
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
-                  <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Add New Personnel</h2>
-                  
-                  <div className="overflow-y-auto custom-scrollbar flex-grow space-y-10 py-2">
-                     {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
-                     
-                     <form id="create-identity-form" onSubmit={handleCreate} className="space-y-10 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                           {[
-                              { k: 'fullName', l: 'Legal Name *', t: 'text' },
-                              { k: 'email', l: 'Work Email *', t: 'email' },
-                              { k: 'jobTitle', l: 'Job Designation *', t: 'text' },
-                              { k: 'employeeCode', l: 'Staff ID Code', t: 'text' },
-                              { k: 'contactNumber', l: 'Phone Number', t: 'text' },
-                              { k: 'joinDate', l: 'Deployment Date', t: 'date' },
-                           ].map(({ k, l, t }) => (
-                              <div key={k} className="space-y-3">
-                                 <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{l}</label>
-                                 <input type={t} className="nx-input" required={l.includes('*')}
-                                   value={(form as any)[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} />
-                              </div>
-                           ))}
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Access Level</label>
-                              <div className="relative group">
-                                 <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                    <option value="STAFF">Personnel (L40)</option>
-                                    <option value="IT_MANAGER">IT Manager (L85)</option>
-                                    <option value="HR_OFFICER">HR Officer (L85)</option>
-                                    <option value="MANAGER">Global Manager (L70)</option>
-                                    <option value="DIRECTOR">Director (L80)</option>
-                                    <option value="SUPERVISOR">Supervisor (L60)</option>
-                                 </select>
-                                 <Shield size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none opacity-60" />
-                              </div>
-                           </div>
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black text-indigo-500/70 uppercase tracking-[0.2em] ml-2">Secure Password</label>
-                              <div className="relative group">
-                                 <input type="password" className="nx-input border-indigo-500/30 focus:border-indigo-500 bg-indigo-500/5" required value={form.password}
-                                   onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
-                                 <Key size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-indigo-500 pointer-events-none opacity-60" />
-                              </div>
-                           </div>
-                        </div>
-
-                        <div className="flex items-start gap-5 p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-                           <AlertTriangle size={24} className="text-amber-500 flex-shrink-0" />
-                           <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] leading-relaxed">
-                              Warning: This will create a master identity node. Ensure the personnel has completed the required security briefing.
-                           </p>
-                        </div>
-                     </form>
-                  </div>
-                  
-                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
-                     <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Cancel</button>
-                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-identity-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
-                        {saving ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-                        {saving ? 'Saving...' : 'Authorize Personnel'}
-                     </motion.button>
-                  </div>
-                </motion.div>
-              </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

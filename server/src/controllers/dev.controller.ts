@@ -568,7 +568,7 @@ export const provisionClient = async (req: Request, res: Response) => {
       const user = await tx.user.create({
         data: {
           organizationId: org.id,
-          fullName: adminFullName,
+          fullName: adminFullName.trim().replace(/\./g, ' '),
           email: normalizedEmail,
           passwordHash,
           role: 'MD',

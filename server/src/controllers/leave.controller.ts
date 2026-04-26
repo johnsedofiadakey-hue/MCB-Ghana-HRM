@@ -316,15 +316,17 @@ export const processLeave = async (req: Request, res: Response) => {
     if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
       updated = await LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
     } 
-    // 2. Manager / HR Processing (Rank >= 60)
+    // 2. Manager / HR / MD Processing (Rank >= 60)
     else if (rank >= 60) {
-      if (rank >= 85) {
-        // HR/MD (Rank 85+) can move directly to APPROVED
+      if (leave.status === 'MD_REVIEW') {
         updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
-      } else if (leave.status === 'MD_REVIEW' && rank >= 90) {
-        updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
+      } else if (leave.status === 'HR_REVIEW') {
+        updated = await LeaveService.hrValidation(id, actorId, action === 'APPROVE', comment);
       } else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
         updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+      } else if (rank >= 90) {
+        // MD Override for any other processable status
+        updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
       } else {
         return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
       }

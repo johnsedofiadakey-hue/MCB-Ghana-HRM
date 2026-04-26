@@ -24,6 +24,8 @@ const statusConfig: Record<string, { label: string; badge: string; icon: React.E
   MANAGER_REVIEW: { label: 'leave.status.MANAGER_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: Clock, color: 'text-[var(--primary)]' },
   MANAGER_APPROVED: { label: 'leave.status.MANAGER_APPROVED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
   MANAGER_REJECTED: { label: 'leave.status.MANAGER_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
+  HR_REVIEW: { label: 'leave.status.HR_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
+  HR_REJECTED: { label: 'leave.status.HR_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
   MD_REVIEW: { label: 'leave.status.MD_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
   APPROVED: { label: 'leave.status.APPROVED', badge: 'bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10', icon: CheckCircle, color: 'text-[var(--success)]' },
   MD_REJECTED: { label: 'leave.status.MD_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
@@ -248,7 +250,10 @@ const Leave = () => {
   };
 
   const handleReviewAction = async (leaveId: string, approve: boolean) => {
-    const role = userRank >= 90 ? 'MD' : 'MANAGER';
+    let role = 'MANAGER';
+    if (userRank >= 90) role = 'MD';
+    else if (userRank >= 85) role = 'HR';
+    
     let comment = approve ? t('leave.system_verification', { role }) : '';
 
     if (!approve) {
@@ -590,9 +595,10 @@ const Leave = () => {
                                         >
                                            <Printer size={18} />
                                         </button>
-                                         {((userRank >= 80 && leave.status === 'MD_REVIEW') || 
-                                            (userRank >= 60 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED' || (leave.status === 'SUBMITTED' && !leave.relieverAcceptanceRequired))) ||
-                                            (userRank >= 80 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED'))) ? (
+                                         {((userRank >= 90 && ['MD_REVIEW', 'HR_REVIEW', 'MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) || 
+                                            (userRank >= 85 && ['HR_REVIEW', 'MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) ||
+                                            (userRank >= 60 && ['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status))) && 
+                                            !(leave.relieverAcceptanceRequired && leave.status === 'SUBMITTED') ? (
                                             <>
                                               <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-[var(--success)]/5 text-[var(--success)] border border-[var(--success)]/10 flex items-center justify-center hover:bg-[var(--success)] hover:text-white transition-all shadow-lg active:scale-90" title={t('common.approve')}><CheckCircle size={18} /></button>
                                               <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/10 flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all shadow-lg active:scale-90" title={t('common.reject')}><XCircle size={18} /></button>
@@ -601,7 +607,11 @@ const Leave = () => {
                                             <div className="px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/30 flex items-center gap-2">
                                                <Clock size={12} className="text-[var(--text-muted)] animate-pulse" /> 
                                                <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
-                                                  {leave.status === 'SUBMITTED' ? t('leave.awaiting_handover') : t('leave.final_review')}
+                                                  {leave.status === 'SUBMITTED' ? t('leave.awaiting_handover') : 
+                                                   leave.status === 'MANAGER_REVIEW' ? t('leave.status.MANAGER_REVIEW') :
+                                                   leave.status === 'HR_REVIEW' ? t('leave.status.HR_REVIEW') :
+                                                   leave.status === 'MD_REVIEW' ? t('leave.status.MD_REVIEW') :
+                                                   t('leave.final_review')}
                                                </span>
                                             </div>
                                           )}

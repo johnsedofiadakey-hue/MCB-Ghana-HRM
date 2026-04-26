@@ -209,15 +209,36 @@ export const approvePayrollRun = async (organizationId: string, runId: string, a
     throw new Error('Run is not in an approvable state');
   }
 
-  // Multi-stage transitions
+  // Multi-stage transitions with specific field tracking
   let nextStatus = 'APPROVED';
-  if (run.status === 'DRAFT') nextStatus = 'PENDING_HR';
-  else if (run.status === 'PENDING_HR') nextStatus = 'PENDING_MD';
-  else if (run.status === 'PENDING_MD') nextStatus = 'APPROVED';
+  let updateData: any = { status: '' };
+
+  if (run.status === 'DRAFT') {
+    nextStatus = 'PENDING_HR';
+    updateData = { 
+        status: nextStatus, 
+        reviewedById: approverId, 
+        reviewedAt: new Date() 
+    };
+  } else if (run.status === 'PENDING_HR') {
+    nextStatus = 'PENDING_MD';
+    updateData = { 
+        status: nextStatus, 
+        approvedById: approverId, 
+        approvedAt: new Date() 
+    };
+  } else if (run.status === 'PENDING_MD') {
+    nextStatus = 'APPROVED';
+    updateData = { 
+        status: nextStatus, 
+        mdApprovedById: approverId, 
+        mdApprovedAt: new Date() 
+    };
+  }
 
   await prisma.payrollRun.updateMany({
     where: { id: runId, organizationId },
-    data: { status: nextStatus, approvedBy: approverId, approvedAt: new Date() }
+    data: updateData
   });
 
   // Only finalize deductions and send emails if moving to APPROVED

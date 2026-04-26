@@ -195,10 +195,6 @@ const Dashboard = () => {
               <Download size={14} />
               <span>{t('dashboard.export_report')}</span>
             </button>
-            <button className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] shadow-xl shadow-[var(--primary)]/20 text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
-              <Calendar size={14} />
-              <span>{t('dashboard.launch_review')}</span>
-            </button>
           </motion.div>
         )}
       </div>

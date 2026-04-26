@@ -91,7 +91,7 @@ export const createUser = async (organizationId: string, data: {
         data: {
             organizationId,
             email: safeData.email.trim(),
-            fullName: safeData.fullName.trim(),
+            fullName: safeData.fullName.trim().replace(/\./g, ' '),
             role: safeData.role || 'STAFF',
             departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? null),
             jobTitle: safeData.jobTitle.trim(),
@@ -253,6 +253,10 @@ export const updateUser = async (
         });
         if (existingEmail) throw new Error('Another user with this email already exists.');
         safeData.email = email;
+    }
+
+    if (safeData.fullName) {
+        safeData.fullName = safeData.fullName.trim().replace(/\./g, ' ');
     }
 
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);

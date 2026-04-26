@@ -14,16 +14,13 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 const Appraisals: React.FC = () => {
   const { t } = useTranslation();
   const [packets, setPackets] = useState<any[]>([]);
-  const [finalPackets, setFinalPackets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingFinal, setLoadingFinal] = useState(false);
   const navigate = useNavigate();
   const user = getStoredUser();
   const rank = getRankFromRole(user?.role);
 
   useEffect(() => { 
     fetchPackets(); 
-    if (rank >= 90) fetchFinalPackets();
   }, []);
 
   const fetchPackets = async () => {
@@ -35,18 +32,6 @@ const Appraisals: React.FC = () => {
       toast.error(t('appraisals.sync_error'));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchFinalPackets = async () => {
-    try {
-      setLoadingFinal(true);
-      const res = await api.get('/appraisals/final-verdict-list');
-      setFinalPackets(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      console.error('Failed to fetch final verdict list');
-    } finally {
-      setLoadingFinal(false);
     }
   };
 
@@ -66,83 +51,16 @@ const Appraisals: React.FC = () => {
           icon={Award}
           variant="purple"
         />
-
-        {rank >= 90 && (
-          <motion.button 
-            whileHover={{ scale: 1.05 }} 
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/reviews/cycles')}
-            className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs flex-shrink-0"
-          >
-            <Plus size={18} /> {t('appraisals.initiate_cycle')}
-          </motion.button>
-        )}
       </div>
       
-      {rank >= 90 && (
-        <section className="space-y-6">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-[var(--warning)]/10 flex items-center justify-center text-[var(--warning)] border border-[var(--warning)]/20">
-                < Award size={20} />
-             </div>
-             <div>
-                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Approval Queue</h2>
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Appraisal packets awaiting final review</p>
-             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence mode="popLayout">
-               {finalPackets.length > 0 ? (
-                 finalPackets.map((packet) => (
-                   <motion.div
-                     key={`final-${packet.id}`}
-                     layout
-                     initial={{ opacity: 0, scale: 0.95 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     onClick={() => navigate(`/reviews/packet/${packet.id}`)}
-                     className="nx-card p-6 cursor-pointer group hover:border-[var(--warning)]/30 bg-[var(--warning)]/5 border-[var(--warning)]/10 transition-all relative overflow-hidden"
-                   >
-                     <div className="absolute top-0 right-0 p-3 bg-[var(--warning)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">FINAL VERDICT PENDING</div>
-                     
-                     <div className="flex items-center gap-4 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-[var(--warning)]/20">
-                           {packet.employee?.avatarUrl ? (
-                             <img src={packet.employee.avatarUrl} className="w-full h-full object-cover rounded-xl" />
-                           ) : (
-                             <div className="w-full h-full flex items-center justify-center font-black text-[var(--warning)]">{packet.employee?.fullName?.[0]}</div>
-                           )}
-                        </div>
-                       <div>
-                          <p className="text-sm font-black text-[var(--text-primary)]">{packet.employee?.fullName}</p>
-                          <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{packet.cycle?.title}</p>
-                       </div>
-                     </div>
-
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-[var(--warning)] transition-colors">
-                         <span>Open Final Review</span>
-                         <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                      </div>
-                   </motion.div>
-                 ))
-               ) : !loadingFinal && (
-                 <div className="col-span-full p-12 rounded-[2.5rem] bg-[var(--bg-elevated)] border border-dashed border-[var(--border-subtle)] text-center">
-                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">The queue is clear. No reviews require final approval.</p>
-                 </div>
-               )}
-            </AnimatePresence>
-          </div>
-        </section>
-      )}
-
       <div className="space-y-6 pt-8 border-t border-[var(--border-subtle)]">
          <div className="flex items-center gap-3">
              <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] border border-[var(--primary)]/20">
                 <ClipboardCheck size={20} />
              </div>
              <div>
-                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Staff Reviews</h2>
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Reviews related to your role</p>
+                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">My Appraisal Record</h2>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">View and complete your self-assessments</p>
              </div>
           </div>
 
@@ -195,15 +113,9 @@ const Appraisals: React.FC = () => {
           ) : (
             <div className="col-span-full">
               <EmptyState
-                title={rank >= 80 ? t('appraisals.no_active_admin') : t('appraisals.no_active_title')}
-                description={rank >= 80 
-                  ? t('appraisals.no_active_admin_desc')
-                  : t('appraisals.no_active_desc')}
+                title={t('appraisals.no_active_title')}
+                description={t('appraisals.no_active_desc')}
                 icon={Award}
-                action={rank >= 90 ? {
-                  label: t('appraisals.initiate_primary'),
-                  onClick: () => navigate('/reviews/cycles')
-                } : undefined}
               />
             </div>
           )}

@@ -5,9 +5,10 @@ import { getRoleRank } from '../middleware/auth.middleware';
 import { getEffectiveLeaveMetrics, canBorrowLeave } from '../utils/leave.utils';
 
 /**
- * Leave Statuses (V3):
+ * Leave Statuses (V4 - Ghana Compliance):
  * DRAFT, SUBMITTED, RELIEVER_ACCEPTED, RELIEVER_DECLINED, 
  * MANAGER_REVIEW, MANAGER_APPROVED, MANAGER_REJECTED, 
+ * HR_REVIEW, HR_REJECTED,
  * MD_REVIEW, APPROVED, MD_REJECTED, CANCELLED
  */
 
@@ -21,24 +22,51 @@ export class LeaveService {
     
     const start = new Date(startDate);
     const end = new Date(endDate);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    if (start < today) throw new Error('Cannot request leave for a past date.');
+    if (end < start) throw new Error('End date cannot be earlier than start date.');
+
+    // 1. DUPLICATE CHECK: Prevent overlapping requests for the SAME user
+    const userOverlap = await prisma.leaveRequest.findFirst({
+      where: {
+        employeeId,
+        status: { notIn: ['CANCELLED', 'MANAGER_REJECTED', 'HR_REJECTED', 'MD_REJECTED'] },
+        OR: [
+          { startDate: { lte: end }, endDate: { gte: start } }
+        ]
+      }
+    });
+    if (userOverlap) {
+      throw new Error(`You already have a leave request (${userOverlap.status}) that overlaps with these dates (${userOverlap.startDate.toLocaleDateString()} - ${userOverlap.endDate.toLocaleDateString()}).`);
+    }
+
+    // 2. CONCURRENCY AUDIT: Check if department exceeds 20% threshold
+    const user = await prisma.user.findUnique({ 
+      where: { id: employeeId },
+      include: { organization: { select: { defaultLeaveAllowance: true } } }
+    });
+    if (!user) throw new Error('User not found');
+
+    if (user.departmentId) {
+        const audit = await this.checkLeaveOverlap(organizationId, user.departmentId, start, end);
+        if (audit.warning) {
+            console.warn(`[LeaveService] Concurrency Warning: ${audit.message}`);
+        }
+    }
     
     // Check for public holidays and weekends
     const holidays = await prisma.publicHoliday.findMany({
       where: { 
         OR: [
           { date: { gte: start, lte: end } },
-          { isRecurring: true } // Simplified check for recurring
+          { isRecurring: true } 
         ]
       }
     });
 
     const leaveDays = this.calculateWorkingDaysWithHolidays(start, end, holidays);
-
-    const user = await prisma.user.findUnique({ 
-      where: { id: employeeId },
-      include: { organization: { select: { defaultLeaveAllowance: true } } }
-    });
-    if (!user) throw new Error('User not found');
     
     const metrics = getEffectiveLeaveMetrics(user);
 
@@ -53,7 +81,7 @@ export class LeaveService {
     if (availableBalance < leaveDays) {
       const allowedToBorrow = canBorrowLeave(user, leaveDays, availableBalance);
       if (!allowedToBorrow) {
-        throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Borrowing is either disabled or you've exceeded the limit. Available: ${availableBalance}, Needed: ${leaveDays}`);
+        throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
       }
     }
 
@@ -67,6 +95,7 @@ export class LeaveService {
         endDate: end,
         leaveDays,
         reason,
+        leaveType: leaveType || 'Annual',
         relieverId: relieverId || null,
         handoverNotes: handoverNotes || null,
         relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
@@ -75,11 +104,11 @@ export class LeaveService {
     });
 
     if (relieverId) {
-      const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}${handoverNotes.length > 100 ? '...' : ''}` : '';
+      const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}` : '';
       await notify(relieverId, '🤝 Handover Request', 
         `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
     } else if (user.supervisorId) {
-      await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
+      await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/leave');
     }
 
     return leave;
@@ -117,7 +146,6 @@ export class LeaveService {
       });
 
       if (accept) {
-        // Create permanent Handover Register record for auditing
         await tx.handoverRecord.create({
           data: {
             organizationId: leave.organizationId || 'default-tenant',
@@ -131,14 +159,13 @@ export class LeaveService {
 
         if (leave.employee.supervisorId) {
           await notify(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', 
-            `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
+            `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted.`, 'INFO', '/leave');
         }
       }
 
-      // Notify employee
       await notify(leave.employeeId, 
         accept ? '✅ Reliever Accepted' : '❌ Reliever Declined',
-        `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request for leave starting ${leave.startDate.toLocaleDateString()}.`,
+        `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request.`,
         accept ? 'SUCCESS' : 'WARNING',
         '/leave'
       );
@@ -147,6 +174,10 @@ export class LeaveService {
     });
   }
 
+  /**
+   * Step 1: Supervisor/Line Manager Review
+   * Moves to HR_REVIEW if approved.
+   */
   static async managerReview(leaveId: string, managerId: string, approve: boolean, comment?: string) {
     const leave = await prisma.leaveRequest.findUnique({
       where: { id: leaveId },
@@ -154,11 +185,10 @@ export class LeaveService {
     });
 
     if (!leave) throw new Error('Leave request not found');
-    if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED' && leave.status !== 'SUBMITTED') {
+    if (!['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) {
       throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
     }
 
-    // ── L1 FIX: Enforce reliever acceptance if required ──────────────────────
     if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
       throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
     }
@@ -167,26 +197,19 @@ export class LeaveService {
     if (!actor) throw new Error('Reviewer account not found');
 
     const rank = getRoleRank(actor.role);
-
-    // Step 1: Manager Review logic:
-    // 1. Primary Manager (supervisorId)
-    // 2. Any Manager (Rank >= 70) in the SAME department
-    // 3. Any high-rank (Rank >= 75) or HR override
     const isPrimaryManager = leave.employee.supervisorId === managerId;
     const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
-    const isHighRank = rank >= 75; // HR (75), Director (80), MD (90)
+    const isHRorHigher = rank >= 75; 
 
-    if (!isPrimaryManager && !isDeptManager && !isHighRank) {
-      throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
+    if (!isPrimaryManager && !isDeptManager && !isHRorHigher) {
+      throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor or a department manager.');
     }
 
     if (!approve && (!comment || comment.trim().length < 3)) {
       throw new Error('Please provide a reason for rejecting this leave request.');
     }
 
-    const employeeRank = getRoleRank(leave.employee.role);
-    const isManager = employeeRank >= 70;
-    const nextStatus = approve ? (isManager ? 'APPROVED' : 'MD_REVIEW') : 'MANAGER_REJECTED'; 
+    const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED'; 
 
     const updated = await prisma.leaveRequest.update({
       where: { id: leaveId },
@@ -194,36 +217,87 @@ export class LeaveService {
         status: nextStatus as any,
         managerComment: comment,
         managerId: managerId,
-        // If it's a manager's leave becoming approved, we also set MD fields to handle the terminal state
-        ...(approve && isManager && { 
-          hrReviewerId: managerId,
-          hrComment: 'Manager self-service / Single-level approval'
-        })
       }
     });
-
-    if (approve && isManager) {
-      // Atomic balance deduction for manager leave
-      const metrics = getEffectiveLeaveMetrics(leave.employee);
-      const newBalance = metrics.balance - Number(leave.leaveDays || 0);
-      await prisma.user.update({
-        where: { id: leave.employeeId },
-        data: { leaveBalance: newBalance }
-      });
-    }
 
     await notify(leave.employeeId, 
       approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected',
       approve 
-        ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`
+        ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to HR for validation.`
         : `Management has rejected your leave request. Reason: ${comment}`,
       approve ? 'INFO' : 'ERROR',
+      '/leave'
+    );
+
+    // Notify HR
+    if (approve) {
+        // Broad notification to HR personnel
+        const hrUsers = await prisma.user.findMany({
+            where: { organizationId: leave.organizationId, role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'SUPER_ADMIN'] }, isArchived: false },
+            select: { id: true }
+        });
+        for (const hr of hrUsers) {
+            await notify(hr.id, '📋 Leave Pending HR Validation', `${leave.employee.fullName} needs HR sign-off.`, 'INFO', '/leave');
+        }
+    }
+
+    return updated;
+  }
+
+  /**
+   * Step 2: HR Validation
+   * Moves to MD_REVIEW if validated.
+   */
+  static async hrValidation(leaveId: string, hrId: string, approve: boolean, comment?: string) {
+    const leave = await prisma.leaveRequest.findUnique({
+      where: { id: leaveId },
+      include: { employee: true }
+    });
+
+    if (!leave) throw new Error('Leave request not found');
+    if (leave.status !== 'HR_REVIEW') {
+      throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. It must be in HR_REVIEW.`);
+    }
+
+    const actor = await prisma.user.findUnique({ where: { id: hrId } });
+    if (!actor) throw new Error('Reviewer account not found');
+
+    const rank = getRoleRank(actor.role);
+    if (rank < 85) {
+      throw new Error('Unauthorized for HR Validation. This action is reserved for HR Managers/Officers (Rank 85+).');
+    }
+
+    if (!approve && (!comment || comment.trim().length < 3)) {
+      throw new Error('A rejection reason is required for the HR audit trail.');
+    }
+
+    const nextStatus = approve ? 'MD_REVIEW' : 'HR_REJECTED';
+
+    const updated = await prisma.leaveRequest.update({
+      where: { id: leaveId },
+      data: {
+        status: nextStatus as any,
+        hrReviewerId: hrId,
+        hrComment: comment || 'Validated by HR'
+      }
+    });
+
+    await notify(leave.employeeId, 
+      approve ? '🛡️ HR Validated' : '❌ HR Rejected',
+      approve 
+        ? `HR has validated your leave request. It now moves to the MD for final institutional approval.`
+        : `HR has rejected your leave validation. Reason: ${comment}`,
+      approve ? 'SUCCESS' : 'ERROR',
       '/leave'
     );
 
     return updated;
   }
 
+  /**
+   * Step 3: Final MD Approval
+   * Moves to APPROVED.
+   */
   static async mdFinalReview(leaveId: string, mdId: string, approve: boolean, comment?: string) {
     const leave = await prisma.leaveRequest.findUnique({
       where: { id: leaveId },
@@ -231,33 +305,20 @@ export class LeaveService {
     });
 
     if (!leave) throw new Error('Leave request not found');
-    if (!leave) throw new Error('Leave request not found');
     
-    const intermediateStages = ['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED', 'MANAGER_APPROVED'];
-    const isAtCorrectStage = leave.status === 'MD_REVIEW' || (approve && intermediateStages.includes(leave.status));
+    // MD can approve if it's in MD_REVIEW, or bypass HR if they are rank 90+
+    const canProcess = leave.status === 'MD_REVIEW' || (getRoleRank((await prisma.user.findUnique({ where: { id: mdId } }))?.role) >= 90);
     
-    if (!isAtCorrectStage) {
+    if (!canProcess) {
         throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
     }
 
-    const actor = await prisma.user.findUnique({ 
-      where: { id: mdId },
-      include: {
-        managedReportingLines: {
-          where: { employeeId: leave.employeeId, type: 'DOTTED', effectiveTo: null }
-        }
-      }
-    });
+    const actor = await prisma.user.findUnique({ where: { id: mdId } });
     if (!actor) throw new Error('Reviewer account not found');
 
     const rank = getRoleRank(actor.role);
-
-    // Step 2: Final MD Review logic:
-    // Reserved for high-rank administrators (Director level / MD)
-    const isHighRank = rank >= 80;
-
-    if (!isHighRank) {
-       throw new Error('Unauthorized for Final Sign-off. This action is reserved for high-rank administrators (MD/Director).');
+    if (rank < 90) {
+       throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director or Director (Rank 90+).');
     }
 
     if (!approve && (!comment || comment.trim().length < 3)) {
@@ -271,20 +332,14 @@ export class LeaveService {
         where: { id: leaveId },
         data: {
           status: nextStatus as any,
-          hrComment: comment,
+          hrComment: comment || leave.hrComment || 'Final Approval by MD',
           hrReviewerId: mdId,
-          // Clear any intermediate comments if we are bypassing
-          ...(approve && leave.status !== 'MD_REVIEW' && {
-            managerComment: comment || 'Direct HR/MD Approval Override'
-          })
         }
       });
 
       if (approve) {
-        // Atomic balance deduction with inheritance support
         const user = await tx.user.findUnique({ 
           where: { id: leave.employeeId },
-          include: { organization: { select: { defaultLeaveAllowance: true } } }
         });
         if (user) {
           const metrics = getEffectiveLeaveMetrics(user);
@@ -298,9 +353,9 @@ export class LeaveService {
       }
 
       await notify(leave.employeeId, 
-        approve ? '🎉 Leave Fully Approved by MD' : '❌ MD Rejected',
+        approve ? '🎉 Leave Fully Approved' : '❌ MD Rejected',
         approve 
-          ? `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`
+          ? `Your leave has been finalized and approved by the Managing Director (${actor.fullName}).`
           : `Managing Director has rejected your leave request. Reason: ${comment}`,
         approve ? 'SUCCESS' : 'ERROR',
         '/leave'
@@ -310,9 +365,6 @@ export class LeaveService {
     });
   }
 
-  /**
-   * Check if department leave concurrency exceeds 20%
-   */
   static async checkLeaveOverlap(organizationId: string, departmentId: number, startDate: Date, endDate: Date) {
     const totalStaff = await prisma.user.count({
       where: { organizationId, departmentId, status: 'ACTIVE', isArchived: false }
@@ -320,7 +372,6 @@ export class LeaveService {
 
     if (totalStaff === 0) return { warning: false };
 
-    // Find overlapping approved leaves
     const overlapping = await prisma.leaveRequest.count({
       where: {
         organizationId,
@@ -337,7 +388,7 @@ export class LeaveService {
     if (ratio > 0.20) {
       return {
         warning: true,
-        message: `Warning: This request will result in ${Math.round(ratio * 100)}% of your department being on leave simultaneously. This exceeds the 20% recommended threshold.`,
+        message: `Warning: This request will result in ${Math.round(ratio * 100)}% of your department being on leave simultaneously.`,
         ratio: ratio
       };
     }
@@ -347,7 +398,6 @@ export class LeaveService {
 
   private static calculateWorkingDaysWithHolidays(start: Date, end: Date, holidays: any[]): number {
     let count = 0;
-    // Use UTC to avoid local timezone shifts during day iteration
     const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
     const fin = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
 
@@ -357,12 +407,10 @@ export class LeaveService {
     }));
 
     while (cur <= fin) {
-      const d = cur.getUTCDay(); // 0=Sun, 6=Sat
+      const d = cur.getUTCDay(); 
       const dateStr = cur.toISOString().split('T')[0];
-      
       const isWeekend = (d === 0 || d === 6);
       const isHoliday = holidaySet.has(dateStr);
-
       if (!isWeekend && !isHoliday) count++;
       cur.setUTCDate(cur.getUTCDate() + 1);
     }

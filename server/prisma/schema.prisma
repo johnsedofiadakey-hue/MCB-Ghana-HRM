@@ -760,8 +760,12 @@ model PayrollRun {
   status         String        @default("DRAFT")
   totalGross     Decimal       @default(0)
   totalNet       Decimal       @default(0)
-  approvedBy     String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  approvedById   String?       // Director/HR Manager final sign-off
   approvedAt     DateTime?
+  mdApprovedById String?       // Managing Director final seal
+  mdApprovedAt   DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   items          PayrollItem[]
