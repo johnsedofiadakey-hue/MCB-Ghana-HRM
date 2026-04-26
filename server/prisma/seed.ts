@@ -29,60 +29,89 @@ async function main() {
   });
 
   // 2. ORGANIZATION & BRANDING
-  console.log('🏢 Synchronizing Initial Organization...');
+  console.log('🏢 Synchronizing MC Bauchemie Ghana Organization...');
   const org = await prisma.organization.upsert({
-    where: { id: 'default-tenant' },
+    where: { id: 'mcb-ghana-tenant' },
     update: {},
     create: {
-      id: 'default-tenant',
-      name: 'MC Bauchemie Personnel',
-      email: 'owner@mcbauchemie.com',
-      subscriptionPlan: 'PRO',
+      id: 'mcb-ghana-tenant',
+      name: 'MC Bauchemie Ghana',
+      email: 'hr@mc-bauchemie.com.gh',
+      subscriptionPlan: 'ENTERPRISE',
       billingStatus: 'ACTIVE',
-      primaryColor: '#6366f1',
+      primaryColor: '#e11d48', // MCB Crimson
       themePreset: 'premium-monolith',
     },
   });
 
-  // 3. SYSTEM SETTINGS
-  console.log('⚙️ Synchronizing System Settings...');
-  const settings = await prisma.systemSettings.findFirst({
-    where: { organizationId: org.id }
-  });
+  // 3. DEPARTMENTS
+  console.log('📂 Synchronizing Departments...');
+  const depts = [
+    { name: 'Production & Manufacturing' },
+    { name: 'Logistics & Supply Chain' },
+    { name: 'Quality Control' },
+    { name: 'Sales & Marketing' },
+    { name: 'HR & Administration' },
+  ];
 
-  if (!settings) {
-    await prisma.systemSettings.create({
-      data: {
+  const deptMap: Record<string, any> = {};
+  for (const d of depts) {
+    deptMap[d.name] = await prisma.department.upsert({
+      where: { name_organizationId: { organizationId: org.id, name: d.name } },
+      update: {},
+      create: {
         organizationId: org.id,
-        loginSubtitle: 'Powered by MC Bauchemie Personnel Operations Center.',
-        loginBullets: JSON.stringify([
-          'Complete Employee Lifecycle Management',
-          'Advanced KPI & Performance Tracking',
-          'Global Payroll & Compliance',
-          'Asset & Document Security',
-        ]),
-      },
+        name: d.name,
+      }
     });
   }
 
   // 4. MD ACCOUNT
   console.log('👤 Synchronizing Managing Director (MD)...');
+  const mdPasswordHashFixed = await hash('unlockme');
   await prisma.user.upsert({
-    where: { email: 'md@nexus.com' },
+    where: { email: 'md@mcbauchemie.com' },
     update: {},
     create: {
-      fullName: 'Managing Director',
-      email: 'md@nexus.com',
-      passwordHash: mdPasswordHash,
+      fullName: 'Regional Director',
+      email: 'md@mcbauchemie.com',
+      passwordHash: mdPasswordHashFixed,
       jobTitle: 'Managing Director',
       role: 'MD',
-      employeeCode: 'EMP-001',
+      employeeCode: 'MCB-MD-001',
       organizationId: org.id,
+      departmentId: deptMap['HR & Administration'].id,
     },
   });
 
-  // 5. OFFBOARDING TEMPLATES (Staff Leaving)
-  console.log('📋 Synchronizing Offboarding Templates (Staff Leaving)...');
+  // 5. SAMPLE EMPLOYEES
+  console.log('👥 Synchronizing Sample Personnel...');
+  const employees = [
+    { name: 'Kwame Mensah', email: 'kwame.mensah@mc-bauchemie.com.gh', role: 'STAFF', title: 'Production Supervisor', dept: 'Production & Manufacturing' },
+    { name: 'Ama Serwaa', email: 'ama.serwaa@mc-bauchemie.com.gh', role: 'MANAGER', title: 'Logistics Manager', dept: 'Logistics & Supply Chain' },
+    { name: 'Kofi Arhin', email: 'kofi.arhin@mc-bauchemie.com.gh', role: 'STAFF', title: 'QC Analyst', dept: 'Quality Control' },
+  ];
+
+  for (const emp of employees) {
+    await prisma.user.upsert({
+      where: { email: emp.email },
+      update: {},
+      create: {
+        fullName: emp.name,
+        email: emp.email,
+        passwordHash: devPasswordHash, // Use dev password for all sample users
+        jobTitle: emp.title,
+        role: emp.role as any,
+        status: 'ACTIVE',
+        employeeCode: `MCB-${emp.dept}-${Math.floor(Math.random() * 900) + 100}`,
+        organizationId: org.id,
+        departmentId: deptMap[emp.dept].id,
+      },
+    });
+  }
+
+  // 6. OFFBOARDING TEMPLATES
+  console.log('📋 Synchronizing Offboarding Templates...');
   const templates = [
     {
       name: 'Standard Employee Exit',

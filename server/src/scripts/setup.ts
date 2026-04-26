@@ -18,14 +18,10 @@ const SALT_ROUNDS = 12;
 
 const DEFAULT_ACCOUNTS = [
   { email: 'johnsedofiadakey@gmail.com', password: 'unlockme',      role: 'DEV',         fullName: 'John Sedofiadakey',   jobTitle: 'System Architect' },
-  { email: 'md@nexus.com',          password: 'MD@Nexus2025!',         role: 'MD',          fullName: 'Managing Director',  jobTitle: 'Managing Director' },
-  { email: 'director@nexus.com',    password: 'Director@Nexus2025!',   role: 'DIRECTOR',    fullName: 'Operations Director',jobTitle: 'Director of Operations' },
-  { email: 'hr@nexus.com',          password: 'HR@Nexus2025!',         role: 'HR_OFFICER',  fullName: 'Head of Human Resources', jobTitle: 'HR Manager' },
-  { email: 'it@nexus.com',          password: 'IT@Nexus2025!',         role: 'IT_MANAGER',  fullName: 'System IT Manager',      jobTitle: 'IT Manager' },
-  { email: 'manager@nexus.com',     password: 'Manager@Nexus2025!',    role: 'MANAGER',     fullName: 'Department Manager', jobTitle: 'Department Manager' },
-  { email: 'mid@nexus.com',         password: 'Mid@Nexus2025!',        role: 'SUPERVISOR',  fullName: 'Team Lead',          jobTitle: 'Team Lead' },
-  { email: 'staff@nexus.com',       password: 'Staff@Nexus2025!',      role: 'STAFF',       fullName: 'Staff Member',       jobTitle: 'Senior Staff' },
-  { email: 'casual@nexus.com',      password: 'Casual@Nexus2025!',     role: 'CASUAL',      fullName: 'Casual Worker',      jobTitle: 'Casual Employee' },
+  { email: 'md@mcbauchemie.com', password: 'unlockme',      role: 'MD',          fullName: 'Regional Director',  jobTitle: 'Managing Director' },
+  { email: 'director@mc-bauchemie.com.gh', password: 'Director@MCB2026!', role: 'DIRECTOR', fullName: 'Operations Director', jobTitle: 'Director of Operations' },
+  { email: 'hr@mc-bauchemie.com.gh', password: 'HR@MCB2026!',      role: 'HR_OFFICER',  fullName: 'Head of Human Resources', jobTitle: 'HR Manager' },
+  { email: 'it@mc-bauchemie.com.gh', password: 'IT@MCB2026!',      role: 'IT_MANAGER',  fullName: 'System IT Manager',      jobTitle: 'IT Manager' },
 ];
 
 async function setup() {
@@ -37,7 +33,7 @@ async function setup() {
     update: {},
     create: {
       id: 'default-tenant',
-      name: 'Nexus HR Platform Default',
+      name: 'MC Bauchemie Ghana',
       email: 'admin@nexus.com',
       currency: 'GHS',
       subscriptionPlan: 'PRO',
@@ -141,25 +137,23 @@ async function setup() {
     await prisma.user.update({ where: { id: casual.id }, data: { departmentId: firstDeptId } });
   }
 
-  // ── 7. Sample Guinea Public Holidays 2026 ─────────────────────────────────
+  // ── 7. Ghana Public Holidays 2026 ───────────────────────────────────────
   const holidays2026 = [
     { name: "New Year's Day", date: new Date('2026-01-01') },
-    { name: "Lailat al-Qadr", date: new Date('2026-03-17') },
-    { name: "Eid al-Fitr (Korité)", date: new Date('2026-03-20') },
+    { name: "Constitution Day", date: new Date('2026-01-07') },
+    { name: "Independence Day", date: new Date('2026-03-06') },
+    { name: "Good Friday", date: new Date('2026-04-03') },
     { name: "Easter Monday", date: new Date('2026-04-06') },
-    { name: "Labour Day", date: new Date('2026-05-01') },
-    { name: "Africa Day", date: new Date('2026-05-25') },
-    { name: "Eid al-Adha (Tabaski)", date: new Date('2026-05-27') },
-    { name: "Eid al-Adha Day 2", date: new Date('2026-05-28') },
-    { name: "Assumption of Mary", date: new Date('2026-08-15') },
-    { name: "The Prophet's Birthday", date: new Date('2026-08-25') },
-    { name: "Independence Day", date: new Date('2026-10-02') },
-    { name: "All Saints' Day", date: new Date('2026-11-01') },
+    { name: "May Day", date: new Date('2026-05-01') },
+    { name: "Founders' Day", date: new Date('2026-08-04') },
+    { name: "Kwame Nkrumah Memorial Day", date: new Date('2026-09-21') },
+    { name: "Farmer's Day", date: new Date('2026-12-04') },
     { name: "Christmas Day", date: new Date('2026-12-25') },
+    { name: "Boxing Day", date: new Date('2026-12-26') },
   ];
 
   for (const h of holidays2026) {
-    const holidayId = `gn-2026-${h.date.getMonth() + 1}-${h.date.getDate()}`;
+    const holidayId = `gh-2026-${h.date.getMonth() + 1}-${h.date.getDate()}`;
     await (prisma as any).publicHoliday.upsert({
       where: { id: holidayId },
       update: {},
@@ -168,7 +162,7 @@ async function setup() {
         organizationId: 'default-tenant',
         name: h.name,
         date: h.date,
-        country: 'GN',
+        country: 'GH',
         year: 2026,
         isRecurring: false,
       },
@@ -176,7 +170,7 @@ async function setup() {
       // ignore duplicate if already exists
     });
   }
-  console.log('✅ Guinea national holidays 2026 seeded');
+  console.log('✅ Ghana national holidays 2026 seeded');
 
   // ── 8. Sample Target for demonstration ───────────────────────────────────
   if (md && staff) {

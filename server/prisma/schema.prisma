@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -692,7 +692,7 @@ model Organization {
   textInverse            String?               @default("#ffffff")
   warningColor           String?               @default("#f59e0b")
   employerSsnitRate      Decimal               @default(0.13)
-  payeBands              Json?                 @default("[{\"rate\": 0, \"limit\": 490}, {\"rate\": 0.05, \"limit\": 110}, {\"rate\": 0.10, \"limit\": 130}, {\"rate\": 0.175, \"limit\": 3166.67}, {\"rate\": 0.25, \"limit\": 16000}, {\"rate\": 0.30, \"limit\": 30520}, {\"rate\": 0.35, \"limit\": 999999999}]")
+  payeBands              String?               @default("[{\"rate\": 0, \"limit\": 490}, {\"rate\": 0.05, \"limit\": 110}, {\"rate\": 0.10, \"limit\": 130}, {\"rate\": 0.175, \"limit\": 3166.67}, {\"rate\": 0.25, \"limit\": 16000}, {\"rate\": 0.30, \"limit\": 30520}, {\"rate\": 0.35, \"limit\": 999999999}]")
   ssnitRate              Decimal               @default(0.055)
   apiKeys                ApiKey[]
   securityEvents         LoginSecurityEvent[]

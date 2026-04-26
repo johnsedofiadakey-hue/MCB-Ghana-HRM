@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
-import StormglideHome from './pages/StormglideHome';
+
 import { motion } from 'framer-motion';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';

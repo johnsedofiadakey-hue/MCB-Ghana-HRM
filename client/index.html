@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- ID: IDENTITY-SYNC-v1.6 (Hyper-Specific Atomic Lock) -->
-<html lang="en" class="boot-lock">
+<html lang="en">
   <head>
     <script>
       /* --- EMERGENCY RESCUE SCRIPT (v1.7) --- */
@@ -134,12 +134,13 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="src/main.tsx"></script>
+    <!-- 
     <script>
       // Service Worker Registration
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then((reg) => {
+          navigator.worker.register('/sw.js').then((reg) => {
             console.log('[PWA] Service worker registered:', reg.scope);
             // Check for updates every 30 minutes
             setInterval(() => reg.update(), 30 * 60 * 1000);
@@ -149,5 +150,6 @@
         });
       }
     </script>
+    -->
   </body>
 </html>
