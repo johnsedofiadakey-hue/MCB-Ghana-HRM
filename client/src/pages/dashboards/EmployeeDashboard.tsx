@@ -32,7 +32,7 @@ const EmployeeDashboard: React.FC = () => {
              <div className="px-3 py-1 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black text-[var(--primary)] uppercase tracking-widest flex items-center gap-2">
                 <Zap size={12} className="animate-pulse" /> {t('common.employee')} {t('dashboard.console')}
              </div>
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{greeting}</span>
           </div>
           <h1 className="font-black text-5xl text-[var(--text-primary)] tracking-tight leading-none">
@@ -106,14 +106,14 @@ const EmployeeDashboard: React.FC = () => {
           <motion.div 
             initial={{ opacity: 0, y: 12 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="p-8 h-full rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-6"
+            className="p-8 h-full rounded-2xl bg-[var(--success)]/5 border border-[var(--success)]/10 flex items-center gap-6"
           >
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+            <div className="w-14 h-14 rounded-2xl bg-[var(--success)]/10 text-[var(--success)] flex items-center justify-center border border-[var(--success)]/20">
               <Send size={24} />
             </div>
             <div>
               <p className="text-[11px] font-black text-white uppercase tracking-[0.2em] mb-1">{t('employee_dashboard.personnel_status')}</p>
-              <p className="text-xs font-medium text-emerald-400/80 uppercase tracking-widest leading-relaxed">
+              <p className="text-xs font-medium text-[var(--success)]/80 uppercase tracking-widest leading-relaxed">
                 {t('employee_dashboard.status_desc', { activeGoals: stats?.activeGoals?.length || 0, pendingAppraisals: stats?.pendingAppraisals || 0 })}
               </p>
             </div>
@@ -124,9 +124,9 @@ const EmployeeDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { title: t('employee_dashboard.my_performance'), value: loading ? '…' : `${stats?.overallPerformance ?? 0}%`, icon: Target, color: 'var(--primary)' },
-          { title: t('employee_dashboard.attendance_rate'), value: loading ? '…' : `${stats?.attendanceRate ?? 0}%`, icon: Clock, color: '#10b981' },
-          { title: t('employee_dashboard.leave_balance'), value: loading ? '…' : `${stats?.leaveBalance ?? 0} ${t('employee_dashboard.days')}`, icon: Calendar, color: '#f59e0b' },
-          { title: t('employee_dashboard.training_status'), value: t('employee_dashboard.on_track'), icon: Award, color: '#ec4899' },
+          { title: t('employee_dashboard.attendance_rate'), value: loading ? '…' : `${stats?.attendanceRate ?? 0}%`, icon: Clock, color: 'var(--success)' },
+          { title: t('employee_dashboard.leave_balance'), value: loading ? '…' : `${stats?.leaveBalance ?? 0} ${t('employee_dashboard.days')}`, icon: Calendar, color: 'var(--warning)' },
+          { title: t('employee_dashboard.training_status'), value: t('employee_dashboard.on_track'), icon: Award, color: 'var(--accent)' },
         ].map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
             className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all">

@@ -44,10 +44,10 @@ const MDDashboard = () => {
   }, []);
 
   const statCards = [
-    { label: t('md_dashboard.total_employees'), value: stats?.totalEmployees ?? '—', icon: Users, color: 'var(--primary)', change: '+3%' },
+    { label: t('md_dashboard.total_employees'), value: stats?.totalEmployees ?? '—', icon: Users, color: 'var(--primary)', change: '' },
     { label: t('md_dashboard.on_leave'), value: stats?.activeLeaves ?? '—', icon: Calendar, color: 'var(--warning)', change: '' },
     { label: t('md_dashboard.monthly_payroll'), value: stats?.payrollTotal ? formatCurrency(stats.payrollTotal) : '—', icon: DollarSign, color: 'var(--success)', change: '' },
-    { label: t('md_dashboard.attendance_rate'), value: stats?.attendanceRate ? `${stats.attendanceRate}%` : '—', icon: Activity, color: 'var(--info)', change: '+1.2%' },
+    { label: t('md_dashboard.attendance_rate'), value: stats?.attendanceRate ? `${stats.attendanceRate}%` : '—', icon: Activity, color: 'var(--info)', change: '' },
   ];
 
   return (
@@ -150,7 +150,7 @@ const MDDashboard = () => {
                 <s.icon size={22} style={{ color: s.color }} className="opacity-80" />
               </div>
               {s.change && (
-                <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400 flex items-center gap-1">
+                <div className="px-3 py-1 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[10px] font-black text-[var(--success)] flex items-center gap-1">
                   <ArrowUp size={10} />{s.change}
                 </div>
               )}

@@ -12,10 +12,10 @@ const MidManagerDashboard: React.FC = () => {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   const milestones = [
-    { name: 'Direct Sales', progress: 72, color: '#6366f1' },
-    { name: 'Customer Tickets', progress: 89, color: '#10b981' },
-    { name: 'Training Completion', progress: 45, color: '#f43f5e' },
-    { name: 'Product Knowledge', progress: 61, color: '#f59e0b' },
+    { name: 'Direct Sales', progress: 72, color: 'var(--primary)' },
+    { name: 'Customer Tickets', progress: 89, color: 'var(--success)' },
+    { name: 'Training Completion', progress: 45, color: 'var(--error)' },
+    { name: 'Product Knowledge', progress: 61, color: 'var(--warning)' },
   ];
 
   return (
@@ -36,10 +36,10 @@ const MidManagerDashboard: React.FC = () => {
         </div>
         <div className="lg:col-span-2 grid grid-cols-2 gap-5 h-fit">
           {[
-            { label: 'Active Team Targets', value: '8', icon: Target, color: '#6366f1' },
-            { label: 'Pending Reviews', value: '3', icon: Activity, color: '#10b981' },
-            { label: 'Team Attendance', value: '94%', icon: Clock, color: '#f59e0b' },
-            { label: 'Reporting Staff', value: '6', icon: Users, color: '#ec4899' },
+            { label: 'Active Team Targets', value: '8', icon: Target, color: 'var(--primary)' },
+            { label: 'Pending Reviews', value: '3', icon: Activity, color: 'var(--success)' },
+            { label: 'Team Attendance', value: '94%', icon: Clock, color: 'var(--warning)' },
+            { label: 'Reporting Staff', value: '6', icon: Users, color: 'var(--accent)' },
           ].map((s, idx) => (
             <motion.div key={idx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.08 }}
               className="glass p-6 group hover:border-primary/30 transition-all">

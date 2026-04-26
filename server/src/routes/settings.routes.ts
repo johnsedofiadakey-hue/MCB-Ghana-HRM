@@ -10,12 +10,12 @@ router.get('/', settingsController.getSettings);
 router.get('/organization', settingsController.getSettings);
 
 // Admin Only Update
-router.put('/', authenticate, requireRole(90), settingsController.updateSettings);
-router.patch('/organization', authenticate, requireRole(90), settingsController.updateSettings);
-router.put('/organization', authenticate, requireRole(90), settingsController.updateSettings);
+router.put('/', authenticate, requireRole(85), settingsController.updateSettings);
+router.patch('/organization', authenticate, requireRole(85), settingsController.updateSettings);
+router.put('/organization', authenticate, requireRole(85), settingsController.updateSettings);
 
 // DANGER: Purge all transactional data (MD/DEV only — production onboarding)
-router.post('/purge-data', authenticate, requireRole(90), async (req: any, res: any) => {
+router.post('/purge-data', authenticate, requireRole(95), async (req: any, res: any) => {
   const { pin } = req.body;
   
   if (pin !== '5646') {

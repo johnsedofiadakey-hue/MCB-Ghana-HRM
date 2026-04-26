@@ -34,9 +34,9 @@ const ManagerDashboard = () => {
 
   const cardStats = [
     { label: t('manager_dashboard.team_members'), value: stats.teamSize || '0', icon: Users, color: 'var(--primary)', delay: 0.1 },
-    { label: t('manager_dashboard.pending_reviews'), value: stats.pendingReviews || '0', icon: ClipboardCheck, color: '#f59e0b', delay: 0.2 },
-    { label: t('manager_dashboard.team_performance'), value: `${Number(stats.teamPerf || 0).toFixed(1)}%`, icon: CheckCircle2, color: '#10b981', delay: 0.3 },
-    { label: t('manager_dashboard.open_leave_req'), value: stats.openLeaves || '0', icon: Clock, color: '#ec4899', delay: 0.4 },
+    { label: t('manager_dashboard.pending_reviews'), value: stats.pendingReviews || '0', icon: ClipboardCheck, color: 'var(--warning)', delay: 0.2 },
+    { label: t('manager_dashboard.team_performance'), value: `${Number(stats.teamPerf || 0).toFixed(1)}%`, icon: CheckCircle2, color: 'var(--success)', delay: 0.3 },
+    { label: t('manager_dashboard.open_leave_req'), value: stats.openLeaves || '0', icon: Clock, color: 'var(--info)', delay: 0.4 },
   ];
 
   return (
@@ -67,7 +67,7 @@ const ManagerDashboard = () => {
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}
           className="hidden lg:flex items-center gap-6 px-8 py-5 rounded-3xl premium-glass border-glow-premium shadow-2xl">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--success)]/10 text-[var(--success)] flex items-center justify-center border border-[var(--success)]/20">
                <Activity size={24} />
             </div>
             <div>
@@ -176,9 +176,7 @@ const ManagerDashboard = () => {
                 <h3 className="font-black text-3xl text-[var(--text-primary)] tracking-ultra">{t('manager_dashboard.performance_analytics')}</h3>
                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-2 opacity-60">{t('manager_dashboard.execution_scores')}</p>
               </div>
-              <div className="text-right px-6 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                <div className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-1">{t('manager_dashboard.execution_velocity')}</div>
-                <div className="text-2xl font-black text-emerald-500 flex items-center gap-2 justify-end">
+                <div className="text-2xl font-black text-[var(--success)] flex items-center gap-2 justify-end">
                    {stats.teamPerf}% <TrendingUp size={20} />
                 </div>
               </div>
@@ -254,7 +252,7 @@ const ManagerDashboard = () => {
                       <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Active Shift</div>
                     </div>
                   </div>
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--success)] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                 </div>
               ))}
             </div>

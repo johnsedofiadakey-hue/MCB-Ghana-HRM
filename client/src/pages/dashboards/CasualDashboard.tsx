@@ -29,8 +29,8 @@ const CasualDashboard: React.FC = () => {
         <div className="lg:col-span-2">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass p-8 h-full flex flex-col justify-center">
             <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
-                <User size={20} className="text-primary" />
+              <div className="p-3 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20">
+                <User size={20} className="text-[var(--primary)]" />
               </div>
               <div>
                 <h3 className="font-display font-bold text-lg text-white">{user.name || 'Employee'}</h3>
@@ -54,18 +54,18 @@ const CasualDashboard: React.FC = () => {
         {/* Attendance Card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass p-8 space-y-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-              <Clock size={20} className="text-emerald-400" />
+            <div className="p-3 rounded-2xl bg-[var(--success)]/10 border border-[var(--success)]/20">
+              <Clock size={20} className="text-[var(--success)]" />
             </div>
             <div>
               <h3 className="font-display font-bold text-lg text-white">Attendance Tracking</h3>
-              <p className="text-xs text-emerald-500 uppercase tracking-widest font-bold">System Active</p>
+              <p className="text-xs text-[var(--success)] uppercase tracking-widest font-bold">System Active</p>
             </div>
           </div>
           <p className="text-sm text-slate-400 leading-relaxed">
             Ensure you clock in every day through the attendance portal to accurately record your working hours.
           </p>
-          <Link to="/attendance" className="block w-full py-3 text-center font-black text-sm text-white rounded-2xl bg-primary/80 hover:bg-primary transition-all">
+          <Link to="/attendance" className="block w-full py-3 text-center font-black text-sm text-white rounded-2xl bg-[var(--primary)]/80 hover:bg-[var(--primary)] transition-all">
             Clock In / Out
           </Link>
         </motion.div>
@@ -82,8 +82,8 @@ const CasualDashboard: React.FC = () => {
           ].map((item, i) => (
             <Link key={i} to={item.href}
               className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-primary/20 transition-all group">
-              <div className="p-2.5 rounded-xl bg-primary/10">
-                <item.icon size={16} className="text-primary-light" />
+              <div className="p-2.5 rounded-xl bg-[var(--primary)]/10">
+                <item.icon size={16} className="text-[var(--primary)]" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-white group-hover:text-primary-light transition-colors">{item.label}</p>

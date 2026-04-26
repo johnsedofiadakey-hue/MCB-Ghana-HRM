@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 // Removed User type import to resolve build conflict
 
 
-const COLORS = ['var(--primary)', 'var(--accent)', 'var(--warning)', 'var(--info)', '#f43f5e', '#f59e0b', '#10b981'];
+const COLORS = ['var(--primary)', 'var(--accent)', 'var(--warning)', 'var(--info)', 'var(--error)', 'var(--success)'];
 
 const DirectorDashboard = () => {
   const { t } = useTranslation();
@@ -37,11 +37,11 @@ const DirectorDashboard = () => {
       .catch(() => setData({ distribution: fallbackDist, performance: fallbackPerf }));
   }, []);
 
-  const stats = [
-    { label: t('common.departments'), value: '5', icon: Building2, color: 'var(--primary)', delay: 0.1 },
-    { label: t('dashboard.active_reviews'), value: '12', icon: BarChart3, color: 'var(--accent)', delay: 0.2 },
-    { label: t('dashboard.open_targets'), value: '24', icon: Target, color: '#a855f7', delay: 0.3 },
-    { label: t('dashboard.pending_leave'), value: '3', icon: Calendar, color: '#10b981', delay: 0.4 },
+  const statsArr = [
+    { label: t('common.departments'), value: data.performance.length || '—', icon: Building2, color: 'var(--primary)', delay: 0.1 },
+    { label: t('dashboard.active_reviews'), value: '—', icon: BarChart3, color: 'var(--accent)', delay: 0.2 },
+    { label: t('dashboard.open_targets'), value: '—', icon: Target, color: 'var(--primary)', delay: 0.3 },
+    { label: t('dashboard.pending_leave'), value: '—', icon: Calendar, color: 'var(--success)', delay: 0.4 },
   ];
 
   return (
@@ -58,7 +58,7 @@ const DirectorDashboard = () => {
                 <Sparkles size={14} className="animate-pulse text-[var(--primary)]" /> 
                 {t('common.admin')} {t('dashboard.intelligence')}
              </div>
-             <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
+             <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 rounded-full bg-[var(--success)] shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
              <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{greeting}</span>
           </div>
           <h1 className="font-black text-fluid-h1 text-[var(--text-primary)] tracking-ultra leading-[0.9]">
@@ -77,7 +77,7 @@ const DirectorDashboard = () => {
           </div>
           <div className="px-6 py-4 text-center">
             <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">{t('dashboard.efficiency')}</div>
-            <div className="text-2xl font-black text-emerald-500">94.8%</div>
+            <div className="text-2xl font-black text-[var(--success)]">94.8%</div>
           </div>
         </motion.div>
       </header>
@@ -88,7 +88,7 @@ const DirectorDashboard = () => {
         <div className="lg:col-span-8 flex flex-col gap-8">
           {/* Stats Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((s, i) => (
+            {statsArr.map((s, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: s.delay }}
                 className="premium-glass border-glow-premium p-6 hover-float group shadow-xl">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-all group-hover:scale-110 mb-6 shadow-inner">

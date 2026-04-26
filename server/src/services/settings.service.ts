@@ -215,7 +215,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     borrowingLimit: Number(org.borrowingLimit || 5),
     ssnitRate: Number(org.ssnitRate || 0.055),
     employerSsnitRate: Number(org.employerSsnitRate || 0.13),
-    payeBands: typeof org.payeBands === 'string' ? JSON.parse(org.payeBands) : org.payeBands,
+    payeBands: (() => {
+      if (typeof org.payeBands !== 'string') return org.payeBands;
+      try { return JSON.parse(org.payeBands); } catch(e) { return []; }
+    })(),
     ...(org.settings || {}),
     ...pricing
   };
@@ -310,7 +313,7 @@ export const updateSettings = async (
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;
-  if (smtpPort !== undefined) settingsUpdate.smtpPort = smtpPort;
+  if (smtpPort !== undefined) settingsUpdate.smtpPort = parseInt(smtpPort as any) || 587;
   if (smtpUser !== undefined) settingsUpdate.smtpUser = smtpUser;
   if (smtpPass !== undefined && smtpPass !== '') settingsUpdate.smtpPass = smtpPass; // Never clear with blank
   if (smtpFrom !== undefined) settingsUpdate.smtpFrom = smtpFrom;
@@ -322,13 +325,13 @@ export const updateSettings = async (
   if (currency !== undefined) settingsUpdate.currency = currency;
   if (monthlyPrice !== undefined) settingsUpdate.monthlyPrice = monthlyPrice;
   if (annualPrice !== undefined) settingsUpdate.annualPrice = annualPrice;
-  if (trialDays !== undefined) settingsUpdate.trialDays = trialDays;
+  if (trialDays !== undefined) settingsUpdate.trialDays = parseInt(trialDays as any) || 14;
 
   if (isMaintenanceMode !== undefined) settingsUpdate.isMaintenanceMode = isMaintenanceMode;
   if (maintenanceNotice !== undefined) settingsUpdate.maintenanceNotice = maintenanceNotice;
   if (securityLockdown !== undefined) settingsUpdate.securityLockdown = securityLockdown;
   if (securityLockdownMessage !== undefined) settingsUpdate.securityLockdownMessage = securityLockdownMessage;
-  if (backupFrequencyDays !== undefined) settingsUpdate.backupFrequencyDays = backupFrequencyDays;
+  if (backupFrequencyDays !== undefined) settingsUpdate.backupFrequencyDays = parseInt(backupFrequencyDays as any) || 7;
   if (data.loginNotice !== undefined) settingsUpdate.loginNotice = loginNotice;
   if (data.loginSubtitle !== undefined) settingsUpdate.loginSubtitle = loginSubtitle;
   if (data.loginBullets !== undefined) settingsUpdate.loginBullets = loginBullets;
