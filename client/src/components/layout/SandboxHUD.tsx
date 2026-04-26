@@ -24,7 +24,7 @@ const SandboxHUD = () => {
 
     const handleSwitch = async (email: string) => {
         try {
-            const res = await api.post('/auth/login', { email, password: 'NexusDemo@2025' });
+            const res = await api.post('/auth/login', { email, password: 'MCBDemo@2025' });
             const { token, refreshToken, user: newUser } = res.data;
             
             localStorage.setItem('nexus_auth_token', token);

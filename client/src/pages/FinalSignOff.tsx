@@ -8,7 +8,7 @@ import { cn } from '../utils/cn';
 import PageHeader from '../components/common/PageHeader';
 import FlowSteps from '../components/common/FlowSteps';
 import EmptyState from '../components/common/EmptyState';
-import NexusAIInsight from '../components/layout/NexusAIInsight';
+import MCBAIInsight from '../components/layout/MCBAIInsight';
 import { useAI } from '../context/AIContext';
 import { getStoredUser } from '../utils/session';
 
@@ -339,7 +339,7 @@ const FinalSignOff = () => {
         </div>
       </div>
 
-      <NexusAIInsight 
+      <MCBAIInsight 
         isOpen={isAIOpen} 
         onClose={() => setIsAIOpen(false)} 
       />

@@ -63,7 +63,7 @@ const Signup = () => {
       >
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest mb-6">
-            <Rocket size={12} /> Start Your Nexus Journey
+            <Rocket size={12} /> Start Your MCB Journey
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-none mb-4">
             Provision Your <span className="text-blue-500">Workspace.</span>

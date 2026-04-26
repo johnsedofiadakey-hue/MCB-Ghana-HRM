@@ -1,5 +1,5 @@
 /**
- * Nexus Insight Engine
+ * MCB Insight Engine
  * High-performance heuristic analysis for the Intelligence Layer.
  */
 import api from './api';

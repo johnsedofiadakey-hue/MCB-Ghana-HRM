@@ -238,7 +238,7 @@ const Layout = () => {
       <MobileNav />
       <DemoPersonaSwitcher />
       {rank >= 70 && (
-        <NexusAIInsight 
+        <MCBAIInsight 
           isOpen={isAIOpen} 
           onClose={() => setIsAIOpen(false)} 
         />
@@ -265,7 +265,7 @@ const AppContent = () => {
   const isCentralDomain = window.location.hostname === 'nexus-hr-platform.web.app' || window.location.hostname === 'nexus-hr-platform.firebaseapp.com' || window.location.hostname === 'mcb-hrm-ghana.web.app';
 
   useEffect(() => {
-    // Legacy Token Cleanup: Standardizing on nexus_* prefix
+    // Legacy Token Cleanup: Standardizing on MCB HRM Ghana session prefixes
     const legacyKeys = ['app_auth_token', 'app_refresh_token', 'user_session'];
     legacyKeys.forEach(key => {
       if (localStorage.getItem(key)) {

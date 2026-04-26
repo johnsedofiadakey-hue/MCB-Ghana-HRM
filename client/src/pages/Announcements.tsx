@@ -118,7 +118,7 @@ const Announcements = () => {
               </h1>
            </div>
           <p className="text-[var(--text-secondary)] font-medium max-w-xl opacity-80">
-            Nexus Bulletin System: Official organization-wide updates and critical dispatches.
+            MCB Bulletin System: Official organization-wide updates and critical dispatches.
           </p>
         </div>
 

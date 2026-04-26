@@ -190,6 +190,7 @@
       "retire_error": "Erreur de suppression",
       "restore_success": "Employé restauré",
       "restore_error": "Erreur de restauration",
+      "nexus_ai_engine": "Moteur AI MCB",
       "purge_success": "Supprimé définitivement",
       "purge_error": "Erreur de purge",
       "avatar_success": "Photo mise à jour",
@@ -1225,7 +1226,7 @@
       "common": {
         "generated": "Créé le",
         "authority": "Système de Gestion",
-        "official_record": "Dossier Officiel - Nexus HR Platform",
+        "official_record": "Dossier Officiel - MCB HRM Ghana",
         "unassigned": "Indépendant"
       },
       "employee_directory": {

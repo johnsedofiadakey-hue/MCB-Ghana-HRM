@@ -132,7 +132,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   }, [rank]);
 
   const handleLogout = () => {
-    // Clear standard Nexus tokens
+        // Clear MCB HRM Ghana session tokens
     localStorage.removeItem('nexus_auth_token');
     localStorage.removeItem('nexus_refresh_token');
     localStorage.removeItem('nexus_user');

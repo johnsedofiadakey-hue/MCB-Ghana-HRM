@@ -51,7 +51,7 @@ const StormglideHome = () => {
       <div className="bg-blue-600 text-white py-2.5 px-6 text-center">
          <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-3">
            <Sparkles size={14} className="animate-pulse" /> 
-           <span>Nexus HRM Platform v5.0 is now live</span>
+           <span>MCB HRM Ghana Platform v5.0 is now live</span>
            <button onClick={handleDemoLaunch} className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full border border-white/20 transition-all font-black ml-2 uppercase">Try the Demo</button>
          </p>
       </div>
@@ -66,7 +66,7 @@ const StormglideHome = () => {
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-200 group-hover:-rotate-3 transition-transform">
                <Shield size={20} className="fill-white/20" />
             </div>
-            <span className="font-black text-2xl tracking-tighter text-slate-900 italic">Nexus<span className="text-blue-600">.</span></span>
+            <span className="font-black text-2xl tracking-tighter text-slate-900 italic">MCB<span className="text-blue-600">.</span></span>
           </div>
           
           <div className="hidden lg:flex items-center gap-12">
@@ -94,13 +94,13 @@ const StormglideHome = () => {
              <div className="flex items-center justify-between mb-20">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white"><Shield size={20}/></div>
-                  <span className="font-black text-2xl tracking-tighter italic">Nexus.</span>
+                  <span className="font-black text-2xl tracking-tighter italic">MCB.</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-400"><X size={32}/></button>
              </div>
              <div className="space-y-12 flex-1">
                 {navLinks.map(l => (
-                  <button key={l.id} onClick={() => scrollTo(l.id)} className="block text-4xl font-black uppercase italic tracking-tighter text-slate-900 hover:text-blue-600 transition-colors">{l.name}</button>
+                   <button key={l.id} onClick={() => scrollTo(l.id)} className="block text-4xl font-black uppercase italic tracking-tighter text-slate-900 hover:text-blue-600 transition-colors">{l.name}</button>
                 ))}
              </div>
              <button onClick={handleDemoLaunch} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-blue-200">Start Free Demo</button>
@@ -119,7 +119,7 @@ const StormglideHome = () => {
                  Manage Your <br /> <span className="text-blue-600">Company Brain.</span>
               </h1>
               <p className="max-w-lg text-lg text-slate-400 font-medium leading-relaxed mb-12">
-                 The Nexus HRM Platform is a recursive enterprise shell designed to handle the complexities of modern teams—from automated payroll to AI-driven performance appraisals.
+                 The MCB HRM Ghana Platform is a recursive enterprise shell designed to handle the complexities of modern teams—from automated payroll to AI-driven performance appraisals.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-6">
                  <button onClick={handleDemoLaunch} className="w-full sm:w-auto px-12 py-6 bg-blue-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 group">
@@ -132,8 +132,8 @@ const StormglideHome = () => {
            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative">
               <div className="absolute inset-0 bg-blue-400/20 blur-[120px] rounded-full -z-10 animate-pulse" />
               <img 
-                src="/nexus_hero.png" 
-                alt="Nexus Interface" 
+                src="/mcb_hero.png" 
+                alt="MCB Interface" 
                 className="w-full h-auto rounded-[3.5rem] border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.5)] transform hover:scale-[1.02] hover:-rotate-1 transition-all duration-700 pointer-events-none"
               />
               <div className="absolute -bottom-10 -right-10 p-8 bg-white/80 backdrop-blur-3xl border border-white rounded-[3rem] shadow-2xl hidden xl:block">
@@ -155,7 +155,7 @@ const StormglideHome = () => {
             <div className="text-center mb-24">
                <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 mb-6 underline decoration-4 underline-offset-8">Workflow Engine</h2>
                <p className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter uppercase italic leading-[1] mb-6">Built for High-Growth <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Enterprise Speed.</span></p>
-               <p className="text-slate-400 font-medium max-w-xl mx-auto">See how Nexus streamlines your entire organization in three simple stages.</p>
+               <p className="text-slate-400 font-medium max-w-xl mx-auto">See how MCB HRM Ghana streamlines your entire organization in three simple stages.</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -163,7 +163,7 @@ const StormglideHome = () => {
                  { 
                    step: "01", 
                    title: "Recursive Onboarding", 
-                   desc: "Import your entire team from any system. Nexus automatically maps profiles, roles, and payroll schedules using AI.",
+                   desc: "Import your entire team from any system. MCB automatically maps profiles, roles, and payroll schedules using AI.",
                    icon: <Users size={24}/>
                  },
                  { 
@@ -200,7 +200,7 @@ const StormglideHome = () => {
                   <div className="space-y-6">
                      <h2 className="text-sm font-black uppercase tracking-[0.4em] text-blue-600">System Capabilities</h2>
                      <p className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-[0.9]">Everything your <br /> team needs.</p>
-                     <p className="text-slate-400 font-medium">We've built the world's most complete HRM platform, so you don't have to stitch together 10 different apps.</p>
+                     <p className="text-slate-400 font-medium">We've built a complete HRM platform, so you don't have to stitch together 10 different apps.</p>
                   </div>
                   
                   <div className="grid gap-8">
@@ -232,7 +232,7 @@ const StormglideHome = () => {
                            <div className="w-3 h-3 rounded-full bg-amber-500" />
                            <div className="w-3 h-3 rounded-full bg-emerald-500" />
                         </div>
-                        <p className="text-blue-400 font-black text-xs uppercase tracking-widest">Nexus Review Engine v1.0.4</p>
+                        <p className="text-blue-400 font-black text-xs uppercase tracking-widest">MCB Review Engine v1.0.4</p>
                         <div className="space-y-4">
                            <motion.p 
                              initial={{ opacity: 0, x: -10 }}
@@ -246,9 +246,9 @@ const StormglideHome = () => {
                         </div>
                         <div className="pt-20">
                            <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl">
-                              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-black">N</div>
+                              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-black">M</div>
                               <div>
-                                 <p className="text-[10px] font-black text-white uppercase tracking-widest">Nexus Cortex is thinking...</p>
+                                 <p className="text-[10px] font-black text-white uppercase tracking-widest">MCB Cortex is thinking...</p>
                                  <div className="h-1 w-24 bg-white/10 rounded-full overflow-hidden mt-1">
                                     <motion.div initial={{ x: '-100%' }} animate={{ x: '100%' }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-1/2 h-full bg-blue-500" />
                                  </div>
@@ -275,7 +275,7 @@ const StormglideHome = () => {
                <div className="space-y-10">
                   <h2 className="text-sm font-black uppercase tracking-[0.5em] text-blue-500">Military-Grade Shell</h2>
                   <p className="text-6xl font-black tracking-tighter uppercase italic leading-[0.9]">Bank-Level Security <br /> by Construction.</p>
-                  <p className="text-slate-400 text-lg font-medium">Nexus uses recursive encryption and multi-tenant isolation to ensure your organization's data remains untouchable.</p>
+                  <p className="text-slate-400 text-lg font-medium">MCB HRM Ghana uses recursive encryption and multi-tenant isolation to ensure your organization's data remains untouchable.</p>
                   <div className="grid grid-cols-2 gap-8">
                      {[
                         { title: "SOC 2 Type II", desc: "Enterprise certified controls.", icon: <Lock /> },
@@ -350,7 +350,7 @@ const StormglideHome = () => {
             <div className="space-y-10">
                <h2 className="text-sm font-black uppercase tracking-[0.4em] text-blue-600">Our Strategic Intent</h2>
                <p className="text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-[1]">Developing the world's most <span className="text-blue-600">Advanced People-Brain.</span></p>
-               <p className="text-slate-400 font-medium text-lg leading-relaxed italic">Nexus was born from a single realization: Most HR software is built for compliance, not potential. We've built a platform that treats your people as your most powerful asset, giving you the tools to help them scale alongside your company.</p>
+               <p className="text-slate-400 font-medium text-lg leading-relaxed italic">MCB HRM Ghana was born from a single realization: Most HR software is built for compliance, not potential. We've built a platform that treats your people as your most powerful asset, giving you the tools to help them scale alongside your company.</p>
                <button className="flex items-center gap-4 text-xs font-black uppercase tracking-[0.4em] text-slate-900 hover:text-blue-600 transition-colors">
                   Meet the Board <ArrowRight size={16}/>
                </button>
@@ -362,14 +362,14 @@ const StormglideHome = () => {
       <section id="contact" className="py-32 px-6">
          <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-xs font-black uppercase tracking-[0.5em] text-blue-600 mb-6 underline decoration-4 underline-offset-8">Direct Engagement</h2>
-            <p className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter uppercase italic leading-[1] mb-12">Scale Your Team <br /> <span className="bg-emerald-50 text-emerald-600 px-6 rounded-[2rem] border-b-8 border-emerald-100 italic">the Nexus Way.</span></p>
+            <p className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter uppercase italic leading-[1] mb-12">Scale Your Team <br /> <span className="bg-emerald-50 text-emerald-600 px-6 rounded-[2rem] border-b-8 border-emerald-100 italic">the MCB Way.</span></p>
             
             <div className="bg-white border-2 border-slate-100 p-12 md:p-20 rounded-[4rem] shadow-2xl relative">
               {formStatus === 'SUCCESS' ? (
                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="py-20 text-center space-y-6">
                     <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-xl"><CheckCircle2 size={48}/></div>
                     <h3 className="text-4xl font-black uppercase italic">Handshake Initiated.</h3>
-                    <p className="text-slate-500 font-medium max-w-xs mx-auto italic">Nexus Shell v5.0 Lead Registered. A specialist will synchronize with you shortly.</p>
+                    <p className="text-slate-500 font-medium max-w-xs mx-auto italic">MCB HRM Ghana v5.0 Lead Registered. A specialist will synchronize with you shortly.</p>
                  </motion.div>
               ) : (
                 <form onSubmit={async (e) => {
@@ -416,7 +416,7 @@ const StormglideHome = () => {
             <div className="max-w-sm space-y-8">
                <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-100"><Shield size={24}/></div>
-                  <span className="font-black text-2xl tracking-tighter text-slate-900 italic uppercase">Nexus HRM<span className="text-blue-600">.</span></span>
+                  <span className="font-black text-2xl tracking-tighter text-slate-900 italic uppercase">MCB HRM Ghana<span className="text-blue-600">.</span></span>
                </div>
                <p className="text-slate-400 font-medium leading-relaxed italic">
                  The world's most advanced operating system for human potential. We build the infrastructure so you can build the future.
@@ -456,7 +456,7 @@ const StormglideHome = () => {
             </div>
          </div>
          <div className="max-w-7xl mx-auto mt-20 pt-10 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">© 2026 NEXUS HRM PLATFORM. ALL RIGHTS RESERVED.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">© 2026 MCB HRM GHANA. ALL RIGHTS RESERVED.</p>
             <div className="flex items-center gap-3">
                <div className="w-2 h-2 rounded-full bg-blue-500 shadow-sm animate-pulse" />
                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Core Status: Active</span>

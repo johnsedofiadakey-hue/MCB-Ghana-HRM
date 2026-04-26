@@ -101,7 +101,7 @@ const DemoPersonaSwitcher = () => {
 
             <div className="mt-8 pt-6 border-t border-slate-100 text-center">
                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                  <Sparkles size={10} className="fill-blue-400 text-blue-400" /> Nexus Simulation Engine v1.0
+                  <Sparkles size={10} className="fill-blue-400 text-blue-400" /> MCB Simulation Engine v1.0
                </p>
             </div>
           </motion.div>

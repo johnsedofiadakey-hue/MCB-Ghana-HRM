@@ -250,7 +250,7 @@ const Login = () => {
                     {/* Footer Info */}
                     <div className="mt-12 text-center">
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-40">
-                            Nexus Enterprise Cloud · Deployment 2026.4.25
+                            MCB Enterprise Cloud · Deployment 2026.4.25
                         </p>
                     </div>
                 </motion.div>

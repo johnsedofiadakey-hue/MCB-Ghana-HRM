@@ -176,7 +176,7 @@ const AttendanceKiosk = () => {
                         </AnimatePresence>
 
                         <div className="text-center p-6">
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Nexus Kiosk Interface v7.0</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">MCB Kiosk Interface v7.0</p>
                         </div>
                     </div>
                 </div>

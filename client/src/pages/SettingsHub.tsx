@@ -666,7 +666,7 @@ const SettingsHub = () => {
                               <Sparkles size={24} />
                             </div>
                             <div>
-                               <p className="text-[14px] font-black uppercase tracking-tight text-[var(--text-primary)]">{t('settings.enable_ai', 'Nexus Pulse AI Advisor')}</p>
+                               <p className="text-[14px] font-black uppercase tracking-tight text-[var(--text-primary)]">{t('settings.enable_ai', 'MCB Pulse AI Advisor')}</p>
                                <p className="text-[10px] text-[var(--text-muted)] font-bold mt-1 uppercase tracking-widest opacity-60">{t('settings.enable_ai_desc', 'Strategic insights & intelligent automation')}</p>
                             </div>
                           </div>
@@ -991,7 +991,7 @@ const SettingsHub = () => {
                         </div>
                         <div>
                           <h4 className="font-bold text-lg text-[var(--text-primary)]">{t('settings.ai_assistant', 'AI Assistant')}</h4>
-                          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.nexus_ai_engine', 'Nexus AI Engine')}</p>
+                          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.nexus_ai_engine', 'MCB AI Engine')}</p>
                         </div>
                       </div>
                     </section>
