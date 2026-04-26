@@ -3,7 +3,7 @@
  * High-performance heuristic analysis for the Intelligence Layer.
  */
 import api from './api';
-import { User } from '../types/models';
+import type { User } from '../types/models';
 
 export interface StrategicInsight {
     id: string;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { storage, StorageKey } from './storage';
-import { User } from '../types/models';
+import type { User } from '../types/models';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://nexus-hr-platform-api.onrender.com/api',
