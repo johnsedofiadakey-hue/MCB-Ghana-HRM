@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
-import { logAction } from '../utils/logger';
+import { logAction } from '../services/audit.service';
 
 /**
  * Biometric Synchronization Controller
