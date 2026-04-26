@@ -19,4 +19,4 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_NEXUS_HR_PLATFORM }}'
           channelId: live
-          projectId: nexus-hr-platform
+          projectId: mcb-hrm-ghana
