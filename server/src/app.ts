@@ -1,7 +1,7 @@
 // MCB HRM Ghana - Production Sync: 2026-04-26
 const APP_VERSION = require('../package.json').version || '4.0.0';
 console.log(`[Startup] ${new Date().toISOString()} - MCB HRM Ghana v${APP_VERSION} Initializing...`);
-// 🚀 DEPLOYMENT HEARTBEAT: 2026-04-26T16:21:00Z
+// 🚀 DEPLOYMENT HEARTBEAT: 2026-04-26T16:53:00Z
 import express, { Application, Request, Response, NextFunction } from 'express';
 import http from 'http';
 import cors from 'cors';
@@ -196,13 +196,13 @@ let isBooted = false;
 
 // ─── STARTUP PROTOCOL ───────────────────────────────────────────────────────
 const runStartupTasks = async () => {
-  console.log('[Startup] Nexus HR core initialization...');
+  console.log('[Startup] MCB HRM Ghana core initialization...');
   try {
     // We skip heavy tasks here to ensure stability on Render hardware.
     // Telemetry and background syncs are handled by the live SchedulerService.
     
     isBooted = true;
-    console.log(`\n🎉 Nexus HR Platform Core fully operational at ${new Date().toISOString()}\n`);
+    console.log(`\n🎉 MCB HRM Ghana Platform Core fully operational at ${new Date().toISOString()}\n`);
   } catch (err: any) {
     console.error('\n❌ [CRITICAL] Background Startup Stalled:');
     console.error(err.message);
@@ -217,8 +217,8 @@ app.get('/api/health', async (req, res) => {
     return res.json({ 
       status: isBooted ? 'UP' : 'BOOTING', 
       database: 'CONNECTED',
-      version: '1.0.3-MCB-GH',
-      last_sync: '2026-04-26T08:18:00Z',
+      version: APP_VERSION,
+      last_sync: '2026-04-26T16:53:00Z',
       client: 'MC-Bauchemie Ghana',
       bootComplete: isBooted,
       nodeEnv: process.env.NODE_ENV 
@@ -235,7 +235,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 
-app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 Nexus HR Platform Core Running', version: APP_VERSION, status: isBooted ? 'READY' : 'BOOTING' }));
+app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 MCB HRM Ghana Platform Core Running', version: APP_VERSION, status: isBooted ? 'READY' : 'BOOTING' }));
 
 // Debug routes — development only
 if (process.env.NODE_ENV !== 'production') {
@@ -344,7 +344,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 // ─── START ──────────────────────────────────────────────────────────────────
 server.listen(PORT, '0.0.0.0', async () => {
-  console.log(`\n🚀 Nexus HR Platform v${APP_VERSION} listening on http://0.0.0.0:${PORT}`);
+  console.log(`\n🚀 MCB HRM Ghana Platform v${APP_VERSION} listening on http://0.0.0.0:${PORT}`);
   
   // Initialize internal services
   SchedulerService.init();
