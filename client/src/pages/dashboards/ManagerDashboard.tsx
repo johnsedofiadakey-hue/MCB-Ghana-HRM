@@ -180,7 +180,6 @@ const ManagerDashboard = () => {
                    {stats.teamPerf}% <TrendingUp size={20} />
                 </div>
               </div>
-            </div>
 
             <div className="h-4 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden mb-16 shadow-inner">
                <motion.div 
