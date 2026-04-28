@@ -1,5 +1,5 @@
 /**
- * Nexus HR Platform — First-time Setup Script
+ * MCB-HRM Ghana — First-time Setup Script
  * Run this ONCE after deploying to production:
  *   npx ts-node src/scripts/setup.ts
  * Or via npm:
@@ -25,7 +25,7 @@ const DEFAULT_ACCOUNTS = [
 ];
 
 async function setup() {
-  console.log('\n🚀 Nexus HR Platform — Production Setup\n');
+  console.log('\n🚀 MCB-HRM Ghana — Production Setup\n');
 
   // ── 1. Default Organization ──────────────────────────────────────────────
   const org = await prisma.organization.upsert({

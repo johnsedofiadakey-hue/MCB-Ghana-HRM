@@ -4,7 +4,9 @@ const initializeFirebase = () => {
     if (admin.apps.length > 0) return;
 
     try {
-        const serviceAccountVar = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT || process.env.GOOGLE_DRIVE_KEY_JSON;
+        const serviceAccountVar = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT || 
+                                 process.env.FIREBASE_SERVICE_ACCOUNT_NEXUS_HR_PLATFORM || 
+                                 process.env.GOOGLE_DRIVE_KEY_JSON;
         
         if (serviceAccountVar) {
             console.log(`[FirebaseAdmin] Initializing with ${process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT ? 'FIREBASE_ADMIN_SERVICE_ACCOUNT' : 'GOOGLE_DRIVE_KEY_JSON'} from ENV...`);

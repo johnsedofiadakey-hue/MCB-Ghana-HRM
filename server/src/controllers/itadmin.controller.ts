@@ -61,13 +61,13 @@ export const itResetPassword = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const bcrypt = await import('bcryptjs');
-    const tempPassword = `Nexus${Math.random().toString(36).slice(-6).toUpperCase()}!`;
+    const tempPassword = `MCB${Math.random().toString(36).slice(-6).toUpperCase()}!`;
     const passwordHash = await bcrypt.default.hash(tempPassword, 12);
 
     await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
 
     const settings = await prisma.systemSettings.findFirst();
-    sendWelcomeEmail(user.email, user.fullName, tempPassword, (settings as any)?.companyName || 'Nexus HR Platform').catch(console.error);
+    sendWelcomeEmail(user.email, user.fullName, tempPassword, (settings as any)?.companyName || 'MCB-HRM Ghana').catch(console.error);
 
     await notify(user.id, 'Password Reset', 'Your password has been reset by IT. Check your email for the temporary password.', 'WARNING');
     await logAction(actorId, 'IT_PASSWORD_RESET', 'User', userId, { email: user.email }, req.ip);

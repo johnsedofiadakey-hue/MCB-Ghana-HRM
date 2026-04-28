@@ -5,7 +5,7 @@ import prisma from '../prisma/client';
 import { executeTool, functionDeclarations } from '../services/ai-tools.service';
 
 /**
- * AI Controller - Nexus IQ Intelligence Layer
+ * AI Controller - MCB IQ Intelligence Layer
  * Unified handler for insights, agentic chat, and technical parsing.
  */
 

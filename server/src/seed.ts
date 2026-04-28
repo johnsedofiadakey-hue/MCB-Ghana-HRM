@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function seed() {
-  console.log('🌱 Seeding Nexus HR Platform (Master Edition)...');
+  console.log('🌱 Seeding MCB-HRM Ghana (Master Edition)...');
 
   const orgId = 'default-tenant';
   const commonPass = await bcrypt.hash('unlockme', 12);
@@ -32,7 +32,7 @@ async function seed() {
     update: {},
     create: {
       id: orgId,
-      name: 'Nexus HR Corporation',
+      name: 'MCB-HRM Ghana Corporation',
       email: 'contact@nexus-platform.com',
       billingStatus: 'ACTIVE',
       subscriptionPlan: 'PRO',

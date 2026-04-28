@@ -609,7 +609,7 @@ export const sandboxLogin = async (req: Request, res: Response) => {
         data: {
           id: SANDBOX_ORG_ID,
           name: 'Stormglide Corporate Simulation',
-          subtitle: 'Nexus HR Sandbox',
+          subtitle: 'MCB-HRM Ghana Sandbox',
           city: 'Global',
           country: 'Cloud',
           themePreset: 'nexus-dark',

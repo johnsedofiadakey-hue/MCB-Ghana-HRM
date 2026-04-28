@@ -20,7 +20,7 @@ router.post('/webhook', async (req, res) => {
 
     try {
         const prompt = `
-        You are "Nexus Bot", an HR Assistant. A user on ${platform} said: "${message}".
+        You are "MCB Bot", an HR Assistant. A user on ${platform} said: "${message}".
         Based on this, determine their intent.
         Intents: LEAVE_REQUEST, SALARY_INQUIRY, POLICY_QUESTION, GENERAL_CHAT.
         
@@ -43,7 +43,7 @@ router.post('/webhook', async (req, res) => {
             }
         });
     } catch (err) {
-        res.status(200).json({ fulfillment: "I'm having trouble processing that right now. Please use the Nexus Dashboard." });
+        res.status(200).json({ fulfillment: "I'm having trouble processing that right now. Please use the MCB Dashboard." });
     }
 });
 

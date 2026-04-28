@@ -1,7 +1,8 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '../../utils/cn';
-import { Shield, Mail, Phone, MapPin, Fingerprint } from 'lucide-react';
+import { Shield, Mail, Phone, MapPin, Fingerprint, Globe, Hexagon } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface EmployeeIDCardProps {
   employee: {
@@ -23,178 +24,264 @@ interface EmployeeIDCardProps {
     idCardAccentColor?: string;
     idCardShowLogo?: boolean;
     idCardShowQrCode?: boolean;
+    idCardOrientation?: 'VERTICAL' | 'HORIZONTAL';
   };
 }
 
 const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization }) => {
-  const primaryColor = organization.idCardPrimaryColor || organization.primaryColor || '#009EE3';
-  const accentColor = organization.idCardAccentColor || '#EE7100';
+  const primaryColor = organization.idCardPrimaryColor || organization.primaryColor || '#4F46E5';
+  const accentColor = organization.idCardAccentColor || '#F59E0B';
   const showLogo = organization.idCardShowLogo ?? true;
   const showQr = organization.idCardShowQrCode ?? true;
+  const orientation = organization.idCardOrientation || 'VERTICAL';
+
+  const isVertical = orientation === 'VERTICAL';
+
+  // Billion Dollar Design Constants
+  const cardWidth = isVertical ? '340px' : '520px';
+  const cardHeight = isVertical ? '520px' : '340px';
 
   return (
-    <div className="flex flex-col gap-10 items-center bg-gray-50 p-10 min-h-screen font-sans">
-      {/* FRONT SIDE */}
-      <div 
+    <div className="flex flex-col gap-12 items-center py-16 px-4 min-h-screen bg-[var(--bg-main)] font-display selection:bg-white/20">
+      
+      {/* ── FRONT SIDE: THE BILLION DOLLAR VIEW ─────────────────────────── */}
+      <motion.div 
         id="id-card-front"
-        className="relative w-[340px] h-[520px] bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-200"
-        style={{ printColorAdjust: 'exact' } as any}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(
+          "relative rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 group transition-all duration-700",
+          isVertical ? "w-[340px] h-[520px]" : "w-[520px] h-[340px]"
+        )}
+        style={{ 
+          background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`,
+          printColorAdjust: 'exact' 
+        } as any}
       >
-        {/* Header Wave */}
-        <div 
-          className="absolute top-0 left-0 w-full h-[180px]"
-          style={{ backgroundColor: primaryColor }}
-        >
-          <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-white to-transparent" />
+        {/* Elite Background: Mesh Gradient Engine */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+            <div 
+              className="absolute -top-[20%] -left-[10%] w-[120%] h-[120%] opacity-40 blur-[80px] animate-pulse"
+              style={{ 
+                background: `radial-gradient(circle at 20% 30%, ${primaryColor} 0%, transparent 50%), 
+                             radial-gradient(circle at 80% 70%, ${accentColor} 0%, transparent 50%)` 
+              }}
+            />
+            {/* Subtle Geometric Overlay */}
+            <div className="absolute inset-0 opacity-[0.03] grayscale" style={{ backgroundImage: 'radial-gradient(var(--text-primary) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-col items-center pt-8 px-6 text-center">
-          {/* Logo */}
-          <div className="h-10 mb-8 flex items-center justify-center">
-            {showLogo && (organization.logoUrl ? (
-              <img src={organization.logoUrl} alt="Logo" className="h-full object-contain" />
-            ) : (
-              <span className="text-white font-black text-xl tracking-tighter uppercase italic">{organization.name}</span>
-            ))}
-          </div>
+        {/* Holographic Security Overlay (Reacts to Hover) */}
+        <div className="absolute inset-0 z-50 pointer-events-none opacity-0 group-hover:opacity-20 transition-opacity duration-1000 mix-blend-overlay bg-gradient-to-tr from-rose-500 via-emerald-500 to-sky-500 animate-gradient-xy" />
 
-          {/* Photo */}
-          <div className="relative mb-6">
-            <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-gray-100">
-              {employee.avatarUrl ? (
-                <img src={employee.avatarUrl} alt={employee.fullName} className="w-full h-full object-cover" />
+        {/* Content Architecture */}
+        <div className={cn(
+            "relative z-10 h-full flex p-8",
+            isVertical ? "flex-col items-center text-center" : "flex-row items-center gap-10 text-left"
+        )}>
+          
+          {/* Header/Side Branding */}
+          <div className={cn(
+            "flex shrink-0",
+            isVertical ? "flex-col items-center mb-10" : "flex-col items-start"
+          )}>
+             {showLogo && (organization.logoUrl ? (
+                <img src={organization.logoUrl} alt="Logo" className={cn("object-contain", isVertical ? "h-12" : "h-14 mb-4")} />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-                   <span className="text-4xl font-black text-white">{employee.fullName[0]}</span>
+                <div className="flex items-center gap-2 mb-4">
+                  <Hexagon size={isVertical ? 24 : 32} style={{ color: accentColor }} fill={accentColor} fillOpacity={0.2} />
+                  <span className="text-white font-black text-xl tracking-tighter uppercase italic">{organization.name}</span>
                 </div>
-              )}
-            </div>
-            <div className="absolute -bottom-2 right-0 bg-white p-1.5 rounded-full shadow-lg">
-                <Shield size={16} style={{ color: primaryColor }} />
-            </div>
-          </div>
-
-          {/* Name & Title */}
-          <h2 className="text-2xl font-black text-gray-900 leading-tight uppercase mb-1">{employee.fullName}</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: accentColor }}>
-            {employee.jobTitle}
-          </p>
-
-          <div className="w-12 h-1 bg-gray-100 rounded-full mb-6" />
-
-          {/* Dept & Code */}
-          <div className="space-y-2 w-full">
-            <div className="flex flex-col items-center">
-                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Department</span>
-                <span className="text-xs font-bold text-gray-700 uppercase">{employee.departmentObj?.name || 'CENTRAL HUB'}</span>
-            </div>
-            <div className="flex flex-col items-center">
-                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Employee ID</span>
-                <span className="text-xs font-mono font-black text-gray-900">{employee.employeeCode || 'NEX-000'}</span>
-            </div>
-          </div>
-
-          {/* Footer QR */}
-          <div className="absolute bottom-8 flex flex-col items-center">
-             {showQr && (
-               <>
-                 <div className="p-2 bg-white rounded-xl shadow-md border border-gray-100">
-                    <QRCodeSVG value={`EMP:${employee.employeeCode}|${employee.fullName}`} size={60} />
+              ))}
+              {!isVertical && (
+                 <div className="mt-4 space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 leading-none">Identity Status</p>
+                    <p className="text-xs font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                        <Shield size={12} fill="currentColor" fillOpacity={0.2} /> Verified Agent
+                    </p>
                  </div>
-                 <p className="text-[7px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-3">Identity Verified</p>
-               </>
+              )}
+          </div>
+
+          {/* Portrait Architecture */}
+          <div className={cn(
+            "relative shrink-0",
+            isVertical ? "mb-8" : ""
+          )}>
+            <div className="relative group/photo">
+                <div 
+                    className="w-36 h-36 rounded-[2.5rem] border-[6px] border-white/5 shadow-2xl overflow-hidden bg-white/5 backdrop-blur-md relative z-10"
+                >
+                    {employee.avatarUrl ? (
+                        <img src={employee.avatarUrl} alt={employee.fullName} className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/10 to-white/5">
+                            <span className="text-5xl font-black text-white/20 italic">{employee.fullName[0]}</span>
+                        </div>
+                    )}
+                </div>
+                {/* Visual Accent Ring */}
+                <div 
+                    className="absolute -inset-2 rounded-[2.8rem] opacity-20 blur-md animate-pulse z-0"
+                    style={{ background: primaryColor }}
+                />
+            </div>
+          </div>
+
+          {/* Identity Detail Stack */}
+          <div className={cn(
+            "flex-1 flex flex-col justify-center",
+            isVertical ? "items-center w-full" : "items-start border-l border-white/10 pl-10"
+          )}>
+            <h2 className={cn(
+                "font-black text-white leading-none uppercase italic tracking-tighter mb-2",
+                isVertical ? "text-3xl" : "text-4xl"
+            )}>{employee.fullName}</h2>
+            
+            <div className={cn(
+                "px-4 py-1.5 rounded-full mb-8 inline-flex items-center gap-2 border border-white/10",
+                isVertical ? "bg-white/5" : "bg-[var(--primary)]/20"
+            )}>
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                    {employee.jobTitle}
+                </p>
+            </div>
+
+            {/* Grid Metadata */}
+            <div className={cn(
+                "grid gap-6 w-full",
+                isVertical ? "grid-cols-2 text-center" : "grid-cols-2 text-left"
+            )}>
+                <div>
+                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] block mb-1">Strategic Unit</span>
+                    <span className="text-xs font-bold text-white/80 uppercase">{employee.departmentObj?.name || 'CENTRAL HUB'}</span>
+                </div>
+                <div>
+                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] block mb-1">Agent Code</span>
+                    <span className="text-xs font-mono font-black text-white tracking-widest">{employee.employeeCode || 'MCB-000'}</span>
+                </div>
+            </div>
+          </div>
+
+          {/* Biometric Gateway (QR) */}
+          <div className={cn(
+             "shrink-0",
+             isVertical ? "mt-auto" : "absolute bottom-8 right-8"
+          )}>
+             {showQr && (
+                <div className="flex flex-col items-center gap-3">
+                   <div className="p-3 bg-white rounded-[1.5rem] shadow-2xl relative group-hover:scale-110 transition-transform duration-500">
+                      <QRCodeSVG 
+                        value={`AGENT_ID:${employee.employeeCode}|NAME:${employee.fullName}|ORG:${organization.name}`} 
+                        size={isVertical ? 64 : 56} 
+                        level="H"
+                        includeMargin={false}
+                        fgColor="#0f172a"
+                      />
+                   </div>
+                </div>
              )}
           </div>
         </div>
-      </div>
 
-      {/* BACK SIDE */}
-      <div 
+        {/* Global Branding Strip */}
+        <div className="absolute bottom-0 left-0 w-full h-1.5 overflow-hidden flex">
+            <div className="flex-1 h-full" style={{ backgroundColor: primaryColor }} />
+            <div className="w-1/3 h-full" style={{ backgroundColor: accentColor }} />
+        </div>
+      </motion.div>
+
+      {/* ── BACK SIDE: THE INSTITUTIONAL VIEW ─────────────────────────── */}
+      <motion.div 
         id="id-card-back"
-        className="relative w-[340px] h-[520px] bg-gray-900 rounded-[2rem] shadow-2xl overflow-hidden text-white"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className={cn(
+          "relative rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/5 bg-[#080c16] text-white",
+          isVertical ? "w-[340px] h-[520px]" : "w-[520px] h-[340px]"
+        )}
         style={{ printColorAdjust: 'exact' } as any}
       >
-        <div className="absolute top-0 left-0 w-full h-2" style={{ backgroundColor: primaryColor }} />
-        
-        <div className="p-10 flex flex-col items-center text-center h-full">
-            <Fingerprint size={40} className="mb-10 opacity-20" />
+        <div className="p-10 flex flex-col items-center text-center h-full relative z-10">
+            <Fingerprint size={48} className="mb-8 text-white/10" />
             
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mb-8 italic">
-                Terms of Use
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-8 italic">
+                Operational Framework & Terms
             </h3>
             
-            <p className="text-[9px] leading-relaxed text-gray-400 mb-10">
-                This identity card remains the property of <strong>{organization.name}</strong>. 
-                If found, please return to the nearest police station or the address below. 
-                Unauthorized use of this card is strictly prohibited and may lead to prosecution.
+            <p className="text-[10px] leading-relaxed text-white/60 mb-10 font-medium px-4">
+                This institutional identity module remains the sole property of <strong>{organization.name}</strong>. 
+                Unauthorized use, duplication, or possession by non-authorized personnel is subject to legal action. 
+                If found, please surrender to the nearest global transit hub or the authority listed below.
             </p>
 
             <div className="w-full space-y-6 text-left border-t border-white/5 pt-8">
-                <div className="flex items-start gap-4">
-                    <MapPin size={14} className="text-gray-500 mt-1" />
+                <div className="flex items-center gap-5">
+                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center shrink-0">
+                        <MapPin size={18} className="text-white/40" />
+                    </div>
                     <div>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1">Corporate Address</p>
-                        <p className="text-[10px] font-bold text-gray-300">{organization.address || 'MCB Ghana Corporate HQ, Accra'}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-0.5">HQ Deployment</p>
+                        <p className="text-xs font-bold text-white/90">{organization.address || 'West Africa Operational Hub'}</p>
                     </div>
                 </div>
-                <div className="flex items-start gap-4">
-                    <Mail size={14} className="text-gray-500 mt-1" />
-                    <div>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1">Support Contact</p>
-                        <p className="text-[10px] font-bold text-gray-300">{employee.email}</p>
+                <div className="flex items-center gap-5">
+                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center shrink-0">
+                        <Globe size={18} className="text-white/40" />
                     </div>
-                </div>
-                <div className="flex items-start gap-4">
-                    <Phone size={14} className="text-gray-500 mt-1" />
                     <div>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1">Emergency Line</p>
-                        <p className="text-[10px] font-bold text-gray-300">{employee.contactNumber || '+233 00 000 0000'}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-0.5">Digital Axis</p>
+                        <p className="text-xs font-bold text-white/90">mcb-hrm-ghana.web.app</p>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-auto">
-                <p className="text-[12px] font-black tracking-tighter uppercase italic opacity-40">{organization.name}</p>
+            <div className="mt-auto flex items-center gap-2 opacity-30">
+                <Shield size={14} />
+                <p className="text-[10px] font-black tracking-[0.3em] uppercase">MCB Institutional Security</p>
             </div>
         </div>
-      </div>
 
-      {/* PRINT STYLES */}
+        {/* Dynamic Background Polish */}
+        <div className="absolute top-[-20%] right-[-10%] w-64 h-64 rounded-full bg-white/5 blur-[80px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 rounded-full bg-[var(--primary)]/5 blur-[60px]" />
+      </motion.div>
+
+      {/* PRINT ENGINE ARCHITECTURE */}
       <style>{`
         @media print {
-          /* Hide everything except the ID cards */
           body * { visibility: hidden; }
           #id-card-front, #id-card-front *,
           #id-card-back, #id-card-back * { visibility: visible; }
           
-          /* Force standard CR80 Portrait Dimensions */
           #id-card-front { 
             position: absolute; 
             left: 50%; 
             top: 20mm; 
-            transform: translateX(-50%);
+            transform: translateX(-50%) !important;
             margin: 0; 
-            box-shadow: none; 
-            border: 1px solid #eee;
-            width: 2.125in;
-            height: 3.375in;
+            box-shadow: none !important; 
+            border: 0.5pt solid rgba(0,0,0,0.1);
+            width: ${isVertical ? '2.125in' : '3.375in'};
+            height: ${isVertical ? '3.375in' : '2.125in'};
             page-break-after: always;
+            border-radius: 12pt;
           }
 
           #id-card-back {
             position: absolute;
             left: 50%;
-            top: 110mm; /* Space it out for standard sheet printing or manual flip */
-            transform: translateX(-50%);
+            top: 110mm;
+            transform: translateX(-50%) !important;
             margin: 0;
-            box-shadow: none;
-            border: 1px solid #eee;
-            width: 2.125in;
-            height: 3.375in;
+            box-shadow: none !important;
+            border: 0.5pt solid rgba(0,0,0,0.1);
+            width: ${isVertical ? '2.125in' : '3.375in'};
+            height: ${isVertical ? '3.375in' : '2.125in'};
+            border-radius: 12pt;
           }
 
-          /* Ensure high quality background colors and images */
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -204,6 +291,15 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
             size: portrait;
             margin: 0;
           }
+        }
+
+        @keyframes gradient-xy {
+          0%, 100% { background-position: 0% 0%; }
+          50% { background-position: 100% 100%; }
+        }
+        .animate-gradient-xy {
+          animation: gradient-xy 5s ease infinite;
+          background-size: 400% 400%;
         }
       `}</style>
     </div>

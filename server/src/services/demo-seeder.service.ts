@@ -36,7 +36,7 @@ export class DemoSeederService {
       createdDepts.push(dept);
     }
 
-    const commonPass = await hash('NexusDemo@2025', 12);
+    const commonPass = await hash('MCBDemo@2025', 12);
 
     // 2. Identify Strategy Dept for Executives
     const execDeptId = createdDepts.find(d => d.name === 'Executive Strategy')?.id;

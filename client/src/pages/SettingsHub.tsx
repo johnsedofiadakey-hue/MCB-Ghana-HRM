@@ -18,6 +18,7 @@ import { BrandingService } from '../services/branding.service';
 import { optimizeImage } from '../utils/image';
 import api from '../services/api';
 import { ApiIntegrations } from '../components/settings/ApiIntegrations';
+import EmployeeIDCard from '../components/it/EmployeeIDCard';
 
 type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations' | 'payroll';
 
@@ -97,6 +98,9 @@ const SettingsHub = () => {
     sidebarBg: '',
     sidebarActive: '',
     sidebarText: '',
+    idCardShowLogo: true,
+    idCardShowQrCode: true,
+    idCardOrientation: 'VERTICAL',
     defaultLanguage: 'en',
     currency: 'GHS',
     successColor: 'var(--success)',
@@ -270,7 +274,8 @@ const SettingsHub = () => {
         idCardPrimaryColor: formData.idCardPrimaryColor,
         idCardAccentColor: formData.idCardAccentColor,
         idCardShowLogo: formData.idCardShowLogo,
-        idCardShowQrCode: formData.idCardShowQrCode
+        idCardShowQrCode: formData.idCardShowQrCode,
+        idCardOrientation: formData.idCardOrientation as any
       }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
       
       await refreshSettings();
@@ -602,6 +607,19 @@ const SettingsHub = () => {
                                value={formData.idCardAccentColor || '#EE7100'} 
                                onChange={val => setFormData({...formData, idCardAccentColor: val})} 
                              />
+                             <div className="space-y-4">
+                                <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Card Orientation</label>
+                                <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)]">
+                                   <button 
+                                      onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
+                                      className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                   >Vertical</button>
+                                   <button 
+                                      onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
+                                      className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                   >Horizontal</button>
+                                </div>
+                             </div>
                              <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
                                 <div>
                                    <p className="text-[13px] font-bold text-[var(--text-primary)]">Enable Node QR Authentication</p>
@@ -615,6 +633,30 @@ const SettingsHub = () => {
                                 />
                              </div>
                           </div>
+                       </div>
+                       <div className="mt-16 p-10 rounded-[3rem] bg-[var(--bg-main)] border border-[var(--border-subtle)] flex flex-col items-center"> 
+                          <h5 className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] mb-12 opacity-50">Identity Module Preview</h5> 
+                          <div className="scale-75 origin-top"> 
+                             <EmployeeIDCard 
+                               employee={{ 
+                                 fullName: "Alexander Hamilton", 
+                                 jobTitle: "Strategic Operations Director", 
+                                 departmentObj: { name: "Institutional Governance" }, 
+                                 employeeCode: "MCB-001-EXEC", 
+                                 email: "alex.h@mcb-ghana.com" 
+                               }} 
+                               organization={{ 
+                                 name: formData.companyName || "MCB-HRM Ghana", 
+                                 logoUrl: formData.companyLogoUrl, 
+                                 primaryColor: formData.primaryColor, 
+                                 idCardPrimaryColor: formData.idCardPrimaryColor, 
+                                 idCardAccentColor: formData.idCardAccentColor, 
+                                 idCardShowLogo: formData.idCardShowLogo, 
+                                 idCardShowQrCode: formData.idCardShowQrCode, 
+                                 idCardOrientation: formData.idCardOrientation as any 
+                               }} 
+                             /> 
+                          </div> 
                        </div>
                     </section>
 

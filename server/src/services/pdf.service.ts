@@ -178,7 +178,7 @@ export class PdfExportService {
       .lineTo(550, 780)
       .stroke();
 
-    const footerText = `Institutional Record | ${org?.name || 'Nexus HR Platform'} | Page ${page} of ${total}`;
+    const footerText = `Institutional Record | ${org?.name || 'MCB-HRM Ghana'} | Page ${page} of ${total}`;
     doc
       .fontSize(7)
       .fillColor('#94a3b8')

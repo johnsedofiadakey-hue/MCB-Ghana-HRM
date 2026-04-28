@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { authenticate } from '../middleware/auth.middleware';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -13,7 +14,8 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } 
 });
 
-router.post('/logo', upload.single('logo'), async (req: any, res: any) => {
+
+router.post('/logo', authenticate, upload.single('logo'), async (req: any, res: any) => {
   try {
     const orgId = req.user?.organizationId || 'default-tenant';
     let logoUrl = '';

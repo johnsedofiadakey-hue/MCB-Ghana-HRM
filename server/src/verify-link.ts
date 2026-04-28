@@ -24,7 +24,7 @@ async function verifyFolder() {
       },
       media: {
         mimeType: 'text/plain',
-        body: 'Nexus HR Platform - Google Drive Link Verified Successfully.',
+        body: 'MCB-HRM Ghana - Google Drive Link Verified Successfully.',
       },
     });
 

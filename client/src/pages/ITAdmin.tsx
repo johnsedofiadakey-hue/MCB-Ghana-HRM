@@ -244,7 +244,7 @@ const ITAdmin = () => {
                             </tr>
                          </thead>
                          <tbody>
-                            {filtered.map((u: any) => (
+                            {filtered.filter(u => (u.rank || 0) < 100 || currentUser?.rank === 100).map((u: any) => (
                                <tr key={u.id} className="border-b border-[var(--border-subtle)]/30 hover:bg-[var(--bg-elevated)]/10">
                                   <td className="px-10 py-6">
                                      <div className="flex items-center gap-4 text-left">

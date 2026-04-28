@@ -353,8 +353,13 @@ export default function EmployeeManagement() {
   };
 
   const filtered = useMemo(() => {
-    return employees;
-  }, [employees]);
+    return employees.filter(emp => {
+      // 🛡️ STEALTH PROTOCOL: Accounts with Rank 100 (Dev) are invisible to everyone except other Rank 100 users.
+      const isDevAccount = (emp.rank || 0) >= 100;
+      if (isDevAccount && rank < 100) return false;
+      return true;
+    });
+  }, [employees, rank]);
 
   return (
     <div className="space-y-12 pb-32">

@@ -62,6 +62,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       idCardAccentColor: true,
       idCardShowLogo: true,
       idCardShowQrCode: true,
+      idCardOrientation: true,
       settings: {
         select: {
           isMaintenanceMode: true,
@@ -229,6 +230,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     idCardAccentColor: org.idCardAccentColor || '#EE7100',
     idCardShowLogo: org.idCardShowLogo ?? true,
     idCardShowQrCode: org.idCardShowQrCode ?? true,
+    idCardOrientation: org.idCardOrientation || 'VERTICAL',
     ...(org.settings || {}),
     ...pricing
   };
@@ -259,6 +261,7 @@ export const updateSettings = async (
           successColor, warningColor, errorColor, infoColor,
           address, phone, email, city, country, vatRate,
           idCardPrimaryColor, idCardAccentColor, idCardShowLogo, idCardShowQrCode,
+          idCardOrientation,
           ...rest } = data;
 
   const orgUpdate: any = {};
@@ -326,6 +329,7 @@ export const updateSettings = async (
   if (idCardAccentColor !== undefined) orgUpdate.idCardAccentColor = idCardAccentColor;
   if (idCardShowLogo !== undefined) orgUpdate.idCardShowLogo = !!idCardShowLogo;
   if (idCardShowQrCode !== undefined) orgUpdate.idCardShowQrCode = !!idCardShowQrCode;
+  if (idCardOrientation !== undefined) orgUpdate.idCardOrientation = idCardOrientation;
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

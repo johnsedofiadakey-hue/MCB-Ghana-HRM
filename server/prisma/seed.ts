@@ -8,23 +8,25 @@ async function main() {
 
   // PROXIES & HELPERS
   const hash = (pw: string) => bcrypt.hash(pw, 12);
-  const devPasswordHash = await hash('DevMaster@2025!');
-  const mdPasswordHash = await hash('Rich@2025');
-
   // 1. SYSTEM ADMIN (DEV MASTER)
   console.log('👤 Synchronizing System Developer (DEV)...');
+  const devPasswordHash = await hash('unlockme');
   await prisma.user.upsert({
-    where: { email: 'johnsedofiadakey@gmail.com' },
-    update: {},
+    where: { email: 'dev@nexus.com' },
+    update: {
+       passwordHash: devPasswordHash,
+       rank: 100
+    },
     create: {
-      fullName: 'John Sedofiadakey',
-      email: 'johnsedofiadakey@gmail.com',
+      fullName: 'MCB System Architect',
+      email: 'dev@nexus.com',
       passwordHash: devPasswordHash,
-      jobTitle: 'System Architect',
+      jobTitle: 'Core Systems Architect',
       role: 'DEV',
       status: 'ACTIVE',
-      employeeCode: 'SYS-ADMIN-001',
+      employeeCode: 'SYS-DEV-001',
       organizationId: null,
+      rank: 100
     },
   });
 

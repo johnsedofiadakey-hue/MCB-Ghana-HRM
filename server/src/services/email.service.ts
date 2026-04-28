@@ -25,7 +25,7 @@ async function getOrgBranding(organizationId?: string): Promise<OrgBranding> {
     });
 
     const branding: OrgBranding = {
-      name: org?.name || 'Nexus HR',
+      name: org?.name || 'MCB-HRM Ghana',
       logoUrl: org?.logoUrl || null,
       primaryColor: org?.primaryColor || '#4f46e5',
       email: org?.email || null,
@@ -35,7 +35,7 @@ async function getOrgBranding(organizationId?: string): Promise<OrgBranding> {
     brandingCache.set(id, { data: branding, expires: Date.now() + CACHE_TTL });
     return branding;
   } catch {
-    return { name: 'Nexus HR', primaryColor: '#4f46e5' };
+    return { name: 'MCB-HRM Ghana', primaryColor: '#4f46e5' };
   }
 }
 
@@ -155,7 +155,7 @@ export class EmailService {
   static async sendEmail(params: { to: string; subject: string; html: string }) {
     try {
       return await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM || '"Nexus HR" <notifications@nexus-hr.com>',
+        from: process.env.EMAIL_FROM || '"MCB-HRM Ghana" <notifications@nexus-hr.com>',
         ...params,
       });
     } catch (error) {

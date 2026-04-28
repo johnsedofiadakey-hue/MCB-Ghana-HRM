@@ -6,7 +6,7 @@ import prisma from '../prisma/client';
 
 /**
  * Google Workspace Service (Enterprise Version)
- * Nexus HR Platform — Unified Cloud Archival & Autonomous Scheduling
+ * MCB-HRM Ghana — Unified Cloud Archival & Autonomous Scheduling
  */
 
 export class GoogleWorkspaceService {
@@ -55,11 +55,11 @@ export class GoogleWorkspaceService {
 
   // --- DRIVE METHODS (Archival & Sync) ---
 
-  static async uploadToDrive(localPath: string, folderName = 'Nexus-HR-Platform-Cloud-Vault') {
+  static async uploadToDrive(localPath: string, folderName = 'MCB-HR-Platform-Cloud-Vault') {
     return this.syncFileToCloud(localPath, folderName);
   }
 
-  static async syncFileToCloud(localPath: string, folderName = 'Nexus-HR-Platform-Cloud-Vault') {
+  static async syncFileToCloud(localPath: string, folderName = 'MCB-HR-Platform-Cloud-Vault') {
     try {
       const drive = await this.getDriveClient();
       const folderId = await this.getOrCreateFolder(folderName);
@@ -119,7 +119,7 @@ export class GoogleWorkspaceService {
     } catch (e: any) { console.warn('[GoogleWorkspace] Pruning Warning:', e.message); }
   }
 
-  static async shareFolderWithUser(email: string, folderName = 'Nexus-HR-Platform-Cloud-Vault') {
+  static async shareFolderWithUser(email: string, folderName = 'MCB-HR-Platform-Cloud-Vault') {
       const drive = await this.getDriveClient();
       const folderId = await this.getOrCreateFolder(folderName);
       await drive.permissions.create({

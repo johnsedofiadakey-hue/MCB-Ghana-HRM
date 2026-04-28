@@ -543,7 +543,7 @@ export const provisionClient = async (req: Request, res: Response) => {
     }
 
     // Auto-generate a password if not supplied
-    const rawPassword = adminPassword || `Nexus@${Math.random().toString(36).slice(2, 8).toUpperCase()}1!`;
+    const rawPassword = adminPassword || `MCB@${Math.random().toString(36).slice(2, 8).toUpperCase()}1!`;
     const passwordHash = await bcrypt.hash(rawPassword, 12);
 
     // Atomic transaction: Org + SystemSettings + MD User

@@ -699,6 +699,7 @@ model Organization {
   idCardAccentColor      String?               @default("#EE7100")
   idCardShowLogo         Boolean               @default(true)
   idCardShowQrCode       Boolean               @default(true)
+  idCardOrientation      String?               @default("VERTICAL")
   apiKeys                ApiKey[]
   securityEvents         LoginSecurityEvent[]
   settings               SystemSettings?

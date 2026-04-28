@@ -150,7 +150,7 @@ export const executeTool = async (name: string, args: any, user: any) => {
     case 'schedule_calendar_event':
       const eventDetails = {
         summary: args.summary,
-        description: args.description || 'Scheduled via Nexus Cortex AI',
+        description: args.description || 'Scheduled via MCB Cortex AI',
         startTime: args.startTime, // Should be ISO string
         endTime: args.endTime,
         attendees: args.attendees || []
@@ -161,7 +161,7 @@ export const executeTool = async (name: string, args: any, user: any) => {
 
     case 'post_to_slack':
       await SlackService.broadcastEvent('Cortex Intelligence Update', args.message, args.priority || 'INFO');
-      return { status: 'SUCCESS', channel: 'Nexus-Ops' };
+      return { status: 'SUCCESS', channel: 'MCB-Ops' };
 
     case 'sync_to_drive':
       // This tool would normally take a file buffer or path. For the agent, we simulate 

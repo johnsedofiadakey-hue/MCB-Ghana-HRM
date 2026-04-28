@@ -23,6 +23,7 @@ export interface BrandingData {
   idCardAccentColor?: string;
   idCardShowLogo?: boolean;
   idCardShowQrCode?: boolean;
+  idCardOrientation?: 'VERTICAL' | 'HORIZONTAL';
   updatedAt?: any;
 }
 

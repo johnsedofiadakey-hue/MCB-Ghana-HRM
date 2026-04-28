@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🚀 Starting Nexus HR Platform Data Cleanup...');
+  console.log('🚀 Starting MCB-HRM Ghana Data Cleanup...');
 
   // 1. Update roles from MID_MANAGER to SUPERVISOR
   const roleUpdate = await prisma.user.updateMany({

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 /**
- * Slack Service - Nexus Ecosystem Phase 5
+ * Slack Service - MCB Ecosystem Phase 5
  * Handles operational broadcasting to institutional channels.
  */
 
@@ -26,7 +26,7 @@ export class SlackService {
                 color: color,
                 title: title.toUpperCase(),
                 text: message,
-                footer: "Nexus Cortex Intelligence",
+                footer: "MCB Cortex Intelligence",
                 footer_icon: "https://nexus-hr-platform.web.app/logo-mini.png",
                 ts: Math.floor(Date.now() / 1000)
             }
