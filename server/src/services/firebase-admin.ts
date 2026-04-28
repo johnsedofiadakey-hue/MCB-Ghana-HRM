@@ -19,6 +19,7 @@ const initializeFirebase = () => {
                     : Buffer.from(serviceAccountVar, 'base64').toString();
                 
                 serviceAccount = JSON.parse(decoded);
+                console.log(`[FirebaseAdmin] Initializing for project: ${serviceAccount.project_id} (Client: ${serviceAccount.client_email?.substring(0, 10)}...)`);
                 
                 // Fix potential newline issues in private key
                 if (serviceAccount && serviceAccount.private_key) {

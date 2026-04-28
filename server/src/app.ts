@@ -220,7 +220,7 @@ app.get('/api/health', async (req, res) => {
       status: isBooted ? 'UP' : 'BOOTING', 
       database: 'CONNECTED',
       version: APP_VERSION,
-      last_sync: '2026-04-28T20:30:00Z',
+      last_sync: '2026-04-28T20:47:00Z',
       client: 'MC-Bauchemie Ghana',
       bootComplete: isBooted,
       nodeEnv: process.env.NODE_ENV 

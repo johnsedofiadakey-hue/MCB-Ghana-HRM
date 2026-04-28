@@ -571,12 +571,6 @@ const SettingsHub = () => {
                           <div className="flex-1 space-y-4">
                              <p className="text-[14px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t('settings.upload_identity', 'Upload Official Identity')}</p>
                              <p className="text-[11px] text-[var(--text-muted)] font-medium max-w-sm leading-relaxed">Ensure your logo has a transparent background for optimal rendering across all UI modes. Supported: SVG, PNG, WebP.</p>
-                             <div className="flex gap-4">
-                                <label className="px-6 py-2.5 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary)]/20 cursor-pointer hover:scale-105 transition-transform">
-                                   {t('settings.change_design', 'Select File')}
-                                   <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                                </label>
-                             </div>
                           </div>
                        </div>
                     </section>
@@ -1686,7 +1680,7 @@ const SettingsHub = () => {
               {/* Bottom Form Bar */}
               <div className="mt-20 pt-10 border-t border-[var(--border-subtle)] flex items-center justify-between">
                 <div className="hidden md:block">
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.4-STABILITY-FIX Deployment Active</p>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.5-IDENTITY-STABILITY Deployment Active</p>
                 </div>
                 <button
                   onClick={async () => {
