@@ -21,7 +21,7 @@ import { ApiIntegrations } from '../components/settings/ApiIntegrations';
 import EmployeeIDCard from '../components/it/EmployeeIDCard';
 import HardwareGuide from '../components/it/AttendanceHardwareGuide';
 
-type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations' | 'payroll' | 'infrastructure';
+type SettingsTab = 'company' | 'leave' | 'branding' | 'id_cards' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations' | 'payroll' | 'infrastructure';
 
 const isValidHex = (hex: string) => /^#[0-9A-Fa-f]{6}$/.test(hex);
 
@@ -338,6 +338,7 @@ const SettingsHub = () => {
     { id: 'company', label: t('settings.company_profile'), icon: Building2, description: t('settings.company_description', 'Basic organization details and structure.') },
     { id: 'leave', label: t('leave.management', 'Leave Management'), icon: Calendar, description: t('leave.settings_description', 'Define global leave allowances, carry-forward rules, and borrowing policies.') },
     { id: 'branding', label: t('settings.branding'), icon: Palette, description: t('settings.branding_description', 'Visual identity, logos, and theme presets.') },
+    { id: 'id_cards', label: 'Personnel ID Cards', icon: ShieldCheck, description: 'Manage the design, orientation, and security features of physical employee tags.' },
     { id: 'localization', label: t('settings.localization'), icon: Globe, description: t('settings.localization_description', 'Language, currency, and regional formats.') },
     { id: 'security', label: t('settings.security'), icon: Shield, description: t('settings.security_description', 'Authentication, roles, and access control.') },
     { id: 'notifications', label: t('settings.notifications'), icon: Bell, description: t('settings.notifications_description', 'Email and system alert preferences.') },
@@ -577,113 +578,6 @@ const SettingsHub = () => {
                       </div>
                     </section>
 
-                    {/* Personnel ID Card Branding — EXCLUSIVE */}
-                    <section className="p-10 rounded-[2.5rem] border-2 border-[var(--primary)]/20 bg-[var(--primary)]/5 relative overflow-hidden group">
-                       <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-[var(--primary)]/10 blur-3xl rounded-full" />
-                       <div className="flex items-center gap-5 mb-10 relative z-10">
-                          <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)] shadow-lg">
-                             <ShieldCheck size={28} />
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Personnel ID Card Identity</h4>
-                            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mt-1">Template Configuration for Physical Tags</p>
-                          </div>
-                       </div>
-
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
-                          <div className="space-y-8">
-                             <ColorPicker 
-                               id="idCardPrimaryColor" 
-                               label="ID Card Primary Accent" 
-                               value={formData.idCardPrimaryColor || '#009EE3'} 
-                               onChange={val => setFormData({...formData, idCardPrimaryColor: val})} 
-                             />
-                             <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                                <div>
-                                   <p className="text-[13px] font-bold text-[var(--text-primary)]">Render Corporate Logo</p>
-                                   <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Display high-res logo on tag front.</p>
-                                </div>
-                                <input 
-                                  type="checkbox" 
-                                  className="toggle-checkbox" 
-                                  checked={formData.idCardShowLogo}
-                                  onChange={e => setFormData({...formData, idCardShowLogo: e.target.checked})}
-                                />
-                             </div>
-                          </div>
-                          <div className="space-y-8">
-                             <ColorPicker 
-                               id="idCardAccentColor" 
-                               label="ID Card Status Border" 
-                               value={formData.idCardAccentColor || '#EE7100'} 
-                               onChange={val => setFormData({...formData, idCardAccentColor: val})} 
-                             />
-                             <div className="space-y-4">
-                                <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Card Orientation</label>
-                                <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)]">
-                                   <button 
-                                      onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
-                                      className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                   >Vertical</button>
-                                   <button 
-                                      onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
-                                      className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                   >Horizontal</button>
-                                </div>
-                             </div>
-
-                             <div className="space-y-4">
-                                <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Card Aesthetic Theme</label>
-                                <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)]">
-                                   <button 
-                                      onClick={() => setFormData({...formData, idCardTheme: 'DARK'})}
-                                      className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'DARK' ? "bg-slate-900 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                   >Elite Dark</button>
-                                   <button 
-                                      onClick={() => setFormData({...formData, idCardTheme: 'LIGHT'})}
-                                      className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'LIGHT' ? "bg-white text-slate-900 border border-slate-200 shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                   >Clean Light</button>
-                                </div>
-                             </div>
-                             <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                                <div>
-                                   <p className="text-[13px] font-bold text-[var(--text-primary)]">Enable Node QR Authentication</p>
-                                   <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Generate unique biometric sync codes.</p>
-                                </div>
-                                <input 
-                                  type="checkbox" 
-                                  className="toggle-checkbox" 
-                                  checked={formData.idCardShowQrCode}
-                                  onChange={e => setFormData({...formData, idCardShowQrCode: e.target.checked})}
-                                />
-                             </div>
-                          </div>
-                       </div>
-                       <div className="mt-16 p-10 rounded-[3rem] bg-[var(--bg-main)] border border-[var(--border-subtle)] flex flex-col items-center"> 
-                          <h5 className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] mb-12 opacity-50">Identity Module Preview</h5> 
-                          <div className="scale-75 origin-top"> 
-                             <EmployeeIDCard 
-                               employee={{ 
-                                 fullName: "Alexander Hamilton", 
-                                 jobTitle: "Strategic Operations Director", 
-                                 departmentObj: { name: "Institutional Governance" }, 
-                                 employeeCode: "MCB-001-EXEC", 
-                                 email: "alex.h@mcb-ghana.com" 
-                               }} 
-                               organization={{ 
-                                 name: formData.companyName || "MCB-HRM Ghana", 
-                                 logoUrl: formData.companyLogoUrl, 
-                                 primaryColor: formData.primaryColor, 
-                                 idCardPrimaryColor: formData.idCardPrimaryColor, 
-                                 idCardAccentColor: formData.idCardAccentColor, 
-                                 idCardShowLogo: formData.idCardShowLogo, 
-                                 idCardShowQrCode: formData.idCardShowQrCode, 
-                                 idCardOrientation: formData.idCardOrientation as any 
-                               }} 
-                             /> 
-                          </div> 
-                       </div>
-                    </section>
 
                     {/* Official Identity — Logo Upload */}
                     <section className="p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] relative overflow-hidden group">
@@ -716,6 +610,144 @@ const SettingsHub = () => {
                           </div>
                        </div>
                     </section>
+                  </div>
+                )}
+
+                {activeTab === 'id_cards' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    <div className="lg:col-span-7 space-y-12 text-left">
+                      <section className="p-10 rounded-[2.5rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] relative overflow-hidden group">
+                        <div className="flex items-center gap-5 mb-10">
+                            <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
+                                <Palette size={28} />
+                            </div>
+                            <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Design & Aesthetics</h4>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                            <ColorPicker 
+                                id="idCardPrimaryColor" 
+                                label="Primary Accent" 
+                                value={formData.idCardPrimaryColor || '#009EE3'} 
+                                onChange={val => setFormData({...formData, idCardPrimaryColor: val})} 
+                            />
+                            <ColorPicker 
+                                id="idCardAccentColor" 
+                                label="Status Border" 
+                                value={formData.idCardAccentColor || '#EE7100'} 
+                                onChange={val => setFormData({...formData, idCardAccentColor: val})} 
+                            />
+                        </div>
+
+                        <div className="mt-12 space-y-8">
+                           <div className="space-y-4">
+                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Card Aesthetic Theme</label>
+                              <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
+                                 <button 
+                                    onClick={() => setFormData({...formData, idCardTheme: 'DARK'})}
+                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'DARK' ? "bg-slate-900 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                 >Elite Dark</button>
+                                 <button 
+                                    onClick={() => setFormData({...formData, idCardTheme: 'LIGHT'})}
+                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'LIGHT' ? "bg-white text-slate-900 border border-slate-200 shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                 >Clean Light</button>
+                              </div>
+                           </div>
+
+                           <div className="space-y-4">
+                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Physical Orientation</label>
+                              <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
+                                 <button 
+                                    onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
+                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                 >Portrait (Vertical)</button>
+                                 <button 
+                                    onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
+                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                 >Landscape (Horizontal)</button>
+                              </div>
+                           </div>
+                        </div>
+                      </section>
+
+                      <section className="p-10 rounded-[2.5rem] border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                         <div className="flex items-center gap-5 mb-10">
+                            <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+                                <ShieldCheck size={28} />
+                            </div>
+                            <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Security Features</h4>
+                         </div>
+
+                         <div className="space-y-6">
+                            <div className="flex items-center justify-between p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
+                               <div>
+                                  <p className="text-[13px] font-bold text-[var(--text-primary)]">Render Corporate Logo</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Display high-res logo on tag front.</p>
+                               </div>
+                               <input 
+                                 type="checkbox" 
+                                 className="toggle-checkbox" 
+                                 checked={formData.idCardShowLogo}
+                                 onChange={e => setFormData({...formData, idCardShowLogo: e.target.checked})}
+                               />
+                            </div>
+
+                            <div className="flex items-center justify-between p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
+                               <div>
+                                  <p className="text-[13px] font-bold text-[var(--text-primary)]">Enable Node QR Authentication</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Embed hardware-specific QR for attendance scans.</p>
+                               </div>
+                               <input 
+                                 type="checkbox" 
+                                 className="toggle-checkbox" 
+                                 checked={formData.idCardShowQrCode}
+                                 onChange={e => setFormData({...formData, idCardShowQrCode: e.target.checked})}
+                               />
+                            </div>
+                         </div>
+                      </section>
+                    </div>
+
+                    <div className="lg:col-span-5">
+                       <div className="sticky top-12 space-y-8">
+                          <div className="text-center space-y-4">
+                             <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Identity Real-time Preview</h4>
+                             <div className="flex justify-center p-8 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed">
+                                <EmployeeIDCard 
+                                  employee={{ 
+                                    fullName: currentUser?.fullName || 'John Doe', 
+                                    jobTitle: currentUser?.jobTitle || 'Executive Personnel', 
+                                    employeeCode: currentUser?.employeeCode || 'MCB-001-GH',
+                                    avatarUrl: currentUser?.avatarUrl,
+                                    departmentObj: { name: 'EXECUTIVE_HUB' }
+                                  }} 
+                                  organization={{
+                                    ...settings,
+                                    companyName: formData.companyName,
+                                    companyLogoUrl: formData.companyLogoUrl,
+                                    idCardPrimaryColor: formData.idCardPrimaryColor,
+                                    idCardAccentColor: formData.idCardAccentColor,
+                                    idCardTheme: formData.idCardTheme,
+                                    idCardOrientation: formData.idCardOrientation,
+                                    idCardShowLogo: formData.idCardShowLogo,
+                                    idCardShowQrCode: formData.idCardShowQrCode
+                                  }} 
+                                />
+                             </div>
+                             <p className="text-[11px] font-medium text-[var(--text-muted)] italic">Final physical output matches CR80 standard specifications.</p>
+                          </div>
+
+                          <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 text-left">
+                             <div className="flex items-center gap-3 text-amber-600 mb-4">
+                                <AlertTriangle size={18} />
+                                <h5 className="text-[11px] font-black uppercase tracking-widest">Hardware Dependency</h5>
+                             </div>
+                             <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                                Ensure your physical card printers support high-fidelity edge-to-edge printing. For Node QR features, ensure the IT Hub "Infrastructure" keys are configured correctly.
+                             </p>
+                          </div>
+                       </div>
+                    </div>
                   </div>
                 )}
 
