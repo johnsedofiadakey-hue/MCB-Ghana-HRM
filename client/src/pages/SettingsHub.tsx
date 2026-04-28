@@ -646,13 +646,13 @@ const SettingsHub = () => {
                                 {/* Base Mode */}
                                 <div className="space-y-6">
                                    <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Background Theme</label>
-                                   <div className="grid grid-cols-3 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
+                                   <div className="flex flex-wrap gap-2 p-2 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
                                       {['DARK', 'LIGHT', 'PRISTINE'].map(m => (
                                          <button 
                                             key={m}
                                             onClick={() => setFormData({...formData, idCardTheme: m as any})}
                                             className={cn(
-                                               "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", 
+                                               "flex-1 min-w-[70px] py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", 
                                                formData.idCardTheme === m 
                                                 ? "bg-[var(--primary)] text-white shadow-lg" 
                                                 : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]"
@@ -665,14 +665,14 @@ const SettingsHub = () => {
                                 {/* Orientation */}
                                 <div className="space-y-6">
                                    <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Card Shape</label>
-                                   <div className="grid grid-cols-2 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
+                                   <div className="flex flex-wrap gap-2 p-2 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
-                                         className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
+                                         className={cn("flex-1 min-w-[100px] py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
                                       >Tall (Portrait)</button>
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
-                                         className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
+                                         className={cn("flex-1 min-w-[100px] py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
                                       >Wide (Landscape)</button>
                                    </div>
                                 </div>
@@ -1680,7 +1680,7 @@ const SettingsHub = () => {
               {/* Bottom Form Bar */}
               <div className="mt-20 pt-10 border-t border-[var(--border-subtle)] flex items-center justify-between">
                 <div className="hidden md:block">
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.6-FINAL-VERIFIED Deployment Active</p>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.7-UI-OVERLAP-FIX Deployment Active</p>
                 </div>
                 <button
                   onClick={async () => {
