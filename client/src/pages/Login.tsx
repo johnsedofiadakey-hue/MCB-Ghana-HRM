@@ -248,10 +248,16 @@ const Login = () => {
                     </div>
 
                     {/* Footer Info */}
-                    <div className="mt-12 text-center">
+                    <div className="mt-12 text-center flex flex-col items-center gap-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-40">
-                            MCB Enterprise Cloud · Deployment 2026.4.25
+                            MCB Enterprise Cloud · Deployment 2026.4.28
                         </p>
+                        <button 
+                            onClick={() => navigate('/it-admin')}
+                            className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] opacity-20 hover:opacity-100 transition-opacity"
+                        >
+                            Dev Access
+                        </button>
                     </div>
                 </motion.div>
             </div>

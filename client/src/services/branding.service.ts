@@ -7,8 +7,16 @@ export interface BrandingData {
   accentColor?: string;
   bgMain?: string;
   bgCard?: string;
+  bgElevated?: string;
+  bgInput?: string;
+  borderSubtle?: string;
   textPrimary?: string;
   textSecondary?: string;
+  textMuted?: string;
+  textInverse?: string;
+  sidebarBg?: string;
+  sidebarActive?: string;
+  sidebarText?: string;
   themePreset?: string;
   updatedAt?: any;
 }

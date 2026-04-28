@@ -26,7 +26,6 @@ import { getStoredUser, getRankFromRole } from './utils/session';
 import SandboxHUD from './components/layout/SandboxHUD';
 import { storage, StorageKey } from './services/storage';
 
-import Signup from './pages/Signup';
 
 // Eager-loaded (always needed)
 import Login from './pages/Login';
@@ -262,7 +261,7 @@ const AppContent = () => {
   const { settings } = useTheme();
   const { t } = useTranslation();
 
-  const isCentralDomain = window.location.hostname === 'nexus-hr-platform.web.app' || window.location.hostname === 'nexus-hr-platform.firebaseapp.com' || window.location.hostname === 'mcb-hrm-ghana.web.app';
+  const isCentralDomain = false; // Dedicated deployment
 
   useEffect(() => {
     // Legacy Token Cleanup: Standardizing on MCB HRM Ghana session prefixes
@@ -411,7 +410,6 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
-          <Route path="/signup" element={<Signup />} />
           <Route path="/force-logout" element={<ForceLogout />} />
 
           <Route element={<ProtectedRoute />}>

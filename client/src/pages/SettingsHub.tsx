@@ -252,7 +252,19 @@ const SettingsHub = () => {
           companyLogoUrl: formData.companyLogoUrl,
           primaryColor: formData.primaryColor,
           accentColor: formData.accentColor,
-          themePreset: formData.themePreset
+          themePreset: formData.themePreset,
+          bgMain: formData.bgMain,
+          bgCard: formData.bgCard,
+          bgElevated: formData.bgElevated,
+          bgInput: formData.bgInput,
+          borderSubtle: formData.borderSubtle,
+          textPrimary: formData.textPrimary,
+          textSecondary: formData.textSecondary,
+          textMuted: formData.textMuted,
+          textInverse: formData.textInverse,
+          sidebarBg: formData.sidebarBg,
+          sidebarActive: formData.sidebarActive,
+          sidebarText: formData.sidebarText
         }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
       }
       

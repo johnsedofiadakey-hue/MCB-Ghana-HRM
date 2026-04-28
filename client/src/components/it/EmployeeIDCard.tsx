@@ -163,19 +163,47 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
       {/* PRINT STYLES */}
       <style>{`
         @media print {
+          /* Hide everything except the ID cards */
           body * { visibility: hidden; }
-          #id-card-front, #id-card-front * { visibility: visible; }
+          #id-card-front, #id-card-front *,
+          #id-card-back, #id-card-back * { visibility: visible; }
+          
+          /* Force standard CR80 Portrait Dimensions */
           #id-card-front { 
             position: absolute; 
-            left: 0; 
-            top: 0; 
+            left: 50%; 
+            top: 20mm; 
+            transform: translateX(-50%);
             margin: 0; 
             box-shadow: none; 
-            border: none;
-            width: 3.375in;
-            height: 2.125in;
+            border: 1px solid #eee;
+            width: 2.125in;
+            height: 3.375in;
+            page-break-after: always;
           }
-          /* Layout adjustments for landscape printing if needed, or keeping it portrait */
+
+          #id-card-back {
+            position: absolute;
+            left: 50%;
+            top: 110mm; /* Space it out for standard sheet printing or manual flip */
+            transform: translateX(-50%);
+            margin: 0;
+            box-shadow: none;
+            border: 1px solid #eee;
+            width: 2.125in;
+            height: 3.375in;
+          }
+
+          /* Ensure high quality background colors and images */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          @page {
+            size: portrait;
+            margin: 0;
+          }
         }
       `}</style>
     </div>

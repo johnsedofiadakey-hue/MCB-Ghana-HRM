@@ -1,31 +1,47 @@
 
-> personnel-hrm-client@0.0.0 build
-> tsc && vite build
+> personnel-hrm-client@5.1.0 build
+> vite build
 
 vite v5.4.21 building for production...
 transforming...
-
-/noise.png referenced in /noise.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
-✓ 49 modules transformed.
-x Build failed in 2.55s
+✓ 2502 modules transformed.
+x Build failed in 10.26s
 error during build:
-[vite:esbuild] Transform failed with 1 error:
-/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/src/pages/AssetManagement.tsx:85:6: ERROR: Expected ";" but found "catch"
-file: /Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/src/pages/AssetManagement.tsx:85:6
+[vite:esbuild] Transform failed with 3 errors:
+/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/src/pages/dashboards/ManagerDashboard.tsx:183:14: ERROR: Unexpected closing "div" tag does not match opening "motion.div" tag
+/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/src/pages/dashboards/ManagerDashboard.tsx:209:12: ERROR: Unexpected closing "motion.div" tag does not match opening "div" tag
+/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/src/pages/dashboards/ManagerDashboard.tsx:265:10: ERROR: Unterminated regular expression
+file: /Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/src/pages/dashboards/ManagerDashboard.tsx:183:14
 
-Expected ";" but found "catch"
-83 |    };
-84 |  
-85 |      } catch (err: any) { toast.error(String(err?.response?.data?.message || t('assets.error_recover'))); }
-   |        ^
-86 |    };
-87 |  
+Unexpected closing "div" tag does not match opening "motion.div" tag
+181|                  </div>
+182|                </div>
+183|              </div>
+   |                ^
+184|  
+185|              <div className="h-4 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden mb-16 shadow-inner">
 
-    at failureErrorWithLog (/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:1472:15)
-    at /Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:755:50
-    at responseCallbacks.<computed> (/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:622:9)
-    at handleIncomingPacket (/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:677:12)
-    at Socket.readFromStdout (/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:600:7)
+Unexpected closing "motion.div" tag does not match opening "div" tag
+207|                 ))}
+208|              </div>
+209|            </motion.div>
+   |              ^
+210|  
+211|            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+Unterminated regular expression
+263|          </div>
+264|        </div>
+265|      </div>
+   |            ^
+266|    );
+267|  };
+
+    at failureErrorWithLog (/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:1472:15)
+    at /Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:600:7)
     at Socket.emit (node:events:524:28)
     at addChunk (node:internal/streams/readable:561:12)
     at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)

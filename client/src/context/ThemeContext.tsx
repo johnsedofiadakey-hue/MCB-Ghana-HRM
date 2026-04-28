@@ -70,25 +70,8 @@ export interface Settings {
 // Contrast utilities removed as they are currently handled by theme tokens
 
 export const getOrgIdFromToken = () => {
-  try {
-    // 1. Primary: Resolve from hostname (The most reliable for white-labeling)
-    const host = window.location.hostname;
-    if (host && !host.includes('localhost') && !host.includes('nexus-hr-platform')) {
-       // mcb-hrm-ghana.web.app -> mcb-hrm-ghana
-       const parts = host.split('.');
-       if (parts.length >= 2) return parts[0];
-    }
-
-    // 2. Secondary: Resolve from Auth Token
-    const token = localStorage.getItem('nexus_auth_token');
-    if (!token) return 'default';
-    const payload = token.split('.')[1];
-    if (!payload) return 'default';
-    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    return decoded.organizationId || 'default';
-  } catch (e) {
-    return 'default';
-  }
+  // STANDALONE MODE: Always return the primary organization ID
+  return 'default-tenant';
 };
 
 const hexToRgb = (hex: string) => {
@@ -156,7 +139,7 @@ export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolea
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeName>(() => {
     const orgId = getOrgIdFromToken();
-    const saved = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName;
+    const saved = localStorage.getItem(`nexus_theme_preference_${orgId}`) as ThemeName;
     return saved || 'premium-monolith';
   });
   const [settings, setSettings] = useState<Settings | null>(() => {
@@ -436,7 +419,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const orgId = getOrgIdFromToken();
     localStorage.setItem(`nexus_branding_cache_${orgId}`, JSON.stringify(settingsToUse));
     localStorage.setItem(`nexus_theme_preference_${orgId}`, themeName);
-    localStorage.setItem('nexus_theme_preference', themeName); // Global fallback
 
     // --- ZERO-FLICKER SYNC: Align with index.html early-paint script ---
     const customColors: Record<string, string> = {};
@@ -450,7 +432,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const orgId = getOrgIdFromToken();
       const hostname = window.location.hostname;
       const cached = localStorage.getItem(`nexus_branding_cache_${orgId}`);
-      const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
+      const savedTheme = localStorage.getItem(`nexus_theme_preference_${orgId}`) as ThemeName || theme;
       
       // Early apply from cache to prevent flash
       if (cached) {
@@ -472,7 +454,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         
         const effectiveOrgId = data.organizationId || orgId;
         localStorage.setItem(`nexus_theme_preference_${effectiveOrgId}`, targetTheme);
-        localStorage.setItem('nexus_theme_preference', targetTheme);
         applyTheme(targetTheme, data);
 
         // Cache for next session
@@ -481,7 +462,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err) {
       console.warn('[ThemeContext] Unauthenticated or failed settings fetch, falling back to cached/default');
       const orgId = getOrgIdFromToken();
-      const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
+      const savedTheme = localStorage.getItem(`nexus_theme_preference_${orgId}`) as ThemeName || theme;
       applyTheme(savedTheme, null); 
     }
   }, [theme, applyTheme]);
@@ -547,7 +528,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const orgId = getOrgIdFromToken();
     setThemeState(newTheme);
     localStorage.setItem(`nexus_theme_preference_${orgId}`, newTheme);
-    localStorage.setItem('nexus_theme_preference', newTheme);
     applyTheme(newTheme, settings);
   };
 
