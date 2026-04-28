@@ -231,6 +231,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     idCardShowLogo: org.idCardShowLogo ?? true,
     idCardShowQrCode: org.idCardShowQrCode ?? true,
     idCardOrientation: org.idCardOrientation || 'VERTICAL',
+    idCardTheme: org.idCardTheme || 'DARK',
+    attendanceScanningEnabled: org.attendanceScanningEnabled ?? false,
+    attendanceApiKey: org.attendanceApiKey || '',
     ...(org.settings || {}),
     ...pricing
   };
@@ -261,7 +264,8 @@ export const updateSettings = async (
           successColor, warningColor, errorColor, infoColor,
           address, phone, email, city, country, vatRate,
           idCardPrimaryColor, idCardAccentColor, idCardShowLogo, idCardShowQrCode,
-          idCardOrientation,
+          idCardOrientation, idCardTheme,
+          attendanceScanningEnabled, attendanceApiKey,
           ...rest } = data;
 
   const orgUpdate: any = {};
@@ -330,6 +334,9 @@ export const updateSettings = async (
   if (idCardShowLogo !== undefined) orgUpdate.idCardShowLogo = !!idCardShowLogo;
   if (idCardShowQrCode !== undefined) orgUpdate.idCardShowQrCode = !!idCardShowQrCode;
   if (idCardOrientation !== undefined) orgUpdate.idCardOrientation = idCardOrientation;
+  if (idCardTheme !== undefined) orgUpdate.idCardTheme = idCardTheme;
+  if (attendanceScanningEnabled !== undefined) orgUpdate.attendanceScanningEnabled = !!attendanceScanningEnabled;
+  if (attendanceApiKey !== undefined) orgUpdate.attendanceApiKey = attendanceApiKey;
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

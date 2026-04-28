@@ -34,8 +34,16 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
   const showLogo = organization.idCardShowLogo ?? true;
   const showQr = organization.idCardShowQrCode ?? true;
   const orientation = organization.idCardOrientation || 'VERTICAL';
+  const theme = organization.idCardTheme || 'DARK';
+  const isDark = theme === 'DARK';
 
   const isVertical = orientation === 'VERTICAL';
+  
+  const txtPrimary = isDark ? 'text-white' : 'text-slate-900';
+  const txtSecondary = isDark ? 'text-white/60' : 'text-slate-600';
+  const txtMuted = isDark ? 'text-white/30' : 'text-slate-400';
+  const glassBg = isDark ? 'bg-white/5' : 'bg-slate-900/5';
+  const glassBorder = isDark ? 'border-white/10' : 'border-slate-900/10';
 
   // Billion Dollar Design Constants
   const cardWidth = isVertical ? '340px' : '520px';
@@ -50,11 +58,12 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          "relative rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 group transition-all duration-700",
-          isVertical ? "w-[340px] h-[520px]" : "w-[520px] h-[340px]"
+          "relative rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden border group transition-all duration-700",
+          isVertical ? "w-[340px] h-[520px]" : "w-[520px] h-[340px]",
+          isDark ? "border-white/10" : "border-slate-200"
         )}
         style={{ 
-          background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`,
+          background: isDark ? `linear-gradient(135deg, ${primaryColor}dd 0%, #000000 100%)` : `linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)`,
           printColorAdjust: 'exact' 
         } as any}
       >
@@ -90,12 +99,12 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
               ) : (
                 <div className="flex items-center gap-2 mb-4">
                   <Hexagon size={isVertical ? 24 : 32} style={{ color: accentColor }} fill={accentColor} fillOpacity={0.2} />
-                  <span className="text-white font-black text-xl tracking-tighter uppercase italic">{organization.name}</span>
+                  <span className={cn("font-black text-xl tracking-tighter uppercase italic", txtPrimary)}>{organization.name}</span>
                 </div>
               ))}
               {!isVertical && (
                  <div className="mt-4 space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 leading-none">Identity Status</p>
+                    <p className={cn("text-[10px] font-black uppercase tracking-[0.3em] leading-none", txtMuted)}>Identity Status</p>
                     <p className="text-xs font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
                         <Shield size={12} fill="currentColor" fillOpacity={0.2} /> Verified Agent
                     </p>
@@ -134,16 +143,18 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
             isVertical ? "items-center w-full" : "items-start border-l border-white/10 pl-10"
           )}>
             <h2 className={cn(
-                "font-black text-white leading-none uppercase italic tracking-tighter mb-2",
-                isVertical ? "text-3xl" : "text-4xl"
+                "font-black leading-none uppercase italic tracking-tighter mb-2",
+                isVertical ? "text-3xl" : "text-4xl",
+                txtPrimary
             )}>{employee.fullName}</h2>
             
             <div className={cn(
-                "px-4 py-1.5 rounded-full mb-8 inline-flex items-center gap-2 border border-white/10",
-                isVertical ? "bg-white/5" : "bg-[var(--primary)]/20"
+                "px-4 py-1.5 rounded-full mb-8 inline-flex items-center gap-2 border",
+                isVertical ? glassBg : "bg-[var(--primary)]/20",
+                glassBorder
             )}>
                 <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", txtPrimary)}>
                     {employee.jobTitle}
                 </p>
             </div>
@@ -154,12 +165,12 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                 isVertical ? "grid-cols-2 text-center" : "grid-cols-2 text-left"
             )}>
                 <div>
-                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] block mb-1">Strategic Unit</span>
-                    <span className="text-xs font-bold text-white/80 uppercase">{employee.departmentObj?.name || 'CENTRAL HUB'}</span>
+                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Strategic Unit</span>
+                    <span className={cn("text-xs font-bold uppercase", txtSecondary)}>{employee.departmentObj?.name || 'CENTRAL HUB'}</span>
                 </div>
                 <div>
-                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] block mb-1">Agent Code</span>
-                    <span className="text-xs font-mono font-black text-white tracking-widest">{employee.employeeCode || 'MCB-000'}</span>
+                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Agent Code</span>
+                    <span className={cn("text-xs font-mono font-black tracking-widest", txtPrimary)}>{employee.employeeCode || 'MCB-000'}</span>
                 </div>
             </div>
           </div>

@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
-import { clockIn, clockOut, getMyAttendance, getAllAttendance } from '../controllers/attendance.controller';
+import { clockIn, clockOut, getMyAttendance, getAllAttendance, nodeScan } from '../controllers/attendance.controller';
 import { syncPunches, kioskPunch } from '../controllers/biometric.controller';
 
 const router = Router();
+
+router.post('/node-scan', nodeScan);
+
 router.use(authenticate);
 
 router.post('/clock-in', clockIn);

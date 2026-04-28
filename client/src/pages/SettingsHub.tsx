@@ -4,7 +4,7 @@ import {
   CreditCard, Download, Save, ChevronRight,
   Lock, Languages, RefreshCw, Check, AlertTriangle,
   Mail, Smartphone, HardDrive, ShieldCheck, Sparkles,
-  Database, CheckCircle, Calendar, Zap, Plus
+  Database, CheckCircle, Calendar, Zap, Plus, Server
 } from 'lucide-react';
 import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +20,7 @@ import api from '../services/api';
 import { ApiIntegrations } from '../components/settings/ApiIntegrations';
 import EmployeeIDCard from '../components/it/EmployeeIDCard';
 
-type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations' | 'payroll';
+type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations' | 'payroll' | 'infrastructure';
 
 const isValidHex = (hex: string) => /^#[0-9A-Fa-f]{6}$/.test(hex);
 
@@ -335,6 +335,7 @@ const SettingsHub = () => {
     { id: 'data', label: t('settings.data_management'), icon: Download, description: t('settings.data_description', 'Export history, backups, and data privacy.') },
     { id: 'integrations', label: t('settings.integrations', 'API & Integrations'), icon: Sparkles, description: t('settings.integrations_desc', 'API Keys, Webhooks, and connected platforms.') },
     { id: 'payroll', label: t('payroll.settings', 'Payroll Settings'), icon: CreditCard, description: t('payroll.settings_desc', 'Configure SSNIT rates, PAYE tax bands, and global payroll rules.') },
+    { id: 'infrastructure', label: t('settings.infrastructure', 'Hardware & Nodes'), icon: Server, description: t('settings.infrastructure_desc', 'Connect QR/NFC devices and manage institutional hardware nodes.') },
   ];
 
   return (
@@ -618,6 +619,20 @@ const SettingsHub = () => {
                                       onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
                                       className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
                                    >Horizontal</button>
+                                </div>
+                             </div>
+
+                             <div className="space-y-4">
+                                <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Card Aesthetic Theme</label>
+                                <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)]">
+                                   <button 
+                                      onClick={() => setFormData({...formData, idCardTheme: 'DARK'})}
+                                      className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'DARK' ? "bg-slate-900 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                   >Elite Dark</button>
+                                   <button 
+                                      onClick={() => setFormData({...formData, idCardTheme: 'LIGHT'})}
+                                      className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'LIGHT' ? "bg-white text-slate-900 border border-slate-200 shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                   >Clean Light</button>
                                 </div>
                              </div>
                              <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
@@ -1433,6 +1448,123 @@ const SettingsHub = () => {
                          </button>
                       </div>
                     </section>
+                  </div>
+                )}
+
+                {activeTab === 'infrastructure' && (
+                  <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    {/* Header */}
+                    <div className="flex items-center gap-6 mb-12">
+                      <div className="w-16 h-16 bg-[var(--primary)]/10 rounded-[2rem] flex items-center justify-center text-[var(--primary)]">
+                        <Server size={32} />
+                      </div>
+                      <div>
+                        <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">Hardware Infrastructure</h3>
+                        <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.25em] mt-2 italic">Institutional Node Management & Access Control</p>
+                      </div>
+                    </div>
+
+                    {/* Attendance Scanning Section */}
+                    <section className="p-10 rounded-[2.5rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-xl relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
+                      
+                      <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
+                            <Smartphone size={20} />
+                          </div>
+                          <h4 className="text-lg font-black text-[var(--text-primary)]">QR/NFC Attendance Scanning</h4>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <span className={cn("text-[10px] font-black uppercase tracking-widest", formData.attendanceScanningEnabled ? "text-emerald-500" : "text-[var(--text-muted)]")}>
+                             {formData.attendanceScanningEnabled ? 'Active' : 'Disabled'}
+                           </span>
+                           <input 
+                             type="checkbox" 
+                             className="toggle-checkbox" 
+                             checked={formData.attendanceScanningEnabled}
+                             onChange={e => setFormData({...formData, attendanceScanningEnabled: e.target.checked})}
+                           />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        <div className="space-y-6">
+                           <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed font-medium">
+                             Enable automated attendance logging by connecting external hardware nodes (Scanners, NFC Readers, or Tablet Kiosks). This integration automatically tracks check-in/out events and calculates billable hours.
+                           </p>
+
+                           <div className="p-6 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-subtle)] space-y-4">
+                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Hardware Node API Key</label>
+                              <div className="flex items-center gap-3">
+                                 <input 
+                                   type="password" 
+                                   readOnly 
+                                   value={formData.attendanceApiKey || '••••••••••••••••'} 
+                                   className="flex-1 bg-transparent border-none font-mono text-sm outline-none" 
+                                 />
+                                 <button 
+                                   onClick={() => {
+                                      const key = 'MCB_' + Math.random().toString(36).substring(2, 15).toUpperCase();
+                                      setFormData({...formData, attendanceApiKey: key});
+                                      toast.success('New Hardware Key Generated');
+                                   }}
+                                   className="p-2 hover:bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] transition-all"
+                                 >
+                                    <RefreshCw size={16} />
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* Guidance Section */}
+                        <div className="p-8 rounded-3xl bg-slate-900 text-white space-y-6 shadow-2xl relative border border-white/5">
+                           <div className="flex items-center gap-3 text-emerald-400">
+                             <ShieldCheck size={20} />
+                             <span className="text-[11px] font-black uppercase tracking-[0.2em]">Hardware Guidance</span>
+                           </div>
+                           <div className="space-y-4">
+                              <div className="flex gap-4">
+                                 <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold shrink-0">1</div>
+                                 <p className="text-[12px] font-medium opacity-80">Mount your QR/NFC device at the company entrance.</p>
+                              </div>
+                              <div className="flex gap-4">
+                                 <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold shrink-0">2</div>
+                                 <p className="text-[12px] font-medium opacity-80">Configure the device to send a POST request to our Node Endpoint.</p>
+                              </div>
+                              <div className="flex gap-4">
+                                 <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold shrink-0">3</div>
+                                 <p className="text-[12px] font-medium opacity-80">Include the <code className="bg-white/10 px-1.5 py-0.5 rounded text-emerald-300">Authorization</code> header with your Hardware Key.</p>
+                              </div>
+                           </div>
+                           <div className="pt-4 border-t border-white/10">
+                              <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-3 italic">API Endpoint</p>
+                              <code className="text-[11px] text-emerald-400 bg-black/40 p-3 rounded-xl block break-all font-mono">
+                                 {window.location.origin}/api/attendance/node-scan
+                              </code>
+                           </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Infrastructure Status */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       {[
+                         { label: 'Network Latency', value: '42ms', icon: Zap, color: 'text-emerald-500' },
+                         { label: 'Active Nodes', value: '0 Nodes', icon: Server, color: 'text-[var(--text-muted)]' },
+                         { label: 'Security Firewall', value: 'Fortress V4', icon: ShieldCheck, color: 'text-[var(--primary)]' },
+                       ].map((stat, i) => (
+                         <div key={i} className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center gap-5">
+                            <div className={cn("w-12 h-12 rounded-2xl bg-current opacity-10 flex items-center justify-center", stat.color)}>
+                               <stat.icon size={24} />
+                            </div>
+                            <div>
+                               <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</p>
+                               <p className="text-xl font-black text-[var(--text-primary)] tracking-tight mt-1">{stat.value}</p>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
                   </div>
                 )}
 

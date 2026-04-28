@@ -700,6 +700,9 @@ model Organization {
   idCardShowLogo         Boolean               @default(true)
   idCardShowQrCode       Boolean               @default(true)
   idCardOrientation      String?               @default("VERTICAL")
+  idCardTheme            String?               @default("DARK")
+  attendanceScanningEnabled Boolean           @default(false)
+  attendanceApiKey       String?               @unique
   apiKeys                ApiKey[]
   securityEvents         LoginSecurityEvent[]
   settings               SystemSettings?
