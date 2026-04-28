@@ -20,7 +20,7 @@ const deriveWsUrl = () => {
     return `${wsBase}/ws`;
   }
 
-  return 'wss://nexus-hr-platform-api.onrender.com/ws';
+  return 'wss://mcb-ghana-hrm-api.onrender.com/ws';
 };
 
 const WS_URL = deriveWsUrl();

@@ -169,12 +169,14 @@ cron.schedule('0 9 * * *', async () => {
   catch (e) { console.error('[Cron] Renewal check failed:', e); }
 });
 
+/* 
 cron.schedule('0 2 * * *', async () => {
   try {
     const { resetDemoTenant } = await import('./scripts/reset-demo-tenant');
     await resetDemoTenant();
   } catch (e) { console.error('[Cron] Demo reset failed:', e); }
 });
+*/
 
 // ─── TELEMETRY & TENANT RESOLUTION ──────────────────────────────────────────
 import { apiUsageMiddleware } from './middleware/telemetry.middleware';

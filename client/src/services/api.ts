@@ -120,7 +120,6 @@ api.interceptors.request.use(
 
     // Always inject the current domain so the backend can dynamically resolve the tenant
     config.headers = config.headers || {};
-    (config.headers as any)['X-Tenant-Domain'] = window.location.hostname;
 
     return config;
   },
