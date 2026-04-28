@@ -25,7 +25,7 @@ interface EmployeeIDCardProps {
     idCardShowLogo?: boolean;
     idCardShowQrCode?: boolean;
     idCardOrientation?: 'VERTICAL' | 'HORIZONTAL';
-    idCardTheme?: 'LIGHT' | 'DARK';
+    idCardTheme?: 'LIGHT' | 'DARK' | 'PRISTINE';
     idCardBackMessage?: string;
     idCardSecurityText?: string;
   };
@@ -39,14 +39,15 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
   const orientation = organization.idCardOrientation || 'VERTICAL';
   const theme = organization.idCardTheme || 'DARK';
   const isDark = theme === 'DARK';
+  const isPristine = theme === 'PRISTINE';
 
   const isVertical = orientation === 'VERTICAL';
   
-  const txtPrimary = isDark ? 'text-white' : 'text-slate-900';
-  const txtSecondary = isDark ? 'text-white/60' : 'text-slate-600';
-  const txtMuted = isDark ? 'text-white/30' : 'text-slate-400';
-  const glassBg = isDark ? 'bg-white/5' : 'bg-slate-900/5';
-  const glassBorder = isDark ? 'border-white/10' : 'border-slate-900/10';
+  const txtPrimary = isPristine ? 'text-slate-900' : (isDark ? 'text-white' : 'text-slate-900');
+  const txtSecondary = isPristine ? 'text-slate-600' : (isDark ? 'text-white/60' : 'text-slate-600');
+  const txtMuted = isPristine ? 'text-slate-400' : (isDark ? 'text-white/30' : 'text-slate-400');
+  const glassBg = isPristine ? 'bg-slate-100/50' : (isDark ? 'bg-white/5' : 'bg-slate-900/5');
+  const glassBorder = isPristine ? 'border-slate-200' : (isDark ? 'border-white/10' : 'border-slate-900/10');
 
   return (
     <div className="flex flex-col gap-12 items-center py-16 px-4 min-h-screen bg-[var(--bg-main)] font-display selection:bg-white/20">
@@ -59,26 +60,42 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
         className={cn(
           "relative rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden border group transition-all duration-700",
           isVertical ? "w-[340px] h-[520px]" : "w-[520px] h-[340px]",
-          isDark ? "border-white/10" : "border-slate-200"
+          isPristine ? "border-slate-200" : (isDark ? "border-white/10" : "border-slate-200")
         )}
         style={{ 
-          background: isDark 
-            ? `linear-gradient(135deg, ${primaryColor} 0%, #000000 100%)` 
-            : `linear-gradient(135deg, ${primaryColor}22 0%, #ffffff 100%)`,
+          background: isPristine 
+            ? '#ffffff'
+            : (isDark 
+                ? `linear-gradient(135deg, ${primaryColor} 0%, #000000 100%)` 
+                : `linear-gradient(135deg, ${primaryColor}22 0%, #ffffff 100%)`),
           printColorAdjust: 'exact' 
         } as any}
       >
         {/* Elite Background: Mesh Gradient Engine */}
         <div className="absolute inset-0 z-0 overflow-hidden">
-            <div 
-              className="absolute -top-[20%] -left-[10%] w-[120%] h-[120%] opacity-40 blur-[80px] animate-pulse"
-              style={{ 
-                background: `radial-gradient(circle at 20% 30%, ${primaryColor} 0%, transparent 50%), 
-                             radial-gradient(circle at 80% 70%, ${accentColor} 0%, transparent 50%)` 
-              }}
-            />
+            {isPristine ? (
+               <>
+                 <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] opacity-80" />
+                 <div className="absolute top-0 left-0 w-2 h-full bg-[var(--primary)] opacity-40" />
+                 <div className="absolute bottom-0 right-0 w-32 h-32 bg-[var(--primary)]/5 rounded-full blur-3xl" />
+                 <div className="absolute top-1/4 -right-16 w-64 h-64 border-8 border-[var(--primary)]/5 rounded-full" />
+               </>
+            ) : (
+              <div 
+                className="absolute -top-[20%] -left-[10%] w-[120%] h-[120%] opacity-40 blur-[80px] animate-pulse"
+                style={{ 
+                  background: `radial-gradient(circle at 20% 30%, ${primaryColor} 0%, transparent 50%), 
+                               radial-gradient(circle at 80% 70%, ${accentColor} 0%, transparent 50%)` 
+                }}
+              />
+            )}
             {/* Subtle Geometric Overlay */}
             <div className="absolute inset-0 opacity-[0.03] grayscale" style={{ backgroundImage: 'radial-gradient(var(--text-primary) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+        </div>
+
+        {/* Safe Zone Boundary - Visible in non-print preview */}
+        <div className="absolute inset-4 border-2 border-dashed border-[var(--primary)]/10 rounded-[1.8rem] z-50 pointer-events-none print:hidden flex items-center justify-center">
+            <span className="text-[7px] font-black uppercase tracking-[0.4em] text-[var(--primary)] opacity-20 absolute top-2">Content Safe Zone</span>
         </div>
 
         {/* Holographic Security Overlay (Reacts to Hover) */}
@@ -210,19 +227,23 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className={cn(
-          "relative rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/5 bg-[#080c16] text-white",
-          isVertical ? "w-[340px] h-[520px]" : "w-[520px] h-[340px]"
+          "relative rounded-[2.5rem] shadow-2xl overflow-hidden border transition-all duration-700",
+          isVertical ? "w-[340px] h-[520px]" : "w-[520px] h-[340px]",
+          isPristine ? "bg-white text-slate-900 border-slate-200" : "bg-[#080c16] text-white border-white/5"
         )}
         style={{ printColorAdjust: 'exact' } as any}
       >
+        {/* Safe Zone Boundary */}
+        <div className={cn("absolute inset-4 border-2 border-dashed rounded-[1.8rem] z-50 pointer-events-none print:hidden", isPristine ? "border-slate-200" : "border-white/10")} />
+
         <div className="p-10 flex flex-col items-center text-center h-full relative z-10">
-            <Fingerprint size={48} className="mb-8 text-white/10" />
+            <Fingerprint size={48} className={cn("mb-8", isPristine ? "text-slate-200" : "text-white/10")} />
             
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-8 italic">
+            <h3 className={cn("text-[10px] font-black uppercase tracking-[0.4em] mb-8 italic", isPristine ? "text-slate-400" : "text-white/40")}>
                 {organization.idCardSecurityText || 'Operational Framework & Terms'}
             </h3>
             
-            <p className="text-[10px] leading-relaxed text-white/60 mb-10 font-medium px-4">
+            <p className={cn("text-[10px] leading-relaxed mb-10 font-medium px-4", isPristine ? "text-slate-600" : "text-white/60")}>
                 {organization.idCardBackMessage || (
                   <>
                     This institutional identity module remains the sole property of <strong>{organization.name}</strong>. 
@@ -232,36 +253,36 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                 )}
             </p>
 
-            <div className="w-full space-y-6 text-left border-t border-white/5 pt-8">
+            <div className={cn("w-full space-y-6 text-left border-t pt-8", isPristine ? "border-slate-100" : "border-white/5")}>
                 <div className="flex items-center gap-5">
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center shrink-0">
-                        <MapPin size={18} className="text-white/40" />
+                    <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0", isPristine ? "bg-slate-50" : "bg-white/5")}>
+                        <MapPin size={18} className={isPristine ? "text-slate-400" : "text-white/40"} />
                     </div>
                     <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-0.5">HQ Deployment</p>
-                        <p className="text-xs font-bold text-white/90">{organization.address || 'West Africa Operational Hub'}</p>
+                        <p className={cn("text-[9px] font-black uppercase tracking-widest mb-0.5", isPristine ? "text-slate-300" : "text-white/30")}>HQ Deployment</p>
+                        <p className={cn("text-xs font-bold", isPristine ? "text-slate-800" : "text-white/90")}>{organization.address || 'West Africa Operational Hub'}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-5">
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center shrink-0">
-                        <Globe size={18} className="text-white/40" />
+                    <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0", isPristine ? "bg-slate-50" : "bg-white/5")}>
+                        <Globe size={18} className={isPristine ? "text-slate-400" : "text-white/40"} />
                     </div>
                     <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-0.5">Digital Axis</p>
-                        <p className="text-xs font-bold text-white/90">mcb-hrm-ghana.web.app</p>
+                        <p className={cn("text-[9px] font-black uppercase tracking-widest mb-0.5", isPristine ? "text-slate-300" : "text-white/30")}>Digital Axis</p>
+                        <p className={cn("text-xs font-bold", isPristine ? "text-slate-800" : "text-white/90")}>mcb-hrm-ghana.web.app</p>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-auto flex items-center gap-2 opacity-30">
+            <div className={cn("mt-auto flex items-center gap-2 opacity-30", isPristine ? "text-slate-400" : "text-white")}>
                 <Shield size={14} />
                 <p className="text-[10px] font-black tracking-[0.3em] uppercase">MCB Institutional Security</p>
             </div>
         </div>
 
         {/* Dynamic Background Polish */}
-        <div className="absolute top-[-20%] right-[-10%] w-64 h-64 rounded-full bg-white/5 blur-[80px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 rounded-full bg-[var(--primary)]/5 blur-[60px]" />
+        <div className={cn("absolute top-[-20%] right-[-10%] w-64 h-64 rounded-full blur-[80px]", isPristine ? "bg-slate-100" : "bg-white/5")} />
+        <div className={cn("absolute bottom-[-10%] left-[-10%] w-48 h-48 rounded-full blur-[60px]", isPristine ? "bg-[var(--primary)]/5" : "bg-[var(--primary)]/5")} />
       </motion.div>
 
       {/* PRINT ENGINE ARCHITECTURE */}

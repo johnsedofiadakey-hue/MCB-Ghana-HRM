@@ -650,9 +650,9 @@ const SettingsHub = () => {
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 {[
                                   { id: 'mcb', label: 'MCB Professional', primary: '#009EE3', accent: '#EE7100', theme: 'DARK' },
+                                  { id: 'pristine', label: 'Pristine White', primary: '#009EE3', accent: '#EE7100', theme: 'PRISTINE' },
                                   { id: 'slate', label: 'Corporate Slate', primary: '#1e293b', accent: '#64748b', theme: 'DARK' },
                                   { id: 'ocean', label: 'Ocean Prime', primary: '#0ea5e9', accent: '#7dd3fc', theme: 'LIGHT' },
-                                  { id: 'industrial', label: 'Industrial Orange', primary: '#ea580c', accent: '#fdba74', theme: 'DARK' },
                                 ].map((preset) => (
                                   <button
                                     key={preset.id}
@@ -688,6 +688,10 @@ const SettingsHub = () => {
                                     onClick={() => setFormData({...formData, idCardTheme: 'LIGHT'})}
                                     className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'LIGHT' ? "bg-white text-slate-900 border border-slate-200 shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
                                  >Clean Light</button>
+                                 <button 
+                                    onClick={() => setFormData({...formData, idCardTheme: 'PRISTINE'})}
+                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'PRISTINE' ? "bg-white text-indigo-600 border-2 border-indigo-500 shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
+                                 >Pristine White</button>
                               </div>
                            </div>
 
@@ -784,7 +788,8 @@ const SettingsHub = () => {
                        <div className="sticky top-12 space-y-8">
                           <div className="text-center space-y-4">
                              <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Identity Real-time Preview</h4>
-                             <div className="flex justify-center p-8 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed">
+                             <div className="p-8 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed overflow-x-auto overflow-y-hidden scrollbar-hide flex justify-center">
+                                <div className={cn("transition-all duration-700 origin-center", formData.idCardOrientation === 'HORIZONTAL' ? "scale-[0.8] lg:scale-[0.9]" : "scale-100")}>
                                 <EmployeeIDCard 
                                   employee={{ 
                                     fullName: currentUser?.fullName || 'John Doe', 
@@ -808,7 +813,8 @@ const SettingsHub = () => {
                                     idCardSecurityText: formData.idCardSecurityText
                                   }} 
                                 />
-                             </div>
+                                 </div>
+                              </div>
                              <p className="text-[11px] font-medium text-[var(--text-muted)] italic">Final physical output matches CR80 standard specifications.</p>
                           </div>
 
