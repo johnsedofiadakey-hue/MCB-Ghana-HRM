@@ -184,11 +184,11 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                 isVertical ? "grid-cols-2 text-center" : "grid-cols-2 text-left"
             )}>
                 <div>
-                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Strategic Unit</span>
-                    <span className={cn("text-xs font-bold uppercase", txtSecondary)}>{employee.departmentObj?.name || 'CENTRAL HUB'}</span>
+                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Department</span>
+                    <span className={cn("text-xs font-bold uppercase", txtSecondary)}>{employee.departmentObj?.name || 'Central Hub'}</span>
                 </div>
                 <div>
-                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Agent Code</span>
+                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Employee ID</span>
                     <span className={cn("text-xs font-mono font-black tracking-widest", txtPrimary)}>{employee.employeeCode || 'MCB-000'}</span>
                 </div>
             </div>
@@ -241,13 +241,13 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
             <Fingerprint size={48} className={cn("mb-8", isPristine ? "text-slate-200" : "text-white/10")} />
             
             <h3 className={cn("text-[10px] font-black uppercase tracking-[0.4em] mb-8 italic", isPristine ? "text-slate-400" : "text-white/40")}>
-                {organization.idCardSecurityText || 'Operational Framework & Terms'}
+                {organization.idCardSecurityText || 'Terms of Use'}
             </h3>
             
             <p className={cn("text-[10px] leading-relaxed mb-10 font-medium px-4", isPristine ? "text-slate-600" : "text-white/60")}>
                 {organization.idCardBackMessage || (
                   <>
-                    This institutional identity module remains the sole property of <strong>{organization.name}</strong>. 
+                    This Employee ID card belongs to <strong>{organization.name}</strong>. 
                     Unauthorized use, duplication, or possession by non-authorized personnel is subject to legal action. 
                     If found, please surrender to the nearest global transit hub or the authority listed below.
                   </>

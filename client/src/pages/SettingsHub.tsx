@@ -143,59 +143,26 @@ const SettingsHub = () => {
     idCardSecurityText: 'Operational Framework & Terms'
   });
 
+  // Initialize form data from settings only once to prevent overwriting user drafts
+  const [initialized, setInitialized] = useState(false);
   useEffect(() => {
-    if (settings) {
+    if (settings && !initialized) {
       setFormData({
-        companyName: settings.companyName || '',
-        subtitle: settings.subtitle || '',
-        companyLogoUrl: settings.companyLogoUrl || '',
-        primaryColor: settings.primaryColor || '',
-        secondaryColor: settings.secondaryColor || '',
-        accentColor: settings.accentColor || '',
-        bgMain: settings.bgMain || '',
-        bgCard: settings.bgCard || '',
-        bgElevated: settings.bgElevated || '',
-        bgInput: settings.bgInput || '',
-        borderSubtle: settings.borderSubtle || '',
-        textPrimary: settings.textPrimary || '',
-        textSecondary: settings.textSecondary || '',
-        textMuted: settings.textMuted || '',
-        textInverse: settings.textInverse || '',
-        sidebarBg: settings.sidebarBg || '',
-        sidebarActive: settings.sidebarActive || '',
-        sidebarText: settings.sidebarText || '',
-        defaultLanguage: settings.defaultLanguage || 'en',
-        currency: settings.currency || 'USD',
-        successColor: settings.successColor || '#10b981',
-        warningColor: settings.warningColor || '#f59e0b',
-        errorColor: settings.errorColor || '#ef4444',
-        infoColor: settings.infoColor || '#06b6d4',
-        vatRate: settings.vatRate || 0,
-        allowSelfRegistration: settings.allowSelfRegistration ?? true,
-        themePreset: (settings.themePreset as ThemeName) || 'premium-monolith',
-        address: settings.address || '',
-        phone: settings.phone || '',
-        email: settings.email || '',
-        city: settings.city || '',
-        country: settings.country || '',
-        isAiEnabled: settings.isAiEnabled ?? false,
-        defaultLeaveAllowance: settings.defaultLeaveAllowance || 24,
-        allowLeaveCarryForward: settings.allowLeaveCarryForward ?? true,
-        allowLeaveBorrowing: settings.allowLeaveBorrowing ?? false,
-        carryForwardLimit: settings.carryForwardLimit || 10,
-        borrowingLimit: settings.borrowingLimit || 5,
-        ssnitRate: settings.ssnitRate || 0.055,
-        employerSsnitRate: settings.employerSsnitRate || 0.13,
-        payeBands: settings.payeBands || [],
+        ...formData,
+        ...settings,
+        companyName: settings.name || '',
         idCardPrimaryColor: settings.idCardPrimaryColor || '#009EE3',
         idCardAccentColor: settings.idCardAccentColor || '#EE7100',
+        idCardOrientation: settings.idCardOrientation || 'VERTICAL',
+        idCardTheme: settings.idCardTheme || 'DARK',
         idCardShowLogo: settings.idCardShowLogo ?? true,
         idCardShowQrCode: settings.idCardShowQrCode ?? true,
-        idCardOrientation: settings.idCardOrientation || 'VERTICAL',
-        idCardTheme: settings.idCardTheme || 'DARK'
+        idCardBackMessage: settings.idCardBackMessage || '',
+        idCardSecurityText: settings.idCardSecurityText || 'Terms of Use'
       });
+      setInitialized(true);
     }
-  }, [settings]);
+  }, [settings, initialized]);
 
   useEffect(() => {
     if (activeTab === 'branding') {
@@ -628,8 +595,8 @@ const SettingsHub = () => {
                                 <Palette size={32} />
                             </div>
                             <div>
-                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Identity Aesthetics</h4>
-                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Global Branding & Visual Modes</p>
+                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Design & Style</h4>
+                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Colors and Themes</p>
                             </div>
                          </div>
 
@@ -638,13 +605,13 @@ const SettingsHub = () => {
                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]">
                                 <ColorPicker 
                                     id="idCardPrimaryColor" 
-                                    label="Primary Identity Accent" 
+                                    label="Primary ID Color" 
                                     value={formData.idCardPrimaryColor || '#009EE3'} 
                                     onChange={val => setFormData({...formData, idCardPrimaryColor: val})} 
                                 />
                                 <ColorPicker 
                                     id="idCardAccentColor" 
-                                    label="Status Border Accent" 
+                                    label="Status Border Color" 
                                     value={formData.idCardAccentColor || '#EE7100'} 
                                     onChange={val => setFormData({...formData, idCardAccentColor: val})} 
                                 />
@@ -652,13 +619,13 @@ const SettingsHub = () => {
 
                             {/* Theme Presets */}
                             <div className="space-y-6">
-                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Curated Identity Presets</label>
-                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Ready-made Designs</label>
+                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                  {[
-                                   { id: 'mcb', label: 'MCB Prof.', primary: '#009EE3', accent: '#EE7100', theme: 'DARK' },
-                                   { id: 'pristine', label: 'Pristine White', primary: '#009EE3', accent: '#EE7100', theme: 'PRISTINE' },
-                                   { id: 'slate', label: 'Corp. Slate', primary: '#1e293b', accent: '#64748b', theme: 'DARK' },
-                                   { id: 'ocean', label: 'Ocean Prime', primary: '#0ea5e9', accent: '#7dd3fc', theme: 'LIGHT' },
+                                   { id: 'mcb', label: 'MCB Dark', primary: '#009EE3', accent: '#EE7100', theme: 'DARK' },
+                                   { id: 'pristine', label: 'Classic White', primary: '#009EE3', accent: '#EE7100', theme: 'PRISTINE' },
+                                   { id: 'slate', label: 'Slate Gray', primary: '#1e293b', accent: '#64748b', theme: 'DARK' },
+                                   { id: 'ocean', label: 'Ocean Blue', primary: '#0ea5e9', accent: '#7dd3fc', theme: 'LIGHT' },
                                  ].map((preset) => (
                                    <button
                                      key={preset.id}
@@ -669,15 +636,15 @@ const SettingsHub = () => {
                                        idCardTheme: preset.theme as any
                                      })}
                                      className={cn(
-                                       "p-5 rounded-[1.5rem] border-2 transition-all text-left group relative overflow-hidden",
+                                       "p-6 rounded-[1.5rem] border-2 transition-all text-left group relative overflow-hidden min-h-[120px] flex flex-col justify-between",
                                        formData.idCardPrimaryColor === preset.primary && formData.idCardTheme === preset.theme ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
                                      )}
                                    >
-                                     <div className="flex gap-1.5 mb-4">
-                                       <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ backgroundColor: preset.primary }} />
-                                       <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ backgroundColor: preset.accent }} />
+                                     <div className="flex gap-1.5">
+                                       <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: preset.primary }} />
+                                       <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: preset.accent }} />
                                      </div>
-                                     <p className="text-[11px] font-black text-[var(--text-primary)] leading-tight">{preset.label}</p>
+                                     <p className="text-[11px] font-black text-[var(--text-primary)] leading-tight mt-4">{preset.label}</p>
                                    </button>
                                  ))}
                                </div>
@@ -686,7 +653,7 @@ const SettingsHub = () => {
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                                 {/* Base Mode */}
                                 <div className="space-y-6">
-                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Base Aesthetic Mode</label>
+                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Background Theme</label>
                                    <div className="grid grid-cols-3 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
                                       {['DARK', 'LIGHT', 'PRISTINE'].map(m => (
                                          <button 
@@ -698,23 +665,23 @@ const SettingsHub = () => {
                                                 ? "bg-[var(--primary)] text-white shadow-lg" 
                                                 : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]"
                                             )}
-                                         >{m === 'PRISTINE' ? 'Pristine' : m}</button>
+                                         >{m === 'PRISTINE' ? 'White' : m}</button>
                                       ))}
                                    </div>
                                 </div>
 
                                 {/* Orientation */}
                                 <div className="space-y-6">
-                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Card Standard Orientation</label>
+                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Card Shape</label>
                                    <div className="grid grid-cols-2 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
                                          className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
-                                      >Portrait</button>
+                                      >Tall (Portrait)</button>
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
                                          className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
-                                      >Landscape</button>
+                                      >Wide (Landscape)</button>
                                    </div>
                                 </div>
                             </div>
@@ -726,16 +693,16 @@ const SettingsHub = () => {
                                 <ShieldCheck size={32} />
                             </div>
                             <div>
-                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Hardware Integration</h4>
-                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Biometric Nodes & Verification</p>
+                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Card Features</h4>
+                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Logo and Scanner Settings</p>
                             </div>
                          </div>
 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="flex items-center justify-between p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] group hover:border-emerald-500/30 transition-all">
                                <div>
-                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Render Corporate Logo</p>
-                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">High-Res Edge Branding</p>
+                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Show Company Logo</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">Visible on card front</p>
                                </div>
                                <input 
                                  type="checkbox" 
@@ -747,8 +714,8 @@ const SettingsHub = () => {
 
                             <div className="flex items-center justify-between p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] group hover:border-emerald-500/30 transition-all">
                                <div>
-                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Node QR Protocol</p>
-                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">Attendance Auto-Sync</p>
+                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Attendance QR Code</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">For clock-in scans</p>
                                </div>
                                <input 
                                  type="checkbox" 
@@ -767,28 +734,28 @@ const SettingsHub = () => {
                                 <Mail size={32} />
                             </div>
                             <div>
-                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Institutional Metadata</h4>
-                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Legal Backing & Authority</p>
+                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Institutional Info</h4>
+                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Ownership & Legal Terms</p>
                             </div>
                          </div>
 
                          <div className="space-y-10">
                             <div className="space-y-6">
-                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Reverse Side: Identity Header</label>
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Back Side Title</label>
                                <input 
                                  type="text"
                                  className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-[1.5rem] px-8 py-5 text-sm font-black text-[var(--text-primary)] focus:border-[var(--primary)] outline-none shadow-inner transition-all"
-                                 placeholder="Operational Framework & Terms"
+                                 placeholder="Terms of Use"
                                  value={formData.idCardSecurityText}
                                  onChange={e => setFormData({...formData, idCardSecurityText: e.target.value})}
                                />
                             </div>
 
                             <div className="space-y-6">
-                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Ownership Statement & Legal Notice</label>
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Ownership Statement</label>
                                <textarea 
                                  className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-[2rem] px-8 py-6 text-sm font-bold leading-relaxed text-[var(--text-primary)] focus:border-[var(--primary)] outline-none min-h-[160px] resize-none shadow-inner transition-all"
-                                 placeholder="This institutional module is the property of..."
+                                 placeholder="This card belongs to..."
                                  value={formData.idCardBackMessage}
                                  onChange={e => setFormData({...formData, idCardBackMessage: e.target.value})}
                                />

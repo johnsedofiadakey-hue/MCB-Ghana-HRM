@@ -701,6 +701,8 @@ model Organization {
   idCardShowQrCode       Boolean               @default(true)
   idCardOrientation      String?               @default("VERTICAL")
   idCardTheme            String?               @default("DARK")
+  idCardBackMessage      String?               @db.Text
+  idCardSecurityText     String?               @default("Terms of Use")
   attendanceScanningEnabled Boolean           @default(false)
   attendanceApiKey       String?               @unique
   apiKeys                ApiKey[]
