@@ -621,109 +621,121 @@ const SettingsHub = () => {
                 {activeTab === 'id_cards' && (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     <div className="lg:col-span-7 space-y-12 text-left">
-                      <section className="p-10 rounded-[2.5rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] relative overflow-hidden group">
-                        <div className="flex items-center gap-5 mb-10">
-                            <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
-                                <Palette size={28} />
+                      {/* --- MODULE 1: AESTHETIC STANDARDS --- */}
+                      <section className="p-12 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
+                         <div className="flex items-center gap-6 mb-12">
+                            <div className="w-16 h-16 bg-[var(--primary)]/10 rounded-[1.5rem] flex items-center justify-center text-[var(--primary)] shadow-inner">
+                                <Palette size={32} />
                             </div>
-                            <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Design & Aesthetics</h4>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                            <ColorPicker 
-                                id="idCardPrimaryColor" 
-                                label="Primary Accent" 
-                                value={formData.idCardPrimaryColor || '#009EE3'} 
-                                onChange={val => setFormData({...formData, idCardPrimaryColor: val})} 
-                            />
-                            <ColorPicker 
-                                id="idCardAccentColor" 
-                                label="Status Border" 
-                                value={formData.idCardAccentColor || '#EE7100'} 
-                                onChange={val => setFormData({...formData, idCardAccentColor: val})} 
-                            />
-                        </div>
-
-                        <div className="mt-12 space-y-12">
-                           <div className="space-y-4">
-                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">ID Card Theme Presets</label>
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                {[
-                                  { id: 'mcb', label: 'MCB Professional', primary: '#009EE3', accent: '#EE7100', theme: 'DARK' },
-                                  { id: 'pristine', label: 'Pristine White', primary: '#009EE3', accent: '#EE7100', theme: 'PRISTINE' },
-                                  { id: 'slate', label: 'Corporate Slate', primary: '#1e293b', accent: '#64748b', theme: 'DARK' },
-                                  { id: 'ocean', label: 'Ocean Prime', primary: '#0ea5e9', accent: '#7dd3fc', theme: 'LIGHT' },
-                                ].map((preset) => (
-                                  <button
-                                    key={preset.id}
-                                    onClick={() => setFormData({
-                                      ...formData, 
-                                      idCardPrimaryColor: preset.primary, 
-                                      idCardAccentColor: preset.accent, 
-                                      idCardTheme: preset.theme as any
-                                    })}
-                                    className={cn(
-                                      "p-4 rounded-2xl border-2 transition-all text-left group",
-                                      formData.idCardPrimaryColor === preset.primary ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border-subtle)] hover:border-[var(--primary)]/50"
-                                    )}
-                                  >
-                                    <div className="flex gap-1.5 mb-3">
-                                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.primary }} />
-                                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.accent }} />
-                                    </div>
-                                    <p className="text-[10px] font-bold text-[var(--text-primary)] leading-tight">{preset.label}</p>
-                                  </button>
-                                ))}
-                              </div>
-                           </div>
-
-                           <div className="space-y-4">
-                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Base Aesthetic Mode</label>
-                              <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
-                                 <button 
-                                    onClick={() => setFormData({...formData, idCardTheme: 'DARK'})}
-                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'DARK' ? "bg-slate-900 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                 >Elite Dark</button>
-                                 <button 
-                                    onClick={() => setFormData({...formData, idCardTheme: 'LIGHT'})}
-                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'LIGHT' ? "bg-white text-slate-900 border border-slate-200 shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                 >Clean Light</button>
-                                 <button 
-                                    onClick={() => setFormData({...formData, idCardTheme: 'PRISTINE'})}
-                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardTheme === 'PRISTINE' ? "bg-white text-indigo-600 border-2 border-indigo-500 shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                 >Pristine White</button>
-                              </div>
-                           </div>
-
-                           <div className="space-y-4">
-                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Physical Orientation</label>
-                              <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
-                                 <button 
-                                    onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
-                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                 >Portrait (Vertical)</button>
-                                 <button 
-                                    onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
-                                    className={cn("py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-main)]")}
-                                 >Landscape (Horizontal)</button>
-                              </div>
-                           </div>
-                        </div>
-                      </section>
-
-                      <section className="p-10 rounded-[2.5rem] border border-[var(--border-subtle)] bg-[var(--bg-card)]">
-                         <div className="flex items-center gap-5 mb-10">
-                            <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
-                                <ShieldCheck size={28} />
+                            <div>
+                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Identity Aesthetics</h4>
+                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Global Branding & Visual Modes</p>
                             </div>
-                            <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Security Features</h4>
                          </div>
 
-                         <div className="space-y-6">
-                            <div className="flex items-center justify-between p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
+                         <div className="space-y-12">
+                            {/* Color Strategy */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]">
+                                <ColorPicker 
+                                    id="idCardPrimaryColor" 
+                                    label="Primary Accent" 
+                                    value={formData.idCardPrimaryColor || '#009EE3'} 
+                                    onChange={val => setFormData({...formData, idCardPrimaryColor: val})} 
+                                />
+                                <ColorPicker 
+                                    id="idCardAccentColor" 
+                                    label="Status Border" 
+                                    value={formData.idCardAccentColor || '#EE7100'} 
+                                    onChange={val => setFormData({...formData, idCardAccentColor: val})} 
+                                />
+                            </div>
+
+                            {/* Theme Presets */}
+                            <div className="space-y-6">
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Curated Identity Presets</label>
+                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                 {[
+                                   { id: 'mcb', label: 'MCB Prof.', primary: '#009EE3', accent: '#EE7100', theme: 'DARK' },
+                                   { id: 'pristine', label: 'Pristine White', primary: '#009EE3', accent: '#EE7100', theme: 'PRISTINE' },
+                                   { id: 'slate', label: 'Corp. Slate', primary: '#1e293b', accent: '#64748b', theme: 'DARK' },
+                                   { id: 'ocean', label: 'Ocean Prime', primary: '#0ea5e9', accent: '#7dd3fc', theme: 'LIGHT' },
+                                 ].map((preset) => (
+                                   <button
+                                     key={preset.id}
+                                     onClick={() => setFormData({
+                                       ...formData, 
+                                       idCardPrimaryColor: preset.primary, 
+                                       idCardAccentColor: preset.accent, 
+                                       idCardTheme: preset.theme as any
+                                     })}
+                                     className={cn(
+                                       "p-5 rounded-[1.5rem] border-2 transition-all text-left group relative overflow-hidden",
+                                       formData.idCardPrimaryColor === preset.primary && formData.idCardTheme === preset.theme ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
+                                     )}
+                                   >
+                                     <div className="flex gap-1.5 mb-4">
+                                       <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ backgroundColor: preset.primary }} />
+                                       <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ backgroundColor: preset.accent }} />
+                                     </div>
+                                     <p className="text-[11px] font-black text-[var(--text-primary)] leading-tight">{preset.label}</p>
+                                   </button>
+                                 ))}
+                               </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                                {/* Base Mode */}
+                                <div className="space-y-6">
+                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Base Aesthetic Mode</label>
+                                   <div className="grid grid-cols-3 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
+                                      {['DARK', 'LIGHT', 'PRISTINE'].map(m => (
+                                         <button 
+                                            key={m}
+                                            onClick={() => setFormData({...formData, idCardTheme: m as any})}
+                                            className={cn(
+                                               "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", 
+                                               formData.idCardTheme === m 
+                                                ? "bg-[var(--primary)] text-white shadow-lg" 
+                                                : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]"
+                                            )}
+                                         >{m === 'PRISTINE' ? 'Pristine' : m}</button>
+                                      ))}
+                                   </div>
+                                </div>
+
+                                {/* Orientation */}
+                                <div className="space-y-6">
+                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Card Standard Orientation</label>
+                                   <div className="grid grid-cols-2 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
+                                      <button 
+                                         onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
+                                         className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
+                                      >Portrait</button>
+                                      <button 
+                                         onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
+                                         className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
+                                      >Landscape</button>
+                                   </div>
+                                </div>
+                            </div>
+                         </div>
+                       </section>
+                      <section className="p-12 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
+                         <div className="flex items-center gap-6 mb-12">
+                            <div className="w-16 h-16 bg-emerald-500/10 rounded-[1.5rem] flex items-center justify-center text-emerald-600 shadow-inner">
+                                <ShieldCheck size={32} />
+                            </div>
+                            <div>
+                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Hardware Integration</h4>
+                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Biometric Nodes & Verification</p>
+                            </div>
+                         </div>
+
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="flex items-center justify-between p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] group hover:border-emerald-500/30 transition-all">
                                <div>
-                                  <p className="text-[13px] font-bold text-[var(--text-primary)]">Render Corporate Logo</p>
-                                  <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Display high-res logo on tag front.</p>
+                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Render Corporate Logo</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">High-Res Edge Branding</p>
                                </div>
                                <input 
                                  type="checkbox" 
@@ -733,10 +745,10 @@ const SettingsHub = () => {
                                />
                             </div>
 
-                            <div className="flex items-center justify-between p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
+                            <div className="flex items-center justify-between p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] group hover:border-emerald-500/30 transition-all">
                                <div>
-                                  <p className="text-[13px] font-bold text-[var(--text-primary)]">Enable Node QR Authentication</p>
-                                  <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Embed hardware-specific QR for attendance scans.</p>
+                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Node QR Protocol</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">Attendance Auto-Sync</p>
                                </div>
                                <input 
                                  type="checkbox" 
@@ -748,37 +760,43 @@ const SettingsHub = () => {
                          </div>
                       </section>
 
-                      <section className="p-10 rounded-[2.5rem] border border-[var(--border-subtle)] bg-[var(--bg-card)]">
-                         <div className="flex items-center gap-5 mb-10">
-                            <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-600">
-                                <Mail size={28} />
+                      {/* --- MODULE 3: INSTITUTIONAL METADATA --- */}
+                      <section className="p-12 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
+                         <div className="flex items-center gap-6 mb-12">
+                            <div className="w-16 h-16 bg-blue-500/10 rounded-[1.5rem] flex items-center justify-center text-blue-600 shadow-inner">
+                                <Mail size={32} />
                             </div>
-                            <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Institutional Information</h4>
+                            <div>
+                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Institutional Metadata</h4>
+                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Legal Backing & Authority</p>
+                            </div>
                          </div>
 
-                         <div className="space-y-8">
-                            <div className="space-y-4">
-                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Back Side: Terms Header</label>
+                         <div className="space-y-10">
+                            <div className="space-y-6">
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Reverse Side: Identity Header</label>
                                <input 
                                  type="text"
-                                 className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none"
+                                 className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-[1.5rem] px-8 py-5 text-sm font-black text-[var(--text-primary)] focus:border-[var(--primary)] outline-none shadow-inner transition-all"
                                  placeholder="Operational Framework & Terms"
                                  value={formData.idCardSecurityText}
                                  onChange={e => setFormData({...formData, idCardSecurityText: e.target.value})}
                                />
                             </div>
 
-                            <div className="space-y-4">
-                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Back Side: Ownership Statement</label>
+                            <div className="space-y-6">
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Ownership Statement & Legal Notice</label>
                                <textarea 
-                                 className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-sm font-medium text-[var(--text-primary)] focus:border-[var(--primary)] outline-none min-h-[120px] resize-none"
-                                 placeholder="This card is the property of..."
+                                 className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-[2rem] px-8 py-6 text-sm font-bold leading-relaxed text-[var(--text-primary)] focus:border-[var(--primary)] outline-none min-h-[160px] resize-none shadow-inner transition-all"
+                                 placeholder="This institutional module is the property of..."
                                  value={formData.idCardBackMessage}
                                  onChange={e => setFormData({...formData, idCardBackMessage: e.target.value})}
                                />
-                               <p className="text-[10px] text-[var(--text-muted)] italic px-2 leading-relaxed">
-                                 Leaving this blank will use the system default: "This institutional identity module remains the sole property of [Company Name]..."
-                               </p>
+                               <div className="p-6 rounded-[1.5rem] bg-indigo-500/5 border border-indigo-500/10">
+                                 <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest leading-relaxed">
+                                   Note: Default statement will append organization hub address automatically if left blank.
+                                 </p>
+                               </div>
                             </div>
                          </div>
                       </section>

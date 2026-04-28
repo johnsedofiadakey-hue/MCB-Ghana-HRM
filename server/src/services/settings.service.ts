@@ -63,6 +63,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       idCardShowLogo: true,
       idCardShowQrCode: true,
       idCardOrientation: true,
+      idCardTheme: true,
+      idCardBackMessage: true,
+      idCardSecurityText: true,
       settings: {
         select: {
           isMaintenanceMode: true,
@@ -232,6 +235,8 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     idCardShowQrCode: org.idCardShowQrCode ?? true,
     idCardOrientation: org.idCardOrientation || 'VERTICAL',
     idCardTheme: org.idCardTheme || 'DARK',
+    idCardBackMessage: org.idCardBackMessage || '',
+    idCardSecurityText: org.idCardSecurityText || 'Operational Framework & Terms',
     attendanceScanningEnabled: org.attendanceScanningEnabled ?? false,
     attendanceApiKey: org.attendanceApiKey || '',
     ...(org.settings || {}),
@@ -265,6 +270,7 @@ export const updateSettings = async (
           address, phone, email, city, country, vatRate,
           idCardPrimaryColor, idCardAccentColor, idCardShowLogo, idCardShowQrCode,
           idCardOrientation, idCardTheme,
+          idCardBackMessage, idCardSecurityText,
           attendanceScanningEnabled, attendanceApiKey,
           ...rest } = data;
 
@@ -335,6 +341,8 @@ export const updateSettings = async (
   if (idCardShowQrCode !== undefined) orgUpdate.idCardShowQrCode = !!idCardShowQrCode;
   if (idCardOrientation !== undefined) orgUpdate.idCardOrientation = idCardOrientation;
   if (idCardTheme !== undefined) orgUpdate.idCardTheme = idCardTheme;
+  if (idCardBackMessage !== undefined) orgUpdate.idCardBackMessage = idCardBackMessage;
+  if (idCardSecurityText !== undefined) orgUpdate.idCardSecurityText = idCardSecurityText;
   if (attendanceScanningEnabled !== undefined) orgUpdate.attendanceScanningEnabled = !!attendanceScanningEnabled;
   if (attendanceApiKey !== undefined) orgUpdate.attendanceApiKey = attendanceApiKey;
 
