@@ -126,20 +126,27 @@ export class PdfExportService {
           if (b64) doc.image(Buffer.from(b64, 'base64'), 50, 35, { width: 100 });
         } else {
           try {
-            const response = await axios.get(org.logoUrl, { 
+            // Resolve absolute URL for relative paths
+            let absoluteLogoUrl = org.logoUrl;
+            if (!absoluteLogoUrl.startsWith('http')) {
+               const apiOrigin = process.env.VITE_API_URL || 'https://mcb-hrm-ghana.onrender.com';
+               absoluteLogoUrl = `${apiOrigin}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
+            }
+
+            const response = await axios.get(absoluteLogoUrl, { 
               responseType: 'arraybuffer',
               timeout: 10000 
             });
             doc.image(response.data, 50, 35, { width: 100 });
           } catch (e) {
-            console.warn('[PdfExportService] Logo fetch failed, fallback to name');
+            console.warn('[PdfExportService] Logo fetch failed, fallback to name branding:', org.logoUrl);
             throw e;
           }
         }
       }
     } catch (err) {
-      console.warn('[PdfExportService] Header Asset Fallback');
-      doc.fontSize(25).fillColor(primaryColor).text('NEXUS', 50, 45);
+      console.warn('[PdfExportService] Header Branding Fallback triggered');
+      doc.fontSize(22).fillColor(primaryColor).font('Helvetica-Bold').text(org?.name?.slice(0, 15).toUpperCase() || 'MCB-HRM', 50, 45);
     }
 
     doc

@@ -42,7 +42,7 @@ router.post('/logo', authenticate, upload.single('logo'), async (req: any, res: 
 
     try {
       // 2. Attempt Cloud Upload (Firebase)
-      logoUrl = await FirebaseStorageService.uploadFile(buffer, `logo-${orgId}-${Date.now()}.webp`, 'branding');
+      logoUrl = await FirebaseStorageService.uploadFile(buffer, `logo-${orgId}-${Date.now()}.webp`, 'branding', mimetype);
     } catch (firebaseError) {
       console.warn('[Upload] Firebase failed, falling back to Database Base64 storage:', firebaseError);
       

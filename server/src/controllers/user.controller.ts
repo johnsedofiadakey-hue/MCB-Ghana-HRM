@@ -258,11 +258,15 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     const userId = userReq.id;
 
     // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
-    if (req.query.role) {
-      const requestedRole = req.query.role as string;
-      filters.role = requestedRole === 'DEV' ? 'DISABLED' : (requestedRole as any);
+    // Only users with Rank 100 (DEV) can see other DEVs.
+    const isDevRequestor = userRole === 'DEV' || userRank === 100;
+    
+    if (isDevRequestor) {
+      if (req.query.role) filters.role = req.query.role as any;
     } else {
+      // Non-devs can never see DEV accounts
       filters.role = { not: 'DEV' };
+      filters.rank = { lt: 100 };
     }
 
     console.log(`[User Ledger] Fetching with filters:`, JSON.stringify(filters));

@@ -54,6 +54,13 @@ export class FirestoreService {
         sidebarBg: data.sidebarBg,
         sidebarActive: data.sidebarActive,
         sidebarText: data.sidebarText,
+        // Personnel ID Card Specifics
+        idCardPrimaryColor: data.idCardPrimaryColor,
+        idCardAccentColor: data.idCardAccentColor,
+        idCardShowLogo: data.idCardShowLogo,
+        idCardShowQrCode: data.idCardShowQrCode,
+        idCardOrientation: data.idCardOrientation,
+        idCardTheme: data.idCardTheme,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
 

@@ -45,7 +45,7 @@ export class FirebaseStorageService {
   /**
    * General file upload service method
    */
-  static async uploadFile(buffer: Buffer, originalName: string, folder: string = 'uploads'): Promise<string> {
+  static async uploadFile(buffer: Buffer, originalName: string, folder: string = 'uploads', mimetype?: string): Promise<string> {
     if (!this.bucket) this.init();
     if (!this.bucket) throw new Error('Cloud storage not configured');
 
@@ -55,9 +55,15 @@ export class FirebaseStorageService {
 
     await file.save(buffer, {
       resumable: false,
+      metadata: mimetype ? { contentType: mimetype } : undefined
     });
 
-    await file.makePublic();
+    try {
+      await file.makePublic();
+    } catch (e) {
+      console.warn('[FirebaseStorage] makePublic failed (likely uniform bucket access), using default access');
+    }
+    
     return `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
   }
 

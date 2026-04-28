@@ -19,6 +19,7 @@ import { optimizeImage } from '../utils/image';
 import api from '../services/api';
 import { ApiIntegrations } from '../components/settings/ApiIntegrations';
 import EmployeeIDCard from '../components/it/EmployeeIDCard';
+import HardwareGuide from '../components/it/AttendanceHardwareGuide';
 
 type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations' | 'payroll' | 'infrastructure';
 
@@ -74,6 +75,7 @@ const SettingsHub = () => {
   const [backups, setBackups] = useState<any[]>([]);
   const [fetchingBackups, setFetchingBackups] = useState(false);
   const [triggeringBackup, setTriggeringBackup] = useState(false);
+  const [showHardwareGuide, setShowHardwareGuide] = useState(false);
 
   const { 
     data: formData, 
@@ -185,7 +187,9 @@ const SettingsHub = () => {
         idCardPrimaryColor: settings.idCardPrimaryColor || '#009EE3',
         idCardAccentColor: settings.idCardAccentColor || '#EE7100',
         idCardShowLogo: settings.idCardShowLogo ?? true,
-        idCardShowQrCode: settings.idCardShowQrCode ?? true
+        idCardShowQrCode: settings.idCardShowQrCode ?? true,
+        idCardOrientation: settings.idCardOrientation || 'VERTICAL',
+        idCardTheme: settings.idCardTheme || 'DARK'
       });
     }
   }, [settings]);
@@ -270,12 +274,18 @@ const SettingsHub = () => {
         sidebarBg: formData.sidebarBg,
         sidebarActive: formData.sidebarActive,
         sidebarText: formData.sidebarText,
+        // Status Colors
+        successColor: formData.successColor,
+        warningColor: formData.warningColor,
+        errorColor: formData.errorColor,
+        infoColor: formData.infoColor,
         // ID Card Tokens
         idCardPrimaryColor: formData.idCardPrimaryColor,
         idCardAccentColor: formData.idCardAccentColor,
         idCardShowLogo: formData.idCardShowLogo,
         idCardShowQrCode: formData.idCardShowQrCode,
-        idCardOrientation: formData.idCardOrientation as any
+        idCardOrientation: formData.idCardOrientation as any,
+        idCardTheme: formData.idCardTheme as any
       }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
       
       await refreshSettings();
@@ -427,9 +437,9 @@ const SettingsHub = () => {
                                   },
                                   'premium-canvas': {
                                     primaryColor: '#009EE3', secondaryColor: '#9C9C9C', accentColor: '#EE7100', 
-                                    bgMain: '#ffffff', bgCard: '#ffffff', bgElevated: '#f9fafb', bgInput: '#ffffff', borderSubtle: 'rgba(0,0,0,0.08)',
+                                    bgMain: '#f8fafc', bgCard: '#ffffff', bgElevated: '#f1f5f9', bgInput: '#ffffff', borderSubtle: 'rgba(0,0,0,0.08)',
                                     textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8', textInverse: '#ffffff',
-                                    sidebarBg: '#ffffff', sidebarActive: '#f1f5f9', sidebarText: '#0f172a'
+                                    sidebarBg: '#ffffff', sidebarActive: 'rgba(0, 158, 227, 0.08)', sidebarText: '#475569'
                                   },
                                   'premium-aero': {
                                     primaryColor: '#009EE3', secondaryColor: '#f1f5f9', accentColor: '#EE7100', 
@@ -1607,6 +1617,11 @@ const SettingsHub = () => {
           </AnimatePresence>
         </div>
       </div>
+      <HardwareGuide 
+        isOpen={showHardwareGuide} 
+        onClose={() => setShowHardwareGuide(false)} 
+        apiKey={settings.attendanceApiKey || ''} 
+      />
     </div>
   );
 };

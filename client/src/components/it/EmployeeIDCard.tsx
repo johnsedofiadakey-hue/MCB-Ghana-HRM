@@ -25,6 +25,7 @@ interface EmployeeIDCardProps {
     idCardShowLogo?: boolean;
     idCardShowQrCode?: boolean;
     idCardOrientation?: 'VERTICAL' | 'HORIZONTAL';
+    idCardTheme?: 'LIGHT' | 'DARK';
   };
 }
 
@@ -45,10 +46,6 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
   const glassBg = isDark ? 'bg-white/5' : 'bg-slate-900/5';
   const glassBorder = isDark ? 'border-white/10' : 'border-slate-900/10';
 
-  // Billion Dollar Design Constants
-  const cardWidth = isVertical ? '340px' : '520px';
-  const cardHeight = isVertical ? '520px' : '340px';
-
   return (
     <div className="flex flex-col gap-12 items-center py-16 px-4 min-h-screen bg-[var(--bg-main)] font-display selection:bg-white/20">
       
@@ -63,7 +60,9 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
           isDark ? "border-white/10" : "border-slate-200"
         )}
         style={{ 
-          background: isDark ? `linear-gradient(135deg, ${primaryColor}dd 0%, #000000 100%)` : `linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)`,
+          background: isDark 
+            ? `linear-gradient(135deg, ${primaryColor} 0%, #000000 100%)` 
+            : `linear-gradient(135deg, ${primaryColor}22 0%, #ffffff 100%)`,
           printColorAdjust: 'exact' 
         } as any}
       >

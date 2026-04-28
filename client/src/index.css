@@ -248,6 +248,11 @@ body {
   
   --border-subtle: #27272a;
   --border-strong: #3f3f46;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #06b6d4;
   
   --ring-color: rgba(139, 92, 246, 0.5);
   
@@ -283,8 +288,13 @@ body {
   --text-sidebar: #64748b;
   --text-sidebar-active: #0f172a;
   
-  --border-subtle: #cbd5e1; /* Increased contrast from e2e8f0 */
-  --border-strong: #94a3b8; /* Increased contrast from cbd5e1 */
+  --border-subtle: #cbd5e1;
+  --border-strong: #94a3b8;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #0ea5e9;
   
   --ring-color: rgba(79, 70, 229, 0.1);
   
@@ -320,6 +330,11 @@ body {
   
   --border-subtle: #f1f5f9;
   --border-strong: #e2e8f0;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #34d399;
   
   --ring-color: rgba(16, 185, 129, 0.1);
   

@@ -4,9 +4,6 @@ import type { User } from '../types/models';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://mcb-ghana-hrm-api.onrender.com/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 let isRefreshing = false;

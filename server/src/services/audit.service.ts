@@ -178,7 +178,14 @@ export const getAuditLogs = async (
   limit = 50,
   filters?: { entity?: string; userId?: string }
 ) => {
-  const where: any = { organizationId };
+  const where: any = { 
+    organizationId,
+    // 🛡️ DEV ISOLATION: Hide actions performed by DEV accounts from standard audit trails
+    user: {
+      isNot: { role: 'DEV' }
+    }
+  };
+
   if (filters?.entity) where.entity = filters.entity;
   if (filters?.userId) where.userId = filters.userId;
 
@@ -187,7 +194,7 @@ export const getAuditLogs = async (
     prisma.auditLog.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: { user: { select: { fullName: true, email: true } } },
+      include: { user: { select: { fullName: true, email: true, role: true } } },
       skip,
       take: limit,
     }),

@@ -209,40 +209,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ['bg-sidebar', settingsToUse.sidebarBg],
       ['growth', settingsToUse.secondaryColor || settingsToUse.primaryColor],
       ['growth-light', hexToRgb(settingsToUse.secondaryColor || settingsToUse.primaryColor || '')],
-      ['sidebarActive', settingsToUse.sidebarActive],
-      ['sidebarText', settingsToUse.sidebarText],
+      ['bg-sidebar-active', settingsToUse.sidebarActive],
+      ['text-sidebar', settingsToUse.textSecondary || '#64748b'],
+      ['text-sidebar-active', settingsToUse.sidebarText || settingsToUse.primaryColor],
       ['success', settingsToUse.successColor || '#10b981'],
       ['warning', settingsToUse.warningColor || '#f59e0b'],
       ['error', settingsToUse.errorColor || '#ef4444'],
       ['info', settingsToUse.infoColor || '#06b6d4'],
     ];
-
-    // --- SIDEBAR HEURISTIC SYNC: Force Light Sidebar in Aero/Canvas if old dark navy is detected ---
-    const isLightHeadingTheme = themeName === 'premium-aero' || themeName === 'premium-canvas';
-    const oldDarkNavy = '#0f172a';
-    const currentSidebarBg = settingsToUse.sidebarBg?.toLowerCase();
-    
-    if (isLightHeadingTheme && (currentSidebarBg === oldDarkNavy || !currentSidebarBg)) {
-      // Force professional Light Aero Gray if the database still holds the old default
-      const aeroGray = '#ffffff'; // Use pure white for MCB professional look
-      tokens.push(['bg-sidebar', aeroGray]);
-      tokens.push(['sidebarText', '#64748b']);
-      tokens.push(['sidebarActive', 'rgba(0, 158, 227, 0.08)']);
-      tokens.push(['border-subtle', 'rgba(0,0,0,0.05)']);
-    }
-
-    // --- MCB BRAND HARDENER: Enforce Blue/Orange balance in Canvas ---
-    if (themeName === 'premium-canvas') {
-       const mcbBlue = '#009EE3';
-       const mcbOrange = '#EE7100';
-       tokens.push(['primary', mcbBlue]);
-       tokens.push(['accent', mcbOrange]);
-       tokens.push(['growth', mcbOrange]);
-       tokens.push(['bg-main', '#f8fafc']);
-       tokens.push(['bg-card', '#ffffff']);
-       tokens.push(['text-primary', '#0f172a']);
-    }
-
 
     tokens.forEach(([key, value]) => {
       if (value) {

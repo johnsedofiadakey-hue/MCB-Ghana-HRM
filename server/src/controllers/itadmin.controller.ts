@@ -83,6 +83,9 @@ export const itSystemOverview = async (req: Request, res: Response) => {
   try {
     const organizationId = req.user?.organizationId || 'default-tenant';
 
+    const requesterRank = (req as any).user?.rank || 0;
+    const devFilter = requesterRank < 100 ? { role: { not: 'DEV' }, rank: { lt: 100 } } : {};
+
     const [
       totalUsers, 
       activeUsers, 
@@ -93,8 +96,8 @@ export const itSystemOverview = async (req: Request, res: Response) => {
       totalAuditLogs,
       biometricLogCount
     ] = await Promise.all([
-      prisma.user.count({ where: { organizationId } }),
-      prisma.user.count({ where: { status: 'ACTIVE', organizationId } }),
+      prisma.user.count({ where: { organizationId, ...devFilter } }),
+      prisma.user.count({ where: { status: 'ACTIVE', organizationId, ...devFilter } }),
       prisma.asset.count({ where: { organizationId } }),
       prisma.asset.count({ where: { status: 'AVAILABLE', organizationId } }),
       prisma.asset.count({ where: { status: 'ASSIGNED', organizationId } }),
@@ -104,7 +107,7 @@ export const itSystemOverview = async (req: Request, res: Response) => {
     ]);
 
     const recentAccounts = await prisma.user.findMany({
-      where: { organizationId },
+      where: { organizationId, ...devFilter },
       orderBy: { createdAt: 'desc' }, 
       take: 10,
       select: { id: true, fullName: true, email: true, role: true, status: true, createdAt: true, jobTitle: true }
@@ -132,9 +135,11 @@ export const itSystemOverview = async (req: Request, res: Response) => {
 // Get all users (no salary data) for IT management
 export const itGetUsers = async (req: Request, res: Response) => {
   try {
-    const organizationId = (req as any).user?.organizationId || 'default-tenant';
+    const requesterRank = (req as any).user?.rank || 0;
+    const devFilter = requesterRank < 100 ? { role: { not: 'DEV' }, rank: { lt: 100 } } : {};
+
     const users = await prisma.user.findMany({
-      where: { organizationId },
+      where: { organizationId, ...devFilter },
       orderBy: { fullName: 'asc' },
       select: {
         id: true, fullName: true, email: true, role: true, status: true,
