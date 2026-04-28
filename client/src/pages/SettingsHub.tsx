@@ -1680,7 +1680,7 @@ const SettingsHub = () => {
               {/* Bottom Form Bar */}
               <div className="mt-20 pt-10 border-t border-[var(--border-subtle)] flex items-center justify-between">
                 <div className="hidden md:block">
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.5-IDENTITY-STABILITY Deployment Active</p>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.6-FINAL-VERIFIED Deployment Active</p>
                 </div>
                 <button
                   onClick={async () => {
