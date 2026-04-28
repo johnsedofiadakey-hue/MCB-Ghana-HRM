@@ -136,8 +136,6 @@ const SettingsHub = () => {
     ],
     idCardPrimaryColor: '#009EE3',
     idCardAccentColor: '#EE7100',
-    idCardShowLogo: true,
-    idCardShowQrCode: true,
     idCardTheme: 'DARK',
     idCardBackMessage: '',
     idCardSecurityText: 'Operational Framework & Terms'
@@ -787,7 +785,7 @@ const SettingsHub = () => {
                                   organization={{
                                     ...settings,
                                     name: formData.companyName,
-                                    companyLogoUrl: formData.companyLogoUrl,
+                                    logoUrl: getLogoUrl(formData.companyLogoUrl) as string,
                                     idCardPrimaryColor: formData.idCardPrimaryColor,
                                     idCardAccentColor: formData.idCardAccentColor,
                                     idCardTheme: formData.idCardTheme,
@@ -1688,7 +1686,7 @@ const SettingsHub = () => {
               {/* Bottom Form Bar */}
               <div className="mt-20 pt-10 border-t border-[var(--border-subtle)] flex items-center justify-between">
                 <div className="hidden md:block">
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">{t('settings.auto_sync_enabled', 'System Auto-sync Enabled')}</p>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.4-STABILITY-FIX Deployment Active</p>
                 </div>
                 <button
                   onClick={async () => {

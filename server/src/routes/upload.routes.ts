@@ -43,6 +43,7 @@ router.post('/logo', authenticate, upload.single('logo'), async (req: any, res: 
     try {
       // 2. Attempt Cloud Upload (Firebase)
       logoUrl = await FirebaseStorageService.uploadFile(buffer, `logo-${orgId}-${Date.now()}.webp`, 'branding', mimetype);
+      console.log('[Upload] Cloud upload successful:', logoUrl);
     } catch (firebaseError) {
       console.warn('[Upload] Firebase failed, falling back to Database Base64 storage:', firebaseError);
       
@@ -51,6 +52,8 @@ router.post('/logo', authenticate, upload.single('logo'), async (req: any, res: 
       logoUrl = `data:image/webp;base64,${base64}`;
       storageType = 'database';
     }
+
+    console.log('[Upload] Final Logo URL length:', logoUrl.length, '| Type:', storageType);
 
     // 4. Update Database with the new URL
     const organization = await prisma.organization.findUnique({ where: { id: orgId } });

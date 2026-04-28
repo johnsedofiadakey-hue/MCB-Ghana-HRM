@@ -104,31 +104,37 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
 
         {/* Content Architecture */}
         <div className={cn(
-            "relative z-10 h-full flex p-8",
-            isVertical ? "flex-col items-center text-center" : "flex-row items-center gap-10 text-left"
+            "relative z-10 h-full flex",
+            isVertical ? "flex-col items-center text-center p-8" : "flex-row items-center p-10 pt-16"
         )}>
           
           {/* Header/Side Branding */}
           <div className={cn(
-            "flex shrink-0",
-            isVertical ? "flex-col items-center mb-10" : "flex-col items-start"
+            "flex shrink-0 z-20",
+            isVertical ? "flex-col items-center mb-10" : "absolute top-8 left-8 right-8 flex-row items-center justify-between"
           )}>
-             {showLogo && (organization.logoUrl ? (
-                <img src={organization.logoUrl} alt="Logo" className={cn("object-contain", isVertical ? "h-12" : "h-14 mb-4")} />
-              ) : (
-                <div className="flex items-center gap-2 mb-4">
-                  <Hexagon size={isVertical ? 24 : 32} style={{ color: accentColor }} fill={accentColor} fillOpacity={0.2} />
-                  <span className={cn("font-black text-xl tracking-tighter uppercase italic", txtPrimary)}>{organization.name}</span>
+             <div className="flex items-center gap-3">
+               {showLogo && organization.logoUrl && (
+                  <img src={organization.logoUrl} alt="Logo" className={cn("object-contain", isVertical ? "h-12" : "h-10")} />
+               )}
+               <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-2">
+                    {!organization.logoUrl && <Hexagon size={isVertical ? 24 : 18} style={{ color: accentColor }} fill={accentColor} fillOpacity={0.2} />}
+                    <span className={cn("font-black tracking-tighter uppercase italic", isVertical ? "text-xl" : "text-base", txtPrimary)}>{organization.name}</span>
+                  </div>
+                  {!isVertical && (
+                    <p className={cn("text-[7px] font-bold uppercase tracking-[0.3em] opacity-40", txtMuted)}>Enterprise Portal</p>
+                  )}
+               </div>
+             </div>
+             {!isVertical && (
+                <div className="flex items-center gap-2">
+                   <div className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1">
+                       <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                       <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Verified</span>
+                   </div>
                 </div>
-              ))}
-              {!isVertical && (
-                 <div className="mt-4 space-y-1">
-                    <p className={cn("text-[10px] font-black uppercase tracking-[0.3em] leading-none", txtMuted)}>Identity Status</p>
-                    <p className="text-xs font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
-                        <Shield size={12} fill="currentColor" fillOpacity={0.2} /> Verified Agent
-                    </p>
-                 </div>
-              )}
+             )}
           </div>
 
           {/* Portrait Architecture */}
@@ -168,7 +174,7 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
             )}>{employee.fullName}</h2>
             
             <div className={cn(
-                "px-4 py-1.5 rounded-full mb-8 inline-flex items-center gap-2 border",
+                "px-4 py-1.5 rounded-full mb-6 inline-flex items-center gap-2 border whitespace-nowrap",
                 isVertical ? glassBg : "bg-[var(--primary)]/20",
                 glassBorder
             )}>
@@ -180,8 +186,8 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
 
             {/* Grid Metadata */}
             <div className={cn(
-                "grid gap-6 w-full",
-                isVertical ? "grid-cols-2 text-center" : "grid-cols-2 text-left"
+                "grid gap-x-10 gap-y-3 w-full",
+                isVertical ? "grid-cols-2 text-center" : "grid-cols-1 text-left"
             )}>
                 <div>
                     <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Department</span>

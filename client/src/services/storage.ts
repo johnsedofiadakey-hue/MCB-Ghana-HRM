@@ -1,5 +1,3 @@
-import { User } from '../types/models';
-
 /**
  * STORAGE SERVICE (Enterprise Resilience Layer)
  * 
@@ -96,7 +94,7 @@ class StorageService {
   }
 
   private getOrgId(): string {
-     const user = this.getItem<Partial<User> | null>(StorageKey.USER, null);
+     const user = this.getItem<any>(StorageKey.USER, null);
      return user?.organizationId || 'default';
   }
 }

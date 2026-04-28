@@ -21,8 +21,10 @@ const initializeFirebase = () => {
                 serviceAccount = JSON.parse(decoded);
                 
                 // Fix potential newline issues in private key
-                if (serviceAccount.private_key) {
+                if (serviceAccount && serviceAccount.private_key) {
                     serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+                } else {
+                    console.warn('[FirebaseAdmin] No private_key found in service account JSON');
                 }
             } catch (pErr: any) {
                 console.error('[FirebaseAdmin] Failed to parse service account JSON:', pErr.message);
