@@ -247,26 +247,31 @@ const SettingsHub = () => {
       toast.success(t('settings.update_success'));
       
       // Permanent Identity Sync to Firebase (Non-blocking)
-      if (currentUser?.organizationId) {
-        BrandingService.updateBranding(currentUser.organizationId, {
-          companyLogoUrl: formData.companyLogoUrl,
-          primaryColor: formData.primaryColor,
-          accentColor: formData.accentColor,
-          themePreset: formData.themePreset,
-          bgMain: formData.bgMain,
-          bgCard: formData.bgCard,
-          bgElevated: formData.bgElevated,
-          bgInput: formData.bgInput,
-          borderSubtle: formData.borderSubtle,
-          textPrimary: formData.textPrimary,
-          textSecondary: formData.textSecondary,
-          textMuted: formData.textMuted,
-          textInverse: formData.textInverse,
-          sidebarBg: formData.sidebarBg,
-          sidebarActive: formData.sidebarActive,
-          sidebarText: formData.sidebarText
-        }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
-      }
+      const syncOrgId = currentUser?.organizationId || 'default-tenant';
+      BrandingService.updateBranding(syncOrgId, {
+        name: formData.companyName,
+        companyLogoUrl: formData.companyLogoUrl,
+        primaryColor: formData.primaryColor,
+        accentColor: formData.accentColor,
+        themePreset: formData.themePreset,
+        bgMain: formData.bgMain,
+        bgCard: formData.bgCard,
+        bgElevated: formData.bgElevated,
+        bgInput: formData.bgInput,
+        borderSubtle: formData.borderSubtle,
+        textPrimary: formData.textPrimary,
+        textSecondary: formData.textSecondary,
+        textMuted: formData.textMuted,
+        textInverse: formData.textInverse,
+        sidebarBg: formData.sidebarBg,
+        sidebarActive: formData.sidebarActive,
+        sidebarText: formData.sidebarText,
+        // ID Card Tokens
+        idCardPrimaryColor: formData.idCardPrimaryColor,
+        idCardAccentColor: formData.idCardAccentColor,
+        idCardShowLogo: formData.idCardShowLogo,
+        idCardShowQrCode: formData.idCardShowQrCode
+      }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
       
       await refreshSettings();
       await clearDraft();
@@ -300,11 +305,10 @@ const SettingsHub = () => {
       toast.success(t('settings.identity_sync_success'));
 
       // 3. Identity broadcast to all devices
-      if (currentUser?.organizationId) {
-        await BrandingService.updateBranding(currentUser.organizationId, {
-          companyLogoUrl: logoUrl
-        });
-      }
+      const syncOrgId = currentUser?.organizationId || 'default-tenant';
+      await BrandingService.updateBranding(syncOrgId, {
+        companyLogoUrl: logoUrl
+      });
 
       await refreshSettings();
     } catch (err: any) {
@@ -1330,7 +1334,7 @@ const SettingsHub = () => {
                             <span className="col-span-3">Marginal Rate (%)</span>
                             <span className="text-center">Action</span>
                          </div>
-                         {(formData.payeBands as any[] || []).map((band, idx) => (
+                         {Array.isArray(formData.payeBands) && (formData.payeBands as any[]).map((band, idx) => (
                            <motion.div 
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}

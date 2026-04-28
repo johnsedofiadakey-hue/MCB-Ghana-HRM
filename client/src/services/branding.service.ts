@@ -17,7 +17,12 @@ export interface BrandingData {
   sidebarBg?: string;
   sidebarActive?: string;
   sidebarText?: string;
+  name?: string;
   themePreset?: string;
+  idCardPrimaryColor?: string;
+  idCardAccentColor?: string;
+  idCardShowLogo?: boolean;
+  idCardShowQrCode?: boolean;
   updatedAt?: any;
 }
 
