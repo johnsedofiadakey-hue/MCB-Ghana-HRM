@@ -578,8 +578,8 @@ const SettingsHub = () => {
                 )}
 
                 {activeTab === 'id_cards' && (
-                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-                    <div className="xl:col-span-7 space-y-12 text-left">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    <div className="lg:col-span-7 space-y-12 text-left">
                       {/* --- MODULE 1: AESTHETIC STANDARDS --- */}
                       <section className="p-12 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
                          <div className="flex items-center gap-6 mb-12">
@@ -646,18 +646,18 @@ const SettingsHub = () => {
                                 {/* Base Mode */}
                                 <div className="space-y-6">
                                    <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Background Theme</label>
-                                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
+                                   <div className="grid grid-cols-3 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
                                       {['DARK', 'LIGHT', 'PRISTINE'].map(m => (
                                          <button 
                                             key={m}
                                             onClick={() => setFormData({...formData, idCardTheme: m as any})}
                                             className={cn(
-                                               "py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", 
+                                               "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", 
                                                formData.idCardTheme === m 
                                                 ? "bg-[var(--primary)] text-white shadow-lg" 
                                                 : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]"
                                             )}
-                                         >{m === 'PRISTINE' ? 'White' : m}</button>
+                                         >{m === 'PRISTINE' ? 'Pristine' : m}</button>
                                       ))}
                                    </div>
                                 </div>
@@ -665,15 +665,15 @@ const SettingsHub = () => {
                                 {/* Orientation */}
                                 <div className="space-y-6">
                                    <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Card Shape</label>
-                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
+                                   <div className="grid grid-cols-2 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
-                                         className={cn("py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
-                                      >Tall (Portrait)</button>
+                                         className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
+                                      >Portrait</button>
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
-                                         className={cn("py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
-                                      >Wide (Landscape)</button>
+                                         className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
+                                      >Landscape</button>
                                    </div>
                                 </div>
                             </div>
@@ -761,12 +761,12 @@ const SettingsHub = () => {
                       </section>
                     </div>
 
-                    <div className="xl:col-span-5">
+                    <div className="lg:col-span-5">
                        <div className="sticky top-12 space-y-8">
                           <div className="text-center space-y-4">
                              <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Identity Real-time Preview</h4>
                              <div className="p-8 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed overflow-hidden flex justify-center items-center min-h-[480px]">
-                                <div className={cn("transition-all duration-700 origin-center scale-[0.55] xl:scale-[0.65]")}>
+                                <div className={cn("transition-all duration-700 origin-center scale-[0.65] lg:scale-[0.7]")}>
                                 <EmployeeIDCard 
                                   employee={{ 
                                     fullName: currentUser?.fullName || 'John Doe', 
@@ -1680,7 +1680,7 @@ const SettingsHub = () => {
               {/* Bottom Form Bar */}
               <div className="mt-20 pt-10 border-t border-[var(--border-subtle)] flex items-center justify-between">
                 <div className="hidden md:block">
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.8-RESPONSIVE-ALIGN Deployment Active</p>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System V5.2.9-GOLDEN-STATE-RESTORED Deployment Active</p>
                 </div>
                 <button
                   onClick={async () => {
