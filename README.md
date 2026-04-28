@@ -1,8 +1,8 @@
-# Nexus HR Platform — v6.0.0 "Cortex Agentic Edition"
+# MCB-HRM Ghana — v6.0.0 "Cortex Agentic Edition"
 <!-- Deployment Refresh Trigger: 2026-04-23T18:48:00Z -->
-**The World-Class Autonomous HRM Framework**
+**The World-Class Institutional HRM Framework**
 
-Nexus HR is now an AI-first, enterprise-grade HRM platform designed for institutional intelligence, premium executive experiences, and autonomous cross-platform operations.
+MCB-HRM Ghana is now an AI-first, enterprise-grade HRM platform designed for institutional intelligence, premium executive experiences, and autonomous cross-platform operations.
 
 ---
 

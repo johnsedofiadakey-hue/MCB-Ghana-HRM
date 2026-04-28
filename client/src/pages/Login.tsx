@@ -62,7 +62,7 @@ const Login = () => {
         }
     };
 
-    const companyName = settings?.companyName || 'MC Bauchemie';
+    const companyName = settings?.companyName || 'MCB-HRM Ghana';
     const logoUrl = settings?.logoUrl || settings?.companyLogoUrl;
 
     return (

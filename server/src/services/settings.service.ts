@@ -98,9 +98,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
   if (!org) {
     console.warn('[SettingsService] No organization found for ID:', organizationId, '- Using system fallback');
     return {
-      companyName: 'Nexus HR Platform',
-      name: 'Nexus HR Platform',
-      subtitle: 'Premium HRM OS',
+      companyName: 'MCB-HRM Ghana',
+      name: 'MCB-HRM Ghana',
+      subtitle: 'Institutional HRM OS',
       companyLogoUrl: '/favicon.ico',
       logoUrl: '/favicon.ico',
       primaryColor: '#4F46E5',
@@ -108,7 +108,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       accentColor: '#F59E0B',
       textColor: '#FFFFFF',
       sidebarColor: '#080c16',
-      themePreset: 'nexus-dark',
+      themePreset: 'premium-canvas',
       bgMain: '#080c16',
       bgCard: '#111827',
       textPrimary: '#ffffff',
