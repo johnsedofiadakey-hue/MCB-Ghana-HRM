@@ -1,7 +1,7 @@
 // MCB HRM Ghana - Production Sync: 2026-04-26
 const APP_VERSION = require('../package.json').version || '4.0.0';
 console.log(`[Startup] ${new Date().toISOString()} - MCB HRM Ghana v${APP_VERSION} Initializing...`);
-// 🚀 DEPLOYMENT HEARTBEAT: 2026-04-28T19:12:00Z
+// 🚀 DEPLOYMENT HEARTBEAT: 2026-04-28T20:30:00Z
 import express, { Application, Request, Response, NextFunction } from 'express';
 import http from 'http';
 import cors from 'cors';
@@ -220,7 +220,7 @@ app.get('/api/health', async (req, res) => {
       status: isBooted ? 'UP' : 'BOOTING', 
       database: 'CONNECTED',
       version: APP_VERSION,
-      last_sync: '2026-04-28T19:12:00Z',
+      last_sync: '2026-04-28T20:30:00Z',
       client: 'MC-Bauchemie Ghana',
       bootComplete: isBooted,
       nodeEnv: process.env.NODE_ENV 
