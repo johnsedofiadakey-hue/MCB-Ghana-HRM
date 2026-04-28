@@ -65,6 +65,11 @@ export interface Settings {
   ssnitRate?: number;
   employerSsnitRate?: number;
   payeBands?: string | any[];
+  // Personnel ID Card Customization
+  idCardOrientation?: 'VERTICAL' | 'HORIZONTAL';
+  idCardTheme?: 'LIGHT' | 'DARK';
+  idCardBackMessage?: string;
+  idCardSecurityText?: string;
 }
 
 // Contrast utilities removed as they are currently handled by theme tokens

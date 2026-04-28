@@ -26,6 +26,8 @@ interface EmployeeIDCardProps {
     idCardShowQrCode?: boolean;
     idCardOrientation?: 'VERTICAL' | 'HORIZONTAL';
     idCardTheme?: 'LIGHT' | 'DARK';
+    idCardBackMessage?: string;
+    idCardSecurityText?: string;
   };
 }
 
@@ -217,13 +219,17 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
             <Fingerprint size={48} className="mb-8 text-white/10" />
             
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-8 italic">
-                Operational Framework & Terms
+                {organization.idCardSecurityText || 'Operational Framework & Terms'}
             </h3>
             
             <p className="text-[10px] leading-relaxed text-white/60 mb-10 font-medium px-4">
-                This institutional identity module remains the sole property of <strong>{organization.name}</strong>. 
-                Unauthorized use, duplication, or possession by non-authorized personnel is subject to legal action. 
-                If found, please surrender to the nearest global transit hub or the authority listed below.
+                {organization.idCardBackMessage || (
+                  <>
+                    This institutional identity module remains the sole property of <strong>{organization.name}</strong>. 
+                    Unauthorized use, duplication, or possession by non-authorized personnel is subject to legal action. 
+                    If found, please surrender to the nearest global transit hub or the authority listed below.
+                  </>
+                )}
             </p>
 
             <div className="w-full space-y-6 text-left border-t border-white/5 pt-8">

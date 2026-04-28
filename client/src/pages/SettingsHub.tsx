@@ -137,7 +137,10 @@ const SettingsHub = () => {
     idCardPrimaryColor: '#009EE3',
     idCardAccentColor: '#EE7100',
     idCardShowLogo: true,
-    idCardShowQrCode: true
+    idCardShowQrCode: true,
+    idCardTheme: 'DARK',
+    idCardBackMessage: '',
+    idCardSecurityText: 'Operational Framework & Terms'
   });
 
   useEffect(() => {
@@ -285,7 +288,9 @@ const SettingsHub = () => {
         idCardShowLogo: formData.idCardShowLogo,
         idCardShowQrCode: formData.idCardShowQrCode,
         idCardOrientation: formData.idCardOrientation as any,
-        idCardTheme: formData.idCardTheme as any
+        idCardTheme: formData.idCardTheme as any,
+        idCardBackMessage: formData.idCardBackMessage,
+        idCardSecurityText: formData.idCardSecurityText
       }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
       
       await refreshSettings();
@@ -639,9 +644,41 @@ const SettingsHub = () => {
                             />
                         </div>
 
-                        <div className="mt-12 space-y-8">
+                        <div className="mt-12 space-y-12">
                            <div className="space-y-4">
-                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Card Aesthetic Theme</label>
+                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">ID Card Theme Presets</label>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                {[
+                                  { id: 'mcb', label: 'MCB Professional', primary: '#009EE3', accent: '#EE7100', theme: 'DARK' },
+                                  { id: 'slate', label: 'Corporate Slate', primary: '#1e293b', accent: '#64748b', theme: 'DARK' },
+                                  { id: 'ocean', label: 'Ocean Prime', primary: '#0ea5e9', accent: '#7dd3fc', theme: 'LIGHT' },
+                                  { id: 'industrial', label: 'Industrial Orange', primary: '#ea580c', accent: '#fdba74', theme: 'DARK' },
+                                ].map((preset) => (
+                                  <button
+                                    key={preset.id}
+                                    onClick={() => setFormData({
+                                      ...formData, 
+                                      idCardPrimaryColor: preset.primary, 
+                                      idCardAccentColor: preset.accent, 
+                                      idCardTheme: preset.theme as any
+                                    })}
+                                    className={cn(
+                                      "p-4 rounded-2xl border-2 transition-all text-left group",
+                                      formData.idCardPrimaryColor === preset.primary ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border-subtle)] hover:border-[var(--primary)]/50"
+                                    )}
+                                  >
+                                    <div className="flex gap-1.5 mb-3">
+                                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.primary }} />
+                                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.accent }} />
+                                    </div>
+                                    <p className="text-[10px] font-bold text-[var(--text-primary)] leading-tight">{preset.label}</p>
+                                  </button>
+                                ))}
+                              </div>
+                           </div>
+
+                           <div className="space-y-4">
+                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Base Aesthetic Mode</label>
                               <div className="grid grid-cols-2 gap-3 p-1.5 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
                                  <button 
                                     onClick={() => setFormData({...formData, idCardTheme: 'DARK'})}
@@ -706,6 +743,41 @@ const SettingsHub = () => {
                             </div>
                          </div>
                       </section>
+
+                      <section className="p-10 rounded-[2.5rem] border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                         <div className="flex items-center gap-5 mb-10">
+                            <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-600">
+                                <Mail size={28} />
+                            </div>
+                            <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Institutional Information</h4>
+                         </div>
+
+                         <div className="space-y-8">
+                            <div className="space-y-4">
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Back Side: Terms Header</label>
+                               <input 
+                                 type="text"
+                                 className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none"
+                                 placeholder="Operational Framework & Terms"
+                                 value={formData.idCardSecurityText}
+                                 onChange={e => setFormData({...formData, idCardSecurityText: e.target.value})}
+                               />
+                            </div>
+
+                            <div className="space-y-4">
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Back Side: Ownership Statement</label>
+                               <textarea 
+                                 className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-sm font-medium text-[var(--text-primary)] focus:border-[var(--primary)] outline-none min-h-[120px] resize-none"
+                                 placeholder="This card is the property of..."
+                                 value={formData.idCardBackMessage}
+                                 onChange={e => setFormData({...formData, idCardBackMessage: e.target.value})}
+                               />
+                               <p className="text-[10px] text-[var(--text-muted)] italic px-2 leading-relaxed">
+                                 Leaving this blank will use the system default: "This institutional identity module remains the sole property of [Company Name]..."
+                               </p>
+                            </div>
+                         </div>
+                      </section>
                     </div>
 
                     <div className="lg:col-span-5">
@@ -719,18 +791,21 @@ const SettingsHub = () => {
                                     jobTitle: currentUser?.jobTitle || 'Executive Personnel', 
                                     employeeCode: currentUser?.employeeCode || 'MCB-001-GH',
                                     avatarUrl: currentUser?.avatarUrl,
-                                    departmentObj: { name: 'EXECUTIVE_HUB' }
+                                    departmentObj: { name: 'EXECUTIVE_HUB' },
+                                    email: currentUser?.email || 'j.doe@mcb-ghana.com'
                                   }} 
                                   organization={{
                                     ...settings,
-                                    companyName: formData.companyName,
+                                    name: formData.companyName,
                                     companyLogoUrl: formData.companyLogoUrl,
                                     idCardPrimaryColor: formData.idCardPrimaryColor,
                                     idCardAccentColor: formData.idCardAccentColor,
                                     idCardTheme: formData.idCardTheme,
                                     idCardOrientation: formData.idCardOrientation,
                                     idCardShowLogo: formData.idCardShowLogo,
-                                    idCardShowQrCode: formData.idCardShowQrCode
+                                    idCardShowQrCode: formData.idCardShowQrCode,
+                                    idCardBackMessage: formData.idCardBackMessage,
+                                    idCardSecurityText: formData.idCardSecurityText
                                   }} 
                                 />
                              </div>

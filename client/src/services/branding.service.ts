@@ -24,6 +24,9 @@ export interface BrandingData {
   idCardShowLogo?: boolean;
   idCardShowQrCode?: boolean;
   idCardOrientation?: 'VERTICAL' | 'HORIZONTAL';
+  idCardTheme?: 'LIGHT' | 'DARK';
+  idCardBackMessage?: string;
+  idCardSecurityText?: string;
   updatedAt?: any;
 }
 
