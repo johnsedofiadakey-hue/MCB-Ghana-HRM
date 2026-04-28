@@ -635,16 +635,16 @@ const SettingsHub = () => {
 
                          <div className="space-y-12">
                             {/* Color Strategy */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]">
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]">
                                 <ColorPicker 
                                     id="idCardPrimaryColor" 
-                                    label="Primary Accent" 
+                                    label="Primary Identity Accent" 
                                     value={formData.idCardPrimaryColor || '#009EE3'} 
                                     onChange={val => setFormData({...formData, idCardPrimaryColor: val})} 
                                 />
                                 <ColorPicker 
                                     id="idCardAccentColor" 
-                                    label="Status Border" 
+                                    label="Status Border Accent" 
                                     value={formData.idCardAccentColor || '#EE7100'} 
                                     onChange={val => setFormData({...formData, idCardAccentColor: val})} 
                                 />
@@ -806,8 +806,8 @@ const SettingsHub = () => {
                        <div className="sticky top-12 space-y-8">
                           <div className="text-center space-y-4">
                              <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Identity Real-time Preview</h4>
-                             <div className="p-8 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed overflow-x-auto overflow-y-hidden scrollbar-hide flex justify-center">
-                                <div className={cn("transition-all duration-700 origin-center", formData.idCardOrientation === 'HORIZONTAL' ? "scale-[0.8] lg:scale-[0.9]" : "scale-100")}>
+                             <div className="p-8 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed overflow-hidden flex justify-center items-center min-h-[480px]">
+                                <div className={cn("transition-all duration-700 origin-center scale-[0.65] lg:scale-[0.7]")}>
                                 <EmployeeIDCard 
                                   employee={{ 
                                     fullName: currentUser?.fullName || 'John Doe', 
@@ -833,7 +833,10 @@ const SettingsHub = () => {
                                 />
                                  </div>
                               </div>
-                             <p className="text-[11px] font-medium text-[var(--text-muted)] italic">Final physical output matches CR80 standard specifications.</p>
+                              <div className="flex flex-col items-center gap-2">
+                                 <p className="text-[11px] font-black text-[var(--primary)] uppercase tracking-widest">CR80 ISO Standard: 85.6mm × 54.0mm</p>
+                                 <p className="text-[10px] font-medium text-[var(--text-muted)] italic leading-relaxed">High-fidelity 300 DPI Physical Print Representation.</p>
+                              </div>
                           </div>
 
                           <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 text-left">

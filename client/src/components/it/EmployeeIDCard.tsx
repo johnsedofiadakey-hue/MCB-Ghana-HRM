@@ -95,7 +95,8 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
 
         {/* Safe Zone Boundary - Visible in non-print preview */}
         <div className="absolute inset-4 border-2 border-dashed border-[var(--primary)]/10 rounded-[1.8rem] z-50 pointer-events-none print:hidden flex items-center justify-center">
-            <span className="text-[7px] font-black uppercase tracking-[0.4em] text-[var(--primary)] opacity-20 absolute top-2">Content Safe Zone</span>
+            <span className="text-[7px] font-black uppercase tracking-[0.4em] text-[var(--primary)] opacity-20 absolute top-2">CR80 Standard: 85.6mm × 54.0mm</span>
+            <span className="text-[6px] font-black uppercase tracking-[0.4em] text-[var(--primary)] opacity-10 absolute bottom-2">Content Safe Zone</span>
         </div>
 
         {/* Holographic Security Overlay (Reacts to Hover) */}
