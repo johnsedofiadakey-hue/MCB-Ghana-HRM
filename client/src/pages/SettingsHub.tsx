@@ -575,7 +575,9 @@ const SettingsHub = () => {
                        </div>
                     </section>
                   </div>
-                            {activeTab === 'id_cards' && (
+                )}
+
+                {activeTab === 'id_cards' && (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     <div className="lg:col-span-7 space-y-10 text-left">
                       {/* --- SECTION: CARD DESIGN --- */}
