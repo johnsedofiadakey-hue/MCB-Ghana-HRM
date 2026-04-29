@@ -102,31 +102,42 @@ const rawPort = process.env.PORT || '5000';
 const PORT = parseInt(rawPort, 10);
 const server = http.createServer(app);
 
-// ─── NUCLEAR CORS BRIDGE (Top Priority) ────────────────────────────────────
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const origin = req.headers.origin;
-  const allowed = [
-    'https://mcb-hrm-ghana.web.app',
-    'https://mcb-hrm-ghana.firebaseapp.com',
-    // Add custom domain later: 'https://hrm.mc-bauchemie.com.gh',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-  ];
+// ─── NUCLEAR CORS BRIDGE (Dedicated Package) ───────────────────────────────
+const allowedOrigins = [
+  'https://mcb-hrm-ghana.web.app',
+  'https://mcb-hrm-ghana.firebaseapp.com',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+];
 
-  if (origin && (allowed.includes(origin) || allowed.some(a => origin.startsWith(a)))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, x-dev-master-key, x-tenant-domain, x-dev-firebase-token, X-Tenant-Domain, X-Dev-Firebase-Token, X-Dev-Master-Key');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(a => origin.startsWith(a))) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With', 
+    'Accept', 
+    'Origin', 
+    'x-dev-master-key', 
+    'x-tenant-domain', 
+    'x-dev-firebase-token', 
+    'X-Tenant-Domain', 
+    'X-Dev-Firebase-Token', 
+    'X-Dev-Master-Key'
+  ],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
 
 // Robust Port Binding - Handled Above
 
