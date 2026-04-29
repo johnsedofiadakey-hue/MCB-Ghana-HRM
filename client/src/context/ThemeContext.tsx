@@ -159,6 +159,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { settingsRef.current = settings; }, [settings]);
 
   const lastAppliedRef = React.useRef<string>('');
+  const lastThemeRef = React.useRef<ThemeName | null>(null);
+
+  // One-time cleanup of early-paint rescue styles
+  useEffect(() => {
+    const cleanup = () => {
+      const pinA = document.getElementById('pinnacle-core-lock');
+      const pinB = document.getElementById('pinnacle-identity-lock');
+      if (pinA) pinA.remove();
+      if (pinB) pinB.remove();
+      document.documentElement.classList.remove('boot-lock');
+    };
+    
+    // Immediate cleanup
+    cleanup();
+    // Delayed cleanup for safety
+    const timer = setTimeout(cleanup, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const applyTheme = useCallback((themeName: ThemeName, customSettings?: Settings | null) => {
     const root = document.documentElement;
@@ -179,25 +197,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       war: settingsToUse.warningColor,
       err: settingsToUse.errorColor,
       inf: settingsToUse.infoColor
-    });
-    
-    if (lastAppliedRef.current === colorSignature && root.getAttribute('data-theme') === themeName) {
+       if (lastAppliedRef.current === colorSignature && root.getAttribute('data-theme') === themeName) {
        return; 
     }
     
     lastAppliedRef.current = colorSignature;
     root.setAttribute('data-theme', themeName);
 
-    // Singleton Style Tag: Check for existing or create once
-    let style = document.getElementById('theme-overrides');
-    if (!style) {
-      style = document.createElement('style');
-      style.id = 'theme-overrides';
-      document.head.appendChild(style);
-    }
-    
-    let css = `html[data-theme="${themeName}"], :root {`;
-    
     const tokens: [string, string | null][] = [
       ['primary', settingsToUse.primaryColor],
       ['primary-rgb', hexToRgb(settingsToUse.primaryColor || '')],
@@ -223,19 +229,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ['info', settingsToUse.infoColor || '#06b6d4'],
     ];
 
+    // 🚀 ATOMIC PERF: Update CSS Variables directly on root for zero-latency color shifts
     tokens.forEach(([key, value]) => {
-      if (value) {
-        // Use !important for the variables to override index.css root presets
-        css += `--${key}: ${value} !important;`;
-      }
+      if (value) root.style.setProperty(`--${key}`, value, 'important');
     });
-    
-    css += `}\n`;
 
-    // --- UNIVERSAL TAILWIND ENFORCER: Force standard utilities to follow variables ---
-    // Increased specificity with html[data-theme] prefix to win over standard tailwind
-    if (themeName.startsWith('premium-')) {
-      css += `
+    // 🚀 SELECTIVE INJECTION: Only update the <style> block if the theme skeleton changed
+    if (lastThemeRef.current !== themeName) {
+      lastThemeRef.current = themeName;
+      let style = document.getElementById('theme-overrides');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'theme-overrides';
+        document.head.appendChild(style);
+      }
+      
+      let css = `
         /* Dynamic Branding Overlord: Map hardcoded Tailwind utility classes to Brand Variables */
         html[data-theme="${themeName}"] .bg-white { background-color: var(--bg-card) !important; }
         html[data-theme="${themeName}"] .bg-slate-50, html[data-theme="${themeName}"] .bg-gray-50 { background-color: var(--bg-main) !important; }
@@ -271,58 +280,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         html[data-theme="${themeName}"] .border-brand-primary,
         html[data-theme="${themeName}"] .border-purple-500 { border-color: var(--primary) !important; }
 
-        /* Alpha/Opacity Variants for Overlays */
+        /* Alpha/Opacity Variants */
         html[data-theme="${themeName}"] .bg-purple-500/5, html[data-theme="${themeName}"] .bg-purple-500/10, html[data-theme="${themeName}"] .bg-purple-500/20 { background-color: var(--primary) !important; opacity: 0.1; }
-        html[data-theme="${themeName}"] .border-purple-500/20, html[data-theme="${themeName}"] .border-purple-500/30 { border-color: var(--primary) !important; opacity: 0.2; }
         
-        /* Modal & Popup Overlord: Force consistency in overlays */
+        /* Surfaces & Modals */
         html[data-theme="${themeName}"] .bg-black/60, html[data-theme="${themeName}"] .bg-slate-900/80 { background-color: var(--bg-main) !important; opacity: 0.8; backdrop-filter: blur(4px); }
-        html[data-theme="${themeName}"] .bg-purple-50 { background-color: var(--primary) !important; opacity: 0.05; }
-        html[data-theme="${themeName}"] .text-purple-700 { color: var(--primary) !important; }
-        html[data-theme="${themeName}"] .border-purple-100 { border-color: var(--border-subtle) !important; }
-
-
-
-        /* Status & Secondary Surface Catchers */
-        html[data-theme="${themeName}"] .bg-slate-200, html[data-theme="${themeName}"] .bg-gray-200 { background-color: var(--border-subtle) !important; }
-        html[data-theme="${themeName}"] .bg-slate-300, html[data-theme="${themeName}"] .bg-gray-300 { background-color: var(--border-strong) !important; }
-        html[data-theme="${themeName}"] .bg-slate-800, html[data-theme="${themeName}"] .bg-gray-800 { background-color: var(--bg-elevated) !important; }
-        html[data-theme="${themeName}"] .bg-slate-900, html[data-theme="${themeName}"] .bg-gray-900 { background-color: var(--bg-card) !important; }
         
-        html[data-theme="${themeName}"] .text-slate-500, html[data-theme="${themeName}"] .text-gray-500 { color: var(--text-muted) !important; }
-        html[data-theme="${themeName}"] .text-slate-300, html[data-theme="${themeName}"] .text-gray-300 { color: var(--text-muted) !important; }
-        html[data-theme="${themeName}"] .text-slate-100, html[data-theme="${themeName}"] .text-gray-100 { color: var(--text-primary) !important; }
-        html[data-theme="${themeName}"] .text-slate-50, html[data-theme="${themeName}"] .text-gray-50 { color: var(--text-primary) !important; }
-
-        /* Button Hardening: Ensure Growth/Secondary color applies to primary-style buttons if needed */
-        html[data-theme="${themeName}"] .btn-growth { background-color: var(--growth) !important; color: white !important; }
-        html[data-theme="${themeName}"] .hover\:bg-indigo-700:hover { background-color: var(--primary) !important; filter: brightness(0.9); }
-
-
-        /* Print Override System: Force Browser Print to use Brand Identity */
         @media print {
           :root {
             --bg-main: #ffffff !important;
-            --bg-card: #ffffff !important;
-            --bg-elevated: #f8fafc !important;
             --text-primary: #0f172a !important;
-            --text-secondary: #475569 !important;
-            --text-muted: #94a3b8 !important;
-            --border-subtle: #e2e8f0 !important;
           }
           body { background: white !important; color: #0f172a !important; }
-          .print-primary-text { color: var(--primary) !important; }
-          .print-primary-bg { background-color: var(--primary) !important; -webkit-print-color-adjust: exact; }
-          .print-border { border-color: var(--primary) !important; }
-          .print\\:hidden { display: none !important; }
-          .print\\:block { display: block !important; }
         }
 
-        
-        /* Force Root Colors & Global Surfaces */
-        html[data-theme="${themeName}"], 
-        html[data-theme="${themeName}"] body, 
-        html[data-theme="${themeName}"] #root { 
+        /* Force Root Surfaces */
+        html[data-theme="${themeName}"], html[data-theme="${themeName}"] body, html[data-theme="${themeName}"] #root { 
           background-color: var(--bg-main) !important; 
           color: var(--text-primary) !important; 
         }
@@ -332,79 +305,40 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           border-color: var(--border-subtle) !important;
         }
 
-        /* Status Colors Overlord */
+        /* Status Colors */
         html[data-theme="${themeName}"] .bg-emerald-500, html[data-theme="${themeName}"] .bg-green-500 { background-color: var(--success) !important; }
-        html[data-theme="${themeName}"] .text-emerald-500, html[data-theme="${themeName}"] .text-green-500, html[data-theme="${themeName}"] .text-emerald-600 { color: var(--success) !important; }
-        
         html[data-theme="${themeName}"] .bg-amber-500, html[data-theme="${themeName}"] .bg-orange-500 { background-color: var(--warning) !important; }
-        html[data-theme="${themeName}"] .text-amber-500, html[data-theme="${themeName}"] .text-orange-500, html[data-theme="${themeName}"] .text-amber-600 { color: var(--warning) !important; }
-        
         html[data-theme="${themeName}"] .bg-rose-500, html[data-theme="${themeName}"] .bg-red-500 { background-color: var(--error) !important; }
-        html[data-theme="${themeName}"] .text-rose-500, html[data-theme="${themeName}"] .text-red-500, html[data-theme="${themeName}"] .text-rose-600 { color: var(--error) !important; }
-
-        html[data-theme="${themeName}"] .bg-cyan-500, html[data-theme="${themeName}"] .bg-blue-500, html[data-theme="${themeName}"] .bg-sky-500 { background-color: var(--info) !important; }
-        html[data-theme="${themeName}"] .text-cyan-500, html[data-theme="${themeName}"] .text-blue-500, html[data-theme="${themeName}"] .text-sky-600 { color: var(--info) !important; }
+        html[data-theme="${themeName}"] .bg-cyan-500, html[data-theme="${themeName}"] .bg-blue-500 { background-color: var(--info) !important; }
       `;
-    }
-    
-    style.innerHTML = css;
-
-    // Atomic Swap Cleanup: Release the early paint locks immediately
-    const pinA = document.getElementById('pinnacle-core-lock');
-    const pinB = document.getElementById('pinnacle-identity-lock');
-    if (pinA) pinA.remove();
-    if (pinB) pinB.remove();
-
-    // Atomic Swap Cleanup: Remove early-paint styles once React takes control
-    const earlyStyle = document.getElementById('pinnacle-core-lock') || document.getElementById('pinnacle-identity-lock');
-    if (earlyStyle) {
-      setTimeout(() => {
-        const pinA = document.getElementById('pinnacle-core-lock');
-        const pinB = document.getElementById('pinnacle-identity-lock');
-        if (pinA) pinA.remove();
-        if (pinB) pinB.remove();
-      }, 500);
+      style.innerHTML = css;
     }
 
-    // --- DYNAMIC FAVICON SYNC: Align browser tab identity with brand logo ---
+    // --- DYNAMIC FAVICON SYNC ---
     if (settingsToUse.logoUrl) {
       let favicon = document.getElementById('dynamic-favicon') as HTMLLinkElement;
       if (!favicon) {
         favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-      }
-      if (!favicon) {
-        favicon = document.createElement('link');
-        favicon.rel = 'icon';
-        favicon.id = 'dynamic-favicon';
-        document.head.appendChild(favicon);
+        if (!favicon) {
+          favicon = document.createElement('link');
+          favicon.rel = 'icon';
+          favicon.id = 'dynamic-favicon';
+          document.head.appendChild(favicon);
+        }
       }
       favicon.href = settingsToUse.logoUrl;
-
-      // ALSO UPDATE APPLE ICON FOR MOBILE PWA
-      let appleIcon = document.getElementById('dynamic-apple-icon') as HTMLLinkElement;
-      if (!appleIcon) {
-        appleIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
-      }
-      if (!appleIcon) {
-        appleIcon = document.createElement('link');
-        appleIcon.rel = 'apple-touch-icon';
-        appleIcon.id = 'dynamic-apple-icon';
-        document.head.appendChild(appleIcon);
-      }
-      appleIcon.href = settingsToUse.logoUrl;
     }
 
-    // IDENTITY-AWARE PERSISTENCE: Save full branding context (Logo + Name + Colors)
+    // IDENTITY-AWARE PERSISTENCE
     const orgId = getOrgIdFromToken();
     localStorage.setItem(`mcb_branding_cache_${orgId}`, JSON.stringify(settingsToUse));
     localStorage.setItem(`mcb_theme_preference_${orgId}`, themeName);
 
-    // --- ZERO-FLICKER SYNC: Align with index.html early-paint script ---
+    // ZERO-FLICKER SYNC
     const customColors: Record<string, string> = {};
     tokens.forEach(([key, value]) => { if (value) customColors[key] = value; });
     localStorage.setItem(`mcb_theme_custom_colors_${orgId}`, JSON.stringify(customColors));
-    localStorage.setItem('mcb_theme_custom_colors', JSON.stringify(customColors));
-  }, []); // Explicitly stable to prevent dependency loops
+  }, []); // Explicitly stable to prevent dependency loopsency loops
 
   const refreshSettings = useCallback(async () => {
     try {
