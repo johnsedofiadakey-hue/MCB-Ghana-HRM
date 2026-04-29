@@ -320,7 +320,7 @@ const SettingsHub = () => {
   ];
 
   return (
-    <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-8 pb-32 px-4 xl:px-8">
+    <div className="max-w-[1600px] mx-auto flex flex-col xl:flex-row gap-8 pb-32 px-4 xl:px-12">
       {/* Sidebar Nav */}
       <div className="w-full xl:w-72 shrink-0">
         <div className="mb-8 px-4">
@@ -365,7 +365,7 @@ const SettingsHub = () => {
 
       {/* Content Area */}
       <div className="flex-1">
-        <div className="nx-card p-8 lg:p-12 xl:p-16 min-h-[800px] border-[var(--border-subtle)] shadow-[0_30px_60px_rgba(0,0,0,0.02)] relative">
+        <div className="nx-card p-6 md:p-10 lg:p-14 xl:p-16 min-h-[800px] border-[var(--border-subtle)] shadow-[0_30px_60px_rgba(0,0,0,0.02)] relative">
           {/* Subtle Background Glow */}
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-[var(--primary)]/5 blur-[120px] rounded-full pointer-events-none" />
           
@@ -578,8 +578,8 @@ const SettingsHub = () => {
                 )}
 
                 {activeTab === 'id_cards' && (
-                  <div className="space-y-12">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                  <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,450px),1fr))] gap-10">
                       <section className="space-y-6 p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-left relative overflow-hidden group/card">
                          <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/5 blur-2xl rounded-full -mr-12 -mt-12 group-hover/card:bg-[var(--primary)]/10 transition-colors" />
                          
