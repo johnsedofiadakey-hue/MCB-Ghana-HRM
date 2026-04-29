@@ -610,39 +610,45 @@ const SettingsHub = () => {
                                 />
                             </div>
 
-                            {/* Orientation & Theme */}
-                            <div className="grid grid-cols-1 gap-10">
-                                <div className="space-y-4">
-                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] ml-1">Architecture</label>
-                                   <div className="grid grid-cols-2 p-1.5 bg-[var(--bg-elevated)] rounded-[1.5rem] border border-[var(--border-subtle)] shadow-inner">
+                            {/* Orientation & Theme - Forced Stacking for Billion-Dollar Clarity */}
+                            <div className="flex flex-col gap-10">
+                                <div className="space-y-5">
+                                   <div className="flex items-center justify-between px-1">
+                                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em]">Card Architecture</label>
+                                      <span className="text-[9px] font-bold text-[var(--primary)] opacity-40 uppercase tracking-widest">{formData.idCardOrientation}</span>
+                                   </div>
+                                   <div className="grid grid-cols-2 p-1.5 bg-[var(--bg-elevated)] rounded-[1.8rem] border border-[var(--border-subtle)] shadow-inner">
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
                                          className={cn(
-                                           "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
-                                           formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-[0_10px_20px_-5px_rgba(var(--primary-rgb),0.3)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                           "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
+                                           formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                          )}
                                       >Portrait</button>
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
                                          className={cn(
-                                           "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
-                                           formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-[0_10px_20px_-5px_rgba(var(--primary-rgb),0.3)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                           "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
+                                           formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                          )}
                                       >Landscape</button>
                                    </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] ml-1">Surface Theme</label>
-                                   <div className="grid grid-cols-3 p-1.5 bg-[var(--bg-elevated)] rounded-[1.5rem] border border-[var(--border-subtle)] shadow-inner">
+                                <div className="space-y-5">
+                                   <div className="flex items-center justify-between px-1">
+                                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em]">Surface Theme</label>
+                                      <span className="text-[9px] font-bold text-[var(--primary)] opacity-40 uppercase tracking-widest">{formData.idCardTheme}</span>
+                                   </div>
+                                   <div className="grid grid-cols-3 p-1.5 bg-[var(--bg-elevated)] rounded-[1.8rem] border border-[var(--border-subtle)] shadow-inner">
                                       {['DARK', 'LIGHT', 'PRISTINE'].map(m => (
                                          <button 
                                             key={m}
                                             onClick={() => setFormData({...formData, idCardTheme: m as any})}
                                             className={cn(
-                                               "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
+                                               "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 whitespace-nowrap px-2", 
                                                formData.idCardTheme === m 
-                                                ? "bg-[var(--primary)] text-white shadow-[0_10px_20px_-5px_rgba(var(--primary-rgb),0.3)]" 
+                                                ? "bg-[var(--primary)] text-white shadow-xl" 
                                                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                             )}
                                          >{m === 'PRISTINE' ? 'White' : m.charAt(0) + m.slice(1).toLowerCase()}</button>
