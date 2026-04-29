@@ -3,21 +3,22 @@
 <html lang="en">
   <head>
     <script>
-      /* --- EMERGENCY RESCUE SCRIPT (v1.7) --- */
+      /* --- EMERGENCY RESCUE SCRIPT (v1.7) ---
       window.onerror = function(msg) {
         if (msg && (msg.toString().includes('showDeleteConfirm') || msg.toString().includes('ReferenceError'))) {
           console.warn('[RESCUE] Stale code detected. Forcing hard reload...');
           window.location.reload(true);
         }
       };
+      */
 
       /* --- HYPER-SPECIFIC ATOMIC THEME ENGINE (v1.7) --- */
       (function() {
-        const TOKEN_KEY = 'nexus_auth_token';
-        const BASE_PREF_KEY = 'nexus_theme_preference';
-        const BASE_COLOR_KEY = 'nexus_theme_custom_colors';
+        const TOKEN_KEY = 'mcb_auth_token';
+        const BASE_PREF_KEY = 'mcb_theme_preference';
+        const BASE_COLOR_KEY = 'mcb_theme_custom_colors';
         
-        let orgId = 'default';
+        let orgId = 'mcb-ghana-tenant';
         try {
           const token = localStorage.getItem(TOKEN_KEY);
           if (token) {
@@ -27,13 +28,13 @@
               const pad = base64.length % 4;
               const padded = pad ? base64 + '===='.slice(pad) : base64;
               const decoded = JSON.parse(atob(padded));
-              orgId = decoded.organizationId || decoded.orgId || 'default';
+              orgId = decoded.organizationId || decoded.orgId || 'mcb-ghana-tenant';
             }
           }
         } catch (e) {}
 
         const SCOPED_PREF_KEY = BASE_PREF_KEY + '_' + orgId;
-        const savedTheme = localStorage.getItem(SCOPED_PREF_KEY) || localStorage.getItem(BASE_PREF_KEY) || 'premium-aero';
+        const savedTheme = localStorage.getItem(SCOPED_PREF_KEY) || localStorage.getItem(BASE_PREF_KEY) || 'premium-monolith';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
         // Atomic Defaults
@@ -92,7 +93,7 @@
 
         // 4. IDENTITY SYNC: Apply branded logo to favicon & apple icons early
         try {
-          const cachedSettings = localStorage.getItem(`nexus_branding_cache_${orgId}`);
+          const cachedSettings = localStorage.getItem(`mcb_branding_cache_${orgId}`);
           if (cachedSettings) {
              const settings = JSON.parse(cachedSettings);
              const logo = settings.logoUrl || settings.companyLogoUrl;

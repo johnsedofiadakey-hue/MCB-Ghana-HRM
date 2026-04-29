@@ -250,10 +250,16 @@ const Layout = () => {
   );
 };
 
-const RoleGuard = ({ children, minRank }: { children: React.ReactNode; minRank: number }) => {
+const RoleGuard = ({ children, minRank, allowedRoles }: { children: React.ReactNode; minRank?: number; allowedRoles?: string[] }) => {
   const user = getStoredUser();
   const rank = getRankFromRole(user?.role);
-  if (rank < minRank) return <Navigate to="/dashboard" replace />;
+  const role = (user?.role || '').toUpperCase();
+  
+  const hasRank = minRank !== undefined && rank >= minRank;
+  const hasRole = allowedRoles !== undefined && allowedRoles.includes(role);
+  
+  // Grant access if either rank requirement is met OR they have an explicitly allowed role
+  if (!hasRank && !hasRole) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -448,7 +454,7 @@ const AppContent = () => {
             <Route path="/attendance" element={<AttendanceDashboard />} />
             <Route path="/org-chart" element={<RoleGuard minRank={85}><OrgChart /></RoleGuard>} />
             <Route path="/enterprise" element={<RoleGuard minRank={95}><EnterpriseSuite /></RoleGuard>} />
-            <Route path="/it-admin" element={<RoleGuard minRank={85}><ITAdmin /></RoleGuard>} />
+            <Route path="/it-admin" element={<RoleGuard minRank={85} allowedRoles={['IT_ADMIN', 'DEV']}><ITAdmin /></RoleGuard>} />
             <Route path="/training" element={<Training />} />
             <Route path="/holidays" element={<HolidayCalendar />} />
             <Route path="/announcements" element={<AnnouncementsPage />} />
