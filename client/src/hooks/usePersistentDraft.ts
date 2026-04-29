@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { debounce } from '../utils/performance';
 
 /**
  * A hook that syncs local state with a Firestore document for real-time persistence.
@@ -67,17 +68,23 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
     }
   }, [collectionName, id, sync]);
 
+  // Debounced sync back to Firestore to prevent UI lag during rapid typing
+  const [debouncedSync] = useState(() => 
+    debounce(async (id: string, collectionName: string, newData: any) => {
+      try {
+        const docRef = doc(db, collectionName, id);
+        await setDoc(docRef, { ...newData, updatedAt: new Date().toISOString() }, { merge: true });
+      } catch (err) {
+        console.error('[Firebase Sync Error]:', err);
+      }
+    }, 1000) // 1 second debounce for drafts
+  );
+
   // Sync changes back to Firestore
-  const updateDraft = async (newData: T) => {
+  const updateDraft = (newData: T) => {
     setData(newData);
     if (!id) return;
-    
-    try {
-      const docRef = doc(db, collectionName, id);
-      await setDoc(docRef, { ...newData, updatedAt: new Date().toISOString() }, { merge: true });
-    } catch (err) {
-      console.error('[Firebase Sync Error]:', err);
-    }
+    debouncedSync(id, collectionName, newData);
   };
 
   // Clear draft from Firestore

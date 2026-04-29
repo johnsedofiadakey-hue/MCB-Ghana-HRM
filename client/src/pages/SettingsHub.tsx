@@ -20,6 +20,7 @@ import api from '../services/api';
 import { ApiIntegrations } from '../components/settings/ApiIntegrations';
 import EmployeeIDCard from '../components/it/EmployeeIDCard';
 import HardwareGuide from '../components/it/AttendanceHardwareGuide';
+import { debounce } from '../utils/performance';
 
 type SettingsTab = 'company' | 'leave' | 'branding' | 'id_cards' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations' | 'payroll' | 'infrastructure';
 
@@ -162,15 +163,20 @@ const SettingsHub = () => {
     }
   }, [settings, initialized]);
 
+  // Debounced branding preview to avoid heavy DOM manipulation on every keystroke
+  const [debouncedPreview] = useState(() => 
+    debounce((data: any) => previewSettings(data), 400)
+  );
+
   useEffect(() => {
     if (activeTab === 'branding') {
-      previewSettings(formData as any);
+      debouncedPreview(formData);
     }
     const currentRank = currentUser?.rank || 0;
     if (activeTab === 'data' && currentRank >= 85) {
       fetchBackups();
     }
-  }, [formData, activeTab, previewSettings, currentUser]);
+  }, [formData, activeTab, currentUser, debouncedPreview]);
 
   const fetchBackups = async () => {
     setFetchingBackups(true);
@@ -217,12 +223,17 @@ const SettingsHub = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await api.put('/settings', formData);
+      const res = await api.put('/settings', formData);
+      const updatedSettings = res.data;
+
       // Update organization default AND user preference lock
       setLanguage(formData.defaultLanguage || 'en');
       toast.success(t('settings.update_success'));
       
-      // Permanent Identity Sync to Firebase (Non-blocking)
+      // Stop blocking the UI after the primary update is confirmed
+      setLoading(false);
+
+      // Background Identity Sync to Firebase
       const syncOrgId = currentUser?.organizationId || 'mcb-ghana-tenant';
       BrandingService.updateBranding(syncOrgId, {
         name: formData.companyName,
@@ -258,12 +269,15 @@ const SettingsHub = () => {
         idCardSecurityText: formData.idCardSecurityText
       }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
       
-      await refreshSettings();
-      await clearDraft();
+      // Run cleanup and refresh in parallel in the background
+      Promise.all([
+        refreshSettings(),
+        clearDraft()
+      ]).catch(err => console.error('[SettingsHub] Post-save cleanup failed:', err));
+
     } catch (err: any) {
-      toast.error(err.response?.data?.message || t('common.error_updating_settings'));
-    } finally {
       setLoading(false);
+      toast.error(err.response?.data?.message || t('common.error_updating_settings'));
     }
   };
 
