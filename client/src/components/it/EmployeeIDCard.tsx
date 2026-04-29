@@ -281,7 +281,7 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                 </div>
             </div>
 
-            <div className={cn("mt-auto pt-6 flex items-center gap-2 opacity-30", isPristine ? "text-slate-400" : "text-white")}>
+            <div className={cn("mt-auto pt-2 flex items-center gap-2 opacity-30", isPristine ? "text-slate-400" : "text-white")}>
                 <Shield size={14} />
                 <p className="text-[10px] font-black tracking-[0.3em] uppercase">MCB Institutional Security</p>
             </div>
