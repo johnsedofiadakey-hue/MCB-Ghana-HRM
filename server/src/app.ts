@@ -155,6 +155,32 @@ app.use(express.static('public'));
 app.use('/uploads', express.static('public/uploads'));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
+// ─── HEALTH PROTOCOL (Nuclear Bypass) ──────────────────────────────────────
+app.get('/api/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return res.json({ 
+      status: isBooted ? 'UP' : 'BOOTING', 
+      database: 'CONNECTED',
+      version: APP_VERSION,
+      last_sync: '2026-04-29T09:12:00Z',
+      client: 'MC-Bauchemie Ghana',
+      bootComplete: isBooted,
+      nodeEnv: process.env.NODE_ENV 
+    });
+  } catch (err: any) {
+    console.error('[Health] System Degraded:', err.message);
+    return res.status(503).json({ 
+      status: 'DEGRADED', 
+      database: 'DISCONNECTED',
+      version: APP_VERSION,
+      error: err.message 
+    });
+  }
+});
+
+app.get('/', (_req, res) => res.json({ message: '🚀 MCB HRM Ghana Platform Core Running', version: APP_VERSION, status: isBooted ? 'READY' : 'BOOTING' }));
+
 // Init WebSocket (After security)
 initWebSocket(server);
 
@@ -225,32 +251,6 @@ const runStartupTasks = async () => {
 };
 
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
-app.get('/api/health', async (req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return res.json({ 
-      status: isBooted ? 'UP' : 'BOOTING', 
-      database: 'CONNECTED',
-      version: APP_VERSION,
-      last_sync: '2026-04-28T21:20:00Z',
-      client: 'MC-Bauchemie Ghana',
-      bootComplete: isBooted,
-      nodeEnv: process.env.NODE_ENV 
-    });
-  } catch (err: any) {
-    console.error('[Health] System Degraded:', err.message);
-    return res.status(503).json({ 
-      status: 'DEGRADED', 
-      database: 'DISCONNECTED',
-      version: APP_VERSION,
-      error: err.message 
-    });
-  }
-});
-
-
-app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 MCB HRM Ghana Platform Core Running', version: APP_VERSION, status: isBooted ? 'READY' : 'BOOTING' }));
-
 // Debug routes — development only
 if (process.env.NODE_ENV !== 'production') {
   const debugRoutes = require('./routes/debug.routes').default;
