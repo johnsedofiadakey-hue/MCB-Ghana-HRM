@@ -12,7 +12,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 import { format } from 'date-fns';
 import { useAI } from '../context/AIContext';
 
@@ -82,7 +82,8 @@ const Leave = () => {
   const { setContextData } = useAI();
 
   const user = getStoredUser();
-  const userRank = user?.rank || 0;
+  // BUG L2 FIX: Use getRankFromRole to prevent stale rank issues
+  const userRank = getRankFromRole(user?.role);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -99,6 +100,7 @@ const Leave = () => {
       setReliefRequests(Array.isArray(reliefRes.data) ? reliefRes.data : []);
       setHandoverHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
 
+      // BUG L4 FIX: Ensure rank thresholds are standardized (Rank 60+ for Team Hub)
       if (userRank >= 60) {
         const pendingRes = await api.get('/leave/pending');
         setTeamLeaves(Array.isArray(pendingRes.data) ? pendingRes.data : []);
@@ -758,7 +760,7 @@ const Leave = () => {
                              )}
                           </tbody>
                         </table>
-                     ) : activeTab === 'ADMIN' ? (
+                      ) : activeTab === 'ADMIN' ? (
                         <div className="p-10 space-y-10">
                            <div className="max-w-4xl mx-auto space-y-8">
                               <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 space-y-4">
@@ -799,339 +801,303 @@ const Leave = () => {
                                                 setForm(prev => ({ ...prev, relieverId: emp.id })); // Borrowing relieverId for selection
                                              }}
                                              className={cn(
-                                                "w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between group",
-                                                form.relieverId === emp.id ? "border-amber-500 bg-amber-500/5 shadow-md" : "border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]"
+                                                "w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left",
+                                                form.relieverId === emp.id ? "bg-[var(--primary)]/5 border-[var(--primary)] shadow-sm" : "bg-[var(--bg-elevated)]/30 border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]"
                                              )}
                                           >
-                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] font-black uppercase">{emp.fullName?.charAt(0)}</div>
-                                                <div>
-                                                   <p className="text-[12px] font-black text-[var(--text-primary)] uppercase">{emp.fullName}</p>
-                                                   <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{emp.jobTitle || emp.role}</p>
-                                                </div>
+                                             <div className="w-10 h-10 rounded-xl bg-[var(--bg-card)] flex items-center justify-center text-[var(--text-primary)] border border-[var(--border-subtle)]">
+                                                <Users size={18} />
                                              </div>
-                                             {form.relieverId === emp.id && <CheckCircle size={16} className="text-amber-500" />}
+                                             <div>
+                                                <p className="text-[12px] font-black uppercase tracking-tight">{emp.fullName}</p>
+                                                <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{emp.jobTitle}</p>
+                                             </div>
                                           </button>
                                        ))}
                                     </div>
                                  </div>
 
-                                 <AnimatePresence mode="wait">
-                                    {form.relieverId ? (
-                                       <motion.div 
-                                          initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:20 }}
-                                          className="nx-card p-8 border-amber-500/20 bg-amber-500/5 space-y-8"
-                                       >
-                                          <div className="pb-6 border-b border-amber-500/10">
-                                             <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Target Personnel</p>
-                                             <h5 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tight">
-                                                {filteredEmployees.find(e => e.id === form.relieverId)?.fullName}
-                                             </h5>
+                                 {form.relieverId && (
+                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8 p-8 rounded-[2rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
+                                       <div className="space-y-6">
+                                          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Adjustment Vector</h4>
+                                          
+                                          <div className="space-y-4">
+                                             <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">New Balance (Days)</label>
+                                             <input 
+                                                type="number" 
+                                                className="nx-input text-2xl font-black" 
+                                                placeholder="0.0"
+                                                onChange={e => setContextData((prev: any) => ({ ...prev, adminNewBalance: Number(e.target.value) }))}
+                                             />
                                           </div>
 
-                                          <div className="space-y-6">
-                                             <div className="grid grid-cols-2 gap-6">
-                                                <div className="space-y-2">
-                                                   <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Current Balance</label>
-                                                   <input 
-                                                      type="number" step="0.5" className="nx-input border-amber-500/20" 
-                                                      defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveBalance || 0}
-                                                      id="admin-balance-val" 
-                                                   />
-                                                </div>
-                                                <div className="space-y-2">
-                                                   <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Annual Allowance</label>
-                                                   <input 
-                                                      type="number" step="1" className="nx-input border-amber-500/20" 
-                                                      defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveAllowance || 24}
-                                                      id="admin-allowance-val"
-                                                   />
-                                                </div>
-                                             </div>
-
-                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Adjustment Reason</label>
-                                                <textarea 
-                                                   className="nx-input min-h-[100px] border-amber-500/20" 
-                                                   placeholder="Institutional rationale for adjustment..."
-                                                   id="admin-adjustment-reason"
-                                                />
-                                             </div>
-                                             
-                                             <button 
-                                                onClick={async () => {
-                                                   const bal = (document.getElementById('admin-balance-val') as HTMLInputElement).value;
-                                                   const allow = (document.getElementById('admin-allowance-val') as HTMLInputElement).value;
-                                                   const reason = (document.getElementById('admin-adjustment-reason') as HTMLTextAreaElement).value;
-                                                   
-                                                   if (!reason || reason.length < 5) {
-                                                      toast.error('Adjustments require a valid institutional rationale (min 5 chars).');
-                                                      return;
-                                                   }
-
-                                                   if (!window.confirm(`WARNING: You are about to override the leave record for ${filteredEmployees.find(e => e.id === form.relieverId)?.fullName}. Continue?`)) return;
-
-                                                   setSaving(true);
-                                                   try {
-                                                      await api.post('/leave/balance/adjust', {
-                                                         targetUserId: form.relieverId,
-                                                         leaveBalance: Number(bal),
-                                                         leaveAllowance: Number(allow),
-                                                         reason
-                                                      });
-                                                      toast.success('Institutional ledger updated successfully.');
-                                                      fetchEmployees();
-                                                   } catch (err: any) {
-                                                      toast.error(err.response?.data?.error || 'Ledger update failed');
-                                                   } finally { setSaving(false); }
-                                                }}
-                                                className="w-full py-5 rounded-2xl bg-amber-500 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-[1.02] active:scale-95 transition-all"
-                                             >
-                                                Execute Hard Override
-                                             </button>
+                                          <div className="space-y-4">
+                                             <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">New Annual Allowance</label>
+                                             <input 
+                                                type="number" 
+                                                className="nx-input" 
+                                                placeholder="30"
+                                                onChange={e => setContextData((prev: any) => ({ ...prev, adminNewAllowance: Number(e.target.value) }))}
+                                             />
                                           </div>
-                                       </motion.div>
-                                    ) : (
-                                       <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 opacity-20 bg-[var(--bg-elevated)]/30 rounded-[2.5rem] border-dashed border-2 border-[var(--border-subtle)]">
-                                          <ShieldCheck size={64} />
-                                          <p className="text-[10px] font-black uppercase tracking-[0.3em]">Select Personnel to Initiate Adjustment</p>
+
+                                          <div className="space-y-4">
+                                             <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Official Reason for Override</label>
+                                             <textarea 
+                                                className="nx-input min-h-[100px] py-4" 
+                                                placeholder="Adjustment for public holidays, policy exception, etc..."
+                                                onChange={e => setContextData((prev: any) => ({ ...prev, adminReason: e.target.value }))}
+                                             />
+                                          </div>
+
+                                          <button 
+                                             onClick={async () => {
+                                                const ctx = (window as any).antigravity_context_data || {};
+                                                if (!ctx.adminReason) return toast.error("Reason is mandatory for official ledger updates.");
+                                                setSaving(true);
+                                                try {
+                                                   await api.post('/leave/adjust-balance', {
+                                                      targetUserId: form.relieverId,
+                                                      leaveBalance: ctx.adminNewBalance,
+                                                      leaveAllowance: ctx.adminNewAllowance,
+                                                      reason: ctx.adminReason
+                                                   });
+                                                   toast.success("Institutional ledger updated successfully.");
+                                                   fetchData();
+                                                   setForm(prev => ({ ...prev, relieverId: '' }));
+                                                } catch (err: any) {
+                                                   toast.error(err?.response?.data?.error || "Ledger update failed.");
+                                                } finally { setSaving(false); }
+                                             }}
+                                             className="w-full h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-0.98 transition-all"
+                                          >
+                                             Commit Adjustment
+                                          </button>
                                        </div>
-                                    )}
-                                 </AnimatePresence>
+                                    </motion.div>
+                                 )}
                               </div>
                            </div>
                         </div>
-                     ) : (
-                        <div className="p-10 space-y-6 text-left">
-                           {reliefRequests.map((req, i) => (
-                             <motion.div key={req.id} initial={{ opacity:0, scale:0.98 }} animate={{ opacity:1, scale:1 }} transition={{ delay: i*0.05 }}
-                                  className="nx-card p-8 flex flex-col md:flex-row items-center justify-between border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 hover:border-[var(--accent)]/30 transition-all group"
-                             >
-                                <div className="flex items-center gap-8 mb-6 md:mb-0 w-full md:w-auto">
-                                    <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/5 text-[var(--accent)] border border-[var(--accent)]/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform flex-shrink-0"><Users size={24} /></div>
-                                    <div className="flex-1 min-w-0">
-                                       <p className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.personnel_handover', { name: req.employee?.fullName })}</p>
-                                       <p className="text-[11px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest">{format(new Date(req.startDate), 'PP')} — {format(new Date(req.endDate), 'PP')}</p>
-                                       
-                                       {req.handoverNotes && (
-                                          <div className="mt-4 p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]/50 text-[11px] text-[var(--text-secondary)] shadow-inner relative overflow-hidden group/note">
-                                             <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/5 blur-3xl rounded-full opacity-0 group-hover/note:opacity-100 transition-opacity" />
-                                             <p className="font-black uppercase tracking-[0.2em] text-[var(--primary)] mb-3 flex items-center gap-2">
-                                                <HelpingHand size={14} /> Handover Protocol
-                                             </p>
-                                             <div className="whitespace-pre-wrap leading-relaxed opacity-90 font-medium border-l-2 border-[var(--primary)]/20 pl-4 py-1">
-                                                {req.handoverNotes}
-                                             </div>
-                                             {req.relieverAcceptanceRequired && (
-                                                <div className="mt-5 pt-4 border-t border-[var(--border-subtle)]/30 flex items-center gap-3">
-                                                   <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
-                                                   <span className="px-3 py-1 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] text-[9px] font-black uppercase tracking-widest border border-[var(--accent)]/20">
-                                                      {t('leave.protocol_notice')}
-                                                   </span>
-                                                </div>
-                                             )}
-                                          </div>
-                                       )}
-                                    </div>
-                                </div>
-                                <div className="flex gap-4 md:ml-8">
-                                   <button onClick={() => handleRelieverResponse(req.id, true)} className="px-10 h-12 rounded-xl bg-[var(--accent)] text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[rgba(var(--accent-rgb),0.3)] hover:scale-105 transition-all">{t('leave.accept_protocol')}</button>
-                                   <button onClick={() => handleRelieverResponse(req.id, false)} className="px-10 h-12 rounded-xl border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/5 transition-all">{t('leave.decline_vector')}</button>
-                                </div>
-                             </motion.div>
-                           ))}
-                           {reliefRequests.length === 0 && (
-                              <div className="py-24 flex flex-col items-center justify-center text-center opacity-30 italic space-y-4">
-                                 <Users size={48} className="text-[var(--text-muted)]" />
-                                 <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">{t('leave.no_handover_detected')}</h4>
-                              </div>
-                           )}
-                        </div>
-                     )}
+                      ) : null}
                 </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Initiation Modal */}
+      {/* Modal Architecture */}
       <AnimatePresence>
         {showModal && (
-          <div 
-            className="modal-wrapper"
-            onClick={() => setShowModal(false)}
-          >
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 30 }}
-                className="modal-content-container"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="nx-card shadow-2xl overflow-visible modal-footer-clearance">
-                  <div className="p-6 sm:p-12 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 backdrop-blur-xl sticky top-0 z-30 flex justify-between items-center rounded-t-[2rem]">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
-                        <Calendar size={24} />
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 lg:p-10">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowModal(false)}
+              className="absolute inset-0 bg-[var(--bg-main)]/90 backdrop-blur-xl"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, y: 100, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 100, scale: 0.9 }}
+              className="relative w-full max-w-5xl bg-[var(--bg-card)] rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.3)] border border-[var(--border-subtle)] overflow-hidden flex flex-col md:flex-row h-full max-h-[90vh]"
+            >
+                {/* Left Panel: Visual Summary */}
+                <div className="w-full md:w-[320px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-12 text-white flex flex-col justify-between relative overflow-hidden shrink-0">
+                   <Umbrella className="absolute -top-20 -left-20 opacity-10" size={300} />
+                   
+                   <div className="relative z-10 space-y-6">
+                      <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-2xl">
+                         <Calendar size={32} />
                       </div>
-                      <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.initiate_vector_title')}</h2>
-                    </div>
-                    <button onClick={() => setShowModal(false)} className="w-10 h-10 rounded-full border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">
-                       <X size={20} />
-                    </button>
-                  </div>
+                      <div>
+                         <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">{t('leave.modal_title')}</h2>
+                         <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mt-4">{t('leave.secure_vector')}</p>
+                      </div>
+                   </div>
 
-                  <div className="px-6 sm:px-12 py-10 relative modal-body-scroll custom-scrollbar">
-                    <form id="leave-init-form" onSubmit={handleApply} className="max-w-xl mx-auto space-y-10 relative z-10">
+                   <div className="relative z-10 space-y-8">
+                      <div className="space-y-2">
+                         <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{t('leave.resource_availability')}</p>
+                         <h3 className="text-4xl font-black tracking-tighter">{Number(balance.leaveBalance || 0).toFixed(1)} <span className="text-sm opacity-60">{t('leave.days')}</span></h3>
+                      </div>
                       
-                      {/* Section 1: Classification */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 mb-2">
-                           <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full" />
-                           <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{t('leave.basis_category')}</h4>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.classification')}</label>
-                            <select 
-                              className="nx-input bg-[var(--bg-elevated)]/50 border-[var(--border-subtle)] focus:scale-[1.01] transition-transform" 
-                              value={form.leaveType} 
-                              onChange={e => setForm({...form, leaveType: e.target.value})}
-                            >
-                              <option value="Annual">{t('leave.types.Annual')}</option>
-                              <option value="Paid">{t('leave.types.Paid')}</option>
-                              <option value="Sick">{t('leave.types.Sick')}</option>
-                              <option value="Maternity">{t('leave.types.Maternity')}</option>
-                              <option value="Paternity">{t('leave.types.Paternity')}</option>
-                              <option value="Compassionate">{t('leave.types.Compassionate')}</option>
-                              <option value="Unpaid">{t('leave.types.Unpaid')}</option>
-                            </select>
-                        </div>
+                      <div className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
+                         <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-2">{t('leave.policy_reminder')}</p>
+                         <p className="text-[11px] font-bold leading-relaxed">{t('leave.policy_desc')}</p>
                       </div>
-
-                      {/* Section 2: Timeline */}
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between mb-2">
-                           <div className="flex items-center gap-3">
-                              <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full" />
-                              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{t('leave.timeline_allocation')}</h4>
-                           </div>
-                           {calculatedDays !== null && (
-                             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="px-4 py-1.5 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--primary)] text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary)]/5">
-                               {calculatedDays} {t('leave.days')} {t('leave.requested')}
-                             </motion.div>
-                           )}
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_commencement')}</label>
-                              <input type="date" className="nx-input bg-[var(--bg-elevated)]/50 border-[var(--border-subtle)]" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} required />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_conclusion')}</label>
-                              <input type="date" className="nx-input bg-[var(--bg-elevated)]/50 border-[var(--border-subtle)]" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} required />
-                            </div>
-                        </div>
-                      </div>
-
-                      {/* Section 3: Personnel Coverage */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 mb-2">
-                           <div className="w-1.5 h-6 bg-[var(--accent)] rounded-full" />
-                           <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{t('leave.personnel_coverage')}</h4>
-                        </div>
-                        <div className="space-y-2 relative">
-                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.relief_personnel')}</label>
-                            <div className="relative group">
-                              <input 
-                                type="text"
-                                className="nx-input bg-[var(--bg-elevated)]/50 border-[var(--border-subtle)] pl-12 focus:scale-[1.01] transition-transform"
-                                placeholder={form.relieverId ? employees.find(e => e.id === form.relieverId)?.fullName : "Search by name or title..."}
-                                value={relieverSearch}
-                                onChange={(e) => {
-                                  setRelieverSearch(e.target.value);
-                                  setShowRelieverOptions(true);
-                                }}
-                                onFocus={() => setShowRelieverOptions(true)}
-                              />
-                              <Users size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 group-focus-within:text-[var(--primary)] transition-colors" />
-                              
-                              <AnimatePresence>
-                                {showRelieverOptions && (
-                                  <>
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40" onClick={() => setShowRelieverOptions(false)} />
-                                    <motion.div 
-                                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                      className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[280px] overflow-y-auto bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl custom-scrollbar"
-                                    >
-                                      <div className="p-2 space-y-1">
-                                         <button type="button" onClick={() => { setForm({...form, relieverId: ''}); setShowRelieverOptions(false); setRelieverSearch(''); }} className="w-full text-left px-5 py-3 rounded-xl hover:bg-[var(--bg-elevated)] text-[10px] font-black uppercase tracking-widest text-rose-500/60 transition-colors">
-                                            {t('leave.no_reliever')}
-                                         </button>
-                                         {filteredEmployees.map(e => (
-                                           <button key={e.id} type="button" onClick={() => { setForm({...form, relieverId: e.id}); setShowRelieverOptions(false); setRelieverSearch(e.fullName); }} 
-                                              className={cn("w-full text-left px-5 py-4 rounded-xl hover:bg-[var(--bg-elevated)] transition-all flex flex-col gap-1", form.relieverId === e.id ? "bg-[var(--primary)]/5 border border-[var(--primary)]/10" : "")}>
-                                              <span className="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-tight">{e.fullName}</span>
-                                              <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{e.jobTitle} • {e.role}</span>
-                                           </button>
-                                         ))}
-                                         {filteredEmployees.length === 0 && <div className="p-10 text-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-30 italic">No personnel found</div>}
-                                      </div>
-                                    </motion.div>
-                                  </>
-                                )}
-                              </AnimatePresence>
-                            </div>
-                        </div>
-
-                        {form.relieverId && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--accent)]/5 border border-[var(--accent)]/10 shadow-sm">
-                                <input 
-                                  type="checkbox" 
-                                  id="requireRelieverAcceptance"
-                                  className="w-5 h-5 rounded-lg border-[var(--border-subtle)] text-[var(--primary)] focus:ring-[var(--primary)] bg-[var(--bg-card)] cursor-pointer"
-                                  checked={form.relieverAcceptanceRequired}
-                                  onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
-                                />
-                                <div className="space-y-1 cursor-pointer select-none" onClick={() => setForm({...form, relieverAcceptanceRequired: !form.relieverAcceptanceRequired})}>
-                                  <label htmlFor="requireRelieverAcceptance" className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest cursor-pointer">
-                                    {t('leave.require_handover_acceptance')}
-                                  </label>
-                                  <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-[0.1em] opacity-60">The cover person must formally acknowledge this request</p>
-                                </div>
-                            </motion.div>
-                        )}
-                      </div>
-
-                      {/* Section 4: Details */}
-                      <div className="space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                           <div className="w-1.5 h-6 bg-[var(--text-primary)]/20 rounded-full" />
-                           <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Justification & Handover</h4>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.mission_justification')}</label>
-                            <textarea className="nx-input bg-[var(--bg-elevated)]/50 border-[var(--border-subtle)] min-h-[100px] py-4 text-[12px]" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder={t('leave.mission_placeholder')} required />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.handover_notes')}</label>
-                            <textarea className="nx-input bg-[var(--bg-elevated)]/50 border-[var(--border-subtle)] min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder={t('leave.handover_placeholder')} />
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-
-                  <div className="p-6 sm:px-12 pb-12 pt-0 relative z-20">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-12 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all order-2 sm:order-1">{t('common.abort')}</button>
-                      <button form="leave-init-form" type="submit" disabled={saving} className="flex-[2] h-12 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all order-1 sm:order-2">
-                        {saving ? <Clock size={16} className="animate-spin mx-auto" /> : t('leave.deploy_vector')}
-                      </button>
-                    </div>
-                  </div>
+                   </div>
                 </div>
-             </motion.div>
+
+                {/* Right Panel: Form Intelligence */}
+                <div className="flex-1 p-8 sm:p-14 overflow-y-auto custom-scrollbar relative bg-[var(--bg-card)]">
+                   <button onClick={() => setShowModal(false)} className="absolute top-8 right-8 p-3 rounded-full hover:bg-[var(--bg-elevated)] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                      <X size={24} />
+                   </button>
+
+                   <form onSubmit={handleApply} className="space-y-12">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                         <div className="space-y-4">
+                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.type_label')}</label>
+                            <select 
+                               className="nx-input" 
+                               value={form.leaveType}
+                               onChange={e => setForm({...form, leaveType: e.target.value})}
+                               required
+                            >
+                               <option value="Annual">{t('leave.types.Annual')}</option>
+                               <option value="Sick">{t('leave.types.Sick')}</option>
+                               <option value="Maternity">{t('leave.types.Maternity')}</option>
+                               <option value="Paternity">{t('leave.types.Paternity')}</option>
+                               <option value="Compassionate">{t('leave.types.Compassionate')}</option>
+                               <option value="Unpaid">{t('leave.types.Unpaid')}</option>
+                            </select>
+                         </div>
+
+                         <div className="space-y-4">
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.relief_matrix')}</label>
+                             <div className="relative">
+                                <input 
+                                   type="text" 
+                                   className="nx-input pl-12" 
+                                   placeholder={t('leave.search_personnel')}
+                                   value={relieverSearch}
+                                   onChange={e => {
+                                      setRelieverSearch(e.target.value);
+                                      setShowRelieverOptions(true);
+                                   }}
+                                   onFocus={() => setShowRelieverOptions(true)}
+                                />
+                                <Users size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40" />
+                                
+                                <AnimatePresence>
+                                   {showRelieverOptions && relieverSearch.length > 0 && (
+                                      <motion.div 
+                                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                                         className="absolute left-0 right-0 mt-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl z-[100] max-h-[240px] overflow-y-auto custom-scrollbar p-2"
+                                      >
+                                         {filteredEmployees.map(emp => (
+                                            <button 
+                                               key={emp.id} type="button"
+                                               onClick={() => {
+                                                  setForm({...form, relieverId: emp.id});
+                                                  setRelieverSearch(emp.fullName);
+                                                  setShowRelieverOptions(false);
+                                               }}
+                                               className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-[var(--bg-elevated)] transition-all text-left"
+                                            >
+                                               <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-primary)] border border-[var(--border-subtle)]">
+                                                  <Users size={18} />
+                                               </div>
+                                               <div>
+                                                  <p className="text-[12px] font-black uppercase tracking-tight">{emp.fullName}</p>
+                                                  <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest italic">{emp.jobTitle}</p>
+                                               </div>
+                                            </button>
+                                         ))}
+                                         {filteredEmployees.length === 0 && (
+                                            <div className="p-8 text-center text-[10px] font-black uppercase text-[var(--text-muted)] opacity-40">{t('leave.no_nodes_found')}</div>
+                                         )}
+                                      </motion.div>
+                                   )}
+                                </AnimatePresence>
+                             </div>
+                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                         <div className="space-y-4">
+                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.start_point')}</label>
+                            <input 
+                               type="date" className="nx-input" 
+                               value={form.startDate}
+                               onChange={e => setForm({...form, startDate: e.target.value})}
+                               required
+                            />
+                         </div>
+
+                         <div className="space-y-4">
+                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.end_point')}</label>
+                            <input 
+                               type="date" className="nx-input" 
+                               value={form.endDate}
+                               onChange={e => setForm({...form, endDate: e.target.value})}
+                               required
+                            />
+                         </div>
+                      </div>
+
+                      {calculatedDays !== null && (
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-8 rounded-[2rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-between">
+                           <div>
+                              <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-1">{t('leave.calculated_span')}</p>
+                              <h4 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight">{calculatedDays} {t('leave.business_days')}</h4>
+                           </div>
+                           <div className="text-right">
+                              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">{t('leave.estimated_debt')}</p>
+                              <h4 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">{(Number(balance.leaveBalance) - calculatedDays).toFixed(1)} <span className="text-xs opacity-50">{t('leave.remaining')}</span></h4>
+                           </div>
+                        </motion.div>
+                      )}
+
+                      <div className="space-y-4">
+                         <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.mission_objectives')}</label>
+                         <textarea 
+                            className="nx-input min-h-[120px] py-6" 
+                            placeholder={t('leave.reason_placeholder')}
+                            value={form.reason}
+                            onChange={e => setForm({...form, reason: e.target.value})}
+                            required
+                         />
+                      </div>
+
+                      {form.relieverId && (
+                         <div className="space-y-6 p-8 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] border-dashed">
+                            <div className="flex items-center gap-4 mb-4">
+                               <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
+                                  <Send size={18} />
+                               </div>
+                               <h4 className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">{t('leave.handover_protocol')}</h4>
+                            </div>
+                            
+                            <div className="space-y-4">
+                               <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.protocol_notes')}</label>
+                               <textarea 
+                                  className="nx-input min-h-[100px] py-4" 
+                                  placeholder={t('leave.handover_placeholder')}
+                                  value={form.handoverNotes}
+                                  onChange={e => setForm({...form, handoverNotes: e.target.value})}
+                               />
+                            </div>
+
+                            <label className="flex items-center gap-4 cursor-pointer group p-2">
+                               <div className="relative w-12 h-6 flex items-center">
+                                  <input 
+                                     type="checkbox" className="sr-only peer" 
+                                     checked={form.relieverAcceptanceRequired}
+                                     onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
+                                  />
+                                  <div className="w-full h-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full peer-checked:bg-[var(--primary)] peer-checked:border-[var(--primary)] transition-all" />
+                                  <div className="absolute left-1 top-1 w-4 h-4 bg-[var(--text-muted)] peer-checked:bg-white rounded-full transition-all peer-checked:translate-x-6" />
+                               </div>
+                               <span className="text-[10px] font-black text-[var(--text-muted)] group-hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">{t('leave.require_reliever_sig')}</span>
+                            </label>
+                         </div>
+                      )}
+
+                      <div className="pt-6">
+                         <button 
+                            type="submit" 
+                            disabled={saving}
+                            className="w-full h-18 rounded-[2rem] bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-0.98 transition-all disabled:opacity-50"
+                         >
+                            {t('leave.initiate_vector_btn')}
+                         </button>
+                      </div>
+                   </form>
+                </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>

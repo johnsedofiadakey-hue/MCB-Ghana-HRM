@@ -115,6 +115,12 @@ export const cancelAppraisalPacket = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const userRole = (req as any).user.role;
+
+    // BUG A1 FIX: Add explicit role guard
+    if (getRoleRank(userRole) < 80) {
+      return res.status(403).json({ error: 'Only Directors or MD can cancel appraisal packets' });
+    }
     
     const packet = await (prisma as any).appraisalPacket.findUnique({
       where: { id: packetId, organizationId }
@@ -137,6 +143,13 @@ export const updateAppraisalCycle = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const userRole = (req as any).user.role;
+
+    // BUG A2 FIX: Add explicit role guard
+    if (getRoleRank(userRole) < 85) {
+      return res.status(403).json({ error: 'Only HR Managers or MD can update appraisal cycles' });
+    }
+
     const cycle = await AppraisalService.updateCycle(organizationId, id, req.body);
     return res.json(cycle);
   } catch (err: any) {
@@ -148,12 +161,20 @@ export const deleteAppraisalCycle = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const userRole = (req as any).user.role;
+
+    // BUG A2 FIX: Add explicit role guard
+    if (getRoleRank(userRole) < 85) {
+      return res.status(403).json({ error: 'Only HR Managers or MD can delete appraisal cycles' });
+    }
+
     await AppraisalService.deleteCycle(organizationId, id);
     return res.json({ success: true });
   } catch (err: any) {
     return res.status(400).json({ error: err.message });
   }
 };
+
 export const updateAppraisalPacket = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -230,12 +251,20 @@ export const getCyclePackets = async (req: Request, res: Response) => {
   try {
     const { cycleId } = req.params;
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const userRole = (req as any).user.role;
+
+    // Only Rank 80+ or HR can view cycle packets listing
+    if (getRoleRank(userRole) < 80) {
+      return res.status(403).json({ error: 'Not authorised to view cycle packets' });
+    }
+
     const packets = await AppraisalService.getCyclePackets(organizationId, cycleId);
     return res.json(packets);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 };
+
 export const purgeOrphanPackets = async (req: Request, res: Response) => {
   try {
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
@@ -277,10 +306,17 @@ export const getPerformanceTrend = async (req: Request, res: Response) => {
   try {
     const { employeeId } = req.params;
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const user = (req as any).user;
+    const userRank = getRoleRank(user.role);
+
+    // Guard: Only self, Manager+, HR, or MD can view trends
+    if (user.id !== employeeId && userRank < 60) {
+      return res.status(403).json({ error: 'Not authorised to view performance trends for other employees' });
+    }
+
     const trend = await AppraisalService.getEmployeePerformanceTrend(employeeId, organizationId);
     return res.json(trend);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 };
-

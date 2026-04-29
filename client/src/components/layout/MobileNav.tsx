@@ -14,7 +14,8 @@ const MobileNav = () => {
 
     const navItems = [
         { icon: LayoutDashboard, label: t('common.dashboard'), path: '/dashboard' },
-        { icon: Inbox, label: t('common.inbox'), path: '/announcements' },
+        // BUG N1 FIX: Mobile Inbox route should point to the centralized Inbox (/inbox), not announcements
+        { icon: Inbox, label: t('common.inbox'), path: '/inbox' },
         { icon: Calendar, label: t('common.leave'), path: '/leave' },
         { icon: Clock, label: t('common.attendance'), path: '/attendance' },
         ...(rank >= 70 

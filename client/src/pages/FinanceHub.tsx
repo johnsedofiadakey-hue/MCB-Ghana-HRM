@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../utils/toast';
-import { Wallet, DollarSign, Receipt, Plus, Loader2, CheckCircle, XCircle, ChevronDown, ShieldCheck, History as FinanceHistory, X } from 'lucide-react';
+import { Wallet, DollarSign, Receipt, Plus, Loader2, CheckCircle, XCircle, ChevronDown, ShieldCheck, History as FinanceHistory, X, FileText, Calendar } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -8,13 +8,18 @@ import { useTranslation } from 'react-i18next';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTheme } from '../context/ThemeContext';
 
+const fmt = (n: number | string, currency = '', lang = 'en') =>
+  `${currency ? currency + ' ' : ''}${Number(n).toLocaleString(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 const FinanceHub = () => {
     const { t, i18n } = useTranslation();
     const { settings } = useTheme();
-    const [activeTab, setActiveTab] = useState<'loans' | 'expenses'>('loans');
+    // BUG N3 FIX: Added 'payslips' to activeTab state
+    const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'payslips'>('loans');
     const [viewScope, setViewScope] = useState<'my' | 'all'>('my');
 
     const [items, setItems] = useState<any[]>([]);
+    const [payslips, setPayslips] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -28,9 +33,14 @@ const FinanceHub = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const endpoint = `/${activeTab}${viewScope === 'all' && isAdmin ? '' : '/me'}`;
-            const res = await api.get('/finance' + endpoint);
-            setItems(Array.isArray(res.data) ? res.data : []);
+            if (activeTab === 'payslips') {
+                const res = await api.get('/payroll/my-payslips');
+                setPayslips(Array.isArray(res.data) ? res.data : []);
+            } else {
+                const endpoint = `/${activeTab}${viewScope === 'all' && isAdmin ? '' : '/me'}`;
+                const res = await api.get('/finance' + endpoint);
+                setItems(Array.isArray(res.data) ? res.data : []);
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -71,8 +81,10 @@ const FinanceHub = () => {
         }
     };
 
+    const downloadPayslip = (runId: string, empId: string) => window.open(`/api/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`, '_blank');
+
     return (
-        <div className="space-y-10 page-enter min-h-screen">
+        <div className="space-y-10 page-enter min-h-screen pb-20">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10">
                 <div>
                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-[var(--text-primary)] font-display tracking-tight flex items-center gap-4">
@@ -84,22 +96,25 @@ const FinanceHub = () => {
                     </p>
                 </div>
 
-                <motion.button
-                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                    onClick={() => { setFormData({}); setShowModal(true); }}
-                    className="btn-primary px-6 sm:px-10 py-3 sm:py-5 rounded-2xl shadow-xl text-[10px] sm:text-[11px]"
-                >
-                    <Plus size={18} /> {activeTab === 'loans' ? t('finance.new_advance') : t('finance.new_expense')}
-                </motion.button>
+                {activeTab !== 'payslips' && (
+                  <motion.button
+                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                      onClick={() => { setFormData({}); setShowModal(true); }}
+                      className="btn-primary px-6 sm:px-10 py-3 sm:py-5 rounded-2xl shadow-xl text-[10px] sm:text-[11px]"
+                  >
+                      <Plus size={18} /> {activeTab === 'loans' ? t('finance.new_advance') : t('finance.new_expense')}
+                  </motion.button>
+                )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-between items-end">
                 <div className="flex gap-2 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-fit overflow-x-auto no-scrollbar max-w-full">
                     <button onClick={() => setActiveTab('loans')} className={cn("px-6 sm:px-10 py-3 sm:py-4 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap", activeTab === 'loans' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('finance.strategic_advances')}</button>
                     <button onClick={() => setActiveTab('expenses')} className={cn("px-6 sm:px-10 py-3 sm:py-4 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap", activeTab === 'expenses' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('finance.expense_audits')}</button>
+                    <button onClick={() => setActiveTab('payslips')} className={cn("px-6 sm:px-10 py-3 sm:py-4 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap", activeTab === 'payslips' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('payroll.my_payslips', 'My Payslips')}</button>
                 </div>
 
-                {isAdmin && (
+                {isAdmin && activeTab !== 'payslips' && (
                     <div className="flex gap-2 p-1.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-fit">
                         <button onClick={() => setViewScope('my')} className={cn("px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all", viewScope === 'my' ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>{t('finance.internal_view')}</button>
                         <button onClick={() => setViewScope('all')} className={cn("px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all", viewScope === 'all' ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>{t('finance.global_matrix')}</button>
@@ -114,11 +129,56 @@ const FinanceHub = () => {
                             <Loader2 size={32} className="text-[var(--primary)] animate-spin" />
                             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">{t('finance.syncing_ledger')}</p>
                         </div>
-                    ) : items.length === 0 ? (
+                    ) : (activeTab === 'payslips' ? payslips : items).length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-32 text-[var(--text-muted)] opacity-40">
                             <FinanceHistory size={64} className="mb-6" />
                             <p className="text-[10px] font-black uppercase tracking-[0.3em]">{t('finance.void_history')}</p>
                         </div>
+                    ) : activeTab === 'payslips' ? (
+                        <table className="nx-table">
+                            <thead>
+                                <tr className="bg-[var(--bg-elevated)]/50">
+                                    <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] text-left">{t('payroll.headers.period')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('payroll.headers.gross')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('payroll.headers.tax')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('payroll.headers.net')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] text-right">{t('payroll.headers.action')}</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--border-subtle)]/30">
+                                {payslips.map((slip: any) => (
+                                    <tr key={slip.id} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
+                                        <td className="px-10 py-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)]">
+                                                    <Calendar size={14} />
+                                                </div>
+                                                <span className="text-[14px] font-bold tracking-tight text-[var(--text-primary)]">{slip.run?.period}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6 text-[13px] font-medium text-[var(--text-secondary)]">
+                                            {fmt(slip.grossPay, slip.currency, i18n.language)}
+                                        </td>
+                                        <td className="px-8 py-6 text-[13px] font-bold text-[var(--error)]">
+                                            -{fmt(Number(slip.tax) + Number(slip.ssnit), slip.currency, i18n.language)}
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="px-4 py-2 rounded-xl bg-[var(--success)]/5 border border-[var(--success)]/10 text-[var(--success)] font-black text-[15px] w-fit">
+                                                {fmt(slip.netPay, slip.currency, i18n.language)}
+                                            </div>
+                                        </td>
+                                        <td className="px-10 py-6 text-right">
+                                            <button
+                                                onClick={() => downloadPayslip(slip.runId, user?.id || '')}
+                                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all ml-auto"
+                                            >
+                                                <FileText size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     ) : (
                         <table className="nx-table">
                             <thead>

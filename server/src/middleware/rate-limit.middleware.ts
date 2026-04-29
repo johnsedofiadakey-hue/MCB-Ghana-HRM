@@ -28,14 +28,18 @@ export const passwordResetLimiter = rateLimit({
 });
 
 /**
- * General API limiter — 300 requests per minute per IP.
- * Prevents scraping and DoS without blocking normal usage.
+ * General API limiter — 300 requests per minute per identifier.
+ * Uses userId if authenticated, fallback to IP.
  */
 export const generalLimiter = rateLimit({
   windowMs: 60 * 1000, 
   limit: 300,          // Hardened from 2000 to prevent automated bombardment
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    // R2 FIX: Use userId for limiting if available to prevent office-wide blocks
+    return (req as any).user?.id || req.ip;
+  },
   message: { error: 'Too many requests. Please slow down.' },
   skip: (req) => req.originalUrl?.startsWith('/api/dev'), // Robust DEV bypass
 });
@@ -48,6 +52,7 @@ export const exportLimiter = rateLimit({
   limit: 20,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: (req) => (req as any).user?.id || req.ip,
   message: { error: 'Too many export requests. Please wait a few minutes.' },
 });
 
@@ -61,6 +66,7 @@ export const devLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many DEV requests.' },
 });
+
 /**
  * AI/Bot limiter — protects the Cortex intelligence engine from token incineration.
  */
@@ -69,5 +75,6 @@ export const aiLimiter = rateLimit({
   limit: 20,           // Strict limit for expensive AI operations
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: (req) => (req as any).user?.id || req.ip,
   message: { error: 'Cortex is processing too many requests. Please wait a minute.' },
 });

@@ -43,9 +43,9 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1];
-  } else if (req.query.token && typeof req.query.token === 'string') {
-    token = req.query.token;
-  }
+  } 
+  
+  // ── S1 SECURITY FIX: Removed query string token acceptance (token must be in header) ──
 
   if (!token) {
     console.warn(`[Auth Middleware] No token provided for: ${req.method} ${req.path}`);
@@ -70,22 +70,31 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       }
     }
 
-    // ── SANDBOX RESILIENCE BYPASS ──
-    // If this is a sandbox token, we prioritize simulation stability over strict DB lookup
-    // This prevents "Ghost Logouts" if the database is in a cold-start state or the seeded user is being refreshed.
+    // ── S2 SECURITY FIX: Hardened Sandbox Bypass (Validate existence in DB) ──
+    // If this is a sandbox token, we still perform a DB lookup to ensure account hasn't been nuked
     if (decoded.organizationId === 'sandbox-org-001') {
+       const sandboxUser = await prisma.user.findFirst({
+         where: { id: decoded.id, organizationId: 'sandbox-org-001' },
+         select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true }
+       });
+
+       if (!sandboxUser) {
+          console.warn(`[Auth Middleware] Sandbox Account not found for ID: ${decoded.id}`);
+          return res.status(401).json({ error: 'Sandbox account expired or deleted.' });
+       }
+
       (req as any).user = {
-        id: decoded.id,
-        role: decoded.role || 'MD',
-        name: decoded.name || 'Sandbox Operator',
+        id: sandboxUser.id,
+        role: sandboxUser.role || 'MD',
+        name: sandboxUser.fullName || 'Sandbox Operator',
         organizationId: 'sandbox-org-001',
-        rank: getRoleRank(decoded.role || 'MD'),
+        rank: getRoleRank(sandboxUser.role || 'MD'),
       };
 
       return tenantContext.run({
         organizationId: 'sandbox-org-001',
-        userId: decoded.id,
-        role: decoded.role || 'MD'
+        userId: sandboxUser.id,
+        role: sandboxUser.role || 'MD'
       }, () => {
         next();
       });

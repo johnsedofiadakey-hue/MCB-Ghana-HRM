@@ -103,13 +103,17 @@ const PORT = parseInt(rawPort, 10);
 const server = http.createServer(app);
 
 // ─── NUCLEAR CORS BRIDGE (Dedicated Package) ───────────────────────────────
+// S3 SECURITY FIX: Restrict localhost to non-production environments
 const allowedOrigins = [
   'https://mcb-hrm-ghana.web.app',
   'https://mcb-hrm-ghana.firebaseapp.com',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:5173',
 ];
+
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:3000');
+  allowedOrigins.push('http://localhost:3001');
+  allowedOrigins.push('http://localhost:5173');
+}
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -232,7 +236,7 @@ app.use(maintenanceMiddleware);
 // MC-Bauchemie Ghana is a licensed deployment. No billing lock.
 app.use((_req, _res, next) => next());
 
-let isBooted = false;
+var isBooted = false;
 
 // ─── STARTUP PROTOCOL ───────────────────────────────────────────────────────
 const runStartupTasks = async () => {

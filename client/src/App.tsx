@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 
 import { motion } from 'framer-motion';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
 import DemoPersonaSwitcher from './components/DemoPersonaSwitcher';
 import CommandPalette from './components/layout/CommandPalette';
@@ -60,6 +60,8 @@ const Training = lazy(() => import('./pages/Training'));
 const HolidayCalendar = lazy(() => import('./pages/HolidayCalendar'));
 const MDKpiView = lazy(() => import('./pages/kpi/MDKpiView'));
 const MyTargetsPage = lazy(() => import('./pages/performance/TargetDashboard'));
+const PerformanceHub = lazy(() => import('./pages/Performance'));
+const TeamReview = lazy(() => import('./pages/TeamReview'));
 const AnnouncementsPage = lazy(() => import('./pages/Announcements'));
 const Profile = lazy(() => import('./pages/Profile'));
 const StrategicGoalBuilder = lazy(() => import('./pages/performance/StrategicGoalBuilder'));
@@ -108,6 +110,7 @@ const AdminGuard = () => {
 const Layout = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { isOpen: isAIOpen, setIsOpen: setIsAIOpen } = useAI();
@@ -393,8 +396,8 @@ const AppContent = () => {
                 </button>
                 <button 
                   onClick={() => {
-                    localStorage.clear();
-                    window.location.href = '/login';
+                    storage.clearSession();
+                    window.location.href = '/';
                   }}
                   className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
                 >
@@ -417,8 +420,9 @@ const AppContent = () => {
             {/* Performance/KPI Module - Strict Routing */}
             <Route path="/kpi/department" element={<RoleGuard minRank={80}><DeptKpiPage /></RoleGuard>} />
             <Route path="/kpi/executive" element={<RoleGuard minRank={80}><MDKpiView /></RoleGuard>} />
-            <Route path="/kpi/team" element={<RoleGuard minRank={70}><MyTargetsPage /></RoleGuard>} />
+            <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamReview /></RoleGuard>} />
             <Route path="/kpi/my-targets" element={<RoleGuard minRank={10}><MyTargetsPage /></RoleGuard>} />
+            <Route path="/performance/analytics" element={<PerformanceHub />} />
             
             {/* Appraisal Module - Strict Routing */}
             <Route path="/reviews/my" element={<RoleGuard minRank={10}><Appraisals /></RoleGuard>} />

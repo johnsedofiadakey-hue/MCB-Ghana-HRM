@@ -3,7 +3,8 @@ import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { User, Settings, LogOut, Bell, Search, Menu, Inbox as InboxIcon, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getStoredUser } from '../../utils/session';
+import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { storage } from '../../services/storage';
 import { useTranslation } from 'react-i18next';
 import NotificationInbox from '../common/NotificationInbox';
 import ActionInbox from '../common/ActionInbox';
@@ -38,17 +39,9 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
             .catch(() => {});
     }, []);
 
+    // BUG 6 FIX: Standardized logout using storage.clearSession()
     const handleLogout = () => {
-        // Clear MCB HRM Ghana session tokens
-        localStorage.removeItem('mcb_auth_token');
-        localStorage.removeItem('mcb_refresh_token');
-        localStorage.removeItem('mcb_user');
-        
-        // Clear legacy tokens to prevent ghost sessions
-        localStorage.removeItem('app_auth_token');
-        localStorage.removeItem('app_refresh_token');
-        localStorage.removeItem('user_session');
-        
+        storage.clearSession();
         navigate('/');
     };
 
@@ -80,41 +73,48 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
                     </div>
                 )}
 
-                <div className="hidden md:flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--primary)] focus-within:bg-[var(--bg-card)] focus-within:shadow-[0_4px_12px_rgba(0,0,0,0.02)] w-full max-w-[320px] transition-all group">
+                {/* BUG 4 FIX: Search Bar wired to CommandPalette via KeyboardEvent proxy */}
+                <div 
+                    onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+                    className="hidden md:flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--primary)] focus-within:bg-[var(--bg-card)] focus-within:shadow-[0_4px_12px_rgba(0,0,0,0.02)] w-full max-w-[320px] transition-all group cursor-pointer"
+                >
                     <Search size={16} className="text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                     <input
                         type="text"
+                        readOnly
                         placeholder={t('common.search')}
-                        className="bg-transparent border-none outline-none text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-full font-medium"
+                        className="bg-transparent border-none outline-none text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-full font-medium cursor-pointer"
                     />
+                    <span className="text-[9px] font-black opacity-30 px-1.5 py-0.5 rounded border border-[var(--text-muted)]">⌘K</span>
                 </div>
             </div>
 
             {/* Identity & Actions */}
             <div className="flex items-center gap-3 sm:gap-6 lg:gap-10">
                 {/* MCB AI Intelligence Trigger */}
-                {isAIEnabled && (user?.rank || 0) >= 70 && (
+                {/* BUG 7 FIX: Use getRankFromRole to prevent visibility issues from stale user properties */}
+                {isAIEnabled && getRankFromRole(user?.role) >= 70 && (
                     <button 
                         onClick={() => setIsAIOpen(true)}
                          className={cn(
                            "group relative p-2 sm:px-4 rounded-xl border transition-all flex items-center gap-2 overflow-hidden",
-                           (user.rank || 0) >= 85 
+                           getRankFromRole(user?.role) >= 85 
                              ? "text-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/25 ring-2 ring-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.2)]" 
                              : "text-[var(--primary)] bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10 border-[var(--primary)]/20 hover:border-[var(--primary)]/40"
                          )}
-                         title={(user.rank || 0) >= 85 ? "Management Insights Active" : "AI Helper Active"}
+                         title={getRankFromRole(user?.role) >= 85 ? "Management Insights Active" : "AI Helper Active"}
                      >
                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                         <Sparkles size={18} className={cn("shrink-0", (user.rank || 0) >= 85 ? "animate-pulse scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "")} />
+                         <Sparkles size={18} className={cn("shrink-0", getRankFromRole(user?.role) >= 85 ? "animate-pulse scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "")} />
                          <div className="flex flex-col items-start leading-none hidden sm:flex">
                            <span className="text-[10px] font-black uppercase tracking-tighter">AI Assistant</span>
-                           <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-80", (user.rank || 0) >= 85 ? "text-amber-500/80" : "text-[var(--primary)]")}>
-                             {(user.rank || 0) >= 85 ? "Management" : "Personal"}
+                           <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-80", getRankFromRole(user?.role) >= 85 ? "text-amber-500/80" : "text-[var(--primary)]")}>
+                             {getRankFromRole(user?.role) >= 85 ? "Management" : "Personal"}
                            </span>
                          </div>
                          <span className={cn(
                            "absolute top-1 right-1 w-2 h-2 rounded-full",
-                           (user.rank || 0) >= 85 ? "bg-amber-500 animate-ping" : "bg-[var(--primary)]"
+                           getRankFromRole(user?.role) >= 85 ? "bg-amber-500 animate-ping" : "bg-[var(--primary)]"
                          )} />
                     </button>
                 )}

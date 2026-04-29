@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { storage } from '../../services/storage';
 import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
   Settings, Building2, LogOut,
@@ -88,16 +89,17 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   const navigate = useNavigate();
   const { settings, refreshSettings } = useTheme();
   
-  // LOGO HYDRATION WATCHER: Automatically triggers a refresh every 5s if logo is missing
+  // BUG 5 FIX: Logo missing, attempting hydration sync with 3s retry
   useEffect(() => {
     if (!settings?.logoUrl && !settings?.companyLogoUrl) {
-      const timer = setInterval(() => {
+      const timer = setTimeout(() => {
         console.log('[Sidebar] Logo missing, attempting hydration sync...');
         refreshSettings();
-      }, 5000);
-      return () => clearInterval(timer);
+      }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [settings?.logoUrl, settings?.companyLogoUrl, refreshSettings]);
+
   const { t } = useTranslation();
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
@@ -120,7 +122,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('mcb_auth_token');
+    const token = storage.getItem('mcb_auth_token', null);
     if (!token || rank < 60) return;
     
     if (rank >= 70) {
@@ -132,16 +134,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   }, [rank]);
 
   const handleLogout = () => {
-        // Clear MCB HRM Ghana session tokens
-    localStorage.removeItem('mcb_auth_token');
-    localStorage.removeItem('mcb_refresh_token');
-    localStorage.removeItem('mcb_user');
-    
-    // Clear legacy tokens to prevent ghost sessions
-    localStorage.removeItem('app_auth_token');
-    localStorage.removeItem('app_refresh_token');
-    localStorage.removeItem('user_session');
-    
+    storage.clearSession();
     navigate('/');
   };
 
@@ -232,10 +225,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               <NavGroup label={t('common.performance_label')} isCollapsed={isCollapsed}>
                 <NavItem to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} isCollapsed={isCollapsed} />
                 {rank >= 80 && (
-                  <NavItem to="/kpi/my-targets" icon={Building2} label={t('common.departmental_goals')} isCollapsed={isCollapsed} />
+                  <NavItem to="/kpi/department" icon={Building2} label={t('common.departmental_goals')} isCollapsed={isCollapsed} />
                 )}
                 {rank >= 70 && (
-                  <NavItem to="/kpi/my-targets" icon={Users} label={t('common.team_targets')} isCollapsed={isCollapsed} />
+                  <NavItem to="/kpi/team" icon={Users} label={t('common.team_targets')} isCollapsed={isCollapsed} />
                 )}
                 <NavItem to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} isCollapsed={isCollapsed} />
                 {rank >= 70 && (
@@ -262,16 +255,14 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/policies" icon={BookOpen} label="Policies" isCollapsed={isCollapsed} />
                 {(rank >= 60 || isHR) && <NavItem to="/disciplinary" icon={AlertOctagon} label="Disciplinary" isCollapsed={isCollapsed} />}
                 {(rank >= 70 || isHR) && <NavItem to="/probation" icon={Clock} label="Probation" isCollapsed={isCollapsed} />}
-                {(isIT || isHR) && (
-                   <NavItem to="/it-admin" icon={ShieldCheck} label="ID Card Registry" isCollapsed={isCollapsed} />
-                )}
               </NavGroup>
  
               <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
                 {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
-                {(isIT && !isMD) && (
-                  <NavItem to="/it-admin" icon={ShieldAlert} label={rank >= 85 ? 'Strategic IT Hub' : 'IT Administration'} isCollapsed={isCollapsed} />
+                {(isIT || isHR) && !isMD && (
+                   <NavItem to="/it-admin" icon={ShieldCheck} label="IT & Registries" isCollapsed={isCollapsed} />
                 )}
+                {/* BUG N2 FIX: Only IT/HR or Rank >= 85 can see Support tickets management */}
                 <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />
                 <NavItem to="/holidays" icon={Calendar} label={t('common.holidays_label')} isCollapsed={isCollapsed} />
