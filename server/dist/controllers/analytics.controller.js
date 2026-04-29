@@ -8,7 +8,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const getExecutiveStats = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const rank = user.rank || 50;
         const userId = user.id;
         const isExecutive = rank >= 80;
@@ -96,7 +96,7 @@ exports.getExecutiveStats = getExecutiveStats;
 const getDepartmentGrowth = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const departments = await client_1.default.department.findMany({
             where: { organizationId },
             include: { _count: { select: { employees: true } } }
@@ -116,7 +116,7 @@ exports.getDepartmentGrowth = getDepartmentGrowth;
 const getPersonalStats = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const userId = user.id;
         // 1. Overall Performance (Average of all completed KPI Sheets)
         const sheets = await client_1.default.kpiSheet.findMany({
@@ -166,7 +166,7 @@ const pdf_service_1 = require("../services/pdf.service");
 const downloadBoardReportPDF = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         // Ensure only executive/director rank can generate board reports
         if ((user.rank || 0) < 80) {
             return res.status(403).json({ error: 'Access denied. Board reports are restricted to executive personnel.' });

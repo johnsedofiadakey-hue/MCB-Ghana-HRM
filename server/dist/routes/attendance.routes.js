@@ -5,6 +5,7 @@ const auth_middleware_1 = require("../middleware/auth.middleware");
 const attendance_controller_1 = require("../controllers/attendance.controller");
 const biometric_controller_1 = require("../controllers/biometric.controller");
 const router = (0, express_1.Router)();
+router.post('/node-scan', attendance_controller_1.nodeScan);
 router.use(auth_middleware_1.authenticate);
 router.post('/clock-in', attendance_controller_1.clockIn);
 router.post('/clock-out', attendance_controller_1.clockOut);

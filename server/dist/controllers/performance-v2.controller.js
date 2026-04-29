@@ -12,7 +12,7 @@ const createDepartmentKPI = async (req, res) => {
     try {
         const { departmentId, title, description, metricType, targetValue, measurementPeriod } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const kpi = await client_1.default.departmentKPI.create({
             data: {
@@ -63,7 +63,7 @@ const createTeamTarget = async (req, res) => {
     try {
         const { departmentKpiId, title, description, metricType, targetValue, measurementPeriod, teamName } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const target = await client_1.default.teamTarget.create({
             data: {
@@ -114,7 +114,7 @@ const createEmployeeTarget = async (req, res) => {
     try {
         const { teamTargetId, employeeId, title, description, metricType, targetValue, measurementPeriod } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const target = await client_1.default.employeeTarget.create({
             data: {
@@ -162,7 +162,7 @@ const createReview = async (req, res) => {
     try {
         const { employeeId, cycleId, selfReview, selfScore } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const cycle = await client_1.default.reviewCycle.findFirst({ where: { id: cycleId, organizationId } });
         if (!cycle)
@@ -215,7 +215,7 @@ const directorFinalize = async (req, res) => {
         const { id } = req.params;
         const { directorReview, directorScore, finalScore } = req.body;
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const review = await client_1.default.performanceReviewV2.updateMany({
             where: { id, organizationId },
             data: {

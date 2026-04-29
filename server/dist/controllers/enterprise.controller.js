@@ -9,7 +9,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const getOrgId = (req) => {
     if (req.user?.role === 'DEV')
         return undefined;
-    return req.user?.organizationId || 'default-tenant';
+    return req.user?.organizationId || 'mcb-ghana-tenant';
 };
 exports.getOrgId = getOrgId;
 const parsePagination = (req) => {
@@ -96,7 +96,7 @@ exports.getRoleDashboard = getRoleDashboard;
 const createDepartmentKPI = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const item = await client_1.default.departmentKPI.create({
             data: {
@@ -147,7 +147,7 @@ exports.listDepartmentKPIs = listDepartmentKPIs;
 const updateDepartmentKPI = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const { id } = req.params;
         const data = req.body;
         const item = await client_1.default.departmentKPI.update({
@@ -173,7 +173,7 @@ exports.updateDepartmentKPI = updateDepartmentKPI;
 const deleteDepartmentKPI = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const { id } = req.params;
         await client_1.default.departmentKPI.delete({
             where: { id, organizationId },
@@ -204,7 +204,7 @@ exports.listDepartmentKPIsLegacy = listDepartmentKPIsLegacy;
 const createTeamTarget = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.teamTarget.create({
             data: {
@@ -231,7 +231,7 @@ exports.createTeamTarget = createTeamTarget;
 const createEmployeeTarget = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         // Fetch team target to get originKPIId
         const teamTarget = await client_1.default.teamTarget.findUnique({
@@ -265,7 +265,7 @@ const upsertPerformanceReview = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const reviewId = asString(data.id);
         if (reviewId) {
@@ -330,7 +330,7 @@ exports.listPerformanceReviews = listPerformanceReviews;
 const createJobPosition = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.jobPosition.create({
             data: {
@@ -371,7 +371,7 @@ exports.listJobPositions = listJobPositions;
 const createCandidate = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.candidate.create({
             data: {
@@ -396,7 +396,7 @@ const updateCandidateStatus = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const candidateId = req.params.id;
         const status = asString(req.body.status).toUpperCase();
         const row = await client_1.default.candidate.update({
@@ -446,7 +446,7 @@ exports.listOnboardingChecklists = listOnboardingChecklists;
 const addOnboardingTask = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.onboardingChecklistTask.create({
             data: {
@@ -492,7 +492,7 @@ exports.updateOnboardingTask = updateOnboardingTask;
 const startOffboarding = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const row = await client_1.default.offboardingProcess.create({
             data: {
                 organizationId,
@@ -513,7 +513,7 @@ exports.startOffboarding = startOffboarding;
 const completeExitInterview = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const row = await client_1.default.exitInterview.create({
             data: {
                 organizationId,
@@ -537,7 +537,7 @@ exports.completeExitInterview = completeExitInterview;
 const recordAssetReturn = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const row = await client_1.default.assetReturn.create({
             data: {
                 organizationId,
@@ -561,7 +561,7 @@ exports.recordAssetReturn = recordAssetReturn;
 const createBenefitPlan = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.benefitPlan.create({
             data: {
@@ -587,7 +587,7 @@ exports.createBenefitPlan = createBenefitPlan;
 const enrollEmployeeBenefit = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.employeeBenefitEnrollment.create({
             data: {
@@ -612,7 +612,7 @@ exports.enrollEmployeeBenefit = enrollEmployeeBenefit;
 const createShift = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.shift.create({
             data: {
@@ -636,7 +636,7 @@ exports.createShift = createShift;
 const assignShift = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.employeeShift.create({
             data: {
@@ -660,7 +660,7 @@ exports.assignShift = assignShift;
 const createAnnouncement = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.announcement.create({
             data: {
@@ -704,7 +704,7 @@ exports.listAnnouncements = listAnnouncements;
 const createTaxRule = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.taxRule.create({
             data: {
@@ -729,7 +729,7 @@ exports.createTaxRule = createTaxRule;
 const createTaxBracket = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = req.body;
         const row = await client_1.default.taxBracket.create({
             data: {

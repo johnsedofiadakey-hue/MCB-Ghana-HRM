@@ -26,7 +26,7 @@ const logAction = async (paramsOrUserId, legacyAction, legacyEntity, legacyEntit
         await client_1.default.auditLog.create({
             data: {
                 userId: p.userId || null,
-                organizationId: p.organizationId || 'default-tenant',
+                organizationId: p.organizationId || 'mcb-ghana-tenant',
                 action: p.action,
                 entity: p.entity,
                 entityId: p.entityId || null,
@@ -120,7 +120,13 @@ const auditKpiEvent = (userId, organizationId, action, kpiId, metadata, req) => 
 exports.auditKpiEvent = auditKpiEvent;
 // ─── Query Functions ───────────────────────────────────────────────
 const getAuditLogs = async (organizationId, page = 1, limit = 50, filters) => {
-    const where = { organizationId };
+    const where = {
+        organizationId,
+        // 🛡️ DEV ISOLATION: Hide actions performed by DEV accounts from standard audit trails
+        user: {
+            isNot: { role: 'DEV' }
+        }
+    };
     if (filters?.entity)
         where.entity = filters.entity;
     if (filters?.userId)
@@ -130,7 +136,7 @@ const getAuditLogs = async (organizationId, page = 1, limit = 50, filters) => {
         client_1.default.auditLog.findMany({
             where,
             orderBy: { createdAt: 'desc' },
-            include: { user: { select: { fullName: true, email: true } } },
+            include: { user: { select: { fullName: true, email: true, role: true } } },
             skip,
             take: limit,
         }),

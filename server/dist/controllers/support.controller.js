@@ -13,7 +13,7 @@ const websocket_service_1 = require("../services/websocket.service");
 const createTicket = async (req, res) => {
     try {
         const { subject, description, category, priority } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const employeeId = req.user?.id;
         const ticket = await client_1.default.supportTicket.create({
             data: {
@@ -45,7 +45,7 @@ exports.createTicket = createTicket;
 const getMyTickets = async (req, res) => {
     try {
         const employeeId = req.user?.id;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const tickets = await client_1.default.supportTicket.findMany({
             where: { employeeId, organizationId },
             orderBy: { createdAt: 'desc' }
@@ -59,7 +59,7 @@ const getMyTickets = async (req, res) => {
 exports.getMyTickets = getMyTickets;
 const getAllTickets = async (req, res) => {
     try {
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const { status, category } = req.query;
         const tickets = await client_1.default.supportTicket.findMany({
             where: {
@@ -108,7 +108,7 @@ const addComment = async (req, res) => {
         const { ticketId } = req.params;
         const { content, attachmentUrl } = req.body;
         const userId = req.user?.id;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const comment = await client_1.default.ticketComment.create({
             data: {
                 organizationId,

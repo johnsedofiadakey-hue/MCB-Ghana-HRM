@@ -11,7 +11,7 @@ const getSubUnits = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const { departmentId } = req.query;
         const whereClause = {
-            organizationId: orgId || 'default-tenant'
+            organizationId: orgId || 'mcb-ghana-tenant'
         };
         if (departmentId) {
             whereClause.departmentId = Number(departmentId);
@@ -46,7 +46,7 @@ exports.getSubUnits = getSubUnits;
 const createSubUnit = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const { name, departmentId, managerId } = req.body;
         if (!name?.trim())
             return res.status(400).json({ error: 'Sub-unit name is required' });
@@ -80,7 +80,7 @@ const updateSubUnit = async (req, res) => {
         const subUnit = await client_1.default.subUnit.update({
             where: {
                 id: req.params.id,
-                organizationId: orgId || 'default-tenant'
+                organizationId: orgId || 'mcb-ghana-tenant'
             },
             data: {
                 ...(name?.trim() ? { name: name.trim() } : {}),
@@ -104,7 +104,7 @@ const deleteSubUnit = async (req, res) => {
         await client_1.default.subUnit.deleteMany({
             where: {
                 id: subUnitId,
-                organizationId: orgId || 'default-tenant'
+                organizationId: orgId || 'mcb-ghana-tenant'
             }
         });
         res.json({ success: true });

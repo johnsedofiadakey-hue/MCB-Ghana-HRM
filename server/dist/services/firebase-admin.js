@@ -40,7 +40,9 @@ const initializeFirebase = () => {
     if (admin.apps.length > 0)
         return;
     try {
-        const serviceAccountVar = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT || process.env.GOOGLE_DRIVE_KEY_JSON;
+        const serviceAccountVar = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT ||
+            process.env.FIREBASE_SERVICE_ACCOUNT_NEXUS_HR_PLATFORM ||
+            process.env.GOOGLE_DRIVE_KEY_JSON;
         if (serviceAccountVar) {
             console.log(`[FirebaseAdmin] Initializing with ${process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT ? 'FIREBASE_ADMIN_SERVICE_ACCOUNT' : 'GOOGLE_DRIVE_KEY_JSON'} from ENV...`);
             let serviceAccount;
@@ -50,9 +52,13 @@ const initializeFirebase = () => {
                     ? serviceAccountVar
                     : Buffer.from(serviceAccountVar, 'base64').toString();
                 serviceAccount = JSON.parse(decoded);
+                console.log(`[FirebaseAdmin] Initializing for project: ${serviceAccount.project_id} (Client: ${serviceAccount.client_email?.substring(0, 10)}...)`);
                 // Fix potential newline issues in private key
-                if (serviceAccount.private_key) {
+                if (serviceAccount && serviceAccount.private_key) {
                     serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+                }
+                else {
+                    console.warn('[FirebaseAdmin] No private_key found in service account JSON');
                 }
             }
             catch (pErr) {

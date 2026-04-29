@@ -48,7 +48,7 @@ const createRun = async (req, res) => {
     try {
         const { month, year, employeeIds, adjustments } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const userReq = req.user;
         if (!month || !year)
             return res.status(400).json({ error: 'month and year are required' });
@@ -79,7 +79,7 @@ const approveRun = async (req, res) => {
             return res.status(403).json({ error: 'Requires Managing Director rank for final approval' });
         }
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const approverId = userReq.id;
         const run = await payrollService.approvePayrollRun(organizationId, req.params.id, approverId);
         await (0, audit_service_1.logAction)(approverId, 'PAYROLL_APPROVED', 'PayrollRun', run.id, { period: run.period }, req.ip);
@@ -97,7 +97,7 @@ const voidRun = async (req, res) => {
             return res.status(403).json({ error: 'Only MD can void payroll runs' });
         }
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
         const run = await payrollService.voidPayrollRun(organizationId, req.params.id);
         if (!run)
@@ -117,7 +117,7 @@ const deleteRun = async (req, res) => {
             return res.status(403).json({ error: 'Only MD can delete payroll runs' });
         }
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
         await payrollService.deletePayrollRun(organizationId, req.params.id);
         await (0, audit_service_1.logAction)(actorId, 'PAYROLL_DELETED', 'PayrollRun', req.params.id, {}, req.ip);
@@ -132,7 +132,7 @@ const updateItem = async (req, res) => {
     try {
         const userReq = req.user;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const item = await payrollService.updatePayrollItem(organizationId, req.params.itemId, req.body);
         res.json(item);
     }
@@ -145,7 +145,7 @@ const getRuns = async (req, res) => {
     try {
         const userReq = req.user;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const data = await payrollService.getPayrollRuns(organizationId, parseInt(req.query.page) || 1);
         res.json(data);
     }
@@ -159,7 +159,7 @@ exports.getRuns = getRuns;
 const getRunDetail = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const run = await payrollService.getPayrollRunDetail(organizationId, req.params.id);
         if (!run)
             return res.status(404).json({ error: 'Not found' });
@@ -176,7 +176,7 @@ const getMyPayslips = async (req, res) => {
     try {
         const userReq = req.user;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const employeeId = userReq.id;
         const slips = await payrollService.getMyPayslips(organizationId, employeeId);
         res.json(slips);
@@ -192,7 +192,7 @@ const getYearlySummary = async (req, res) => {
     try {
         const userReq = req.user;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const year = parseInt(req.query.year) || new Date().getFullYear();
         const summary = await payrollService.getPayrollSummaryByYear(organizationId, year);
         res.json(summary);
@@ -209,7 +209,7 @@ const downloadPayslipPDF = async (req, res) => {
         const { runId, employeeId } = req.params;
         const userReq = req.user;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const requesterId = userReq.id;
         const requesterRole = userReq.role;
         if ((0, auth_middleware_1.getRoleRank)(requesterRole) < 80 && requesterId !== employeeId) {
@@ -255,7 +255,7 @@ exports.downloadPayslipPDF = downloadPayslipPDF;
 const exportPayrollCSV = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const run = await payrollService.getPayrollRunDetail(organizationId, req.params.id);
         if (!run)
             return res.status(404).json({ error: 'Not found' });
@@ -273,7 +273,7 @@ exports.exportPayrollCSV = exportPayrollCSV;
 const exportBankCSV = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const run = await client_1.default.payrollRun.findFirst({
             where: { id: req.params.id, organizationId },
             include: {

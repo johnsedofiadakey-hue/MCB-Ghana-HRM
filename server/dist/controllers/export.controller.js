@@ -7,7 +7,7 @@ exports.exportRoadmapPdf = exports.exportLeavePdf = exports.exportAppraisalPdf =
 const client_1 = __importDefault(require("../prisma/client"));
 const pdf_service_1 = require("../services/pdf.service");
 const error_log_service_1 = require("../services/error-log.service");
-const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 const exportTargetPdf = async (req, res) => {
     try {
         const { id } = req.params;

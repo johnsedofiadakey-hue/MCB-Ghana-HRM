@@ -7,33 +7,16 @@ exports.resolveTenant = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const resolveTenant = async (req, res, next) => {
     try {
-        const host = req.get('host') || '';
-        const origin = req.get('origin') || '';
-        const referer = req.get('referer') || '';
-        const customDomainHeader = req.get('x-tenant-domain');
-        // 1. Check if we are on a custom domain (Prioritize the explicit header from frontend)
-        let domainToMatch = customDomainHeader || '';
-        if (!domainToMatch) {
-            // Try resolving from host if it's not our main domain
-            const mainDomains = ['nexus-hr-platform-api.onrender.com', 'localhost'];
-            if (!mainDomains.some(d => host.includes(d))) {
-                domainToMatch = host.replace('www.', '');
-            }
-        }
-        if (domainToMatch) {
-            const organization = await client_1.default.organization.findFirst({
-                where: {
-                    OR: [
-                        { customDomain: domainToMatch },
-                        { subdomain: domainToMatch.split('.')[0] }
-                    ]
-                },
-                select: { id: true, name: true, customDomain: true, subdomain: true }
-            });
-            if (organization) {
-                req.organizationId = organization.id;
-                req.organization = organization;
-            }
+        // STANDALONE MODE: Everything is consolidated into the primary organization
+        const DEFAULT_ORG_ID = 'mcb-ghana-tenant';
+        req.organizationId = DEFAULT_ORG_ID;
+        // Optional: Pre-fetch the organization object to avoid repeated lookups in controllers
+        const organization = await client_1.default.organization.findUnique({
+            where: { id: DEFAULT_ORG_ID },
+            select: { id: true, name: true }
+        });
+        if (organization) {
+            req.organization = organization;
         }
         next();
     }

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getProbationStats = exports.updateProbationRecord = exports.createProbationRecord = exports.listProbationRecords = exports.getPolicyAcknowledgments = exports.acknowledgePolicy = exports.deletePolicy = exports.updatePolicy = exports.createPolicy = exports.listPolicies = exports.deleteDisciplinaryCase = exports.updateDisciplinaryCase = exports.createDisciplinaryCase = exports.listDisciplinaryCases = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 const getUser = (req) => req.user;
 // ─────────────────────────────────────────────────────────────────────────────
 // DISCIPLINARY & GRIEVANCE

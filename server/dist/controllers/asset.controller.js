@@ -40,7 +40,7 @@ const audit_service_1 = require("../services/audit.service");
 const createAsset = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const asset = await assetService.createAsset(organizationId, req.body);
         await (0, audit_service_1.logAction)(user.id, 'CREATE_ASSET', 'Asset', asset.id, { serial: asset.serialNumber }, req.ip);
         res.status(201).json(asset);
@@ -53,7 +53,7 @@ exports.createAsset = createAsset;
 const getInventory = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorRole = userReq.role;
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const actorId = userReq.id;
@@ -76,7 +76,7 @@ exports.getInventory = getInventory;
 const assignAsset = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { assetId, userId, condition, signature } = req.body;
         const assignment = await assetService.assignAsset(organizationId, assetId, userId, condition, signature);
         await (0, audit_service_1.logAction)(userReq.id, 'ASSIGN_ASSET', 'Asset', assetId, { assignedTo: userId, signed: !!signature }, req.ip);
@@ -90,7 +90,7 @@ exports.assignAsset = assignAsset;
 const returnAsset = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { assetId, condition, signature } = req.body;
         const result = await assetService.returnAsset(organizationId, assetId, condition, signature);
         await (0, audit_service_1.logAction)(userReq.id, 'RETURN_ASSET', 'Asset', assetId, { condition, signed: !!signature }, req.ip);
@@ -104,7 +104,7 @@ exports.returnAsset = returnAsset;
 const deleteAsset = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const assetId = req.params.id;
         await assetService.deleteAsset(organizationId, assetId);
         await (0, audit_service_1.logAction)(userReq.id, 'DELETE_ASSET', 'Asset', assetId, {}, req.ip);

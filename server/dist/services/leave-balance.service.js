@@ -43,7 +43,7 @@ const accrueLeaveBalances = async () => {
     await client_1.default.$transaction(async (tx) => {
         for (const user of users) {
             const org = await tx.organization.findUnique({
-                where: { id: user.organizationId || 'default-tenant' },
+                where: { id: user.organizationId || 'mcb-ghana-tenant' },
                 select: { allowLeaveCarryForward: true, carryForwardLimit: true }
             });
             const lastAccruedAt = user.leaveAccruedAt || new Date(now.getFullYear(), now.getMonth() - 1, 1);

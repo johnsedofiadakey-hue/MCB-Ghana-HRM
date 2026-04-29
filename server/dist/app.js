@@ -36,10 +36,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// MCB HRM Ghana - Production Sync: 2026-04-26
 const APP_VERSION = require('../package.json').version || '4.0.0';
-console.log(`[Startup] ${new Date().toISOString()} - Nexus HR Platform v${APP_VERSION} Initializing...`);
+console.log(`[Startup] ${new Date().toISOString()} - MCB HRM Ghana v${APP_VERSION} Initializing...`);
+// 🚀 DEPLOYMENT HEARTBEAT: 2026-04-28T21:20:00Z
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
+const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -106,6 +109,8 @@ const integrations_routes_1 = __importDefault(require("./routes/integrations.rou
 const bot_routes_1 = __importDefault(require("./routes/bot.routes"));
 const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
 const maintenance_routes_1 = __importDefault(require("./routes/maintenance.routes"));
+const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
+const biometric_routes_1 = __importDefault(require("./routes/biometric.routes"));
 // Config already loaded at top level
 const validateConfig = () => {
     const required = ['JWT_SECRET', 'DATABASE_URL'];
@@ -125,27 +130,42 @@ app.set('trust proxy', 1);
 const rawPort = process.env.PORT || '5000';
 const PORT = parseInt(rawPort, 10);
 const server = http_1.default.createServer(app);
-// ─── NUCLEAR CORS BRIDGE (Top Priority) ────────────────────────────────────
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    const allowed = [
-        'https://mcb-hrm-ghana.web.app',
-        'https://mcb-hrm-ghana.firebaseapp.com',
-        // Add custom domain later: 'https://hrm.mc-bauchemie.com.gh',
-        'http://localhost:3000',
-        'http://localhost:5173',
-    ];
-    if (origin && (allowed.includes(origin) || allowed.some(a => origin.startsWith(a)))) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, x-dev-master-key, x-tenant-domain, x-dev-firebase-token, X-Tenant-Domain, X-Dev-Firebase-Token, X-Dev-Master-Key');
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-    next();
-});
+// ─── NUCLEAR CORS BRIDGE (Dedicated Package) ───────────────────────────────
+const allowedOrigins = [
+    'https://mcb-hrm-ghana.web.app',
+    'https://mcb-hrm-ghana.firebaseapp.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
+];
+app.use((0, cors_1.default)({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(a => origin.startsWith(a))) {
+            callback(null, true);
+        }
+        else {
+            console.warn(`[CORS] Blocked request from origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'x-dev-master-key',
+        'x-tenant-domain',
+        'x-dev-firebase-token',
+        'X-Tenant-Domain',
+        'X-Dev-Firebase-Token',
+        'X-Dev-Master-Key'
+    ],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+}));
 // Robust Port Binding - Handled Above
 // ─── SECURITY HEADERS ──────────────────────────────────────────────────────
 app.use((0, helmet_1.default)({
@@ -160,6 +180,31 @@ app.use(express_1.default.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express_1.default.static('public'));
 app.use('/uploads', express_1.default.static('public/uploads'));
 app.use((0, morgan_1.default)(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+// ─── HEALTH PROTOCOL (Nuclear Bypass) ──────────────────────────────────────
+app.get('/api/health', async (req, res) => {
+    try {
+        await client_1.default.$queryRaw `SELECT 1`;
+        return res.json({
+            status: isBooted ? 'UP' : 'BOOTING',
+            database: 'CONNECTED',
+            version: APP_VERSION,
+            last_sync: '2026-04-29T09:12:00Z',
+            client: 'MC-Bauchemie Ghana',
+            bootComplete: isBooted,
+            nodeEnv: process.env.NODE_ENV
+        });
+    }
+    catch (err) {
+        console.error('[Health] System Degraded:', err.message);
+        return res.status(503).json({
+            status: 'DEGRADED',
+            database: 'DISCONNECTED',
+            version: APP_VERSION,
+            error: err.message
+        });
+    }
+});
+app.get('/', (_req, res) => res.json({ message: '🚀 MCB HRM Ghana Platform Core Running', version: APP_VERSION, status: isBooted ? 'READY' : 'BOOTING' }));
 // Init WebSocket (After security)
 (0, websocket_service_1.initWebSocket)(server);
 // ─── CRON JOBS ─────────────────────────────────────────────────────────────
@@ -200,15 +245,14 @@ node_cron_1.default.schedule('0 9 * * *', async () => {
         console.error('[Cron] Renewal check failed:', e);
     }
 });
-node_cron_1.default.schedule('0 2 * * *', async () => {
-    try {
-        const { resetDemoTenant } = await Promise.resolve().then(() => __importStar(require('./scripts/reset-demo-tenant')));
-        await resetDemoTenant();
-    }
-    catch (e) {
-        console.error('[Cron] Demo reset failed:', e);
-    }
+/*
+cron.schedule('0 2 * * *', async () => {
+  try {
+    const { resetDemoTenant } = await import('./scripts/reset-demo-tenant');
+    await resetDemoTenant();
+  } catch (e) { console.error('[Cron] Demo reset failed:', e); }
 });
+*/
 // ─── TELEMETRY & TENANT RESOLUTION ──────────────────────────────────────────
 const telemetry_middleware_1 = require("./middleware/telemetry.middleware");
 const tenant_middleware_1 = require("./middleware/tenant.middleware");
@@ -224,12 +268,12 @@ app.use((_req, _res, next) => next());
 let isBooted = false;
 // ─── STARTUP PROTOCOL ───────────────────────────────────────────────────────
 const runStartupTasks = async () => {
-    console.log('[Startup] Nexus HR core initialization...');
+    console.log('[Startup] MCB HRM Ghana core initialization...');
     try {
         // We skip heavy tasks here to ensure stability on Render hardware.
         // Telemetry and background syncs are handled by the live SchedulerService.
         isBooted = true;
-        console.log(`\n🎉 Nexus HR Platform Core fully operational at ${new Date().toISOString()}\n`);
+        console.log(`\n🎉 MCB HRM Ghana Platform Core fully operational at ${new Date().toISOString()}\n`);
     }
     catch (err) {
         console.error('\n❌ [CRITICAL] Background Startup Stalled:');
@@ -238,30 +282,6 @@ const runStartupTasks = async () => {
     }
 };
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
-app.get('/api/health', async (req, res) => {
-    try {
-        await client_1.default.$queryRaw `SELECT 1`;
-        return res.json({
-            status: isBooted ? 'UP' : 'BOOTING',
-            database: 'CONNECTED',
-            version: '1.0.2-MCB-GH',
-            last_sync: '2026-04-25T18:53:00Z',
-            client: 'MC-Bauchemie Ghana',
-            bootComplete: isBooted,
-            nodeEnv: process.env.NODE_ENV
-        });
-    }
-    catch (err) {
-        console.error('[Health] System Degraded:', err.message);
-        return res.status(503).json({
-            status: 'DEGRADED',
-            database: 'DISCONNECTED',
-            version: APP_VERSION,
-            error: err.message
-        });
-    }
-});
-app.get('/', (_req, res) => res.json({ message: '🚀 Nexus HR Platform Core Running', version: APP_VERSION, status: isBooted ? 'READY' : 'BOOTING' }));
 // Debug routes — development only
 if (process.env.NODE_ENV !== 'production') {
     const debugRoutes = require('./routes/debug.routes').default;
@@ -317,7 +337,7 @@ app.use('/api/hr', hrFeatures_routes_1.default);
 app.use('/api/public/v1', public_api_routes_1.default);
 app.use('/api/integrations', integrations_routes_1.default);
 app.use('/api/bot', rate_limit_middleware_1.aiLimiter, bot_routes_1.default);
-const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
+app.use('/api/biometric', biometric_routes_1.default);
 app.use('/api/ai', rate_limit_middleware_1.aiLimiter, ai_routes_1.default);
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {
@@ -363,9 +383,11 @@ app.use((err, req, res, next) => {
 });
 // ─── START ──────────────────────────────────────────────────────────────────
 server.listen(PORT, '0.0.0.0', async () => {
-    console.log(`\n🚀 Nexus HR Platform v${APP_VERSION} listening on http://0.0.0.0:${PORT}`);
+    console.log(`\n🚀 MCB HRM Ghana Platform v${APP_VERSION} listening on http://0.0.0.0:${PORT}`);
     // Initialize internal services
     scheduler_service_1.SchedulerService.init();
     // Trigger background startup tasks
     runStartupTasks();
 });
+// Last Sync: Sat Apr 25 19:02:38 GMT 2026
+// Deployment Sync: Sun Apr 26 15:45:42 GMT 2026

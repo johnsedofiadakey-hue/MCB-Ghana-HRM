@@ -85,7 +85,7 @@ export const createPayrollRun = async (
   });
   const ssnitRate = Number(org?.ssnitRate ?? 0.055);
   const employerSsnitRate = Number(org?.employerSsnitRate ?? 0.13);
-  const payeBands = typeof org?.payeBands === 'string' ? JSON.parse(org.payeBands) : (org?.payeBands as any[]);
+  const payeBands = typeof org?.payeBands === 'string' ? JSON.parse(org.payeBands) : (org?.payeBands as unknown as any[] || []);
 
   const employees = await prisma.user.findMany({
     where: {
@@ -366,7 +366,7 @@ export const updatePayrollItem = async (
   });
   const ssnitRate = Number(org?.ssnitRate ?? 0.055);
   const employerSsnitRate = Number(org?.employerSsnitRate ?? 0.13);
-  const payeBands = typeof org?.payeBands === 'string' ? JSON.parse(org.payeBands) : (org?.payeBands as any[]);
+  const payeBands = typeof org?.payeBands === 'string' ? JSON.parse(org.payeBands) : (org?.payeBands as unknown as any[] || []);
 
   const base = Number(item.baseSalary);
   const overtime = data.overtime ?? Number(item.overtime);

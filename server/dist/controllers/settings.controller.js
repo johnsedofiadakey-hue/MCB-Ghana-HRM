@@ -40,24 +40,35 @@ const getSettings = async (req, res) => {
     try {
         const user = req.user;
         const resolvedOrgId = req.organizationId;
-        // Priority: Resolved from domain/header > Authenticated user's org > Default
-        const orgId = resolvedOrgId || user?.organizationId || 'default-tenant';
+        // CRITICAL: Prioritize the ID resolved from the domain/subdomain context
+        const orgId = resolvedOrgId || user?.organizationId || 'mcb-ghana-tenant';
         const isAdmin = user ? (0, auth_middleware_1.getRoleRank)(user.role) >= 85 : false;
         const settings = await settingsService.getSettings(orgId, isAdmin);
         res.json(settings || {});
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('[SettingsController] Critical failure fetching settings:', error);
+        res.json({
+            companyName: 'MC Bauchemie',
+            name: 'MC Bauchemie',
+            subtitle: 'Enterprise Portal',
+            logoUrl: '',
+            primaryColor: '#4F46E5',
+            themePreset: 'premium-canvas',
+            bgMain: '#f9fafb',
+            textPrimary: '#0f172a'
+        });
     }
 };
 exports.getSettings = getSettings;
 const updateSettings = async (req, res) => {
     try {
         const user = req.user;
-        if ((0, auth_middleware_1.getRoleRank)(user.role) < 95) {
-            return res.status(403).json({ error: 'Only MD can update admin settings' });
+        const resolvedOrgId = req.organizationId;
+        if ((0, auth_middleware_1.getRoleRank)(user.role) < 85) {
+            return res.status(403).json({ error: 'Only IT/HR Managers or MD can update admin settings' });
         }
-        const orgId = user?.organizationId || 'default-tenant';
+        const orgId = resolvedOrgId || user?.organizationId || 'mcb-ghana-tenant';
         const settings = await settingsService.updateSettings(orgId, req.body);
         res.json(settings);
     }

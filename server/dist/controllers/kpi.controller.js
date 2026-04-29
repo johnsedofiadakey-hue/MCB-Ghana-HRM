@@ -41,7 +41,7 @@ const createKpiSheet = async (req, res) => {
     try {
         const { title, employeeId, targetDepartmentId, isTemplate, month, year, items } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const reviewerId = user.id;
         const reviewerRole = user.role;
@@ -397,7 +397,7 @@ exports.getAllSheets = getAllSheets;
 const getDepartmentalSummary = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const departments = await client_1.default.department.findMany({
             where: { organizationId },
             include: {
@@ -465,7 +465,7 @@ exports.getDepartmentalSummary = getDepartmentalSummary;
 const getIndividualSummary = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const userRank = (0, auth_middleware_1.getRoleRank)(user.role);
         const where = { organizationId };
@@ -522,7 +522,7 @@ exports.getIndividualSummary = getIndividualSummary;
 const getStrategicMandates = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const { departmentId, month, year } = req.query;
         const mandates = await client_1.default.kpiSheet.findMany({
             where: {
@@ -550,7 +550,7 @@ const assignFromTemplate = async (req, res) => {
     try {
         const { templateId, employeeId, month, year } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const template = await client_1.default.kpiSheet.findFirst({
             where: { id: templateId, organizationId, isTemplate: true },

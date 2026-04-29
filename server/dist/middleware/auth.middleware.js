@@ -161,7 +161,7 @@ const checkBilling = async (req, res, next) => {
         return next();
     try {
         const org = await client_1.default.organization.findUnique({
-            where: { id: user.organizationId || 'default-tenant' },
+            where: { id: user.organizationId || 'mcb-ghana-tenant' },
             select: {
                 billingStatus: true,
                 trialStartDate: true,

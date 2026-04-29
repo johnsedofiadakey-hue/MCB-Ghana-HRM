@@ -9,7 +9,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const getHierarchy = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const users = await client_1.default.user.findMany({
             where: {
                 organizationId,

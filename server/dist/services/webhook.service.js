@@ -30,12 +30,12 @@ const triggerWebhook = async (organizationId, event, payload) => {
             try {
                 const headers = {
                     'Content-Type': 'application/json',
-                    'User-Agent': 'Nexus-HR-Platform-Webhooks/1.0'
+                    'User-Agent': 'MCB-HR-Platform-Webhooks/1.0'
                 };
                 // Add HMAC signature if a secret is configured
                 if (sub.secret) {
                     const signature = crypto_1.default.createHmac('sha256', sub.secret).update(requestPayload).digest('hex');
-                    headers['X-Nexus-Signature'] = `sha256=${signature}`;
+                    headers['X-MCB-Signature'] = `sha256=${signature}`;
                 }
                 await axios_1.default.post(sub.url, requestPayload, { headers });
             }

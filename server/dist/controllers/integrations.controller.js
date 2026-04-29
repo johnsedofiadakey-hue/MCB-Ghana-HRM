@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteWebhook = exports.createWebhook = exports.listWebhooks = exports.revokeApiKey = exports.createApiKey = exports.listApiKeys = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const client_1 = __importDefault(require("../prisma/client"));
-const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 // ── API Keys ───────────────────────────────────────────────────────────────
 const listApiKeys = async (req, res) => {
     try {

@@ -31,7 +31,7 @@ async function main() {
         update: {},
         create: {
             id: 'production-tenant',
-            name: 'Nexus HR Production',
+            name: 'MCB-HRM Ghana Production',
             email: 'admin@prod-nexus.com',
             billingStatus: 'ACTIVE',
             subscriptionPlan: 'PRO',
@@ -60,7 +60,7 @@ async function main() {
         update: {},
         create: {
             id: 'demo-tenant-live',
-            name: 'Nexus HR Demo Sandbox',
+            name: 'MCB-HRM Ghana Demo Sandbox',
             email: 'admin@demo-nexus.com',
             billingStatus: 'FREE',
             subscriptionPlan: 'FREE',

@@ -13,7 +13,7 @@ const websocket_service_1 = require("../services/websocket.service");
 // ─── Templates (Admin) ────────────────────────────────────────────────────
 const getTemplates = async (req, res) => {
     try {
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const templates = await client_1.default.offboardingTemplate.findMany({
             where: { organizationId },
             include: { tasks: { orderBy: { order: 'asc' } } }
@@ -28,7 +28,7 @@ exports.getTemplates = getTemplates;
 const createTemplate = async (req, res) => {
     try {
         const { name, description, tasks } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const template = await client_1.default.offboardingTemplate.create({
             data: {
                 organizationId,
@@ -47,7 +47,7 @@ exports.createTemplate = createTemplate;
 const initiateOffboarding = async (req, res) => {
     try {
         const { employeeId, effectiveDate, reason, templateId } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const triggeredById = req.user?.id;
         let template = null;
         if (templateId) {
@@ -95,7 +95,7 @@ const initiateOffboarding = async (req, res) => {
 exports.initiateOffboarding = initiateOffboarding;
 const getOffboardingList = async (req, res) => {
     try {
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const list = await client_1.default.offboardingProcess.findMany({
             where: { organizationId },
             include: {
@@ -113,7 +113,7 @@ exports.getOffboardingList = getOffboardingList;
 const completeOffboarding = async (req, res) => {
     try {
         const { id } = req.params;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         // Verify all mandatory clearance items are done
         const processCheck = await client_1.default.offboardingProcess.findUnique({
             where: { id },
@@ -189,7 +189,7 @@ exports.updateExitInterview = updateExitInterview;
 const trackAssetReturn = async (req, res) => {
     try {
         const { offboardingId, assetId, conditionNotes } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const returnRecord = await client_1.default.assetReturn.create({
             data: {
                 organizationId,

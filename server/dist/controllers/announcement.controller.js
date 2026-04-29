@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteAnnouncement = exports.listAnnouncements = exports.createAnnouncement = void 0;
 const announcement_service_1 = require("../services/announcement.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
-const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 const createAnnouncement = async (req, res) => {
     try {
         const orgId = getOrgId(req);

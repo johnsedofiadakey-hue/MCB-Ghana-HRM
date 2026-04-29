@@ -10,7 +10,7 @@ const path_1 = __importDefault(require("path"));
 require("dotenv/config");
 /**
  * Google Workspace Service (Enterprise Version)
- * Nexus HR Platform — Unified Cloud Archival & Autonomous Scheduling
+ * MCB-HRM Ghana — Unified Cloud Archival & Autonomous Scheduling
  */
 class GoogleWorkspaceService {
     static async getAuth() {
@@ -54,10 +54,10 @@ class GoogleWorkspaceService {
         return this.calendarClient;
     }
     // --- DRIVE METHODS (Archival & Sync) ---
-    static async uploadToDrive(localPath, folderName = 'Nexus-HR-Platform-Cloud-Vault') {
+    static async uploadToDrive(localPath, folderName = 'MCB-HR-Platform-Cloud-Vault') {
         return this.syncFileToCloud(localPath, folderName);
     }
-    static async syncFileToCloud(localPath, folderName = 'Nexus-HR-Platform-Cloud-Vault') {
+    static async syncFileToCloud(localPath, folderName = 'MCB-HR-Platform-Cloud-Vault') {
         try {
             const drive = await this.getDriveClient();
             const folderId = await this.getOrCreateFolder(folderName);
@@ -113,7 +113,7 @@ class GoogleWorkspaceService {
             console.warn('[GoogleWorkspace] Pruning Warning:', e.message);
         }
     }
-    static async shareFolderWithUser(email, folderName = 'Nexus-HR-Platform-Cloud-Vault') {
+    static async shareFolderWithUser(email, folderName = 'MCB-HR-Platform-Cloud-Vault') {
         const drive = await this.getDriveClient();
         const folderId = await this.getOrCreateFolder(folderName);
         await drive.permissions.create({

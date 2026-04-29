@@ -9,14 +9,17 @@ const enterprise_controller_1 = require("./enterprise.controller");
 const client_1 = __importDefault(require("../prisma/client"));
 const ai_tools_service_1 = require("../services/ai-tools.service");
 /**
- * AI Controller - Nexus IQ Intelligence Layer
+ * AI Controller - MCB IQ Intelligence Layer
  * Unified handler for insights, agentic chat, and technical parsing.
  */
 const apiKey = process.env.GEMINI_API_KEY || '';
 const ai = apiKey ? new generative_ai_1.GoogleGenerativeAI(apiKey) : null;
 const generateInsight = async (req, res) => {
     if (!ai) {
-        return res.status(503).json({ error: 'AI service unavailable. No API key configured.' });
+        return res.status(503).json({
+            error: 'AI service unavailable.',
+            details: 'GEMINI_API_KEY is missing from environment variables. Please add it to Render dashboard.'
+        });
     }
     try {
         const { contextType, data } = req.body;
@@ -67,10 +70,13 @@ exports.generateInsight = generateInsight;
  */
 const chat = async (req, res) => {
     if (!ai)
-        return res.status(503).json({ error: 'AI Assistant unavailable.' });
+        return res.status(503).json({
+            error: 'Cortex AI Assistant unavailable.',
+            details: 'GEMINI_API_KEY is missing from environment variables. Please add it to Render dashboard.'
+        });
     try {
         const { message, history } = req.body;
-        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
         const user = req.user;
         // 1. Fetch organizational baseline for context
         const [empCount, depts] = await Promise.all([
@@ -118,11 +124,19 @@ Always refer to the user by name if appropriate and make them feel like they are
         let iterationCount = 0;
         const MAX_ITERATIONS = 5;
         // Iterate until AI stops calling functions or we hit limit
+        const loopStartTime = Date.now();
         while (calls && calls.length > 0 && iterationCount < MAX_ITERATIONS) {
             iterationCount++;
+            // Safety: Total tool loop timeout (15s)
+            if (Date.now() - loopStartTime > 15000) {
+                console.warn('[Cortex Agent] Maximum tool execution time exceeded. Terminating loop.');
+                break;
+            }
             const toolResults = await Promise.all(calls.map(async (call) => {
+                const toolStart = Date.now();
                 try {
                     const data = await (0, ai_tools_service_1.executeTool)(call.name, call.args, user);
+                    console.log(`[Cortex Agent] Tool ${call.name} completed in ${Date.now() - toolStart}ms`);
                     return {
                         functionResponse: {
                             name: call.name,
@@ -131,7 +145,7 @@ Always refer to the user by name if appropriate and make them feel like they are
                     };
                 }
                 catch (error) {
-                    console.error(`[Cortex Tool Error] ${call.name}:`, error.message);
+                    console.error(`[Cortex Tool Error] ${call.name} (${Date.now() - toolStart}ms):`, error.message);
                     return {
                         functionResponse: {
                             name: call.name,
@@ -155,19 +169,23 @@ Always refer to the user by name if appropriate and make them feel like they are
     }
     catch (err) {
         console.error('[Cortex Agent] Critical synchronization fault:', err.stack || err.message);
+        const errorMessage = err.message || 'Unknown error';
         res.status(500).json({
             error: 'Elite Intelligence layer experienced a synchronization fault.',
-            details: process.env.NODE_ENV === 'development' ? err.message : undefined
+            details: errorMessage
         });
     }
 };
 exports.chat = chat;
 const parseResumeViaAI = async (req, res) => {
     if (!ai)
-        return res.status(503).json({ error: 'AI parsing unavailable.' });
+        return res.status(503).json({
+            error: 'AI parsing unavailable.',
+            details: 'GEMINI_API_KEY is missing from environment variables. Please add it to Render dashboard.'
+        });
     try {
         const { candidateId } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const candidate = await client_1.default.candidate.findUnique({
             where: { id: candidateId, organizationId },
             include: { jobPosition: true }

@@ -138,6 +138,7 @@ export const itGetUsers = async (req: Request, res: Response) => {
     const requesterRank = (req as any).user?.rank || 0;
     const devFilter = requesterRank < 100 ? { role: { not: 'DEV' }, rank: { lt: 100 } } : {};
 
+    const organizationId = (req as any).user?.organizationId || 'mcb-ghana-tenant';
     const users = await prisma.user.findMany({
       where: { organizationId, ...devFilter },
       orderBy: { fullName: 'asc' },

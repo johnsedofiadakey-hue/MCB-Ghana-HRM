@@ -38,7 +38,7 @@ const audit_service_1 = require("../services/audit.service");
 const getLogs = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user?.organizationId || 'default-tenant';
+        const organizationId = user?.organizationId || 'mcb-ghana-tenant';
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const entity = req.query.entity;
@@ -54,7 +54,7 @@ exports.getLogs = getLogs;
 const exportLogsCSV = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq?.organizationId || 'default-tenant';
+        const organizationId = userReq?.organizationId || 'mcb-ghana-tenant';
         const { PrismaClient } = await Promise.resolve().then(() => __importStar(require('@prisma/client')));
         const prismaLocal = new PrismaClient();
         // Fetch last 5000 audit logs

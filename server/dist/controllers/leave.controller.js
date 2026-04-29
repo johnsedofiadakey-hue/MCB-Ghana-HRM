@@ -12,7 +12,7 @@ const leave_service_1 = require("../services/leave.service");
 const hierarchy_service_1 = require("../services/hierarchy.service");
 const websocket_service_1 = require("../services/websocket.service");
 const error_log_service_1 = require("../services/error-log.service");
-const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 // Working-day calculator (weekends & holidays excluded) - Timezone Stable
 const calcWorkingDays = (start, end, holidayDates = []) => {
     let count = 0;
@@ -287,17 +287,20 @@ const processLeave = async (req, res) => {
         if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
             updated = await leave_service_1.LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
         }
-        // 2. Manager / HR Processing (Rank >= 60)
+        // 2. Manager / HR / MD Processing (Rank >= 60)
         else if (rank >= 60) {
-            if (rank >= 85) {
-                // HR/MD (Rank 85+) can move directly to APPROVED
+            if (leave.status === 'MD_REVIEW') {
                 updated = await leave_service_1.LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
             }
-            else if (leave.status === 'MD_REVIEW' && rank >= 90) {
-                updated = await leave_service_1.LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
+            else if (leave.status === 'HR_REVIEW') {
+                updated = await leave_service_1.LeaveService.hrValidation(id, actorId, action === 'APPROVE', comment);
             }
             else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
                 updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+            }
+            else if (rank >= 90) {
+                // MD Override for any other processable status
+                updated = await leave_service_1.LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
             }
             else {
                 return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });

@@ -8,5 +8,5 @@ router.use(auth_middleware_1.authenticate);
 router.get('/', holiday_controller_1.getHolidays);
 router.post('/', (0, auth_middleware_1.requireRole)(80), holiday_controller_1.addHoliday);
 router.delete('/:id', (0, auth_middleware_1.requireRole)(80), holiday_controller_1.deleteHoliday);
-router.post('/seed-guinea', (0, auth_middleware_1.requireRole)(80), holiday_controller_1.seedGuineaHolidays);
+router.post('/seed-ghana', (0, auth_middleware_1.requireRole)(80), holiday_controller_1.seedGhanaHolidays);
 exports.default = router;

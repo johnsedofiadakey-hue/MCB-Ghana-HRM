@@ -15,7 +15,7 @@ const websocket_service_1 = require("../services/websocket.service");
 const createJobPosition = async (req, res) => {
     try {
         const { title, departmentId, description, location, employmentType } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const job = await client_1.default.jobPosition.create({
             data: {
                 organizationId,
@@ -38,7 +38,7 @@ const createJobPosition = async (req, res) => {
 exports.createJobPosition = createJobPosition;
 const getJobPositions = async (req, res) => {
     try {
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const { status } = req.query;
         const jobs = await client_1.default.jobPosition.findMany({
             where: {
@@ -62,7 +62,7 @@ exports.getJobPositions = getJobPositions;
 const updateJobPosition = async (req, res) => {
     try {
         const { id } = req.params;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const data = req.body;
         const job = await client_1.default.jobPosition.update({
             where: { id },
@@ -79,7 +79,7 @@ exports.updateJobPosition = updateJobPosition;
 const applyForJob = async (req, res) => {
     try {
         const { jobPositionId, fullName, email, phone, resumeUrl, source, notes } = req.body;
-        const organizationId = req.body.organizationId || 'default-tenant'; // Public apply might not have req.user
+        const organizationId = req.body.organizationId || 'mcb-ghana-tenant'; // Public apply might not have req.user
         const candidate = await client_1.default.candidate.create({
             data: {
                 organizationId,
@@ -110,7 +110,7 @@ const applyForJob = async (req, res) => {
 exports.applyForJob = applyForJob;
 const getCandidates = async (req, res) => {
     try {
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const { jobPositionId, status } = req.query;
         const candidates = await client_1.default.candidate.findMany({
             where: {
@@ -146,7 +146,7 @@ exports.updateCandidateStatus = updateCandidateStatus;
 const scheduleInterview = async (req, res) => {
     try {
         const { candidateId, stage, scheduledAt, interviewerId } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const interview = await client_1.default.interviewStage.create({
             data: {
                 organizationId,
@@ -174,7 +174,7 @@ exports.scheduleInterview = scheduleInterview;
 const submitInterviewFeedback = async (req, res) => {
     try {
         const { candidateId, interviewStageId, rating, feedback, recommendation } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const reviewerId = req.user?.id;
         const entry = await client_1.default.interviewFeedback.create({
             data: {

@@ -8,7 +8,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const getCompensationHistory = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { employeeId } = req.params;
         const history = await client_1.default.compensationHistory.findMany({
             where: { employeeId, organizationId },
@@ -37,7 +37,7 @@ const addCompensationRecord = async (req, res) => {
         }
         const transaction = await client_1.default.$transaction(async (tx) => {
             const userReq = req.user;
-            const organizationId = userReq.organizationId || 'default-tenant';
+            const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
             const authorizedById = userReq.id;
             // 1. Update the user's current salary
             const updatedUser = await tx.user.updateMany({

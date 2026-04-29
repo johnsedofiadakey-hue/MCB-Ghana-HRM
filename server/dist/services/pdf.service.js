@@ -14,7 +14,7 @@ class PdfExportService {
      */
     static async generateBrandedPdf(organizationId, title, content, type) {
         const org = await client_1.default.organization.findUnique({
-            where: { id: organizationId || 'default-tenant' },
+            where: { id: organizationId || 'mcb-ghana-tenant' },
             select: {
                 name: true,
                 logoUrl: true,
@@ -63,16 +63,16 @@ class PdfExportService {
                     case 'TARGET_ROADMAP':
                         const targets = content;
                         this.renderRoadmapSummary(doc, targets, primaryColor);
-                        targets.forEach((target) => {
+                        for (const target of targets) {
                             doc.addPage();
                             this.renderTargetContent(doc, target, primaryColor);
-                        });
+                        }
                         break;
                     case 'APPRAISAL':
-                        this.renderAppraisalContent(doc, content, primaryColor);
+                        await this.renderAppraisalContent(doc, content, primaryColor);
                         break;
                     case 'LEAVE':
-                        this.renderLeaveContent(doc, content, primaryColor);
+                        await this.renderLeaveContent(doc, content, primaryColor);
                         break;
                     case 'PAYSLIP':
                         this.renderPayslipContent(doc, content, primaryColor);
@@ -103,26 +103,38 @@ class PdfExportService {
                 if (org.logoUrl.startsWith('data:image')) {
                     const b64 = org.logoUrl.split(',')[1];
                     if (b64)
-                        doc.image(Buffer.from(b64, 'base64'), 50, 40, { width: 70 });
+                        doc.image(Buffer.from(b64, 'base64'), 50, 35, { width: 100 });
                 }
                 else {
-                    const response = await axios_1.default.get(org.logoUrl, {
-                        responseType: 'arraybuffer',
-                        timeout: 5000
-                    });
-                    doc.image(response.data, 50, 40, { width: 70 });
+                    try {
+                        // Resolve absolute URL for relative paths
+                        let absoluteLogoUrl = org.logoUrl;
+                        if (!absoluteLogoUrl.startsWith('http')) {
+                            const apiOrigin = process.env.VITE_API_URL || 'https://mcb-hrm-ghana-api.onrender.com';
+                            absoluteLogoUrl = `${apiOrigin}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
+                        }
+                        const response = await axios_1.default.get(absoluteLogoUrl, {
+                            responseType: 'arraybuffer',
+                            timeout: 10000
+                        });
+                        doc.image(response.data, 50, 35, { width: 100 });
+                    }
+                    catch (e) {
+                        console.warn('[PdfExportService] Logo fetch failed, fallback to name branding:', org.logoUrl);
+                        throw e;
+                    }
                 }
             }
         }
         catch (err) {
-            console.warn('[PdfExportService] Header Asset Fallback');
-            doc.fontSize(25).fillColor(primaryColor).text('NEXUS', 50, 45);
+            console.warn('[PdfExportService] Header Branding Fallback triggered');
+            doc.fontSize(22).fillColor(primaryColor).font('Helvetica-Bold').text(org?.name?.slice(0, 15).toUpperCase() || 'MCB-HRM', 50, 45);
         }
         doc
             .fillColor(primaryColor)
             .fontSize(18)
             .font('Helvetica-Bold')
-            .text(org?.name?.toUpperCase() || 'NEXUS HR PLATFORM', this.SAFE_MARGIN, 43, { align: 'center', width: this.CONTENT_WIDTH })
+            .text(org?.name?.toUpperCase() || 'MCB-HRM Ghana', this.SAFE_MARGIN, 43, { align: 'center', width: this.CONTENT_WIDTH })
             .fontSize(9)
             .font('Helvetica')
             .fillColor('#64748b')
@@ -150,7 +162,7 @@ class PdfExportService {
             .moveTo(50, 780)
             .lineTo(550, 780)
             .stroke();
-        const footerText = `Institutional Record | ${org?.name || 'Nexus HR Platform'} | Page ${page} of ${total}`;
+        const footerText = `Institutional Record | ${org?.name || 'MCB-HRM Ghana'} | Page ${page} of ${total}`;
         doc
             .fontSize(7)
             .fillColor('#94a3b8')
@@ -255,7 +267,7 @@ class PdfExportService {
         doc.fillColor(brandColor).fontSize(11).font('Helvetica-Bold').text('MANAGEMENT SUMMARY', 65, summaryTop + 15);
         doc.fillColor('#475569').fontSize(10).font('Helvetica').text('The above roadmap encapsulates the prioritized strategic vectors. All phases are synchronized with departmental goals.', 65, summaryTop + 35, { width: 470, lineGap: 4 });
     }
-    static renderAppraisalContent(doc, packet, brandColor) {
+    static async renderAppraisalContent(doc, packet, brandColor) {
         const idTop = doc.y;
         doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, idTop, this.CONTENT_WIDTH, 65).fill();
         doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold');
@@ -345,28 +357,40 @@ class PdfExportService {
         }
         const sigY = doc.y;
         if (packet.employee?.signatureUrl)
-            this.renderSignature(doc, packet.employee.signatureUrl, 70, sigY, 165);
+            await this.renderSignature(doc, packet.employee.signatureUrl, 70, sigY, 165);
         doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(235, sigY).stroke();
         doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('EMPLOYEE SIGN-OFF', 70, sigY + 8);
         const managementSig = packet.finalReviewer?.signatureUrl || packet.reviews?.find((r) => r.reviewStage === 'MANAGER')?.reviewer?.signatureUrl;
         if (managementSig)
-            this.renderSignature(doc, managementSig, 365, sigY, 165);
+            await this.renderSignature(doc, managementSig, 365, sigY, 165);
         doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(365, sigY).lineTo(530, sigY).stroke();
         doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('AUTHORIZED MANAGEMENT', 365, sigY + 8);
     }
-    static renderSignature(doc, sigUrl, xPos, yPos, lineWidth) {
+    static async renderSignature(doc, sigUrl, xPos, yPos, lineWidth) {
         try {
-            if (sigUrl && sigUrl.startsWith('data:image')) {
+            if (!sigUrl)
+                return;
+            const imgWidth = 110;
+            const centeredX = xPos + (lineWidth - imgWidth) / 2;
+            if (sigUrl.startsWith('data:image')) {
                 const b64 = sigUrl.split(',')[1];
                 const img = Buffer.from(b64, 'base64');
-                const imgWidth = 110;
-                const centeredX = xPos + (lineWidth - imgWidth) / 2;
                 doc.image(img, centeredX, yPos - 35, { width: imgWidth, height: 40, fit: [imgWidth, 40] });
             }
+            else {
+                // Support for external signature URLs (Cloudinary/Firestore)
+                const response = await axios_1.default.get(sigUrl, {
+                    responseType: 'arraybuffer',
+                    timeout: 5000
+                });
+                doc.image(response.data, centeredX, yPos - 35, { width: imgWidth, height: 40, fit: [imgWidth, 40] });
+            }
         }
-        catch (e) { }
+        catch (e) {
+            console.warn('[PdfExportService] Signature render failed', e);
+        }
     }
-    static renderLeaveContent(doc, leave, brandColor) {
+    static async renderLeaveContent(doc, leave, brandColor) {
         doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text('LEAVE AUTHORIZATION SANCTION', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, characterSpacing: 2 });
         doc.moveDown(0.5);
         const statement = `This document confirms that ${leave.employee?.fullName} has been given permission for ${leave.leaveType} Leave from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}. coverage has been finalized to ensure stability.`;
@@ -401,12 +425,12 @@ class PdfExportService {
         doc.moveDown(4);
         const sigY = doc.y;
         if (leave.employee?.signatureUrl)
-            this.renderSignature(doc, leave.employee.signatureUrl, 70, sigY, 160);
+            await this.renderSignature(doc, leave.employee.signatureUrl, 70, sigY, 160);
         doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
         doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 70, sigY + 8);
         const reviewerSig = leave.hrReviewer?.signatureUrl || leave.manager?.signatureUrl;
         if (reviewerSig)
-            this.renderSignature(doc, reviewerSig, 370, sigY, 160);
+            await this.renderSignature(doc, reviewerSig, 370, sigY, 160);
         doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
         doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('MANAGEMENT / HR SIGNATURE', 370, sigY + 8);
     }
@@ -416,7 +440,7 @@ class PdfExportService {
     }
     static renderPayslipContent(doc, item, brandColor) {
         const currency = item.currency || 'GHS';
-        const formatAmount = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const formatAmount = (val) => val.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
         const headerTop = doc.y;
         doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, headerTop, this.CONTENT_WIDTH, 70).fill();
         doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text(item.employee?.fullName?.toUpperCase() || 'OFFICIAL PAYSLIP', this.SAFE_MARGIN + 15, headerTop + 15);

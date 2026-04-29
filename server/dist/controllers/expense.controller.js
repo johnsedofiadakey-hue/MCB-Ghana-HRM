@@ -13,7 +13,7 @@ const websocket_service_1 = require("../services/websocket.service");
 const createExpenseClaim = async (req, res) => {
     try {
         const { title, category, amount, currency, description, receiptUrl } = req.body;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const employeeId = req.user?.id;
         const claim = await client_1.default.expenseClaim.create({
             data: {
@@ -44,7 +44,7 @@ exports.createExpenseClaim = createExpenseClaim;
 const getMyExpenses = async (req, res) => {
     try {
         const employeeId = req.user?.id;
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const claims = await client_1.default.expenseClaim.findMany({
             where: { employeeId, organizationId },
             orderBy: { submittedAt: 'desc' }
@@ -58,7 +58,7 @@ const getMyExpenses = async (req, res) => {
 exports.getMyExpenses = getMyExpenses;
 const getPendingApprovals = async (req, res) => {
     try {
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const supervisorId = req.user?.id;
         const rank = req.user?.rank || 0;
         // If MD or HR Manager, see everything open. Otherwise, see subordinates.

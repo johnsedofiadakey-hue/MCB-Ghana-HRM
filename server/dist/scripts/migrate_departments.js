@@ -13,7 +13,7 @@ const enterprise_controller_1 = require("../controllers/enterprise.controller");
 const migrateDepartmentsToTenant = async (req, res) => {
     try {
         const targetOrgId = (0, enterprise_controller_1.getOrgId)(req);
-        if (!targetOrgId || targetOrgId === 'default-tenant') {
+        if (!targetOrgId || targetOrgId === 'mcb-ghana-tenant') {
             return res.status(400).json({ error: 'Cannot migrate to default or undefined tenant' });
         }
         // Update Departments
@@ -21,7 +21,7 @@ const migrateDepartmentsToTenant = async (req, res) => {
             where: {
                 OR: [
                     { organizationId: null },
-                    { organizationId: 'default-tenant' }
+                    { organizationId: 'mcb-ghana-tenant' }
                 ]
             },
             data: { organizationId: targetOrgId }
@@ -30,7 +30,7 @@ const migrateDepartmentsToTenant = async (req, res) => {
         // (Assuming DepartmentKPI also needs matching organizationId)
         const kpiUpdate = await client_1.default.departmentKPI.updateMany({
             where: {
-                organizationId: 'default-tenant'
+                organizationId: 'mcb-ghana-tenant'
             },
             data: { organizationId: targetOrgId }
         });

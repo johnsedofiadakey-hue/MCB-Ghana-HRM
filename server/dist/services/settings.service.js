@@ -44,7 +44,8 @@ const isValidHex = (hex) => /^#([A-Fa-f0-9]{3}){1,2}$/.test(hex);
  * Returns branding + config data for the client.
  * Branding lives on Organization; security/email/payment config on SystemSettings.
  */
-const getSettings = async (organizationId = 'default-tenant', isAdmin = false) => {
+const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false) => {
+    console.log('[SettingsService] Attempting to fetch settings for OrgID:', organizationId, '| Admin:', isAdmin);
     const org = await client_1.default.organization.findUnique({
         where: { id: organizationId },
         select: {
@@ -89,6 +90,18 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
             allowLeaveBorrowing: true,
             carryForwardLimit: true,
             borrowingLimit: true,
+            ssnitRate: true,
+            employerSsnitRate: true,
+            payeBands: true,
+            vatRate: true,
+            idCardPrimaryColor: true,
+            idCardAccentColor: true,
+            idCardShowLogo: true,
+            idCardShowQrCode: true,
+            idCardOrientation: true,
+            idCardTheme: true,
+            idCardBackMessage: true,
+            idCardSecurityText: true,
             settings: {
                 select: {
                     isMaintenanceMode: true,
@@ -124,9 +137,9 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
     if (!org) {
         console.warn('[SettingsService] No organization found for ID:', organizationId, '- Using system fallback');
         return {
-            companyName: 'Nexus HR Platform',
-            name: 'Nexus HR Platform',
-            subtitle: 'Premium HRM OS',
+            companyName: 'MCB-HRM Ghana',
+            name: 'MCB-HRM Ghana',
+            subtitle: 'Institutional HRM OS',
             companyLogoUrl: '/favicon.ico',
             logoUrl: '/favicon.ico',
             primaryColor: '#4F46E5',
@@ -134,7 +147,7 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
             accentColor: '#F59E0B',
             textColor: '#FFFFFF',
             sidebarColor: '#080c16',
-            themePreset: 'nexus-dark',
+            themePreset: 'premium-canvas',
             bgMain: '#080c16',
             bgCard: '#111827',
             textPrimary: '#ffffff',
@@ -169,10 +182,10 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
         paystackPublicKey: org.settings?.paystackPublicKey,
         paystackPayLink: org.settings?.paystackPayLink,
     };
-    if (organizationId !== 'default-tenant' && (!pricing.monthlyPriceGHS || !pricing.paystackPublicKey)) {
+    if (organizationId !== 'mcb-ghana-tenant' && (!pricing.monthlyPriceGHS || !pricing.paystackPublicKey)) {
         try {
             const master = await client_1.default.systemSettings.findUnique({
-                where: { organizationId: 'default-tenant' },
+                where: { organizationId: 'mcb-ghana-tenant' },
                 select: {
                     monthlyPriceGHS: true,
                     annualPriceGHS: true,
@@ -242,14 +255,37 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
         allowLeaveBorrowing: org.allowLeaveBorrowing ?? false,
         carryForwardLimit: Number(org.carryForwardLimit || 10),
         borrowingLimit: Number(org.borrowingLimit || 5),
+        ssnitRate: Number(org.ssnitRate || 0.055),
+        employerSsnitRate: Number(org.employerSsnitRate || 0.13),
+        payeBands: (() => {
+            if (typeof org.payeBands !== 'string')
+                return org.payeBands;
+            try {
+                return JSON.parse(org.payeBands);
+            }
+            catch (e) {
+                return [];
+            }
+        })(),
+        vatRate: Number(org.vatRate || 0),
+        idCardPrimaryColor: org.idCardPrimaryColor || '#009EE3',
+        idCardAccentColor: org.idCardAccentColor || '#EE7100',
+        idCardShowLogo: org.idCardShowLogo ?? true,
+        idCardShowQrCode: org.idCardShowQrCode ?? true,
+        idCardOrientation: org.idCardOrientation || 'VERTICAL',
+        idCardTheme: org.idCardTheme || 'DARK',
+        idCardBackMessage: org.idCardBackMessage || '',
+        idCardSecurityText: org.idCardSecurityText || 'Operational Framework & Terms',
+        attendanceScanningEnabled: org.attendanceScanningEnabled ?? false,
+        attendanceApiKey: org.attendanceApiKey || '',
         ...(org.settings || {}),
         ...pricing
     };
 };
 exports.getSettings = getSettings;
-const updateSettings = async (organizationId = 'default-tenant', data) => {
+const updateSettings = async (organizationId = 'mcb-ghana-tenant', data) => {
     // Split: branding → Organization, config → SystemSettings
-    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, isAiEnabled, defaultLeaveAllowance, allowLeaveCarryForward, allowLeaveBorrowing, carryForwardLimit, borrowingLimit, successColor, warningColor, errorColor, infoColor, address, phone, email, city, country, ...rest } = data;
+    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, isAiEnabled, defaultLeaveAllowance, allowLeaveCarryForward, allowLeaveBorrowing, carryForwardLimit, borrowingLimit, ssnitRate, employerSsnitRate, payeBands, successColor, warningColor, errorColor, infoColor, address, phone, email, city, country, vatRate, idCardPrimaryColor, idCardAccentColor, idCardShowLogo, idCardShowQrCode, idCardOrientation, idCardTheme, idCardBackMessage, idCardSecurityText, attendanceScanningEnabled, attendanceApiKey, ...rest } = data;
     const orgUpdate = {};
     if (companyName !== undefined)
         orgUpdate.name = companyName;
@@ -346,11 +382,39 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.carryForwardLimit = safeNum(carryForwardLimit);
     if (borrowingLimit !== undefined)
         orgUpdate.borrowingLimit = safeNum(borrowingLimit);
+    if (ssnitRate !== undefined)
+        orgUpdate.ssnitRate = safeNum(ssnitRate);
+    if (employerSsnitRate !== undefined)
+        orgUpdate.employerSsnitRate = safeNum(employerSsnitRate);
+    if (payeBands !== undefined)
+        orgUpdate.payeBands = typeof payeBands === 'string' ? payeBands : JSON.stringify(payeBands);
+    if (vatRate !== undefined)
+        orgUpdate.vatRate = safeNum(vatRate);
+    if (idCardPrimaryColor !== undefined)
+        orgUpdate.idCardPrimaryColor = idCardPrimaryColor;
+    if (idCardAccentColor !== undefined)
+        orgUpdate.idCardAccentColor = idCardAccentColor;
+    if (idCardShowLogo !== undefined)
+        orgUpdate.idCardShowLogo = !!idCardShowLogo;
+    if (idCardShowQrCode !== undefined)
+        orgUpdate.idCardShowQrCode = !!idCardShowQrCode;
+    if (idCardOrientation !== undefined)
+        orgUpdate.idCardOrientation = idCardOrientation;
+    if (idCardTheme !== undefined)
+        orgUpdate.idCardTheme = idCardTheme;
+    if (idCardBackMessage !== undefined)
+        orgUpdate.idCardBackMessage = idCardBackMessage;
+    if (idCardSecurityText !== undefined)
+        orgUpdate.idCardSecurityText = idCardSecurityText;
+    if (attendanceScanningEnabled !== undefined)
+        orgUpdate.attendanceScanningEnabled = !!attendanceScanningEnabled;
+    if (attendanceApiKey !== undefined)
+        orgUpdate.attendanceApiKey = attendanceApiKey;
     const settingsUpdate = {};
     if (smtpHost !== undefined)
         settingsUpdate.smtpHost = smtpHost;
     if (smtpPort !== undefined)
-        settingsUpdate.smtpPort = smtpPort;
+        settingsUpdate.smtpPort = parseInt(smtpPort) || 587;
     if (smtpUser !== undefined)
         settingsUpdate.smtpUser = smtpUser;
     if (smtpPass !== undefined && smtpPass !== '')
@@ -374,7 +438,7 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
     if (annualPrice !== undefined)
         settingsUpdate.annualPrice = annualPrice;
     if (trialDays !== undefined)
-        settingsUpdate.trialDays = trialDays;
+        settingsUpdate.trialDays = parseInt(trialDays) || 14;
     if (isMaintenanceMode !== undefined)
         settingsUpdate.isMaintenanceMode = isMaintenanceMode;
     if (maintenanceNotice !== undefined)
@@ -384,13 +448,19 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
     if (securityLockdownMessage !== undefined)
         settingsUpdate.securityLockdownMessage = securityLockdownMessage;
     if (backupFrequencyDays !== undefined)
-        settingsUpdate.backupFrequencyDays = backupFrequencyDays;
+        settingsUpdate.backupFrequencyDays = parseInt(backupFrequencyDays) || 7;
     if (data.loginNotice !== undefined)
         settingsUpdate.loginNotice = loginNotice;
     if (data.loginSubtitle !== undefined)
         settingsUpdate.loginSubtitle = loginSubtitle;
     if (data.loginBullets !== undefined)
         settingsUpdate.loginBullets = loginBullets;
+    // 1. Update Organization Branding & Identity Tokens
+    const org = await client_1.default.organization.findUnique({ where: { id: organizationId } });
+    if (!org) {
+        console.error('[SettingsService] Cannot update: Organization not found:', organizationId);
+        throw new Error(`Organization identity context lost: ${organizationId}`);
+    }
     await Promise.all([
         Object.keys(orgUpdate).length > 0
             ? client_1.default.organization.update({ where: { id: organizationId }, data: orgUpdate })
@@ -407,13 +477,14 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
     // Real-time Sync: Broadcast to all connected clients that settings have changed
     (0, websocket_service_1.broadcastToAll)({ type: 'SETTINGS_UPDATED', organizationId });
     // Cloud Sync: Push branding metadata to Firestore for Zero-Flicker Identity Sync
-    try {
-        const { firestoreService } = await Promise.resolve().then(() => __importStar(require('./firestore.service')));
-        await firestoreService.syncBranding(organizationId, newSettings);
-    }
-    catch (syncError) {
-        console.warn('[SettingsService] Cloud branding sync background failure:', syncError);
-    }
+    // We don't await this to avoid blocking the main settings update if Firebase is slow
+    Promise.resolve().then(() => __importStar(require('./firestore.service'))).then(({ firestoreService }) => {
+        firestoreService.syncBranding(organizationId, newSettings).catch(err => {
+            console.warn('[SettingsService] Deferred cloud branding sync failure:', err);
+        });
+    }).catch(importErr => {
+        console.warn('[SettingsService] Could not import firestore service for deferred sync:', importErr);
+    });
     return newSettings;
 };
 exports.updateSettings = updateSettings;

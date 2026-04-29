@@ -211,7 +211,7 @@ export const ssoLogin = async (req: Request, res: Response) => {
       name: user.fullName,
       status: user.status || 'ACTIVE',
       organizationId: orgId,
-      rank: user.rank || getRoleRank(user.role)
+      rank: (user as any).rank || getRoleRank(user.role)
     });
     
     // In SSO, we also issue our Native Refresh token so they don't have to keep doing the OAuth popup.
@@ -279,7 +279,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       name: user.fullName,
       status: user.status || 'ACTIVE',
       organizationId: orgId,
-      rank: user.rank || getRoleRank(user.role)
+      rank: (user as any).rank || getRoleRank(user.role)
     });
 
     return res.json({
@@ -540,7 +540,8 @@ export const signup = async (req: Request, res: Response) => {
       role: result.user.role,
       name: result.user.fullName,
       status: result.user.status,
-      organizationId: result.org.id
+      organizationId: result.org.id,
+      rank: (result.user as any).rank || getRoleRank(result.user.role)
     });
 
     const refreshToken = await issueRefreshToken(result.user.id, result.org.id, req);

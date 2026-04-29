@@ -8,7 +8,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const target_service_1 = require("../services/target.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const error_log_service_1 = require("../services/error-log.service");
-const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 const getUser = (req) => req.user;
 const sanitizeTarget = (target) => {
     if (!target)

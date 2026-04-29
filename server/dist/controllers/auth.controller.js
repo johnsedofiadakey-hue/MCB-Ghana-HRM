@@ -68,7 +68,7 @@ const safeLogSecurityEvent = async (params) => {
         const meta = getClientMeta(req);
         await client_1.default.loginSecurityEvent.create({
             data: {
-                organizationId: organizationId || 'default-tenant',
+                organizationId: organizationId || 'mcb-ghana-tenant',
                 email: email.toLowerCase().trim(),
                 success,
                 reason,
@@ -89,7 +89,7 @@ const issueRefreshToken = async (userId, organizationId, req) => {
     await client_1.default.refreshToken.create({
         data: {
             userId,
-            organizationId: organizationId || 'default-tenant',
+            organizationId: organizationId || 'mcb-ghana-tenant',
             tokenHash,
             ipAddress: meta.ipAddress,
             userAgent: meta.userAgent,
@@ -110,32 +110,18 @@ const login = async (req, res) => {
             where: { email: normalizedEmail },
             select: { id: true, email: true, fullName: true, role: true, status: true,
                 passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true,
-                departmentId: true }
+                departmentId: true, rank: true }
         });
         if (!user) {
-            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'default-tenant', reason: 'USER_NOT_FOUND', req });
+            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'mcb-ghana-tenant', reason: 'USER_NOT_FOUND', req });
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         if (user.status === 'TERMINATED') {
-            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'default-tenant', reason: 'ACCOUNT_TERMINATED', req });
+            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'ACCOUNT_TERMINATED', req });
             return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
         }
-        const orgId = user.organizationId || 'default-tenant';
-        const tenantDomain = req.headers['x-tenant-domain'];
-        if (tenantDomain && tenantDomain !== 'nexus-hr-platform.web.app' && tenantDomain !== 'localhost' && tenantDomain !== 'mcb-hrm-ghana.web.app') {
-            const orgMatch = await client_1.default.organization.findFirst({
-                where: {
-                    OR: [
-                        { customDomain: tenantDomain },
-                        { subdomain: tenantDomain.split('.')[0] }
-                    ]
-                }
-            });
-            if (!orgMatch || orgMatch.id !== orgId) {
-                await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: orgId, reason: 'CROSS_TENANT_LOGIN_ATTEMPT', req });
-                return res.status(403).json({ error: 'This user account does not belong to this organization.' });
-            }
-        }
+        const orgId = user.organizationId || 'mcb-ghana-tenant';
+        // CROSS-TENANT VALIDATION DISABLED FOR STANDALONE MODE
         const isMatch = await bcryptjs_1.default.compare(password, user.passwordHash);
         if (!isMatch) {
             await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: orgId, reason: 'BAD_PASSWORD', req });
@@ -146,9 +132,18 @@ const login = async (req, res) => {
             role: user.role,
             name: user.fullName,
             status: user.status || 'ACTIVE',
-            organizationId: orgId
+            organizationId: orgId,
+            rank: user.rank || getRoleRank(user.role)
         });
-        const refreshToken = await issueRefreshToken(user.id, orgId, req);
+        let refreshToken;
+        try {
+            refreshToken = await issueRefreshToken(user.id, orgId, req);
+        }
+        catch (tokenErr) {
+            console.error('[Auth] Refresh token issuance failed:', tokenErr.message);
+            // We still allow login but without a refresh token? No, better to fail and log.
+            throw new Error(`Session security initialization failed: ${tokenErr.message}`);
+        }
         await safeLogSecurityEvent({ email: normalizedEmail, success: true, organizationId: orgId, reason: 'LOGIN_OK', req });
         return res.status(200).json({
             token,
@@ -159,7 +154,7 @@ const login = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 jobTitle: user.jobTitle,
-                rank: getRoleRank(user.role),
+                rank: user.rank || getRoleRank(user.role),
                 organizationId: orgId,
                 avatar: user.avatarUrl,
                 departmentId: user.departmentId,
@@ -171,8 +166,11 @@ const login = async (req, res) => {
         });
     }
     catch (error) {
-        console.error('[Auth] Login error:', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        console.error('[Auth] Login CRITICAL error:', error.message, error.stack);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: error.message
+        });
     }
 };
 exports.login = login;
@@ -204,20 +202,21 @@ const ssoLogin = async (req, res) => {
                 departmentId: true }
         });
         if (!user) {
-            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'default-tenant', reason: 'SSO_USER_NOT_FOUND', req });
+            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'mcb-ghana-tenant', reason: 'SSO_USER_NOT_FOUND', req });
             return res.status(401).json({ error: `The SSO email (${normalizedEmail}) is not registered in our HR records.` });
         }
         if (user.status === 'TERMINATED') {
-            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'default-tenant', reason: 'SSO_ACCOUNT_TERMINATED', req });
+            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'SSO_ACCOUNT_TERMINATED', req });
             return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
         }
-        const orgId = user.organizationId || 'default-tenant';
+        const orgId = user.organizationId || 'mcb-ghana-tenant';
         const token = signAccessToken({
             id: user.id,
             role: user.role,
             name: user.fullName,
             status: user.status || 'ACTIVE',
-            organizationId: orgId
+            organizationId: orgId,
+            rank: user.rank || getRoleRank(user.role)
         });
         // In SSO, we also issue our Native Refresh token so they don't have to keep doing the OAuth popup.
         const refreshToken = await issueRefreshToken(user.id, orgId, req);
@@ -267,7 +266,7 @@ const refreshAccessToken = async (req, res) => {
         if (!user || user.status === 'TERMINATED') {
             return res.status(403).json({ error: 'Account unavailable' });
         }
-        const orgId = user.organizationId || 'default-tenant';
+        const orgId = user.organizationId || 'mcb-ghana-tenant';
         // Rotate refresh token for security
         await client_1.default.refreshToken.update({ where: { id: found.id }, data: { revokedAt: new Date() } });
         const nextRefreshToken = await issueRefreshToken(user.id, orgId, req);
@@ -276,7 +275,8 @@ const refreshAccessToken = async (req, res) => {
             role: user.role,
             name: user.fullName,
             status: user.status || 'ACTIVE',
-            organizationId: orgId
+            organizationId: orgId,
+            rank: user.rank || getRoleRank(user.role)
         });
         return res.json({
             token,
@@ -501,7 +501,7 @@ const signup = async (req, res) => {
             const user = await tx.user.create({
                 data: {
                     organizationId: org.id,
-                    fullName,
+                    fullName: fullName.trim().replace(/\./g, ' '),
                     email: normalizedEmail,
                     passwordHash,
                     role: 'MD',
@@ -518,7 +518,8 @@ const signup = async (req, res) => {
             role: result.user.role,
             name: result.user.fullName,
             status: result.user.status,
-            organizationId: result.org.id
+            organizationId: result.org.id,
+            rank: result.user.rank || getRoleRank(result.user.role)
         });
         const refreshToken = await issueRefreshToken(result.user.id, result.org.id, req);
         return res.status(201).json({
@@ -581,8 +582,8 @@ const sandboxLogin = async (req, res) => {
             organization = await client_1.default.organization.create({
                 data: {
                     id: SANDBOX_ORG_ID,
-                    name: 'Stormglide Corporate Simulation',
-                    subtitle: 'Nexus HR Sandbox',
+                    name: 'MCB-HRM Ghana Sandbox',
+                    subtitle: 'Institutional HR Simulation',
                     city: 'Global',
                     country: 'Cloud',
                     themePreset: 'nexus-dark',
@@ -613,7 +614,8 @@ const sandboxLogin = async (req, res) => {
             role: 'MD',
             name: targetUser.fullName || 'Sandbox Operator',
             status: 'ACTIVE',
-            organizationId: SANDBOX_ORG_ID
+            organizationId: SANDBOX_ORG_ID,
+            rank: getRoleRank('MD')
         });
         const refreshToken = await issueRefreshToken(targetUser.id, SANDBOX_ORG_ID, req);
         return res.status(200).json({

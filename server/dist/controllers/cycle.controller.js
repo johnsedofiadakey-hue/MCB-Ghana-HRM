@@ -39,7 +39,7 @@ const enterprise_controller_1 = require("./enterprise.controller");
 const createCycle = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const cycle = await cycleService.createCycle(organizationId, req.body);
         res.status(201).json(cycle);
     }
@@ -51,7 +51,7 @@ exports.createCycle = createCycle;
 const getCycles = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const cycles = await cycleService.getCycles(organizationId, req.query);
         res.json(cycles);
     }
@@ -63,7 +63,7 @@ exports.getCycles = getCycles;
 const updateCycleStatus = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const { id } = req.params;
         const cycle = await cycleService.updateCycle(organizationId, id, req.body);
         res.json(cycle);
@@ -76,7 +76,7 @@ exports.updateCycleStatus = updateCycleStatus;
 const deleteCycle = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const { id } = req.params;
         await cycleService.deleteCycle(organizationId, id);
         res.json({ success: true, message: 'Cycle deleted' });

@@ -10,7 +10,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const brandingCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000;
 async function getOrgBranding(organizationId) {
-    const id = organizationId || 'default-tenant';
+    const id = organizationId || 'mcb-ghana-tenant';
     const cached = brandingCache.get(id);
     if (cached && cached.expires > Date.now())
         return cached.data;
@@ -20,7 +20,7 @@ async function getOrgBranding(organizationId) {
             select: { name: true, logoUrl: true, primaryColor: true, email: true, phone: true },
         });
         const branding = {
-            name: org?.name || 'Nexus HR',
+            name: org?.name || 'MCB-HRM Ghana',
             logoUrl: org?.logoUrl || null,
             primaryColor: org?.primaryColor || '#4f46e5',
             email: org?.email || null,
@@ -30,7 +30,7 @@ async function getOrgBranding(organizationId) {
         return branding;
     }
     catch {
-        return { name: 'Nexus HR', primaryColor: '#4f46e5' };
+        return { name: 'MCB-HRM Ghana', primaryColor: '#4f46e5' };
     }
 }
 function buildBrandedTemplate(branding, title, message, actionUrl, actionLabel = 'View in Dashboard') {
@@ -101,11 +101,11 @@ class EmailService {
      */
     static async sendNotification(to, title, message, link, organizationId) {
         const branding = await getOrgBranding(organizationId);
-        const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+        const dashboardUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
         const actionUrl = link ? (link.startsWith('http') ? link : `${dashboardUrl}${link}`) : dashboardUrl;
         const html = buildBrandedTemplate(branding, title, message, actionUrl);
         try {
-            const fromName = `"${branding.name}" <${process.env.SMTP_USER || 'notifications@nexus-hr.com'}>`;
+            const fromName = `"${branding.name}" <${process.env.SMTP_USER || 'notifications@mcb-ghana-hrm.com'}>`;
             const info = await this.transporter.sendMail({
                 from: fromName,
                 to,
@@ -123,7 +123,7 @@ class EmailService {
     static async sendEmail(params) {
         try {
             return await this.transporter.sendMail({
-                from: process.env.EMAIL_FROM || '"Nexus HR" <notifications@nexus-hr.com>',
+                from: process.env.EMAIL_FROM || '"MCB-HRM Ghana" <notifications@mcb-ghana-hrm.com>',
                 ...params,
             });
         }
@@ -134,7 +134,7 @@ class EmailService {
     }
     static async sendWelcomeEmail(to, name, pass, company, organizationId) {
         const branding = await getOrgBranding(organizationId);
-        const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+        const dashboardUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
         const message = `
       <p>Hi <strong>${name}</strong>,</p>
       <p>Your account at <strong>${company}</strong> has been created. You can log in with:</p>
@@ -149,7 +149,7 @@ class EmailService {
     }
     static async sendPayslipEmail(to, period, employeeName, organizationId) {
         const branding = await getOrgBranding(organizationId);
-        const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+        const dashboardUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
         const message = `
       <p>Hi${employeeName ? ` <strong>${employeeName}</strong>` : ''},</p>
       <p>Your payslip for <strong>${period}</strong> has been processed and is now available for download.</p>
@@ -160,7 +160,7 @@ class EmailService {
     }
     static async sendLeaveStatusEmail(to, employeeName, status, dates, organizationId) {
         const branding = await getOrgBranding(organizationId);
-        const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+        const dashboardUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
         const isApproved = status === 'APPROVED';
         const message = `
       <p>Hi <strong>${employeeName}</strong>,</p>

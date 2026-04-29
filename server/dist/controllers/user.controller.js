@@ -68,7 +68,7 @@ const getPublicBaseUrl = (req) => {
     const isOnRender = !!process.env.RENDER_SERVICE_ID;
     if (isOnRender && (host.includes('localhost') || !host)) {
         // Force the known production API domain
-        return 'https://nexus-hr-platform-api.onrender.com';
+        return 'https://mcb-hrm-ghana-api.onrender.com';
     }
     // Fallback for local dev
     if (!host)
@@ -136,7 +136,7 @@ const getMyTeam = async (req, res) => {
     try {
         const userReq = req.user;
         const isDev = userReq.role === 'DEV';
-        const organizationId = isDev ? undefined : (userReq.organizationId || 'default-tenant');
+        const organizationId = isDev ? undefined : (userReq.organizationId || 'mcb-ghana-tenant');
         const whereOrg = organizationId ? { organizationId } : {};
         const { id: userId, role } = userReq;
         const requestedId = req.query.supervisorId;
@@ -190,7 +190,7 @@ exports.getMyTeam = getMyTeam;
 const createEmployee = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorRank = userReq.rank;
         const actorRole = userReq.role;
         const actorId = userReq.id;
@@ -258,7 +258,7 @@ exports.createEmployee = createEmployee;
 const getAllEmployees = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const filters = { organizationId };
         const showArchived = req.query.archived === 'true';
         if (showArchived) {
@@ -277,12 +277,16 @@ const getAllEmployees = async (req, res) => {
         const userRank = (0, auth_middleware_1.getRoleRank)(userRole);
         const userId = userReq.id;
         // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
-        if (req.query.role) {
-            const requestedRole = req.query.role;
-            filters.role = requestedRole === 'DEV' ? 'DISABLED' : requestedRole;
+        // Only users with Rank 100 (DEV) can see other DEVs.
+        const isDevRequestor = userRole === 'DEV' || userRank === 100;
+        if (isDevRequestor) {
+            if (req.query.role)
+                filters.role = req.query.role;
         }
         else {
+            // Non-devs can never see DEV accounts
             filters.role = { not: 'DEV' };
+            filters.rank = { lt: 100 };
         }
         console.log(`[User Ledger] Fetching with filters:`, JSON.stringify(filters));
         // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION: 
@@ -333,7 +337,7 @@ exports.getAllEmployees = getAllEmployees;
 const getEmployee = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const targetId = req.params.id;
         const user = await userService.getUserById(organizationId, targetId);
         if (!user)
@@ -363,7 +367,7 @@ exports.getEmployee = getEmployee;
 const updateEmployee = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const rank = (0, auth_middleware_1.getRoleRank)(userReq.role);
         const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
         // 🛡️ REQUISITE: Only MD, HR, or IT can update employee details
@@ -430,7 +434,7 @@ exports.updateEmployee = updateEmployee;
 const deleteEmployee = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
         const targetId = req.params.id;
         // Prevent self-deletion
@@ -459,7 +463,7 @@ exports.deleteEmployee = deleteEmployee;
 const hardDeleteEmployee = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
         const targetId = req.params.id;
         if (actorId === targetId)
@@ -496,7 +500,7 @@ exports.hardDeleteEmployee = hardDeleteEmployee;
 const assignRole = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
         const actorRole = userReq.role;
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
@@ -543,7 +547,7 @@ exports.assignRole = assignRole;
 const uploadImage = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { role: actorRole, id: actorId } = userReq;
         const targetId = req.params.id;
         const rank = (0, auth_middleware_1.getRoleRank)(actorRole);
@@ -655,7 +659,7 @@ exports.uploadImage = uploadImage;
 const uploadSignature = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { id: actorId } = userReq;
         const targetId = req.params.id;
         // 🛡️ REQUISITE: Only self-upload or MD/HR/IT
@@ -702,7 +706,7 @@ exports.uploadSignature = uploadSignature;
 // ─── GET SUPERVISORS LIST (for dropdowns) ────────────────────────────────
 const getSupervisors = async (req, res) => {
     const user = req.user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const organizationId = user.organizationId || 'mcb-ghana-tenant';
     const supervisors = await client_1.default.user.findMany({
         where: {
             organizationId,
@@ -722,7 +726,7 @@ exports.getSupervisors = getSupervisors;
 const archiveEmployee = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const { id } = req.params;
         await client_1.default.user.update({
             where: { id, organizationId },
@@ -740,7 +744,7 @@ exports.archiveEmployee = archiveEmployee;
 const restoreEmployee = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const { id } = req.params;
         await client_1.default.user.update({
             where: { id, organizationId },
@@ -758,7 +762,7 @@ exports.restoreEmployee = restoreEmployee;
 const transferEmployee = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const { id } = req.params;
         const { departmentId, reason } = req.body;
         await client_1.default.user.update({
@@ -777,7 +781,7 @@ exports.transferEmployee = transferEmployee;
 const promoteEmployee = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { id } = req.params;
         const { jobTitle, role, salary, reason } = req.body;
         const updateData = { jobTitle, role };
@@ -809,7 +813,7 @@ exports.promoteEmployee = promoteEmployee;
 const getUserRiskProfile = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const profile = await riskService.getRiskProfile(organizationId, req.params.id);
         res.json(profile);
     }
@@ -821,7 +825,7 @@ exports.getUserRiskProfile = getUserRiskProfile;
 const resetEmployeePassword = async (req, res) => {
     try {
         const userReq = req.user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
         const targetId = req.params.id;
         const { newPassword } = req.body;

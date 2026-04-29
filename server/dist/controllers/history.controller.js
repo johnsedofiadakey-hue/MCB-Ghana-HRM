@@ -39,7 +39,7 @@ const audit_service_1 = require("../services/audit.service");
 const createRecord = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const record = await historyService.createHistory({
             ...req.body,
             loggedById: user.id,
@@ -56,7 +56,7 @@ exports.createRecord = createRecord;
 const getEmployeeRecords = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const records = await historyService.getHistoryByEmployee(organizationId, req.params.employeeId);
         const userRole = user?.role;
         if (userRole === 'STAFF' || userRole === 'CASUAL') {
@@ -74,7 +74,7 @@ exports.getEmployeeRecords = getEmployeeRecords;
 const updateStatus = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const record = await historyService.updateHistoryStatus(organizationId, req.params.id, req.body.status);
         await (0, audit_service_1.logAction)(user?.id, 'UPDATE_HISTORY_STATUS', 'EmployeeHistory', req.params.id, { status: req.body.status }, req.ip);
         res.json(record);

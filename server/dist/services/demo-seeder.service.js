@@ -38,7 +38,7 @@ class DemoSeederService {
             });
             createdDepts.push(dept);
         }
-        const commonPass = await (0, bcryptjs_1.hash)('NexusDemo@2025', 12);
+        const commonPass = await (0, bcryptjs_1.hash)('MCBDemo@2025', 12);
         // 2. Identify Strategy Dept for Executives
         const execDeptId = createdDepts.find(d => d.name === 'Executive Strategy')?.id;
         const hrDeptId = createdDepts.find(d => d.name === 'Human Capital')?.id;
@@ -56,7 +56,8 @@ class DemoSeederService {
                 organizationId,
                 jobTitle: 'Chief Executive Officer',
                 avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-                departmentId: execDeptId
+                departmentId: execDeptId,
+                rank: 95
             }
         });
         // 4. Provision HR Manager and Staff
@@ -79,6 +80,7 @@ class DemoSeederService {
                     organizationId,
                     jobTitle: s.title,
                     departmentId: deptId,
+                    rank: s.role === 'MANAGER' ? 70 : 40,
                     avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.name.split(' ')[0]}`
                 }
             });

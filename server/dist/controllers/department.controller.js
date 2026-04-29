@@ -31,10 +31,10 @@ const getDepartments = async (req, res) => {
             },
             orderBy: { name: 'asc' }
         });
-        // Fallback: If no departments for current tenant, try to find default-tenant ones
-        if (departments.length === 0 && orgId && orgId !== 'default-tenant') {
+        // Fallback: If no departments for current tenant, try to find mcb-ghana-tenant ones
+        if (departments.length === 0 && orgId && orgId !== 'mcb-ghana-tenant') {
             departments = await client_1.default.department.findMany({
-                where: { organizationId: 'default-tenant' },
+                where: { organizationId: 'mcb-ghana-tenant' },
                 include: {
                     manager: { select: { fullName: true, avatarUrl: true, jobTitle: true } },
                     employees: { select: { id: true } },
@@ -88,7 +88,7 @@ exports.getDepartments = getDepartments;
 const createDepartment = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const { name, managerId } = req.body;
         if (!name?.trim())
             return res.status(400).json({ error: 'Department name is required' });

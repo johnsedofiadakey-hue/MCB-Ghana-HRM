@@ -30,7 +30,7 @@ exports.getPrograms = getPrograms;
 const createProgram = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const createdById = user.id;
         const program = await client_1.default.trainingProgram.create({
@@ -52,7 +52,7 @@ exports.createProgram = createProgram;
 const enroll = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
         const actorId = user.id;
         const { programId, employeeId } = req.body;

@@ -30,7 +30,7 @@ async function seedOffboarding() {
     ];
     for (const t of templates) {
         const existing = await prisma.offboardingTemplate.findFirst({
-            where: { name: t.name, organizationId: 'default-tenant' }
+            where: { name: t.name, organizationId: 'mcb-ghana-tenant' }
         });
         if (existing) {
             console.log(`  ⚠️ Template already exists: ${t.name}. Skipping...`);
@@ -38,13 +38,13 @@ async function seedOffboarding() {
         else {
             await prisma.offboardingTemplate.create({
                 data: {
-                    organizationId: 'default-tenant',
+                    organizationId: 'mcb-ghana-tenant',
                     name: t.name,
                     description: t.description,
                     tasks: {
                         create: t.tasks.map((task, i) => ({
                             ...task,
-                            organizationId: 'default-tenant',
+                            organizationId: 'mcb-ghana-tenant',
                             order: i
                         }))
                     }

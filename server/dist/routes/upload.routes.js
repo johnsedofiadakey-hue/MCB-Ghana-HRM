@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const auth_middleware_1 = require("../middleware/auth.middleware");
 const multer_1 = __importDefault(require("multer"));
 const client_1 = __importDefault(require("../prisma/client"));
 const firebase_storage_service_1 = require("../services/firebase-storage.service");
@@ -13,9 +14,11 @@ const upload = (0, multer_1.default)({
     storage: multer_1.default.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 }
 });
-router.post('/logo', upload.single('logo'), async (req, res) => {
+router.post('/logo', auth_middleware_1.authenticate, upload.single('logo'), async (req, res) => {
     try {
-        const orgId = req.user?.organizationId || 'default-tenant';
+        console.log('[Upload] Request initiated by user:', req.user?.id, '| Role:', req.user?.role);
+        const orgId = req.user?.organizationId || 'mcb-ghana-tenant';
+        console.log('[Upload] Resolved Organization ID:', orgId);
         let logoUrl = '';
         let storageType = 'cloud';
         let buffer = null;
@@ -40,7 +43,8 @@ router.post('/logo', upload.single('logo'), async (req, res) => {
             return res.status(400).json({ success: false, message: 'No image data provided' });
         try {
             // 2. Attempt Cloud Upload (Firebase)
-            logoUrl = await firebase_storage_service_1.FirebaseStorageService.uploadFile(buffer, `logo-${orgId}-${Date.now()}.webp`, 'branding');
+            logoUrl = await firebase_storage_service_1.FirebaseStorageService.uploadFile(buffer, `logo-${orgId}-${Date.now()}.webp`, 'branding', mimetype);
+            console.log('[Upload] Cloud upload successful:', logoUrl);
         }
         catch (firebaseError) {
             console.warn('[Upload] Firebase failed, falling back to Database Base64 storage:', firebaseError);
@@ -49,6 +53,7 @@ router.post('/logo', upload.single('logo'), async (req, res) => {
             logoUrl = `data:image/webp;base64,${base64}`;
             storageType = 'database';
         }
+        console.log('[Upload] Final Logo URL length:', logoUrl.length, '| Type:', storageType);
         // 4. Update Database with the new URL
         const organization = await client_1.default.organization.findUnique({ where: { id: orgId } });
         const oldLogo = organization?.logoUrl;

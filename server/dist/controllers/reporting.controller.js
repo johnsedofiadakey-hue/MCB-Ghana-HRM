@@ -7,7 +7,7 @@ exports.removeReportingLine = exports.updateReportingLine = exports.addReporting
 const client_1 = __importDefault(require("../prisma/client"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const hierarchy_service_1 = require("../services/hierarchy.service");
-const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 const getUser = (req) => req.user;
 // GET /reporting/employee/:employeeId — all reporting lines for an employee
 const getEmployeeReportingLines = async (req, res) => {

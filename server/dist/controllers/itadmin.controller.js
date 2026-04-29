@@ -58,7 +58,7 @@ const itCreateEmployee = async (req, res) => {
         // Strip salary/compensation fields — IT Admin should not set these
         const { salary, currency, ...safeData } = req.body;
         const tempPassword = safeData.password || 'SecureInit!';
-        const organizationId = req.user?.organizationId || 'default-tenant';
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const user = await userService.createUser(organizationId, { ...safeData, password: tempPassword });
         const { passwordHash, ...safeUser } = user;
         // Send welcome email asynchronously
@@ -92,11 +92,11 @@ const itResetPassword = async (req, res) => {
         if (!user)
             return res.status(404).json({ error: 'User not found' });
         const bcrypt = await Promise.resolve().then(() => __importStar(require('bcryptjs')));
-        const tempPassword = `Nexus${Math.random().toString(36).slice(-6).toUpperCase()}!`;
+        const tempPassword = `MCB${Math.random().toString(36).slice(-6).toUpperCase()}!`;
         const passwordHash = await bcrypt.default.hash(tempPassword, 12);
         await client_1.default.user.update({ where: { id: userId }, data: { passwordHash } });
         const settings = await client_1.default.systemSettings.findFirst();
-        (0, email_service_1.sendWelcomeEmail)(user.email, user.fullName, tempPassword, settings?.companyName || 'Nexus HR Platform').catch(console.error);
+        (0, email_service_1.sendWelcomeEmail)(user.email, user.fullName, tempPassword, settings?.companyName || 'MCB-HRM Ghana').catch(console.error);
         await (0, websocket_service_1.notify)(user.id, 'Password Reset', 'Your password has been reset by IT. Check your email for the temporary password.', 'WARNING');
         await (0, audit_service_1.logAction)(actorId, 'IT_PASSWORD_RESET', 'User', userId, { email: user.email }, req.ip);
         res.json({ success: true, message: `Temporary password sent to ${user.email}` });
@@ -107,25 +107,35 @@ const itResetPassword = async (req, res) => {
 };
 exports.itResetPassword = itResetPassword;
 // Get system overview for IT dashboard
-const itSystemOverview = async (_req, res) => {
+const itSystemOverview = async (req, res) => {
     try {
-        const [totalUsers, activeUsers, assets, availableAssets, assignedAssets, vaultStatus] = await Promise.all([
-            client_1.default.user.count(),
-            client_1.default.user.count({ where: { status: 'ACTIVE' } }),
-            client_1.default.asset.count(),
-            client_1.default.asset.count({ where: { status: 'AVAILABLE' } }),
-            client_1.default.asset.count({ where: { status: 'ASSIGNED' } }),
-            workspace_service_1.GoogleWorkspaceService.checkHealth()
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const requesterRank = req.user?.rank || 0;
+        const devFilter = requesterRank < 100 ? { role: { not: 'DEV' }, rank: { lt: 100 } } : {};
+        const [totalUsers, activeUsers, assets, availableAssets, assignedAssets, vaultStatus, totalAuditLogs, biometricLogCount] = await Promise.all([
+            client_1.default.user.count({ where: { organizationId, ...devFilter } }),
+            client_1.default.user.count({ where: { status: 'ACTIVE', organizationId, ...devFilter } }),
+            client_1.default.asset.count({ where: { organizationId } }),
+            client_1.default.asset.count({ where: { status: 'AVAILABLE', organizationId } }),
+            client_1.default.asset.count({ where: { status: 'ASSIGNED', organizationId } }),
+            workspace_service_1.GoogleWorkspaceService.checkHealth(),
+            client_1.default.auditLog.count({ where: { organizationId } }),
+            client_1.default.attendanceLog.count({ where: { organizationId, source: 'BIOMETRIC' } })
         ]);
         const recentAccounts = await client_1.default.user.findMany({
-            orderBy: { createdAt: 'desc' }, take: 10,
+            where: { organizationId, ...devFilter },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
             select: { id: true, fullName: true, email: true, role: true, status: true, createdAt: true, jobTitle: true }
         });
         const systemHealth = {
             nodeVersion: process.version,
             platform: process.platform,
             uptime: Math.floor(process.uptime()),
-            dbConnectivity: true // If code reaches here, DB is up
+            dbConnectivity: true,
+            totalAuditLogs,
+            biometricLogCount,
+            syncState: biometricLogCount > 0 ? 'ACTIVE' : 'IDLE'
         };
         res.json({
             totalUsers, activeUsers, assets, availableAssets, assignedAssets,
@@ -140,13 +150,16 @@ exports.itSystemOverview = itSystemOverview;
 // Get all users (no salary data) for IT management
 const itGetUsers = async (req, res) => {
     try {
+        const requesterRank = req.user?.rank || 0;
+        const devFilter = requesterRank < 100 ? { role: { not: 'DEV' }, rank: { lt: 100 } } : {};
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const users = await client_1.default.user.findMany({
+            where: { organizationId, ...devFilter },
             orderBy: { fullName: 'asc' },
             select: {
                 id: true, fullName: true, email: true, role: true, status: true,
                 jobTitle: true, employeeCode: true, departmentObj: { select: { name: true } },
                 createdAt: true, avatarUrl: true, contactNumber: true
-                // NOTE: salary, passwordHash deliberately excluded
             }
         });
         res.json(users);

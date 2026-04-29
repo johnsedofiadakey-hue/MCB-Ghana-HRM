@@ -107,9 +107,9 @@ export const executeTool = async (name: string, args: any, user: any) => {
           organizationId,
           isArchived: false,
           OR: [
-            { fullName: { contains: args.query, mode: 'insensitive' } },
-            { departmentObj: { name: { contains: args.query, mode: 'insensitive' } } },
-            { jobTitle: { contains: args.query, mode: 'insensitive' } }
+            { fullName: { contains: args.query, mode: 'insensitive' } } as any,
+            { departmentObj: { name: { contains: args.query, mode: 'insensitive' } } } as any,
+            { jobTitle: { contains: args.query, mode: 'insensitive' } } as any
           ]
         },
         select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } }, email: true },

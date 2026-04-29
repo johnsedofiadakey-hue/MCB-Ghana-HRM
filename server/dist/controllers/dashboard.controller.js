@@ -20,7 +20,7 @@ const monthLabel = (year, month) => {
 const getDashboardStats = async (req, res) => {
     try {
         const user = req.user;
-        const orgId = user?.organizationId || 'default-tenant';
+        const orgId = user?.organizationId || 'mcb-ghana-tenant';
         const userRank = user?.rank || 0;
         const userDeptId = user?.departmentId;
         // 1. Resolve scoping logic based on rank
@@ -154,7 +154,7 @@ const getDashboardStats = async (req, res) => {
 exports.getDashboardStats = getDashboardStats;
 const getDashboardPerformance = async (req, res) => {
     try {
-        const orgId = (req.user?.organizationId) || 'default-tenant';
+        const orgId = (req.user?.organizationId) || 'mcb-ghana-tenant';
         const departmentId = req.query.departmentId ? parseInt(req.query.departmentId) : undefined;
         const deptFilter = departmentId ? { employee: { departmentId } } : {};
         // Fetch last 6 completed cycles for the trend line

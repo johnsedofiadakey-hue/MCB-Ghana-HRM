@@ -107,8 +107,7 @@ export class DemoSeederService {
           targetAudience: 'ALL',
           createdById: mdUser.id
         }
-      ],
-      skipDuplicates: true
+      ]
     });
 
     console.log(`[DemoSeeder] Environment successfully provisioned.`);

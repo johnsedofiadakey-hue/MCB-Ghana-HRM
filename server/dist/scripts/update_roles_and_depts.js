@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 async function main() {
-    console.log('🚀 Starting Nexus HR Platform Data Cleanup...');
+    console.log('🚀 Starting MCB-HRM Ghana Data Cleanup...');
     // 1. Update roles from MID_MANAGER to SUPERVISOR
     const roleUpdate = await prisma.user.updateMany({
         where: { role: 'MID_MANAGER' },

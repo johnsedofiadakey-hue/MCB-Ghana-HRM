@@ -24,7 +24,7 @@ async function verify() {
         const targetDate = new Date();
         targetDate.setDate(targetDate.getDate() + 7);
         const settings = await client_1.default.systemSettings.findFirst({
-            where: { organizationId: 'default-tenant' }
+            where: { organizationId: 'mcb-ghana-tenant' }
         });
         if (settings) {
             await client_1.default.systemSettings.update({

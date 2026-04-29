@@ -9,14 +9,14 @@ const axios_1 = __importDefault(require("axios"));
 const client_1 = __importDefault(require("../prisma/client"));
 const receipt_service_1 = require("../services/receipt.service");
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
-const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 const initializePayment = async (req, res) => {
     try {
         const { plan } = req.body; // 'MONTHLY' or 'ANNUALLY'
         const userReq = req.user;
         // Fetch global master config for Paystack keys
         const masterSettings = await client_1.default.systemSettings.findFirst({
-            where: { organizationId: 'default-tenant' }
+            where: { organizationId: 'mcb-ghana-tenant' }
         });
         const secretKey = masterSettings?.paystackSecretKey || PAYSTACK_SECRET;
         if (!secretKey) {
@@ -35,7 +35,7 @@ const initializePayment = async (req, res) => {
             amount = Math.max(0, Number(amount) - Number(org.discountFixed));
         }
         const response = await axios_1.default.post('https://api.paystack.co/transaction/initialize', {
-            email: userReq.email || 'billing@hrm-enterprise.cloud',
+            email: userReq.email || 'billing@mcb-ghana-hrm.com',
             amount: Math.round(Number(amount) * 100), // In pesewas
             callback_url: `${process.env.FRONTEND_URL}/billing/callback`,
             metadata: {
@@ -121,7 +121,7 @@ exports.manualBillingOverride = manualBillingOverride;
 const getPaymentStatus = async (req, res) => {
     try {
         const user = req.user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const [org, settings, masterSettings] = await Promise.all([
             client_1.default.organization.findUnique({
                 where: { id: organizationId },
@@ -147,7 +147,7 @@ const getPaymentStatus = async (req, res) => {
                 }
             }),
             client_1.default.systemSettings.findFirst({
-                where: { organizationId: 'default-tenant' }
+                where: { organizationId: 'mcb-ghana-tenant' }
             })
         ]);
         if (!org) {
@@ -190,7 +190,7 @@ const downloadReceipt = async (req, res) => {
     try {
         const { id } = req.params;
         const orgId = getOrgId(req);
-        await receipt_service_1.ReceiptService.generateSubscriptionReceipt(id, orgId || 'default-tenant', res);
+        await receipt_service_1.ReceiptService.generateSubscriptionReceipt(id, orgId || 'mcb-ghana-tenant', res);
     }
     catch (error) {
         res.status(500).json({ error: error.message });

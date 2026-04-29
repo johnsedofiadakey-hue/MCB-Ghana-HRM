@@ -7,6 +7,12 @@ exports.adminResetPassword = exports.hardDeleteUser = exports.deleteUser = expor
 const client_1 = __importDefault(require("../prisma/client"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const encryption_1 = require("../utils/encryption");
+const roles_1 = require("../types/roles");
+const getRankFromRole = (role) => {
+    if (!role)
+        return 40;
+    return roles_1.ROLE_RANK_MAP[role.toUpperCase()] ?? 40;
+};
 const resolveDepartmentId = async (organizationId, department, departmentId) => {
     if (departmentId !== undefined)
         return departmentId;
@@ -64,13 +70,14 @@ const createUser = async (organizationId, data) => {
         data: {
             organizationId,
             email: safeData.email.trim(),
-            fullName: safeData.fullName.trim(),
+            fullName: safeData.fullName.trim().replace(/\./g, ' '),
             role: safeData.role || 'STAFF',
             departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? null),
             jobTitle: safeData.jobTitle.trim(),
             passwordHash,
             employeeCode: safeData.employeeCode,
             status: safeData.status || 'ACTIVE',
+            rank: getRankFromRole(safeData.role || 'STAFF'),
             position: safeData.position || safeData.jobTitle.trim(),
             joinDate: (safeData.joinDate && safeData.joinDate !== null) ? new Date(safeData.joinDate) : null,
             supervisorId: safeData.supervisorId || null,
@@ -215,6 +222,9 @@ const updateUser = async (organizationId, id, data) => {
             throw new Error('Another user with this email already exists.');
         safeData.email = email;
     }
+    if (safeData.fullName) {
+        safeData.fullName = safeData.fullName.trim().replace(/\./g, ' ');
+    }
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);
     if (resolvedDepartmentId !== undefined) {
         safeData.departmentId = resolvedDepartmentId;
@@ -278,6 +288,9 @@ const updateUser = async (organizationId, id, data) => {
         safeData.certifications = JSON.stringify(safeData.certifications);
     const extractedSecondarySupervisorId = safeData.secondarySupervisorId;
     delete safeData.secondarySupervisorId;
+    if (safeData.role) {
+        safeData.rank = getRankFromRole(safeData.role);
+    }
     const updatedUser = await client_1.default.user.update({
         where: { id },
         data: {

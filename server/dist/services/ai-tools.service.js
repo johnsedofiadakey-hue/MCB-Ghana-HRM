@@ -9,6 +9,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const leave_utils_1 = require("../utils/leave.utils");
 const workspace_service_1 = require("./workspace.service");
 const slack_service_1 = require("./slack.service");
+const leave_service_1 = require("./leave.service");
 /**
  * AI Tool Registry - Phase 4 Agentic Intelligence
  * Defines the tools (functions) that the Cortex Agent can call autonomously.
@@ -90,7 +91,7 @@ exports.functionDeclarations = [
  * Maps AI tool calls to secure Prisma/Service operations.
  */
 const executeTool = async (name, args, user) => {
-    const organizationId = user.organizationId || 'default-tenant';
+    const organizationId = user.organizationId || 'mcb-ghana-tenant';
     console.log(`[Cortex Agent] Executing Tool: ${name}`, args);
     switch (name) {
         case 'get_organization_health':
@@ -131,33 +132,23 @@ const executeTool = async (name, args, user) => {
                 department: me.departmentObj?.name
             };
         case 'request_leave':
-            // Safety: Calculate days
-            const start = new Date(args.startDate);
-            const end = new Date(args.endDate);
-            const diffTime = Math.abs(end.getTime() - start.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-            const newLeave = await client_1.default.leaveRequest.create({
-                data: {
-                    employeeId: user.id,
-                    organizationId,
-                    leaveType: args.leaveType,
-                    startDate: start,
-                    endDate: end,
-                    leaveDays: diffDays,
-                    reason: args.reason || 'Requested via Cortex AI',
-                    status: 'PENDING'
-                }
+            const newLeave = await leave_service_1.LeaveService.requestLeave(organizationId, user.id, {
+                startDate: args.startDate,
+                endDate: args.endDate,
+                leaveType: args.leaveType,
+                reason: args.reason || 'Requested via Cortex AI',
+                relieverId: args.relieverId || null
             });
             return {
                 status: 'SUCCESS',
                 message: 'Leave request created and pending approval',
                 requestId: newLeave.id,
-                days: diffDays
+                days: newLeave.leaveDays
             };
         case 'schedule_calendar_event':
             const eventDetails = {
                 summary: args.summary,
-                description: args.description || 'Scheduled via Nexus Cortex AI',
+                description: args.description || 'Scheduled via MCB Cortex AI',
                 startTime: args.startTime, // Should be ISO string
                 endTime: args.endTime,
                 attendees: args.attendees || []
@@ -167,7 +158,7 @@ const executeTool = async (name, args, user) => {
             return { status: 'SUCCESS', calendarLink: event.htmlLink, id: event.id };
         case 'post_to_slack':
             await slack_service_1.SlackService.broadcastEvent('Cortex Intelligence Update', args.message, args.priority || 'INFO');
-            return { status: 'SUCCESS', channel: 'Nexus-Ops' };
+            return { status: 'SUCCESS', channel: 'MCB-Ops' };
         case 'sync_to_drive':
             // This tool would normally take a file buffer or path. For the agent, we simulate 
             // by syncing a specific report they just generated.

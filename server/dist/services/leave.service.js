@@ -9,9 +9,10 @@ const websocket_service_1 = require("./websocket.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const leave_utils_1 = require("../utils/leave.utils");
 /**
- * Leave Statuses (V3):
+ * Leave Statuses (V4 - Ghana Compliance):
  * DRAFT, SUBMITTED, RELIEVER_ACCEPTED, RELIEVER_DECLINED,
  * MANAGER_REVIEW, MANAGER_APPROVED, MANAGER_REJECTED,
+ * HR_REVIEW, HR_REJECTED,
  * MD_REVIEW, APPROVED, MD_REJECTED, CANCELLED
  */
 class LeaveService {
@@ -23,22 +24,48 @@ class LeaveService {
         const { startDate, endDate, reason, relieverId, leaveType, handoverNotes } = data;
         const start = new Date(startDate);
         const end = new Date(endDate);
-        // Check for public holidays and weekends
-        const holidays = await client_1.default.publicHoliday.findMany({
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (start < today)
+            throw new Error('Cannot request leave for a past date.');
+        if (end < start)
+            throw new Error('End date cannot be earlier than start date.');
+        // 1. DUPLICATE CHECK: Prevent overlapping requests for the SAME user
+        const userOverlap = await client_1.default.leaveRequest.findFirst({
             where: {
+                employeeId,
+                status: { notIn: ['CANCELLED', 'MANAGER_REJECTED', 'HR_REJECTED', 'MD_REJECTED'] },
                 OR: [
-                    { date: { gte: start, lte: end } },
-                    { isRecurring: true } // Simplified check for recurring
+                    { startDate: { lte: end }, endDate: { gte: start } }
                 ]
             }
         });
-        const leaveDays = this.calculateWorkingDaysWithHolidays(start, end, holidays);
+        if (userOverlap) {
+            throw new Error(`You already have a leave request (${userOverlap.status}) that overlaps with these dates (${userOverlap.startDate.toLocaleDateString()} - ${userOverlap.endDate.toLocaleDateString()}).`);
+        }
+        // 2. CONCURRENCY AUDIT: Check if department exceeds 20% threshold
         const user = await client_1.default.user.findUnique({
             where: { id: employeeId },
             include: { organization: { select: { defaultLeaveAllowance: true } } }
         });
         if (!user)
             throw new Error('User not found');
+        if (user.departmentId) {
+            const audit = await this.checkLeaveOverlap(organizationId, user.departmentId, start, end);
+            if (audit.warning) {
+                console.warn(`[LeaveService] Concurrency Warning: ${audit.message}`);
+            }
+        }
+        // Check for public holidays and weekends
+        const holidays = await client_1.default.publicHoliday.findMany({
+            where: {
+                OR: [
+                    { date: { gte: start, lte: end } },
+                    { isRecurring: true }
+                ]
+            }
+        });
+        const leaveDays = this.calculateWorkingDaysWithHolidays(start, end, holidays);
         const metrics = (0, leave_utils_1.getEffectiveLeaveMetrics)(user);
         // Virtual Balance check: Actual Balance - Pending Requests
         const pendingRequests = await client_1.default.leaveRequest.findMany({
@@ -49,7 +76,7 @@ class LeaveService {
         if (availableBalance < leaveDays) {
             const allowedToBorrow = (0, leave_utils_1.canBorrowLeave)(user, leaveDays, availableBalance);
             if (!allowedToBorrow) {
-                throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Borrowing is either disabled or you've exceeded the limit. Available: ${availableBalance}, Needed: ${leaveDays}`);
+                throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
             }
         }
         const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
@@ -61,6 +88,7 @@ class LeaveService {
                 endDate: end,
                 leaveDays,
                 reason,
+                leaveType: leaveType || 'Annual',
                 relieverId: relieverId || null,
                 handoverNotes: handoverNotes || null,
                 relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
@@ -68,11 +96,11 @@ class LeaveService {
             }
         });
         if (relieverId) {
-            const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}${handoverNotes.length > 100 ? '...' : ''}` : '';
+            const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}` : '';
             await (0, websocket_service_1.notify)(relieverId, '🤝 Handover Request', `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
         }
         else if (user.supervisorId) {
-            await (0, websocket_service_1.notify)(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
+            await (0, websocket_service_1.notify)(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/leave');
         }
         return leave;
     }
@@ -106,10 +134,9 @@ class LeaveService {
                 }
             });
             if (accept) {
-                // Create permanent Handover Register record for auditing
                 await tx.handoverRecord.create({
                     data: {
-                        organizationId: leave.organizationId || 'default-tenant',
+                        organizationId: leave.organizationId || 'mcb-ghana-tenant',
                         leaveRequestId: leaveId,
                         requesterId: leave.employeeId,
                         relieverId: relieverId,
@@ -118,14 +145,17 @@ class LeaveService {
                     }
                 });
                 if (leave.employee.supervisorId) {
-                    await (0, websocket_service_1.notify)(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
+                    await (0, websocket_service_1.notify)(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted.`, 'INFO', '/leave');
                 }
             }
-            // Notify employee
-            await (0, websocket_service_1.notify)(leave.employeeId, accept ? '✅ Reliever Accepted' : '❌ Reliever Declined', `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request for leave starting ${leave.startDate.toLocaleDateString()}.`, accept ? 'SUCCESS' : 'WARNING', '/leave');
+            await (0, websocket_service_1.notify)(leave.employeeId, accept ? '✅ Reliever Accepted' : '❌ Reliever Declined', `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request.`, accept ? 'SUCCESS' : 'WARNING', '/leave');
             return updated;
         });
     }
+    /**
+     * Step 1: Supervisor/Line Manager Review
+     * Moves to HR_REVIEW if approved.
+     */
     static async managerReview(leaveId, managerId, approve, comment) {
         const leave = await client_1.default.leaveRequest.findUnique({
             where: { id: leaveId },
@@ -133,10 +163,9 @@ class LeaveService {
         });
         if (!leave)
             throw new Error('Leave request not found');
-        if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED' && leave.status !== 'SUBMITTED') {
+        if (!['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) {
             throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
         }
-        // ── L1 FIX: Enforce reliever acceptance if required ──────────────────────
         if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
             throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
         }
@@ -144,49 +173,99 @@ class LeaveService {
         if (!actor)
             throw new Error('Reviewer account not found');
         const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
-        // Step 1: Manager Review logic:
-        // 1. Primary Manager (supervisorId)
-        // 2. Any Manager (Rank >= 70) in the SAME department
-        // 3. Any high-rank (Rank >= 75) or HR override
         const isPrimaryManager = leave.employee.supervisorId === managerId;
         const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
-        const isHighRank = rank >= 75; // HR (75), Director (80), MD (90)
-        if (!isPrimaryManager && !isDeptManager && !isHighRank) {
-            throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
+        const isHRorHigher = rank >= 75;
+        if (!isPrimaryManager && !isDeptManager && !isHRorHigher) {
+            throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor or a department manager.');
         }
         if (!approve && (!comment || comment.trim().length < 3)) {
             throw new Error('Please provide a reason for rejecting this leave request.');
         }
-        const employeeRank = (0, auth_middleware_1.getRoleRank)(leave.employee.role);
-        const isManager = employeeRank >= 70;
-        const nextStatus = approve ? (isManager ? 'APPROVED' : 'MD_REVIEW') : 'MANAGER_REJECTED';
+        const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED';
         const updated = await client_1.default.leaveRequest.update({
             where: { id: leaveId },
             data: {
                 status: nextStatus,
                 managerComment: comment,
                 managerId: managerId,
-                // If it's a manager's leave becoming approved, we also set MD fields to handle the terminal state
-                ...(approve && isManager && {
-                    hrReviewerId: managerId,
-                    hrComment: 'Manager self-service / Single-level approval'
-                })
             }
         });
-        if (approve && isManager) {
-            // Atomic balance deduction for manager leave
-            const metrics = (0, leave_utils_1.getEffectiveLeaveMetrics)(leave.employee);
-            const newBalance = metrics.balance - Number(leave.leaveDays || 0);
-            await client_1.default.user.update({
-                where: { id: leave.employeeId },
-                data: { leaveBalance: newBalance }
-            });
-        }
         await (0, websocket_service_1.notify)(leave.employeeId, approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected', approve
-            ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`
+            ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to HR for validation.`
             : `Management has rejected your leave request. Reason: ${comment}`, approve ? 'INFO' : 'ERROR', '/leave');
+        // Notify HR
+        if (approve) {
+            // Broad notification to HR personnel
+            const hrUsers = await client_1.default.user.findMany({
+                where: { organizationId: leave.organizationId, role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'SUPER_ADMIN'] }, isArchived: false },
+                select: { id: true }
+            });
+            for (const hr of hrUsers) {
+                await (0, websocket_service_1.notify)(hr.id, '📋 Leave Pending HR Validation', `${leave.employee.fullName} needs HR sign-off.`, 'INFO', '/leave');
+            }
+        }
         return updated;
     }
+    /**
+     * Step 2: HR Validation
+     * Moves to MD_REVIEW if validated.
+     */
+    static async hrValidation(leaveId, hrId, approve, comment) {
+        const leave = await client_1.default.leaveRequest.findUnique({
+            where: { id: leaveId },
+            include: { employee: true }
+        });
+        if (!leave)
+            throw new Error('Leave request not found');
+        if (leave.status !== 'HR_REVIEW') {
+            throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. It must be in HR_REVIEW.`);
+        }
+        const actor = await client_1.default.user.findUnique({ where: { id: hrId } });
+        if (!actor)
+            throw new Error('Reviewer account not found');
+        const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
+        if (rank < 85) {
+            throw new Error('Unauthorized for HR Validation. This action is reserved for HR Managers/Officers (Rank 85+).');
+        }
+        if (!approve && (!comment || comment.trim().length < 3)) {
+            throw new Error('A rejection reason is required for the HR audit trail.');
+        }
+        const employeeRank = (0, auth_middleware_1.getRoleRank)(leave.employee.role);
+        const isTerminalAtHR = employeeRank < 85;
+        const nextStatus = approve ? (isTerminalAtHR ? 'APPROVED' : 'MD_REVIEW') : 'HR_REJECTED';
+        return client_1.default.$transaction(async (tx) => {
+            const updated = await tx.leaveRequest.update({
+                where: { id: leaveId },
+                data: {
+                    status: nextStatus,
+                    hrReviewerId: hrId,
+                    hrComment: comment || 'Validated by HR'
+                }
+            });
+            if (approve && isTerminalAtHR) {
+                const user = await tx.user.findUnique({ where: { id: leave.employeeId } });
+                if (user) {
+                    const metrics = (0, leave_utils_1.getEffectiveLeaveMetrics)(user);
+                    const newBalance = metrics.balance - Number(leave.leaveDays || 0);
+                    await tx.user.update({
+                        where: { id: user.id },
+                        data: { leaveBalance: newBalance }
+                    });
+                }
+            }
+            await (0, websocket_service_1.notify)(leave.employeeId, approve ? (isTerminalAtHR ? '🎉 Leave Fully Approved' : '🛡️ HR Validated') : '❌ HR Rejected', approve
+                ? (isTerminalAtHR
+                    ? `Your leave has been finalized and fully approved by HR (${actor.fullName}).`
+                    : `HR has validated your leave request. It now moves to the MD for final institutional approval.`)
+                : `HR has rejected your leave validation. Reason: ${comment}`, approve ? 'SUCCESS' : 'ERROR', '/leave');
+            return updated;
+        });
+    }
+    /**
+     * Step 3: Final MD Approval
+     * Moves to APPROVED.
+     */
     static async mdFinalReview(leaveId, mdId, approve, comment) {
         const leave = await client_1.default.leaveRequest.findUnique({
             where: { id: leaveId },
@@ -194,29 +273,17 @@ class LeaveService {
         });
         if (!leave)
             throw new Error('Leave request not found');
-        if (!leave)
-            throw new Error('Leave request not found');
-        const intermediateStages = ['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED', 'MANAGER_APPROVED'];
-        const isAtCorrectStage = leave.status === 'MD_REVIEW' || (approve && intermediateStages.includes(leave.status));
-        if (!isAtCorrectStage) {
+        // MD can approve if it's in MD_REVIEW, or bypass HR if they are rank 90+
+        const canProcess = leave.status === 'MD_REVIEW' || ((0, auth_middleware_1.getRoleRank)((await client_1.default.user.findUnique({ where: { id: mdId } }))?.role) >= 90);
+        if (!canProcess) {
             throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
         }
-        const actor = await client_1.default.user.findUnique({
-            where: { id: mdId },
-            include: {
-                managedReportingLines: {
-                    where: { employeeId: leave.employeeId, type: 'DOTTED', effectiveTo: null }
-                }
-            }
-        });
+        const actor = await client_1.default.user.findUnique({ where: { id: mdId } });
         if (!actor)
             throw new Error('Reviewer account not found');
         const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
-        // Step 2: Final MD Review logic:
-        // Reserved for high-rank administrators (Director level / MD)
-        const isHighRank = rank >= 80;
-        if (!isHighRank) {
-            throw new Error('Unauthorized for Final Sign-off. This action is reserved for high-rank administrators (MD/Director).');
+        if (rank < 90) {
+            throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director or Director (Rank 90+).');
         }
         if (!approve && (!comment || comment.trim().length < 3)) {
             throw new Error('A final rejection reason is required for the audit trail.');
@@ -227,19 +294,13 @@ class LeaveService {
                 where: { id: leaveId },
                 data: {
                     status: nextStatus,
-                    hrComment: comment,
+                    hrComment: comment || leave.hrComment || 'Final Approval by MD',
                     hrReviewerId: mdId,
-                    // Clear any intermediate comments if we are bypassing
-                    ...(approve && leave.status !== 'MD_REVIEW' && {
-                        managerComment: comment || 'Direct HR/MD Approval Override'
-                    })
                 }
             });
             if (approve) {
-                // Atomic balance deduction with inheritance support
                 const user = await tx.user.findUnique({
                     where: { id: leave.employeeId },
-                    include: { organization: { select: { defaultLeaveAllowance: true } } }
                 });
                 if (user) {
                     const metrics = (0, leave_utils_1.getEffectiveLeaveMetrics)(user);
@@ -250,22 +311,18 @@ class LeaveService {
                     });
                 }
             }
-            await (0, websocket_service_1.notify)(leave.employeeId, approve ? '🎉 Leave Fully Approved by MD' : '❌ MD Rejected', approve
-                ? `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`
+            await (0, websocket_service_1.notify)(leave.employeeId, approve ? '🎉 Leave Fully Approved' : '❌ MD Rejected', approve
+                ? `Your leave has been finalized and approved by the Managing Director (${actor.fullName}).`
                 : `Managing Director has rejected your leave request. Reason: ${comment}`, approve ? 'SUCCESS' : 'ERROR', '/leave');
             return updated;
         });
     }
-    /**
-     * Check if department leave concurrency exceeds 20%
-     */
     static async checkLeaveOverlap(organizationId, departmentId, startDate, endDate) {
         const totalStaff = await client_1.default.user.count({
             where: { organizationId, departmentId, status: 'ACTIVE', isArchived: false }
         });
         if (totalStaff === 0)
             return { warning: false };
-        // Find overlapping approved leaves
         const overlapping = await client_1.default.leaveRequest.count({
             where: {
                 organizationId,
@@ -281,7 +338,7 @@ class LeaveService {
         if (ratio > 0.20) {
             return {
                 warning: true,
-                message: `Warning: This request will result in ${Math.round(ratio * 100)}% of your department being on leave simultaneously. This exceeds the 20% recommended threshold.`,
+                message: `Warning: This request will result in ${Math.round(ratio * 100)}% of your department being on leave simultaneously.`,
                 ratio: ratio
             };
         }
@@ -289,7 +346,6 @@ class LeaveService {
     }
     static calculateWorkingDaysWithHolidays(start, end, holidays) {
         let count = 0;
-        // Use UTC to avoid local timezone shifts during day iteration
         const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
         const fin = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
         const holidaySet = new Set(holidays.map(h => {
@@ -297,7 +353,7 @@ class LeaveService {
             return d.toISOString().split('T')[0];
         }));
         while (cur <= fin) {
-            const d = cur.getUTCDay(); // 0=Sun, 6=Sat
+            const d = cur.getUTCDay();
             const dateStr = cur.toISOString().split('T')[0];
             const isWeekend = (d === 0 || d === 6);
             const isHoliday = holidaySet.has(dateStr);

@@ -62,7 +62,7 @@ class ReceiptService {
             throw new Error('Subscription records not found for receipt generation.');
         }
         const lang = org?.language || 'en';
-        const companyName = org?.name || 'NEXUS HR PLATFORM';
+        const companyName = org?.name || 'MCB-HRM Ghana';
         const t = (key) => i18n_service_1.i18n.translate(key, lang);
         const doc = new pdfkit_1.default({
             margin: 50,
@@ -83,12 +83,16 @@ class ReceiptService {
         const textPrimary = org?.textPrimary || '#111827';
         if (org?.logoUrl) {
             try {
-                let logoSource = org.logoUrl;
-                // Handle Remote URLs (Firebase Storage)
-                if (org.logoUrl.startsWith('http')) {
+                let logoSource = null;
+                if (org.logoUrl.startsWith('data:image')) {
+                    const b64 = org.logoUrl.split(',')[1];
+                    if (b64)
+                        logoSource = Buffer.from(b64, 'base64');
+                }
+                else if (org.logoUrl.startsWith('http')) {
                     try {
                         const axios = (await Promise.resolve().then(() => __importStar(require('axios')))).default;
-                        const response = await axios.get(org.logoUrl, { responseType: 'arraybuffer' });
+                        const response = await axios.get(org.logoUrl, { responseType: 'arraybuffer', timeout: 5000 });
                         logoSource = Buffer.from(response.data);
                     }
                     catch (fetchError) {
@@ -104,20 +108,20 @@ class ReceiptService {
                     else if (fs_1.default.existsSync(uploadsPath))
                         logoSource = uploadsPath;
                 }
-                if (logoSource instanceof Buffer || (typeof logoSource === 'string' && fs_1.default.existsSync(logoSource))) {
+                if (logoSource) {
                     doc.image(logoSource, 50, 45, { height: 35 });
-                    doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(20).text(companyName, 100, 50);
+                    doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(18).text(companyName.toUpperCase(), 100, 52);
                 }
                 else {
-                    doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+                    doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName.toUpperCase(), 50, 50);
                 }
             }
             catch (e) {
-                doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+                doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName.toUpperCase(), 50, 50);
             }
         }
         else {
-            doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+            doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName.toUpperCase(), 50, 50);
         }
         doc.fontSize(10).font('Helvetica').fillColor('#6B7280').text(org?.address || 'Premium Workforce Management Systems', 50, 80);
         doc.fillColor('#111827').font('Helvetica-Bold').fontSize(12).text(t('pdf.receipt.title'), 350, 50, { align: 'right' });
@@ -166,7 +170,7 @@ class ReceiptService {
         doc.fillColor('#9CA3AF').fontSize(8).font('Helvetica-Bold').text(t('pdf.receipt.notes_title'), 50, 500);
         doc.fillColor('#6B7280').font('Helvetica').fontSize(9).text(t('pdf.receipt.notes_value'), 50, 515, { width: 250 });
         // Footer
-        doc.fontSize(8).fillColor('#D1D5DB').text(`${t('pdf.receipt.footer_line1')} • Conakry, GN`, 50, 750, { align: 'center' });
+        doc.fontSize(8).fillColor('#D1D5DB').text(`${t('pdf.receipt.footer_line1')} • Accra, GH`, 50, 750, { align: 'center' });
         doc.text(t('pdf.receipt.footer_line2'), 50, 765, { align: 'center' });
         doc.end();
     }

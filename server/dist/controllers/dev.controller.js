@@ -75,7 +75,7 @@ const getSystemStats = async (req, res) => {
             }
         });
         const masterSettings = await client_1.default.systemSettings.findFirst({
-            where: { organizationId: 'default-tenant' }
+            where: { organizationId: 'mcb-ghana-tenant' }
         }).catch(() => null);
         res.json({
             summary: {
@@ -556,7 +556,7 @@ const provisionClient = async (req, res) => {
                 return res.status(400).json({ error: `Subdomain "${subdomain}" is already taken` });
         }
         // Auto-generate a password if not supplied
-        const rawPassword = adminPassword || `Nexus@${Math.random().toString(36).slice(2, 8).toUpperCase()}1!`;
+        const rawPassword = adminPassword || `MCB@${Math.random().toString(36).slice(2, 8).toUpperCase()}1!`;
         const passwordHash = await bcryptjs_1.default.hash(rawPassword, 12);
         // Atomic transaction: Org + SystemSettings + MD User
         const result = await client_1.default.$transaction(async (tx) => {
@@ -578,7 +578,7 @@ const provisionClient = async (req, res) => {
             const user = await tx.user.create({
                 data: {
                     organizationId: org.id,
-                    fullName: adminFullName,
+                    fullName: adminFullName.trim().replace(/\./g, ' '),
                     email: normalizedEmail,
                     passwordHash,
                     role: 'MD',
@@ -609,7 +609,7 @@ const provisionClient = async (req, res) => {
             credentials: {
                 email: normalizedEmail,
                 password: rawPassword,
-                loginUrl: 'https://nexus-hr-platform.web.app/login',
+                loginUrl: 'https://mcb-hrm-ghana.web.app/login',
             },
         });
     }
