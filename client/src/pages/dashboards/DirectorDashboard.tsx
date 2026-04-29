@@ -17,31 +17,42 @@ const DirectorDashboard = () => {
   const user = getStoredUser() as any;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
-  const [data, setData] = useState({ distribution: [] as any[], performance: [] as any[] });
-
-  const fallbackDist = [
-    { name: 'Operations', value: 38 }, { name: 'Sales', value: 28 },
-    { name: 'Admin', value: 18 }, { name: 'IT', value: 16 }
-  ];
-  const fallbackPerf = [
-    { name: 'Operations', value: 88 }, { name: 'Sales', value: 74 },
-    { name: 'Admin', value: 91 }, { name: 'IT', value: 82 }
-  ];
+  const [data, setData] = useState({ 
+    distribution: [] as any[], 
+    performance: [] as any[],
+    headcount: 0,
+    efficiency: 0,
+    activeReviews: 0,
+    openTargets: 0,
+    pendingLeaves: 0
+  });
 
   useEffect(() => {
-    api.get('/analytics/dept-growth')
-      .then(res => setData({
-        distribution: fallbackDist,
-        performance: Array.isArray(res.data) && res.data.length ? res.data : fallbackPerf
-      }))
-      .catch(() => setData({ distribution: fallbackDist, performance: fallbackPerf }));
+    Promise.all([
+      api.get('/analytics/dept-growth'),
+      api.get('/analytics/executive')
+    ]).then(([growthRes, execRes]) => {
+      const dist = growthRes.data.map((d: any) => ({ name: d.name, value: d.employees }));
+      const total = dist.reduce((acc: number, cur: any) => acc + cur.value, 0);
+      const normalizedDist = dist.map((d: any) => ({ ...d, value: total > 0 ? Math.round((d.value / total) * 100) : 0 }));
+
+      setData({
+        distribution: normalizedDist,
+        performance: Array.isArray(growthRes.data) ? growthRes.data : [],
+        headcount: execRes.data?.totalEmployees || 0,
+        efficiency: execRes.data?.attendanceRate || 0,
+        activeReviews: execRes.data?.pendingTasks || 0,
+        openTargets: execRes.data?.totalEmployees || 0, // Placeholder or real target count if available
+        pendingLeaves: execRes.data?.activeLeaves || 0
+      });
+    }).catch(console.error);
   }, []);
 
   const statsArr = [
     { label: t('common.departments'), value: data.performance.length || '—', icon: Building2, color: 'var(--primary)', delay: 0.1 },
-    { label: t('dashboard.active_reviews'), value: '—', icon: BarChart3, color: 'var(--accent)', delay: 0.2 },
-    { label: t('dashboard.open_targets'), value: '—', icon: Target, color: 'var(--primary)', delay: 0.3 },
-    { label: t('dashboard.pending_leave'), value: '—', icon: Calendar, color: 'var(--success)', delay: 0.4 },
+    { label: t('dashboard.active_reviews'), value: data.activeReviews || '0', icon: BarChart3, color: 'var(--accent)', delay: 0.2 },
+    { label: t('dashboard.open_targets'), value: data.openTargets || '0', icon: Target, color: 'var(--primary)', delay: 0.3 },
+    { label: t('dashboard.pending_leave'), value: data.pendingLeaves || '0', icon: Calendar, color: 'var(--success)', delay: 0.4 },
   ];
 
   return (
@@ -73,11 +84,11 @@ const DirectorDashboard = () => {
           className="hidden lg:flex items-center gap-4 p-2 rounded-2xl premium-glass border-glow-premium shadow-2xl">
           <div className="px-6 py-4 text-center border-r border-[var(--border-subtle)]">
             <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">{t('dashboard.headcount')}</div>
-            <div className="text-2xl font-black text-[var(--text-primary)]">142</div>
+            <div className="text-2xl font-black text-[var(--text-primary)]">{data.headcount}</div>
           </div>
           <div className="px-6 py-4 text-center">
             <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">{t('dashboard.efficiency')}</div>
-            <div className="text-2xl font-black text-[var(--success)]">94.8%</div>
+            <div className="text-2xl font-black text-[var(--success)]">{data.efficiency}%</div>
           </div>
         </motion.div>
       </header>
@@ -118,7 +129,7 @@ const DirectorDashboard = () => {
                   </Pie>
                   <Tooltip 
                     contentStyle={{ background: 'rgba(0,0,0,0.85)', border: 'none', borderRadius: '12px', backdropFilter: 'blur(8px)' }}
-                    itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }}
+                    itemStyle={{ color: 'var(--text-inverse)', fontSize: '11px', fontWeight: 'bold' }}
                   />
                 </PieChart>
               </ResponsiveContainer>

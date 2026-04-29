@@ -87,6 +87,47 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
             })
         ) : [];
 
+        // Strategy Phases (Dynamic based on current activities)
+        const activeCycle = await prisma.appraisalCycle.findFirst({
+            where: { organizationId, status: { in: ['ACTIVE', 'OPEN'] } }
+        });
+        const activeKpis = await prisma.kpiSheet.count({
+            where: { organizationId, status: 'ACTIVE' }
+        });
+        const activeAppraisals = await (prisma as any).appraisalPacket.count({
+            where: { organizationId, status: 'OPEN' }
+        });
+
+        const strategyPhases = [
+            { label: 'corp_strategy', status: activeCycle ? 'active' : 'pending' },
+            { label: 'operational', status: activeKpis > 0 ? 'active' : 'pending' },
+            { label: 'execution', status: activeAppraisals > 0 ? 'active' : 'pending' }
+        ];
+
+        // Growth Phases (Aggregate of all active appraisals)
+        const appraisalStages = await (prisma as any).appraisalPacket.groupBy({
+            by: ['currentStage'],
+            where: { organizationId, status: 'OPEN' },
+            _count: true
+        });
+
+        const hasSelf = appraisalStages.some((s: any) => s.currentStage === 'SELF_REVIEW');
+        const hasManager = appraisalStages.some((s: any) => s.currentStage === 'MANAGER_REVIEW' || s.currentStage === 'HR_REVIEW');
+        const hasFinal = appraisalStages.some((s: any) => s.currentStage === 'FINAL_SIGN_OFF');
+
+        const growthPhases = [
+            { label: 'self_review', status: hasSelf ? 'active' : (activeAppraisals > 0 && !hasSelf ? 'done' : 'pending') },
+            { label: 'alignment', status: hasManager ? 'active' : (activeAppraisals > 0 && hasFinal ? 'done' : 'pending') },
+            { label: 'final_verdict', status: hasFinal ? 'active' : 'pending' }
+        ];
+
+        const team = await prisma.user.findMany({
+            where: userWhere,
+            orderBy: { rank: 'desc' },
+            take: 5,
+            select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
+        });
+
         res.json({ 
             totalEmployees, 
             activeLeaves, 
@@ -94,7 +135,10 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
             payrollTotal, 
             attendanceRate, 
             growth,
-            teamPerf
+            teamPerf,
+            strategyPhases,
+            growthPhases,
+            team
         });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
@@ -162,15 +206,28 @@ export const getPersonalStats = async (req: Request, res: Response) => {
         const activeGoals = latestSheet ? latestSheet.items.map(item => ({
             name: item.name || item.description,
             progress: Number(item.targetValue) > 0 ? Math.min(100, Math.round((Number(item.actualValue) / Number(item.targetValue)) * 100)) : 0,
-            color: '#6366f1' // Can be dynamic later if needed
+            color: 'var(--primary)' // Dynamic theme color
         })).slice(0, 4) : []; // Limit to top 4 for dashboard
+
+        // 5. Strategic & Growth Journeys
+        const personalPacket = await (prisma as any).appraisalPacket.findFirst({
+            where: { employeeId: userId, organizationId },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const journeyPhases = [
+            { label: 'self_review', status: personalPacket?.currentStage === 'SELF_REVIEW' ? 'active' : (personalPacket && personalPacket.currentStage !== 'SELF_REVIEW' ? 'done' : 'pending') },
+            { label: 'alignment', status: (personalPacket?.currentStage === 'MANAGER_REVIEW' || personalPacket?.currentStage === 'HR_REVIEW') ? 'active' : (personalPacket && ['FINAL_SIGN_OFF', 'COMPLETED'].includes(personalPacket.currentStage) ? 'done' : 'pending') },
+            { label: 'final_verdict', status: personalPacket?.currentStage === 'FINAL_SIGN_OFF' ? 'active' : (personalPacket?.status === 'COMPLETED' ? 'done' : 'pending') }
+        ];
 
         res.json({
             overallPerformance: Math.round(overallPerformance * 10) / 10,
             attendanceRate: Math.round(attendanceRate * 10) / 10,
             leaveBalance: userRec?.leaveBalance || 0,
             leaveAllowance: userRec?.leaveAllowance || 0,
-            activeGoals
+            activeGoals,
+            journeyPhases
         });
 
     } catch (error: any) {

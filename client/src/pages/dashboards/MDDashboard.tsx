@@ -16,6 +16,8 @@ interface Stats {
   payrollTotal: number;
   attendanceRate: number;
   growth: { name: string; value: number }[];
+  strategyPhases: { label: string; status: 'active' | 'pending' | 'done' }[];
+  growthPhases: { label: string; status: 'active' | 'pending' | 'done' }[];
 }
 
 const MDDashboard = () => {
@@ -36,7 +38,9 @@ const MDDashboard = () => {
           pendingTasks: res.data?.pendingTasks || 0,
           payrollTotal: res.data?.payrollTotal || 0,
           attendanceRate: res.data?.attendanceRate || 0,
-          growth: Array.isArray(res.data?.growth) ? res.data.growth : []
+          growth: Array.isArray(res.data?.growth) ? res.data.growth : [],
+          strategyPhases: res.data?.strategyPhases || [],
+          growthPhases: res.data?.growthPhases || []
         });
       })
       .catch(() => setStats(null))
@@ -93,21 +97,28 @@ const MDDashboard = () => {
             </h3>
             <div className="flex items-center justify-center">
                <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
-                 {[
-                   { label: t('md_dashboard.corp_strategy'), icon: Zap, status: 'active' },
-                   { label: t('md_dashboard.operational'), icon: Activity, status: 'pending' },
-                   { label: t('md_dashboard.execution'), icon: Target, status: 'pending' },
-                 ].map((step, idx) => (
-                   <div key={idx} className="flex flex-col items-center gap-3 relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${idx === 0 ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
-                        <step.icon size={20} />
-                      </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${idx === 0 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
-                      {idx < 2 && (
-                        <div className="absolute top-7 -right-2 w-4 h-0.5 bg-[var(--border-subtle)]" />
-                      )}
-                   </div>
-                 ))}
+                 {(stats?.strategyPhases?.length ? stats.strategyPhases : [
+                   { label: 'corp_strategy', status: 'active' },
+                   { label: 'operational', status: 'pending' },
+                   { label: 'execution', status: 'pending' },
+                 ]).map((step, idx) => {
+                   const stepIcons = [Zap, Activity, Target];
+                   const Icon = stepIcons[idx] || Target;
+                   const isActive = step.status === 'active';
+                   const isDone = step.status === 'done';
+                   
+                   return (
+                     <div key={idx} className="flex flex-col items-center gap-3 relative">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${isActive ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : isDone ? 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
+                          <Icon size={20} />
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{t(`md_dashboard.${step.label}`)}</span>
+                        {idx < 2 && (
+                          <div className={`absolute top-7 -right-2 w-4 h-0.5 ${isDone ? 'bg-[var(--primary)]/30' : 'bg-[var(--border-subtle)]'}`} />
+                        )}
+                     </div>
+                   );
+                 })}
                </div>
             </div>
           </div>
@@ -119,21 +130,28 @@ const MDDashboard = () => {
             </h3>
             <div className="flex items-center justify-center">
                <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
-                 {[
-                   { label: t('md_dashboard.self_review'), icon: Users, status: 'done' },
-                   { label: t('md_dashboard.alignment'), icon: Shield, status: 'done' },
-                   { label: t('md_dashboard.final_verdict'), icon: Award, status: 'active' },
-                 ].map((step, idx) => (
-                   <div key={idx} className="flex flex-col items-center gap-3 relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${idx === 2 ? 'bg-[var(--primary)] border-[var(--primary)] text-[var(--text-inverse)] shadow-lg shadow-[var(--primary)]/20' : 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]'}`}>
-                        <step.icon size={20} />
+                 {(stats?.growthPhases?.length ? stats.growthPhases : [
+                   { label: 'self_review', status: 'done' },
+                   { label: 'alignment', status: 'done' },
+                   { label: 'final_verdict', status: 'active' },
+                 ]).map((step, idx) => {
+                    const stepIcons = [Users, Shield, Award];
+                    const Icon = stepIcons[idx] || Award;
+                    const isActive = step.status === 'active';
+                    const isDone = step.status === 'done';
+
+                    return (
+                      <div key={idx} className="flex flex-col items-center gap-3 relative">
+                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${isActive ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : isDone ? 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
+                           <Icon size={20} />
+                         </div>
+                         <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{t(`md_dashboard.${step.label}`)}</span>
+                         {idx < 2 && (
+                           <div className={`absolute top-7 -right-2 w-4 h-0.5 ${isDone ? 'bg-[var(--primary)]/30' : 'bg-[var(--border-subtle)]'}`} />
+                         )}
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${idx === 2 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
-                      {idx < 2 && (
-                        <div className="absolute top-7 -right-2 w-4 h-0.5 bg-[var(--primary)]/30" />
-                      )}
-                   </div>
-                 ))}
+                    );
+                 })}
                </div>
             </div>
           </div>

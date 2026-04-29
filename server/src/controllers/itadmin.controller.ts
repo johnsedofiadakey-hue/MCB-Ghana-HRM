@@ -113,6 +113,11 @@ export const itSystemOverview = async (req: Request, res: Response) => {
       select: { id: true, fullName: true, email: true, role: true, status: true, createdAt: true, jobTitle: true }
     });
 
+    const nodes = await prisma.asset.findMany({
+      where: { organizationId, type: { contains: 'BIOMETRIC', mode: 'insensitive' } },
+      select: { id: true, name: true, description: true, status: true }
+    });
+
     const systemHealth = {
       nodeVersion: process.version,
       platform: process.platform,
@@ -125,7 +130,7 @@ export const itSystemOverview = async (req: Request, res: Response) => {
 
     res.json({ 
       totalUsers, activeUsers, assets, availableAssets, assignedAssets, 
-      recentAccounts, systemHealth, vaultStatus 
+      recentAccounts, systemHealth, vaultStatus, nodes 
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

@@ -197,8 +197,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       war: settingsToUse.warningColor,
       err: settingsToUse.errorColor,
       inf: settingsToUse.infoColor
-       if (lastAppliedRef.current === colorSignature && root.getAttribute('data-theme') === themeName) {
-       return; 
+    });
+
+    if (lastAppliedRef.current === colorSignature && root.getAttribute('data-theme') === themeName) {
+      return; 
     }
     
     lastAppliedRef.current = colorSignature;

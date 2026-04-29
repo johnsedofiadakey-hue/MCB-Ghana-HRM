@@ -289,18 +289,19 @@ const ITAdmin = () => {
                        <div className="nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)]">
                           <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-8">Active Hardware Nodes</h4>
                           <div className="space-y-4">
-                             {[
-                                { loc: 'Main Reception', type: 'FaceID + Finger', id: 'BIO-01' },
-                                { loc: 'Executive Floor', type: 'FaceID Only', id: 'BIO-02' }
-                             ].map(n => (
+                             {(overview.nodes && overview.nodes.length > 0) ? overview.nodes.map((n: any) => (
                                 <div key={n.id} className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex items-center justify-between">
                                    <div>
-                                      <p className="text-[11px] font-black text-[var(--text-primary)] uppercase">{n.loc}</p>
-                                      <p className="text-[9px] text-[var(--text-muted)] font-bold">{n.type} • {n.id}</p>
+                                      <p className="text-[11px] font-black text-[var(--text-primary)] uppercase">{n.name}</p>
+                                      <p className="text-[9px] text-[var(--text-muted)] font-bold">{n.description || 'Hardware Node'} • {n.id.split('-')[0]}</p>
                                    </div>
-                                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                   <div className={cn("w-2 h-2 rounded-full", n.status === 'AVAILABLE' || n.status === 'ACTIVE' ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
                                 </div>
-                             ))}
+                             )) : (
+                                <div className="p-8 text-center border border-dashed border-[var(--border-subtle)] rounded-xl opacity-40">
+                                   <p className="text-[9px] font-black uppercase tracking-widest">{t('common.no_data_available')}</p>
+                                </div>
+                             )}
                           </div>
                        </div>
                    </div>

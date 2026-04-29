@@ -9,13 +9,22 @@ import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import ActionInbox from '../../components/dashboard/ActionInbox';
 import { useTranslation } from 'react-i18next';
+import { cn } from '../../utils/cn';
 // Removed User type import to resolve build conflict
 
 
 const ManagerDashboard = () => {
   const { t } = useTranslation();
   const user = getStoredUser() as any;
-  const [stats, setStats] = useState({ teamSize: 0, pendingReviews: 0, teamPerf: 88, openLeaves: 0 });
+  const [stats, setStats] = useState({ 
+    teamSize: 0, 
+    pendingReviews: 0, 
+    teamPerf: 88, 
+    openLeaves: 0,
+    strategyPhases: [] as any[],
+    growthPhases: [] as any[],
+    team: [] as any[]
+  });
   const [loading, setLoading] = useState(true);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
@@ -27,6 +36,9 @@ const ManagerDashboard = () => {
         pendingReviews: Number(res.data?.pendingTasks) || 0,
         teamPerf: Number(res.data?.teamPerf) || 0,
         openLeaves: Number(res.data?.activeLeaves) || 0,
+        strategyPhases: res.data?.strategyPhases || [],
+        growthPhases: res.data?.growthPhases || [],
+        team: res.data?.team || []
       }))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -77,8 +89,6 @@ const ManagerDashboard = () => {
           </div>
         </motion.div>
       </header>
-
-      {/* Team Strategy Phase Layer */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
           className="premium-glass border-glow-premium p-10 bg-gradient-to-br from-[var(--primary)]/5 to-transparent">
@@ -87,21 +97,28 @@ const ManagerDashboard = () => {
             {t('manager_dashboard.team_strategy')}
           </h3>
           <div className="flex items-center justify-between gap-4 max-w-lg">
-             {[
-               { label: t('manager_dashboard.dept'), icon: Zap },
-               { label: t('manager_dashboard.team'), icon: Activity },
-               { label: t('manager_dashboard.focus'), icon: Target },
-             ].map((step, idx) => (
-               <div key={idx} className="flex flex-col items-center gap-4 flex-1 relative">
-                  <div className={`w-16 h-16 rounded-3xl flex items-center justify-center border-2 transition-all duration-500 ${idx === 1 ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-[var(--primary)]/40 scale-110' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
-                    <step.icon size={24} />
-                  </div>
-                  <span className={`text-[9px] font-black uppercase tracking-widest text-center ${idx === 1 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
-                  {idx < 2 && (
-                    <div className="absolute top-8 -right-4 w-8 h-[1px] bg-gradient-to-r from-[var(--border-subtle)] to-transparent" />
-                  )}
-               </div>
-             ))}
+             {(stats.strategyPhases?.length ? stats.strategyPhases : [
+               { label: 'dept', icon: Zap },
+               { label: 'team', icon: Activity },
+               { label: 'focus', icon: Target },
+             ]).map((step, idx) => {
+               const stepIcons = [Zap, Activity, Target];
+               const Icon = stepIcons[idx] || Target;
+               const isActive = step.status === 'active';
+               const isDone = step.status === 'done';
+
+               return (
+                 <div key={idx} className="flex flex-col items-center gap-4 flex-1 relative">
+                    <div className={`w-16 h-16 rounded-3xl flex items-center justify-center border-2 transition-all duration-500 ${isActive ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-[var(--primary)]/40 scale-110' : isDone ? 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
+                      <Icon size={24} />
+                    </div>
+                    <span className={`text-[9px] font-black uppercase tracking-widest text-center ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{t(`manager_dashboard.${step.label}`)}</span>
+                    {idx < 2 && (
+                      <div className={`absolute top-8 -right-4 w-8 h-[1px] ${isDone ? 'bg-[var(--primary)]/30' : 'bg-gradient-to-r from-[var(--border-subtle)] to-transparent'}`} />
+                    )}
+                 </div>
+               );
+             })}
           </div>
         </motion.div>
 
@@ -112,21 +129,28 @@ const ManagerDashboard = () => {
             {t('manager_dashboard.team_growth')}
           </h3>
           <div className="flex items-center justify-between gap-4 max-w-lg">
-             {[
-               { label: t('md_dashboard.self_review'), icon: Users },
-               { label: t('md_dashboard.alignment'), icon: Shield },
-               { label: t('md_dashboard.growth'), icon: Award },
-             ].map((step, idx) => (
-               <div key={idx} className="flex flex-col items-center gap-4 flex-1 relative">
-                  <div className={`w-16 h-16 rounded-3xl flex items-center justify-center border-2 transition-all duration-500 ${idx === 1 ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-[var(--primary)]/40 scale-110' : 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]'}`}>
-                    <step.icon size={24} />
+             {(stats.growthPhases?.length ? stats.growthPhases : [
+               { label: 'self_review', icon: Users },
+               { label: 'alignment', icon: Shield },
+               { label: 'growth', icon: Award },
+             ]).map((step, idx) => {
+                const stepIcons = [Users, Shield, Award];
+                const Icon = stepIcons[idx] || Award;
+                const isActive = step.status === 'active';
+                const isDone = step.status === 'done';
+
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-4 flex-1 relative">
+                     <div className={`w-16 h-16 rounded-3xl flex items-center justify-center border-2 transition-all duration-500 ${isActive ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-[var(--primary)]/40 scale-110' : isDone ? 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
+                       <Icon size={24} />
+                     </div>
+                     <span className={`text-[9px] font-black uppercase tracking-widest text-center ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{t(`md_dashboard.${step.label}`)}</span>
+                     {idx < 2 && (
+                       <div className={`absolute top-8 -right-4 w-8 h-[1px] ${isDone ? 'bg-[var(--primary)]/30' : 'bg-gradient-to-r from-[var(--primary)]/30 to-transparent'}`} />
+                     )}
                   </div>
-                  <span className={`text-[9px] font-black uppercase tracking-widest text-center ${idx === 1 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
-                  {idx < 2 && (
-                    <div className="absolute top-8 -right-4 w-8 h-[1px] bg-gradient-to-r from-[var(--primary)]/30 to-transparent" />
-                  )}
-               </div>
-             ))}
+                );
+             })}
           </div>
         </motion.div>
       </div>
@@ -240,20 +264,22 @@ const ManagerDashboard = () => {
           <div className="premium-glass border-glow-premium p-8 shadow-2xl bg-gradient-to-br from-[var(--primary)]/5 to-transparent">
             <h4 className="text-[11px] font-black text-[var(--primary)] uppercase tracking-[0.3em] mb-8">{t('manager_dashboard.active_headcount')}</h4>
             <div className="space-y-6">
-              {[1, 2, 3].map((_, i) => (
-                <div key={i} className="flex items-center justify-between group">
+              {stats.team.length > 0 ? stats.team.map((member: any) => (
+                <div key={member.id} className="flex items-center justify-between group">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] group-hover:border-[var(--primary)]/30 transition-all">
-                      <Users size={16} />
+                    <div className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center overflow-hidden group-hover:border-[var(--primary)]/30 transition-all">
+                      {member.avatarUrl ? <img src={member.avatarUrl} alt="" className="w-full h-full object-cover" /> : <Users size={16} className="text-[var(--text-muted)]" />}
                     </div>
                     <div>
-                      <div className="text-[11px] font-black text-[var(--text-primary)] tracking-tight">Department Core</div>
-                      <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Active Shift</div>
+                      <div className="text-[11px] font-black text-[var(--text-primary)] tracking-tight">{member.fullName}</div>
+                      <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{member.jobTitle}</div>
                     </div>
                   </div>
-                  <div className="w-2 h-2 rounded-full bg-[var(--success)] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                  <div className={cn("w-2 h-2 rounded-full", member.status === 'ACTIVE' ? "bg-[var(--success)] shadow-[0_0_8px_var(--success)]" : "bg-[var(--text-muted)]")} />
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-4 opacity-40 italic text-[10px]">{t('common.no_data_available')}</div>
+              )}
             </div>
             <Link to="/employees" className="block mt-10 p-4 text-center rounded-xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)]/30 transition-all no-underline">
               {t('manager_dashboard.view_team')}
