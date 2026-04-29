@@ -73,7 +73,7 @@ const MDDashboard = () => {
         {/* Executive Actions */}
         <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} className="flex pb-1">
            <button
-             onClick={() => window.open('/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('nexus_auth_token'))}
+             onClick={() => window.open('/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('mcb_auth_token'))}
              className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white text-sm font-black uppercase tracking-widest flex items-center gap-3 hover:bg-[var(--accent)] hover:shadow-[0_0_20px_var(--primary)] hover:shadow-[var(--primary)]/30 transition-all active:scale-95"
            >
              <FileText size={18} /> Download Board Report

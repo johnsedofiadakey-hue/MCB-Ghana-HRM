@@ -27,7 +27,7 @@ export class ReceiptService {
     }
 
     const lang = org?.language || 'en';
-    const companyName = org?.name || 'NEXUS HR PLATFORM';
+    const companyName = org?.name || 'MCB-HRM Ghana';
     const t = (key: string) => i18n.translate(key, lang);
 
     const doc = new PDFDocument({ 
@@ -147,7 +147,7 @@ export class ReceiptService {
     doc.fillColor('#6B7280').font('Helvetica').fontSize(9).text(t('pdf.receipt.notes_value'), 50, 515, { width: 250 });
 
     // Footer
-    doc.fontSize(8).fillColor('#D1D5DB').text(`${t('pdf.receipt.footer_line1')} • Conakry, GN`, 50, 750, { align: 'center' });
+    doc.fontSize(8).fillColor('#D1D5DB').text(`${t('pdf.receipt.footer_line1')} • Accra, GH`, 50, 750, { align: 'center' });
     doc.text(t('pdf.receipt.footer_line2'), 50, 765, { align: 'center' });
 
     doc.end();

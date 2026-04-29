@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const orgId = 'default-tenant';
+  const orgId = 'mcb-ghana-tenant';
   console.log(`Verifying persistence for ${orgId}...`);
 
   const org = await prisma.organization.findUnique({

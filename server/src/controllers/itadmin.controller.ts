@@ -23,7 +23,7 @@ export const itCreateEmployee = async (req: Request, res: Response) => {
     const { salary, currency, ...safeData } = req.body;
 
     const tempPassword = safeData.password || 'SecureInit!';
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const user = await userService.createUser(organizationId, { ...safeData, password: tempPassword });
     const { passwordHash, ...safeUser } = user;
 
@@ -81,7 +81,7 @@ export const itResetPassword = async (req: Request, res: Response) => {
 // Get system overview for IT dashboard
 export const itSystemOverview = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     const requesterRank = (req as any).user?.rank || 0;
     const devFilter = requesterRank < 100 ? { role: { not: 'DEV' }, rank: { lt: 100 } } : {};

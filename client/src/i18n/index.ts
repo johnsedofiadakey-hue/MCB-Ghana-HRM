@@ -16,7 +16,7 @@ i18n
     fallbackLng: 'en',
     detection: {
       order: ['localStorage', 'cookie', 'htmlTag', 'path', 'subdomain'],
-      lookupLocalStorage: 'nexus_lang',
+      lookupLocalStorage: 'mcb_lang',
       caches: ['localStorage'],
     },
     interpolation: {

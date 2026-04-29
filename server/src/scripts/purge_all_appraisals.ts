@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 async function purgeAllAppraisals() {
   console.log('--- Appraisal Full Purge Started ---');
   
-  const organizationId = 'default-tenant';
+  const organizationId = 'mcb-ghana-tenant';
   
   try {
     const cycles = await (prisma as any).appraisalCycle.findMany({

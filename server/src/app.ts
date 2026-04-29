@@ -110,6 +110,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     'https://mcb-hrm-ghana.firebaseapp.com',
     // Add custom domain later: 'https://hrm.mc-bauchemie.com.gh',
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:5173',
   ];
 

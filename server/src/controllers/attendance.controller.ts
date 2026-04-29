@@ -5,7 +5,7 @@ import { getOrgId } from './enterprise.controller';
 export const clockIn = async (req: Request, res: Response) => {
     try {
         const orgId = getOrgId(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = (req as any).user;
         const employeeId = user.id;
         const today = new Date();
@@ -39,7 +39,7 @@ export const clockIn = async (req: Request, res: Response) => {
 export const clockOut = async (req: Request, res: Response) => {
     try {
         const orgId = getOrgId(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = (req as any).user;
         const employeeId = user.id;
         const today = new Date();

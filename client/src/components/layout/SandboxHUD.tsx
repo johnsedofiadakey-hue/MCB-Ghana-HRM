@@ -5,12 +5,12 @@ import api from '../../services/api';
 import { toast } from '../../utils/toast';
 
 const SandboxHUD = () => {
-    const isSandbox = localStorage.getItem('nexus_is_sandbox') === 'true';
+    const isSandbox = localStorage.getItem('mcb_is_sandbox') === 'true';
     if (!isSandbox) return null;
 
     const user = React.useMemo(() => {
         try {
-            return JSON.parse(localStorage.getItem('nexus_user') || '{}');
+            return JSON.parse(localStorage.getItem('mcb_user') || '{}');
         } catch (e) {
             return {};
         }
@@ -27,10 +27,10 @@ const SandboxHUD = () => {
             const res = await api.post('/auth/login', { email, password: 'MCBDemo@2025' });
             const { token, refreshToken, user: newUser } = res.data;
             
-            localStorage.setItem('nexus_auth_token', token);
-            if (refreshToken) localStorage.setItem('nexus_refresh_token', refreshToken);
-            localStorage.setItem('nexus_user', JSON.stringify(newUser || {}));
-            localStorage.setItem('nexus_is_sandbox', 'true'); // Persist sandbox status
+            localStorage.setItem('mcb_auth_token', token);
+            if (refreshToken) localStorage.setItem('mcb_refresh_token', refreshToken);
+            localStorage.setItem('mcb_user', JSON.stringify(newUser || {}));
+            localStorage.setItem('mcb_is_sandbox', 'true'); // Persist sandbox status
             
             toast.success(`Switched to ${newUser.role} Perspective`);
             window.location.reload();
@@ -40,10 +40,10 @@ const SandboxHUD = () => {
     };
 
     const handleExit = () => {
-        localStorage.removeItem('nexus_auth_token');
-        localStorage.removeItem('nexus_refresh_token');
-        localStorage.removeItem('nexus_user');
-        localStorage.removeItem('nexus_is_sandbox');
+        localStorage.removeItem('mcb_auth_token');
+        localStorage.removeItem('mcb_refresh_token');
+        localStorage.removeItem('mcb_user');
+        localStorage.removeItem('mcb_is_sandbox');
         window.location.href = '/login';
     };
 

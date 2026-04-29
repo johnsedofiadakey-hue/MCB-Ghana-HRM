@@ -4,7 +4,7 @@ import prisma from '../prisma/client';
 
 export const getOrgId = (req: Request): string | undefined => {
   if (req.user?.role === 'DEV') return undefined;
-  return req.user?.organizationId || 'default-tenant';
+  return req.user?.organizationId || 'mcb-ghana-tenant';
 };
 
 const parsePagination = (req: Request) => {
@@ -100,7 +100,7 @@ export const getRoleDashboard = async (req: Request, res: Response) => {
 export const createDepartmentKPI = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const item = await prisma.departmentKPI.create({
       data: {
@@ -151,7 +151,7 @@ export const listDepartmentKPIs = async (req: Request, res: Response) => {
 export const updateDepartmentKPI = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const { id } = req.params;
     const data = req.body as Record<string, unknown>;
 
@@ -177,7 +177,7 @@ export const updateDepartmentKPI = async (req: Request, res: Response) => {
 export const deleteDepartmentKPI = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const { id } = req.params;
 
     await prisma.departmentKPI.delete({
@@ -207,7 +207,7 @@ export const listDepartmentKPIsLegacy = async (req: Request, res: Response) => {
 export const createTeamTarget = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.teamTarget.create({
       data: {
@@ -233,7 +233,7 @@ export const createTeamTarget = async (req: Request, res: Response) => {
 export const createEmployeeTarget = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     // Fetch team target to get originKPIId
     const teamTarget = await prisma.teamTarget.findUnique({
@@ -267,7 +267,7 @@ export const upsertPerformanceReview = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const reviewId = asString(data.id);
 
@@ -332,7 +332,7 @@ export const listPerformanceReviews = async (req: Request, res: Response) => {
 export const createJobPosition = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.jobPosition.create({
       data: {
@@ -371,7 +371,7 @@ export const listJobPositions = async (req: Request, res: Response) => {
 export const createCandidate = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.candidate.create({
       data: {
@@ -395,7 +395,7 @@ export const updateCandidateStatus = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const candidateId = req.params.id;
     const status = asString(req.body.status).toUpperCase();
 
@@ -445,7 +445,7 @@ export const listOnboardingChecklists = async (req: Request, res: Response) => {
 export const addOnboardingTask = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.onboardingChecklistTask.create({
       data: {
@@ -487,7 +487,7 @@ export const updateOnboardingTask = async (req: Request, res: Response) => {
 export const startOffboarding = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const row = await prisma.offboardingProcess.create({
       data: {
         organizationId,
@@ -506,7 +506,7 @@ export const startOffboarding = async (req: Request, res: Response) => {
 export const completeExitInterview = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const row = await prisma.exitInterview.create({
       data: {
         organizationId,
@@ -528,7 +528,7 @@ export const completeExitInterview = async (req: Request, res: Response) => {
 export const recordAssetReturn = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const row = await prisma.assetReturn.create({
       data: {
         organizationId,
@@ -550,7 +550,7 @@ export const recordAssetReturn = async (req: Request, res: Response) => {
 export const createBenefitPlan = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.benefitPlan.create({
       data: {
@@ -574,7 +574,7 @@ export const createBenefitPlan = async (req: Request, res: Response) => {
 export const enrollEmployeeBenefit = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.employeeBenefitEnrollment.create({
       data: {
@@ -597,7 +597,7 @@ export const enrollEmployeeBenefit = async (req: Request, res: Response) => {
 export const createShift = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.shift.create({
       data: {
@@ -619,7 +619,7 @@ export const createShift = async (req: Request, res: Response) => {
 export const assignShift = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.employeeShift.create({
       data: {
@@ -641,7 +641,7 @@ export const assignShift = async (req: Request, res: Response) => {
 export const createAnnouncement = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.announcement.create({
       data: {
@@ -681,7 +681,7 @@ export const listAnnouncements = async (req: Request, res: Response) => {
 export const createTaxRule = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.taxRule.create({
       data: {
@@ -704,7 +704,7 @@ export const createTaxRule = async (req: Request, res: Response) => {
 export const createTaxBracket = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.taxBracket.create({
       data: {

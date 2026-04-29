@@ -23,7 +23,7 @@ router.post('/purge-data', authenticate, requireRole(95), async (req: any, res: 
   }
 
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const result = await PurgeService.purgeTransactionalData(organizationId);
     res.json({ success: true, message: 'All transactional data has been permanently wiped.', ...result });
   } catch (err: any) {

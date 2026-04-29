@@ -223,7 +223,7 @@ const SettingsHub = () => {
       toast.success(t('settings.update_success'));
       
       // Permanent Identity Sync to Firebase (Non-blocking)
-      const syncOrgId = currentUser?.organizationId || 'default-tenant';
+      const syncOrgId = currentUser?.organizationId || 'mcb-ghana-tenant';
       BrandingService.updateBranding(syncOrgId, {
         name: formData.companyName,
         companyLogoUrl: formData.companyLogoUrl,
@@ -290,7 +290,7 @@ const SettingsHub = () => {
       toast.success(t('settings.identity_sync_success'));
 
       // 3. Identity broadcast to all devices
-      const syncOrgId = currentUser?.organizationId || 'default-tenant';
+      const syncOrgId = currentUser?.organizationId || 'mcb-ghana-tenant';
       await BrandingService.updateBranding(syncOrgId, {
         companyLogoUrl: logoUrl
       });
@@ -1171,7 +1171,7 @@ const SettingsHub = () => {
                         </div>
                         <div>
                           <h4 className="font-bold text-lg text-[var(--text-primary)]">{t('settings.ai_assistant', 'AI Assistant')}</h4>
-                          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.nexus_ai_engine', 'MCB AI Engine')}</p>
+                          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.mcb_ai_engine', 'MCB AI Engine')}</p>
                         </div>
                       </div>
                     </section>

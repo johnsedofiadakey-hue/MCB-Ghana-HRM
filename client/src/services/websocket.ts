@@ -32,7 +32,7 @@ export const useWebSocket = (onMessage?: (type: string, data: any) => void) => {
   const [connected, setConnected] = useState(false);
 
   const connect = useCallback(() => {
-    const token = localStorage.getItem('nexus_auth_token');
+    const token = localStorage.getItem('mcb_auth_token');
     if (!token) return;
 
     ws.current = new WebSocket(`${WS_URL}?token=${token}`);

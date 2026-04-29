@@ -10,7 +10,7 @@ import { notify } from '../services/websocket.service';
 export const createTicket = async (req: Request, res: Response) => {
   try {
     const { subject, description, category, priority } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const employeeId = req.user?.id!;
 
     const ticket = await prisma.supportTicket.create({
@@ -46,7 +46,7 @@ export const createTicket = async (req: Request, res: Response) => {
 export const getMyTickets = async (req: Request, res: Response) => {
   try {
     const employeeId = req.user?.id!;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     const tickets = await prisma.supportTicket.findMany({
       where: { employeeId, organizationId },
@@ -61,7 +61,7 @@ export const getMyTickets = async (req: Request, res: Response) => {
 
 export const getAllTickets = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const { status, category } = req.query;
 
     const tickets = await prisma.supportTicket.findMany({
@@ -110,7 +110,7 @@ export const addComment = async (req: Request, res: Response) => {
     const { ticketId } = req.params;
     const { content, attachmentUrl } = req.body;
     const userId = req.user?.id!;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     const comment = await prisma.ticketComment.create({
       data: {

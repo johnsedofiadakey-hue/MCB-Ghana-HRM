@@ -14,7 +14,7 @@ const brandingCache = new Map<string, { data: OrgBranding; expires: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
 async function getOrgBranding(organizationId?: string): Promise<OrgBranding> {
-  const id = organizationId || 'default-tenant';
+  const id = organizationId || 'mcb-ghana-tenant';
   const cached = brandingCache.get(id);
   if (cached && cached.expires > Date.now()) return cached.data;
 
@@ -131,13 +131,13 @@ export class EmailService {
     organizationId?: string
   ) {
     const branding = await getOrgBranding(organizationId);
-    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+    const dashboardUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
     const actionUrl = link ? (link.startsWith('http') ? link : `${dashboardUrl}${link}`) : dashboardUrl;
 
     const html = buildBrandedTemplate(branding, title, message, actionUrl);
 
     try {
-      const fromName = `"${branding.name}" <${process.env.SMTP_USER || 'notifications@nexus-hr.com'}>`;
+      const fromName = `"${branding.name}" <${process.env.SMTP_USER || 'notifications@mcb-ghana-hrm.com'}>`;
       const info = await this.transporter.sendMail({
         from: fromName,
         to,
@@ -155,7 +155,7 @@ export class EmailService {
   static async sendEmail(params: { to: string; subject: string; html: string }) {
     try {
       return await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM || '"MCB-HRM Ghana" <notifications@nexus-hr.com>',
+        from: process.env.EMAIL_FROM || '"MCB-HRM Ghana" <notifications@mcb-ghana-hrm.com>',
         ...params,
       });
     } catch (error) {
@@ -166,7 +166,7 @@ export class EmailService {
 
   static async sendWelcomeEmail(to: string, name: string, pass: string, company: string, organizationId?: string) {
     const branding = await getOrgBranding(organizationId);
-    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+    const dashboardUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
     const message = `
       <p>Hi <strong>${name}</strong>,</p>
       <p>Your account at <strong>${company}</strong> has been created. You can log in with:</p>
@@ -182,7 +182,7 @@ export class EmailService {
 
   static async sendPayslipEmail(to: string, period: string, employeeName?: string, organizationId?: string) {
     const branding = await getOrgBranding(organizationId);
-    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+    const dashboardUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
     const message = `
       <p>Hi${employeeName ? ` <strong>${employeeName}</strong>` : ''},</p>
       <p>Your payslip for <strong>${period}</strong> has been processed and is now available for download.</p>
@@ -194,7 +194,7 @@ export class EmailService {
 
   static async sendLeaveStatusEmail(to: string, employeeName: string, status: string, dates: string, organizationId?: string) {
     const branding = await getOrgBranding(organizationId);
-    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+    const dashboardUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
     const isApproved = status === 'APPROVED';
     const message = `
       <p>Hi <strong>${employeeName}</strong>,</p>

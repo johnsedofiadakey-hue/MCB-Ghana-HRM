@@ -36,7 +36,7 @@ const getPublicBaseUrl = (req: Request) => {
   const isOnRender = !!process.env.RENDER_SERVICE_ID;
   if (isOnRender && (host.includes('localhost') || !host)) {
      // Force the known production API domain
-     return 'https://nexus-hr-platform-api.onrender.com';
+     return 'https://mcb-hrm-ghana-api.onrender.com';
   }
 
   // Fallback for local dev
@@ -108,7 +108,7 @@ export const getMyTeam = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
     const isDev = userReq.role === 'DEV';
-    const organizationId = isDev ? undefined : (userReq.organizationId || 'default-tenant');
+    const organizationId = isDev ? undefined : (userReq.organizationId || 'mcb-ghana-tenant');
     const whereOrg = organizationId ? { organizationId } : {};
     const { id: userId, role } = userReq;
     const requestedId = req.query.supervisorId as string;
@@ -165,7 +165,7 @@ export const getMyTeam = async (req: Request, res: Response) => {
 export const createEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const actorRank = userReq.rank;
     const actorRole = userReq.role;
     const actorId = userReq.id;
@@ -239,7 +239,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 export const getAllEmployees = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const filters: any = { organizationId };
     const showArchived = req.query.archived === 'true';
 
@@ -321,7 +321,7 @@ export const getAllEmployees = async (req: Request, res: Response) => {
 export const getEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const targetId = req.params.id;
     const user = await userService.getUserById(organizationId, targetId);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -352,7 +352,7 @@ export const getEmployee = async (req: Request, res: Response) => {
 export const updateEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const rank = getRoleRank(userReq.role);
     const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
 
@@ -424,7 +424,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
 export const deleteEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const actorId = userReq.id;
     const targetId = req.params.id;
 
@@ -453,7 +453,7 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 export const hardDeleteEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const actorId = userReq.id;
     const targetId = req.params.id;
 
@@ -491,7 +491,7 @@ export const hardDeleteEmployee = async (req: Request, res: Response) => {
 export const assignRole = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const actorId = userReq.id;
     const actorRole = userReq.role;
     const actorRank = getRoleRank(actorRole);
@@ -546,7 +546,7 @@ export const assignRole = async (req: Request, res: Response) => {
 export const uploadImage = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const { role: actorRole, id: actorId } = userReq;
     const targetId = req.params.id;
     const rank = getRoleRank(actorRole);
@@ -656,7 +656,7 @@ export const uploadImage = async (req: Request, res: Response) => {
 export const uploadSignature = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const { id: actorId } = userReq;
     const targetId = req.params.id;
 
@@ -708,7 +708,7 @@ export const uploadSignature = async (req: Request, res: Response) => {
 // ─── GET SUPERVISORS LIST (for dropdowns) ────────────────────────────────
 export const getSupervisors = async (req: Request, res: Response) => {
   const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
+  const organizationId = user.organizationId || 'mcb-ghana-tenant';
   const supervisors = await prisma.user.findMany({
     where: { 
       organizationId, 
@@ -728,7 +728,7 @@ export const getSupervisors = async (req: Request, res: Response) => {
 export const archiveEmployee = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const organizationId = user.organizationId || 'mcb-ghana-tenant';
     const { id } = req.params;
     await prisma.user.update({
       where: { id, organizationId },
@@ -745,7 +745,7 @@ export const archiveEmployee = async (req: Request, res: Response) => {
 export const restoreEmployee = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const organizationId = user.organizationId || 'mcb-ghana-tenant';
     const { id } = req.params;
     await prisma.user.update({
       where: { id, organizationId },
@@ -762,7 +762,7 @@ export const restoreEmployee = async (req: Request, res: Response) => {
 export const transferEmployee = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const organizationId = user.organizationId || 'mcb-ghana-tenant';
     const { id } = req.params;
     const { departmentId, reason } = req.body;
     await prisma.user.update({
@@ -780,7 +780,7 @@ export const transferEmployee = async (req: Request, res: Response) => {
 export const promoteEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const { id } = req.params;
     const { jobTitle, role, salary, reason } = req.body;
     const updateData: any = { jobTitle, role };
@@ -813,7 +813,7 @@ export const promoteEmployee = async (req: Request, res: Response) => {
 export const getUserRiskProfile = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const profile = await riskService.getRiskProfile(organizationId, req.params.id);
     res.json(profile);
   } catch (err: any) {
@@ -824,7 +824,7 @@ export const getUserRiskProfile = async (req: Request, res: Response) => {
 export const resetEmployeePassword = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const actorId = userReq.id;
     const targetId = req.params.id;
     const { newPassword } = req.body;

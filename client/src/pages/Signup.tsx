@@ -36,9 +36,9 @@ const Signup = () => {
       // Auto-login after a short delay
       setTimeout(() => {
         const { token, refreshToken, user } = res.data;
-        localStorage.setItem('nexus_auth_token', token);
-        if (refreshToken) localStorage.setItem('nexus_refresh_token', refreshToken);
-        localStorage.setItem('nexus_user', JSON.stringify(user));
+        localStorage.setItem('mcb_auth_token', token);
+        if (refreshToken) localStorage.setItem('mcb_refresh_token', refreshToken);
+        localStorage.setItem('mcb_user', JSON.stringify(user));
         window.location.href = '/dashboard';
       }, 2000);
     } catch (err: any) {
@@ -167,7 +167,7 @@ const Signup = () => {
                             placeholder="my-company"
                             className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:border-blue-500 outline-none transition-all font-medium"
                           />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 text-[10px] font-black">.nexus.io</span>
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 text-[10px] font-black">.mcb-ghana.com</span>
                        </div>
                     </div>
                     <div className="space-y-2">

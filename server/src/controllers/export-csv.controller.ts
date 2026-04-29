@@ -15,7 +15,7 @@ const jsonToCsv = (data: any[]): string => {
     return csvRows.join('\r\n');
 };
 
-const getOrgId = (req: Request) => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request) => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
 export const exportEmployeesCSV = async (req: Request, res: Response) => {
     try {

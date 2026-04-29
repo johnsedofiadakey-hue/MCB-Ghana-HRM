@@ -13,7 +13,7 @@ import { notify } from '../services/websocket.service';
 export const createJobPosition = async (req: Request, res: Response) => {
   try {
     const { title, departmentId, description, location, employmentType } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     const job = await prisma.jobPosition.create({
       data: {
@@ -37,7 +37,7 @@ export const createJobPosition = async (req: Request, res: Response) => {
 
 export const getJobPositions = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const { status } = req.query;
 
     const jobs = await prisma.jobPosition.findMany({
@@ -62,7 +62,7 @@ export const getJobPositions = async (req: Request, res: Response) => {
 export const updateJobPosition = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const data = req.body;
 
     const job = await prisma.jobPosition.update({
@@ -81,7 +81,7 @@ export const updateJobPosition = async (req: Request, res: Response) => {
 export const applyForJob = async (req: Request, res: Response) => {
   try {
     const { jobPositionId, fullName, email, phone, resumeUrl, source, notes } = req.body;
-    const organizationId = req.body.organizationId || 'default-tenant'; // Public apply might not have req.user
+    const organizationId = req.body.organizationId || 'mcb-ghana-tenant'; // Public apply might not have req.user
 
     const candidate = await prisma.candidate.create({
       data: {
@@ -115,7 +115,7 @@ export const applyForJob = async (req: Request, res: Response) => {
 
 export const getCandidates = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const { jobPositionId, status } = req.query;
 
     const candidates = await prisma.candidate.findMany({
@@ -154,7 +154,7 @@ export const updateCandidateStatus = async (req: Request, res: Response) => {
 export const scheduleInterview = async (req: Request, res: Response) => {
   try {
     const { candidateId, stage, scheduledAt, interviewerId } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     const interview = await prisma.interviewStage.create({
       data: {
@@ -185,7 +185,7 @@ export const scheduleInterview = async (req: Request, res: Response) => {
 export const submitInterviewFeedback = async (req: Request, res: Response) => {
   try {
     const { candidateId, interviewStageId, rating, feedback, recommendation } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const reviewerId = req.user?.id!;
 
     const entry = await prisma.interviewFeedback.create({

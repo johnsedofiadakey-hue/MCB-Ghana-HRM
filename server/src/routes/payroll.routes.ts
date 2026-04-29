@@ -23,7 +23,7 @@ router.get('/my-tax-summary/:year', async (req, res) => {
     const year = parseInt(req.params.year);
     if (isNaN(year)) return res.status(400).json({ error: 'Invalid year' });
     const summary = await YearEndSummaryService.getEmployeeSummary(
-      user.organizationId || 'default-tenant', user.id, year
+      user.organizationId || 'mcb-ghana-tenant', user.id, year
     );
     if (!summary) return res.status(404).json({ error: 'No payroll data found for this year' });
     res.json(summary);
@@ -47,7 +47,7 @@ router.get('/:id/bank-export/csv', requireRole(85), exportBankCSV);
 // Admin year-end summary for all employees
 router.get('/tax-summary/org/:year', requireRole(85), async (req, res) => {
   try {
-    const orgId = getOrgId(req) || 'default-tenant';
+    const orgId = getOrgId(req) || 'mcb-ghana-tenant';
     const year = parseInt(req.params.year);
     if (isNaN(year)) return res.status(400).json({ error: 'Invalid year' });
     const summaries = await YearEndSummaryService.getOrganizationSummary(orgId, year);

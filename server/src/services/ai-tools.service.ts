@@ -88,7 +88,7 @@ export const functionDeclarations = [
  * Maps AI tool calls to secure Prisma/Service operations.
  */
 export const executeTool = async (name: string, args: any, user: any) => {
-  const organizationId = user.organizationId || 'default-tenant';
+  const organizationId = user.organizationId || 'mcb-ghana-tenant';
 
   console.log(`[Cortex Agent] Executing Tool: ${name}`, args);
 

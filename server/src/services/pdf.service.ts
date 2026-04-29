@@ -25,7 +25,7 @@ export class PdfExportService {
     type: 'TARGET' | 'APPRAISAL' | 'LEAVE' | 'PAYSLIP' | 'TARGET_ROADMAP' | 'BOARD_REPORT'
   ): Promise<Buffer> {
     const org = await prisma.organization.findUnique({
-      where: { id: organizationId || 'default-tenant' },
+      where: { id: organizationId || 'mcb-ghana-tenant' },
       select: {
         name: true,
         logoUrl: true,
@@ -129,7 +129,7 @@ export class PdfExportService {
             // Resolve absolute URL for relative paths
             let absoluteLogoUrl = org.logoUrl;
             if (!absoluteLogoUrl.startsWith('http')) {
-               const apiOrigin = process.env.VITE_API_URL || 'https://mcb-hrm-ghana.onrender.com';
+               const apiOrigin = process.env.VITE_API_URL || 'https://mcb-hrm-ghana-api.onrender.com';
                absoluteLogoUrl = `${apiOrigin}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
             }
 
@@ -153,7 +153,7 @@ export class PdfExportService {
       .fillColor(primaryColor)
       .fontSize(18)
       .font('Helvetica-Bold')
-      .text(org?.name?.toUpperCase() || 'NEXUS HR PLATFORM', this.SAFE_MARGIN, 43, { align: 'center', width: this.CONTENT_WIDTH })
+      .text(org?.name?.toUpperCase() || 'MCB-HRM Ghana', this.SAFE_MARGIN, 43, { align: 'center', width: this.CONTENT_WIDTH })
       .fontSize(9)
       .font('Helvetica')
       .fillColor('#64748b')

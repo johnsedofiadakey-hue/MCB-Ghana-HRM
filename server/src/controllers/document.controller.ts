@@ -3,7 +3,7 @@ import prisma from '../prisma/client';
 
 export const getEmployeeDocuments = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const docs = await prisma.employeeDocument.findMany({
       where: { employeeId: req.params.id, organizationId },
       orderBy: { uploadedAt: 'desc' }
@@ -20,7 +20,7 @@ export const uploadDocument = async (req: Request, res: Response) => {
     const { title, category, fileUrl } = req.body;
     if (!title || !category || !fileUrl) return res.status(400).json({ error: 'Missing required fields' });
     
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const doc = await prisma.employeeDocument.create({
       data: {
         organizationId,
@@ -39,7 +39,7 @@ export const uploadDocument = async (req: Request, res: Response) => {
 
 export const deleteDocument = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     await prisma.employeeDocument.deleteMany({ 
       where: { id: req.params.id, organizationId } 
     });
@@ -53,7 +53,7 @@ export const deleteDocument = async (req: Request, res: Response) => {
 export const signDocument = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const documentId = req.params.id;
 
     // 1. Fetch user signature

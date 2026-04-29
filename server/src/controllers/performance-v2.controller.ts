@@ -8,7 +8,7 @@ export const createDepartmentKPI = async (req: Request, res: Response) => {
     try {
         const { departmentId, title, description, metricType, targetValue, measurementPeriod } = req.body;
         const orgId = getOrgId(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = (req as any).user;
         const kpi = await prisma.departmentKPI.create({
             data: {
@@ -58,7 +58,7 @@ export const createTeamTarget = async (req: Request, res: Response) => {
     try {
         const { departmentKpiId, title, description, metricType, targetValue, measurementPeriod, teamName } = req.body;
         const orgId = getOrgId(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = (req as any).user;
         const target = await prisma.teamTarget.create({
             data: {
@@ -108,7 +108,7 @@ export const createEmployeeTarget = async (req: Request, res: Response) => {
     try {
         const { teamTargetId, employeeId, title, description, metricType, targetValue, measurementPeriod } = req.body;
         const orgId = getOrgId(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = (req as any).user;
         const target = await prisma.employeeTarget.create({
             data: {
@@ -153,7 +153,7 @@ export const createReview = async (req: Request, res: Response) => {
     try {
         const { employeeId, cycleId, selfReview, selfScore } = req.body;
         const orgId = getOrgId(req);
-        const organizationId = orgId || 'default-tenant';
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const user = (req as any).user;
         const cycle = await prisma.reviewCycle.findFirst({ where: { id: cycleId, organizationId } });
         if (!cycle) return res.status(404).json({ error: 'Review cycle not found' });
@@ -204,7 +204,7 @@ export const directorFinalize = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { directorReview, directorScore, finalScore } = req.body;
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
 
         const review = await prisma.performanceReviewV2.updateMany({
             where: { id, organizationId },

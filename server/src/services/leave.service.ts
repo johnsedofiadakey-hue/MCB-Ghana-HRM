@@ -148,7 +148,7 @@ export class LeaveService {
       if (accept) {
         await tx.handoverRecord.create({
           data: {
-            organizationId: leave.organizationId || 'default-tenant',
+            organizationId: leave.organizationId || 'mcb-ghana-tenant',
             leaveRequestId: leaveId,
             requesterId: leave.employeeId,
             relieverId: relieverId,

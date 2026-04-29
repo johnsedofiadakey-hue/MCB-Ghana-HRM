@@ -2,6 +2,12 @@ import prisma from '../prisma/client';
 type User = any;
 import bcrypt from 'bcryptjs';
 import { maybeEncrypt } from '../utils/encryption';
+import { ROLE_RANK_MAP } from '../types/roles';
+
+const getRankFromRole = (role: string): number => {
+    if (!role) return 40;
+    return ROLE_RANK_MAP[role.toUpperCase()] ?? 40;
+};
 
 const resolveDepartmentId = async (organizationId: string, department?: string, departmentId?: number | null) => {
     if (departmentId !== undefined) return departmentId;
@@ -98,6 +104,7 @@ export const createUser = async (organizationId: string, data: {
             passwordHash,
             employeeCode: safeData.employeeCode,
             status: safeData.status || 'ACTIVE',
+            rank: getRankFromRole(safeData.role || 'STAFF'),
             position: safeData.position || safeData.jobTitle.trim(),
             joinDate: (safeData.joinDate && safeData.joinDate !== null) ? new Date(safeData.joinDate) : null,
             supervisorId: safeData.supervisorId || null,
@@ -321,6 +328,10 @@ export const updateUser = async (
 
     const extractedSecondarySupervisorId = safeData.secondarySupervisorId;
     delete safeData.secondarySupervisorId;
+
+    if (safeData.role) {
+        safeData.rank = getRankFromRole(safeData.role);
+    }
 
     const updatedUser = await prisma.user.update({
         where: { id },

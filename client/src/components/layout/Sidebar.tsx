@@ -120,7 +120,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('nexus_auth_token');
+    const token = localStorage.getItem('mcb_auth_token');
     if (!token || rank < 60) return;
     
     if (rank >= 70) {
@@ -133,9 +133,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
   const handleLogout = () => {
         // Clear MCB HRM Ghana session tokens
-    localStorage.removeItem('nexus_auth_token');
-    localStorage.removeItem('nexus_refresh_token');
-    localStorage.removeItem('nexus_user');
+    localStorage.removeItem('mcb_auth_token');
+    localStorage.removeItem('mcb_refresh_token');
+    localStorage.removeItem('mcb_user');
     
     // Clear legacy tokens to prevent ghost sessions
     localStorage.removeItem('app_auth_token');

@@ -17,7 +17,7 @@ const monthLabel = (year: number, month: number) => {
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const orgId = user?.organizationId || 'default-tenant';
+    const orgId = user?.organizationId || 'mcb-ghana-tenant';
     const userRank = user?.rank || 0;
     const userDeptId = user?.departmentId;
 
@@ -177,7 +177,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
 export const getDashboardPerformance = async (req: Request, res: Response) => {
   try {
-    const orgId = ((req as any).user?.organizationId) || 'default-tenant';
+    const orgId = ((req as any).user?.organizationId) || 'mcb-ghana-tenant';
     const departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
     const deptFilter = departmentId ? { employee: { departmentId } } : {};
 

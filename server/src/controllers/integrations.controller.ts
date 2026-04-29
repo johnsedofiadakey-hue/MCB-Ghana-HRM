@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import prisma from '../prisma/client';
 
-const getOrgId = (req: Request) => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request) => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
 // ── API Keys ───────────────────────────────────────────────────────────────
 

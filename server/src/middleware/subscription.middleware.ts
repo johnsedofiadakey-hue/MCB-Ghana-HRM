@@ -8,7 +8,7 @@ export const subscriptionGuard = async (req: Request, res: Response, next: NextF
     }
 
     const userRole = (req as any).user?.role;
-    const organizationId = (req as any).user?.organizationId || 'default-tenant';
+    const organizationId = (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
     // Developers completely bypass billing lockdowns
     if (userRole === 'DEV') {

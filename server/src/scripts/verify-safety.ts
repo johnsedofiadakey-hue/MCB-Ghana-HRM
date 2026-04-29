@@ -22,7 +22,7 @@ async function verify() {
     targetDate.setDate(targetDate.getDate() + 7);
     
     const settings = await prisma.systemSettings.findFirst({
-      where: { organizationId: 'default-tenant' }
+      where: { organizationId: 'mcb-ghana-tenant' }
     });
 
     if (settings) {

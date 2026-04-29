@@ -30,10 +30,10 @@ export const getDepartments = async (req: Request, res: Response) => {
       orderBy: { name: 'asc' }
     });
 
-    // Fallback: If no departments for current tenant, try to find default-tenant ones
-    if (departments.length === 0 && orgId && orgId !== 'default-tenant') {
+    // Fallback: If no departments for current tenant, try to find mcb-ghana-tenant ones
+    if (departments.length === 0 && orgId && orgId !== 'mcb-ghana-tenant') {
        departments = await prisma.department.findMany({
-         where: { organizationId: 'default-tenant' },
+         where: { organizationId: 'mcb-ghana-tenant' },
          include: {
            manager: { select: { fullName: true, avatarUrl: true, jobTitle: true } },
            employees: { select: { id: true } },
@@ -90,7 +90,7 @@ export const getDepartments = async (req: Request, res: Response) => {
 export const createDepartment = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const { name, managerId } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Department name is required' });
     const existing = await prisma.department.findFirst({ where: { name: name.trim(), organizationId } });

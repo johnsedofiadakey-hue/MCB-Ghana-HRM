@@ -10,7 +10,7 @@ import { notify } from '../services/websocket.service';
 // ─── Templates (Admin) ────────────────────────────────────────────────────
 export const getTemplates = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const templates = await prisma.offboardingTemplate.findMany({
       where: { organizationId },
       include: { tasks: { orderBy: { order: 'asc' } } }
@@ -22,7 +22,7 @@ export const getTemplates = async (req: Request, res: Response) => {
 export const createTemplate = async (req: Request, res: Response) => {
   try {
     const { name, description, tasks } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const template = await prisma.offboardingTemplate.create({
       data: {
         organizationId,
@@ -38,7 +38,7 @@ export const createTemplate = async (req: Request, res: Response) => {
 export const initiateOffboarding = async (req: Request, res: Response) => {
   try {
     const { employeeId, effectiveDate, reason, templateId } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const triggeredById = req.user?.id!;
 
     let template: any = null;
@@ -90,7 +90,7 @@ export const initiateOffboarding = async (req: Request, res: Response) => {
 
 export const getOffboardingList = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const list = await prisma.offboardingProcess.findMany({
       where: { organizationId },
       include: {
@@ -107,7 +107,7 @@ export const getOffboardingList = async (req: Request, res: Response) => {
 export const completeOffboarding = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     // Verify all mandatory clearance items are done
     const processCheck = await prisma.offboardingProcess.findUnique({
@@ -188,7 +188,7 @@ export const updateExitInterview = async (req: Request, res: Response) => {
 export const trackAssetReturn = async (req: Request, res: Response) => {
   try {
     const { offboardingId, assetId, conditionNotes } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     const returnRecord = await prisma.assetReturn.create({
       data: {

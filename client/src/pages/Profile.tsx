@@ -103,11 +103,11 @@ const Profile = () => {
             });
             setSuccess('Profile updated successfully.');
             // Update local storage if fields changed
-            const stored = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+            const stored = JSON.parse(localStorage.getItem('mcb_user') || '{}');
             stored.name = formData.fullName;
             stored.email = formData.email;
             stored.contactNumber = formData.phone;
-            localStorage.setItem('nexus_user', JSON.stringify(stored));
+            localStorage.setItem('mcb_user', JSON.stringify(stored));
         } catch (err: any) {
             setError(err?.response?.data?.error || 'Failed to update profile.');
         } finally {
@@ -216,9 +216,9 @@ const Profile = () => {
                                   const newUrl = res.data.url;
                                   
                                   // Sync Local State
-                                  const stored = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+                                  const stored = JSON.parse(localStorage.getItem('mcb_user') || '{}');
                                   stored.avatar = newUrl;
-                                  localStorage.setItem('nexus_user', JSON.stringify(stored));
+                                  localStorage.setItem('mcb_user', JSON.stringify(stored));
                                   
                                   setSuccess('Avatar updated successfully.');
                                   setTimeout(() => window.location.reload(), 1500); // Allow toast to be seen

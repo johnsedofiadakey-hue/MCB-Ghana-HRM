@@ -42,7 +42,7 @@ export const accrueLeaveBalances = async () => {
   await prisma.$transaction(async (tx) => {
     for (const user of users) {
       const org = await tx.organization.findUnique({ 
-        where: { id: user.organizationId || 'default-tenant' },
+        where: { id: user.organizationId || 'mcb-ghana-tenant' },
         select: { allowLeaveCarryForward: true, carryForwardLimit: true }
       });
 

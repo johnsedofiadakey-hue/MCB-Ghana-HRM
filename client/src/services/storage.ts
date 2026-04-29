@@ -7,18 +7,18 @@
  */
 
 export enum StorageKey {
-  AUTH_TOKEN = 'nexus_auth_token',
-  REFRESH_TOKEN = 'nexus_refresh_token',
-  USER = 'nexus_user',
-  IS_SANDBOX = 'nexus_is_sandbox',
+  AUTH_TOKEN = 'mcb_auth_token',
+  REFRESH_TOKEN = 'mcb_refresh_token',
+  USER = 'mcb_user',
+  IS_SANDBOX = 'mcb_is_sandbox',
   SIDEBAR_COLLAPSED = 'sidebar_collapsed',
-  THEME_PREFERENCE = 'nexus_theme_preference',
-  BRANDING_CACHE = 'nexus_branding_cache',
+  THEME_PREFERENCE = 'mcb_theme_preference',
+  BRANDING_CACHE = 'mcb_branding_cache',
   DISMISSED_ANNOUNCEMENTS = 'dismissed_announcements',
-  LANGUAGE = 'nexus_user_language',
-  DEV_TOKEN = 'nexus_dev_token',
-  DEV_MODE = 'nexus_dev_mode',
-  DEV_FIREBASE_TOKEN = 'nexus_dev_firebase_token'
+  LANGUAGE = 'mcb_user_language',
+  DEV_TOKEN = 'mcb_dev_token',
+  DEV_MODE = 'mcb_dev_mode',
+  DEV_FIREBASE_TOKEN = 'mcb_dev_firebase_token'
 }
 
 class StorageService {

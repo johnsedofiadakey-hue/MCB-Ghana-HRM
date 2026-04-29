@@ -83,6 +83,7 @@ async function main() {
       employeeCode: 'MCB-MD-001',
       organizationId: org.id,
       departmentId: deptMap['HR & Administration'].id,
+      rank: 95
     },
   });
 
@@ -108,6 +109,7 @@ async function main() {
         employeeCode: `MCB-${emp.dept}-${Math.floor(Math.random() * 900) + 100}`,
         organizationId: org.id,
         departmentId: deptMap[emp.dept].id,
+        rank: emp.role === 'MANAGER' ? 70 : 40
       },
     });
   }

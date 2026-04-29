@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function seed() {
   console.log('🌱 Seeding MCB-HRM Ghana (Master Edition)...');
 
-  const orgId = 'default-tenant';
+  const orgId = 'mcb-ghana-tenant';
   const commonPass = await bcrypt.hash('unlockme', 12);
 
   // 1. System Developer (You)

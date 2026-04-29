@@ -27,8 +27,8 @@ const AttendanceKiosk = () => {
         setResult(null);
         try {
             // Get kiosk settings or default orgId
-            const userData = JSON.parse(localStorage.getItem('nexus_user') || '{}');
-            const organizationId = userData.organizationId || 'default-tenant';
+            const userData = JSON.parse(localStorage.getItem('mcb_user') || '{}');
+            const organizationId = userData.organizationId || 'mcb-ghana-tenant';
 
             const res = await api.post('/attendance/kiosk-punch', {
                 employeeCode: code,

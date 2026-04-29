@@ -3,7 +3,7 @@ import prisma from '../prisma/client';
 import { PdfExportService } from '../services/pdf.service';
 import { errorLogger } from '../services/error-log.service';
 
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
 export const exportTargetPdf = async (req: Request, res: Response) => {
   try {

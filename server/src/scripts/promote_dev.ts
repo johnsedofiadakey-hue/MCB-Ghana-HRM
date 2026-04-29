@@ -25,7 +25,7 @@ async function main() {
     where: { id: user.id },
     data: { 
       role: 'DEV',
-      organizationId: 'default-tenant' // Force them into the default tenant as well
+      organizationId: 'mcb-ghana-tenant' // Force them into the default tenant as well
     }
   });
 

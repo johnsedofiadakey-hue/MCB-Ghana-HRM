@@ -56,7 +56,8 @@ export class DemoSeederService {
         organizationId,
         jobTitle: 'Chief Executive Officer',
         avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-        departmentId: execDeptId
+        departmentId: execDeptId,
+        rank: 95
       }
     });
 
@@ -81,6 +82,7 @@ export class DemoSeederService {
           organizationId,
           jobTitle: s.title,
           departmentId: deptId,
+          rank: s.role === 'MANAGER' ? 70 : 40,
           avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.name.split(' ')[0]}`
         }
       });

@@ -17,7 +17,7 @@ async function main() {
     update: {
       passwordHash,
       role: 'DEV',
-      organizationId: 'default-tenant',
+      organizationId: 'mcb-ghana-tenant',
       status: 'ACTIVE'
     },
     create: {
@@ -25,7 +25,7 @@ async function main() {
       fullName,
       passwordHash,
       role: 'DEV',
-      organizationId: 'default-tenant',
+      organizationId: 'mcb-ghana-tenant',
       status: 'ACTIVE',
       jobTitle: 'Lead Developer'
     }

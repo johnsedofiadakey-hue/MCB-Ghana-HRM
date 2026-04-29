@@ -63,7 +63,7 @@ const AuditLogs = () => {
         </div>
         <div className="flex items-center gap-4">
           <button 
-             onClick={() => window.open(`${api.defaults.baseURL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/audit/export?token=${localStorage.getItem('nexus_token')}`, '_blank')}
+             onClick={() => window.open(`${api.defaults.baseURL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/audit/export?token=${localStorage.getItem('mcb_token')}`, '_blank')}
              className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg shadow-[var(--primary)]/20 hover:scale-105 transition-all"
           >
              <Download size={16} /> {t('audit.export_csv', 'Export CSV')}

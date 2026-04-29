@@ -14,11 +14,11 @@ export class RenewalService {
     console.log('[RenewalService] Auditing infrastructure expiry dates...');
     
     const settings = await prisma.systemSettings.findFirst({
-      where: { organizationId: 'default-tenant' }
+      where: { organizationId: 'mcb-ghana-tenant' }
     });
 
     if (!settings) {
-      console.warn('[RenewalService] No system settings found for default-tenant.');
+      console.warn('[RenewalService] No system settings found for mcb-ghana-tenant.');
       return;
     }
 

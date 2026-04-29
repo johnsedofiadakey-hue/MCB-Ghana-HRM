@@ -54,7 +54,7 @@ export const logAction = async (
     await prisma.auditLog.create({
       data: {
         userId: p.userId || null,
-        organizationId: p.organizationId || 'default-tenant',
+        organizationId: p.organizationId || 'mcb-ghana-tenant',
         action: p.action,
         entity: p.entity,
         entityId: p.entityId || null,

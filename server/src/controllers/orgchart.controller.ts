@@ -5,7 +5,7 @@ import prisma from '../prisma/client';
 export const getHierarchy = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
 
     const users = await prisma.user.findMany({
       where: {

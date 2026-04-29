@@ -38,7 +38,7 @@ export const createKpiSheet = async (req: Request, res: Response) => {
   try {
     const { title, employeeId, targetDepartmentId, isTemplate, month, year, items } = req.body;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const user = (req as any).user;
     const reviewerId = user.id;
     const reviewerRole = user.role;
@@ -390,7 +390,7 @@ export const getAllSheets = async (req: Request, res: Response) => {
 export const getDepartmentalSummary = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
 
     const departments = await prisma.department.findMany({
       where: { organizationId },
@@ -455,7 +455,7 @@ export const getDepartmentalSummary = async (req: Request, res: Response) => {
 export const getIndividualSummary = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const user = (req as any).user;
 
     const userRank = getRoleRank(user.role);
@@ -517,7 +517,7 @@ export const getIndividualSummary = async (req: Request, res: Response) => {
 export const getStrategicMandates = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const { departmentId, month, year } = req.query;
 
     const mandates = await prisma.kpiSheet.findMany({
@@ -547,7 +547,7 @@ export const assignFromTemplate = async (req: Request, res: Response) => {
   try {
     const { templateId, employeeId, month, year } = req.body;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const user = (req as any).user;
 
     const template = await prisma.kpiSheet.findFirst({

@@ -6,7 +6,7 @@ import { ReceiptService } from '../services/receipt.service';
 
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
 export const initializePayment = async (req: Request, res: Response) => {
   try {
@@ -15,7 +15,7 @@ export const initializePayment = async (req: Request, res: Response) => {
     
     // Fetch global master config for Paystack keys
     const masterSettings = await prisma.systemSettings.findFirst({
-      where: { organizationId: 'default-tenant' }
+      where: { organizationId: 'mcb-ghana-tenant' }
     });
 
     const secretKey = masterSettings?.paystackSecretKey || PAYSTACK_SECRET;
@@ -42,7 +42,7 @@ export const initializePayment = async (req: Request, res: Response) => {
     const response = await axios.post(
       'https://api.paystack.co/transaction/initialize',
       {
-        email: userReq.email || 'billing@hrm-enterprise.cloud',
+        email: userReq.email || 'billing@mcb-ghana-hrm.com',
         amount: Math.round(Number(amount) * 100), // In pesewas
         callback_url: `${process.env.FRONTEND_URL}/billing/callback`,
         metadata: {
@@ -136,7 +136,7 @@ export const manualBillingOverride = async (req: Request, res: Response) => {
 export const getPaymentStatus = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const organizationId = user.organizationId || 'mcb-ghana-tenant';
 
      const [org, settings, masterSettings] = await Promise.all([
       prisma.organization.findUnique({
@@ -163,7 +163,7 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
         }
       }),
       prisma.systemSettings.findFirst({
-        where: { organizationId: 'default-tenant' }
+        where: { organizationId: 'mcb-ghana-tenant' }
       })
 
     ]);
@@ -210,7 +210,7 @@ export const downloadReceipt = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const orgId = getOrgId(req);
-    await ReceiptService.generateSubscriptionReceipt(id, orgId || 'default-tenant', res);
+    await ReceiptService.generateSubscriptionReceipt(id, orgId || 'mcb-ghana-tenant', res);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

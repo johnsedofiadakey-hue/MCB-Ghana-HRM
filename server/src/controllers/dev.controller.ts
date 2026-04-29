@@ -42,7 +42,7 @@ export const getSystemStats = async (req: Request, res: Response) => {
     });
 
     const masterSettings = await prisma.systemSettings.findFirst({
-      where: { organizationId: 'default-tenant' }
+      where: { organizationId: 'mcb-ghana-tenant' }
     }).catch(() => null);
 
     res.json({
@@ -602,7 +602,7 @@ export const provisionClient = async (req: Request, res: Response) => {
       credentials: {
         email: normalizedEmail,
         password: rawPassword,
-        loginUrl: 'https://nexus-hr-platform.web.app/login',
+        loginUrl: 'https://mcb-hrm-ghana.web.app/login',
       },
     });
   } catch (err: any) {

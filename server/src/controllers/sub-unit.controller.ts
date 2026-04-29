@@ -8,7 +8,7 @@ export const getSubUnits = async (req: Request, res: Response) => {
     const { departmentId } = req.query;
     
     const whereClause: any = {
-      organizationId: orgId || 'default-tenant'
+      organizationId: orgId || 'mcb-ghana-tenant'
     };
     
     if (departmentId) {
@@ -46,7 +46,7 @@ export const getSubUnits = async (req: Request, res: Response) => {
 export const createSubUnit = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const { name, departmentId, managerId } = req.body;
     
     if (!name?.trim()) return res.status(400).json({ error: 'Sub-unit name is required' });
@@ -83,7 +83,7 @@ export const updateSubUnit = async (req: Request, res: Response) => {
     const subUnit = await prisma.subUnit.update({
       where: { 
         id: req.params.id,
-        organizationId: orgId || 'default-tenant'
+        organizationId: orgId || 'mcb-ghana-tenant'
       },
       data: {
         ...(name?.trim() ? { name: name.trim() } : {}),
@@ -108,7 +108,7 @@ export const deleteSubUnit = async (req: Request, res: Response) => {
     await prisma.subUnit.deleteMany({
       where: { 
         id: subUnitId,
-        organizationId: orgId || 'default-tenant'
+        organizationId: orgId || 'mcb-ghana-tenant'
       }
     });
     

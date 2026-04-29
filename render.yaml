@@ -1,12 +1,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Nexus HR Platform — Render Deployment Configuration
+# MCB-HRM Ghana — Render Deployment Configuration
 # Last Sync: Identity & Branding Finalized (Nationality Shift)
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
   # ── Backend API ─────────────────────────────────────────────────────────────
   - type: web
-    name: nexus-hr-platform-api
+    name: mcb-hrm-ghana-api
     env: node
     plan: free             # Free tier for testing phase
     region: oregon         # Changed to match database region
@@ -35,7 +35,7 @@ services:
 
   # ── Frontend (Static Site) ──────────────────────────────────────────────────
   - type: web
-    name: nexus-hr-platform-client
+    name: mcb-hrm-ghana-client
     env: static
     buildCommand: cd client && npm install --no-audit --no-fund && npm run build
     staticPublishPath: client/dist
@@ -49,4 +49,4 @@ services:
         destination: /index.html   # SPA fallback for React Router
     envVars:
       - key: VITE_API_URL
-        sync: false               # Set to your API service URL, e.g. https://nexus-hr-platform-api.onrender.com
+        sync: false               # Set to your API service URL, e.g. https://mcb-hrm-ghana-api.onrender.com/api

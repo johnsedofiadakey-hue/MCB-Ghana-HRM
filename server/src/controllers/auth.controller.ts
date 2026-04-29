@@ -22,7 +22,7 @@ const REFRESH_TOKEN_WINDOW_HOURS = 24; // Standard 24-hour workday session
 const isStrongPassword = (pass: string) => 
   /^(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/.test(pass);
 
-const signAccessToken = (payload: { id: string; role: string; name: string; status: string; organizationId: string }) =>
+const signAccessToken = (payload: { id: string; role: string; name: string; status: string; organizationId: string; rank: number }) =>
   jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
 
 const hashToken = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
@@ -44,7 +44,7 @@ const safeLogSecurityEvent = async (params: {
     const meta = getClientMeta(req);
     await prisma.loginSecurityEvent.create({
       data: {
-        organizationId: organizationId || 'default-tenant',
+        organizationId: organizationId || 'mcb-ghana-tenant',
         email: email.toLowerCase().trim(),
         success,
         reason,
@@ -66,7 +66,7 @@ const issueRefreshToken = async (userId: string, organizationId: string, req: Re
   await prisma.refreshToken.create({
     data: {
       userId,
-      organizationId: organizationId || 'default-tenant',
+      organizationId: organizationId || 'mcb-ghana-tenant',
       tokenHash,
       ipAddress: meta.ipAddress,
       userAgent: meta.userAgent,
@@ -91,20 +91,20 @@ export const login = async (req: Request, res: Response) => {
       where: { email: normalizedEmail },
       select: { id: true, email: true, fullName: true, role: true, status: true, 
                 passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true,
-                departmentId: true }
+                departmentId: true, rank: true }
     });
 
     if (!user) {
-      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'default-tenant', reason: 'USER_NOT_FOUND', req });
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'mcb-ghana-tenant', reason: 'USER_NOT_FOUND', req });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     if (user.status === 'TERMINATED') {
-      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'default-tenant', reason: 'ACCOUNT_TERMINATED', req });
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'ACCOUNT_TERMINATED', req });
       return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
     }
 
-    const orgId = user.organizationId || 'default-tenant';
+    const orgId = user.organizationId || 'mcb-ghana-tenant';
     // CROSS-TENANT VALIDATION DISABLED FOR STANDALONE MODE
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -119,7 +119,8 @@ export const login = async (req: Request, res: Response) => {
       role: user.role,
       name: user.fullName,
       status: user.status || 'ACTIVE',
-      organizationId: orgId
+      organizationId: orgId,
+      rank: user.rank || getRoleRank(user.role)
     });
     let refreshToken;
     try {
@@ -141,7 +142,7 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
         jobTitle: user.jobTitle,
-        rank: getRoleRank(user.role),
+        rank: user.rank || getRoleRank(user.role),
         organizationId: orgId,
         avatar: user.avatarUrl,
         departmentId: user.departmentId,
@@ -193,23 +194,24 @@ export const ssoLogin = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'default-tenant', reason: 'SSO_USER_NOT_FOUND', req });
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'mcb-ghana-tenant', reason: 'SSO_USER_NOT_FOUND', req });
       return res.status(401).json({ error: `The SSO email (${normalizedEmail}) is not registered in our HR records.` });
     }
 
     if (user.status === 'TERMINATED') {
-      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'default-tenant', reason: 'SSO_ACCOUNT_TERMINATED', req });
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'SSO_ACCOUNT_TERMINATED', req });
       return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
     }
 
-    const orgId = user.organizationId || 'default-tenant';
+    const orgId = user.organizationId || 'mcb-ghana-tenant';
 
     const token = signAccessToken({
       id: user.id,
       role: user.role,
       name: user.fullName,
       status: user.status || 'ACTIVE',
-      organizationId: orgId
+      organizationId: orgId,
+      rank: user.rank || getRoleRank(user.role)
     });
     
     // In SSO, we also issue our Native Refresh token so they don't have to keep doing the OAuth popup.
@@ -266,7 +268,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Account unavailable' });
     }
 
-    const orgId = user.organizationId || 'default-tenant';
+    const orgId = user.organizationId || 'mcb-ghana-tenant';
 
     // Rotate refresh token for security
     await prisma.refreshToken.update({ where: { id: found.id }, data: { revokedAt: new Date() } });
@@ -276,7 +278,8 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       role: user.role,
       name: user.fullName,
       status: user.status || 'ACTIVE',
-      organizationId: orgId
+      organizationId: orgId,
+      rank: user.rank || getRoleRank(user.role)
     });
 
     return res.json({
@@ -608,8 +611,8 @@ export const sandboxLogin = async (req: Request, res: Response) => {
       organization = await prisma.organization.create({
         data: {
           id: SANDBOX_ORG_ID,
-          name: 'Stormglide Corporate Simulation',
-          subtitle: 'MCB-HRM Ghana Sandbox',
+          name: 'MCB-HRM Ghana Sandbox',
+          subtitle: 'Institutional HR Simulation',
           city: 'Global',
           country: 'Cloud',
           themePreset: 'nexus-dark',
@@ -645,7 +648,8 @@ export const sandboxLogin = async (req: Request, res: Response) => {
       role: 'MD',
       name: targetUser.fullName || 'Sandbox Operator',
       status: 'ACTIVE',
-      organizationId: SANDBOX_ORG_ID
+      organizationId: SANDBOX_ORG_ID,
+      rank: getRoleRank('MD')
     });
 
     const refreshToken = await issueRefreshToken(targetUser.id, SANDBOX_ORG_ID, req);

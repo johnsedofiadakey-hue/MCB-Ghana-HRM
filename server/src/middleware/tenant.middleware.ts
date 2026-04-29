@@ -4,7 +4,7 @@ import prisma from '../prisma/client';
 export const resolveTenant = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // STANDALONE MODE: Everything is consolidated into the primary organization
-    const DEFAULT_ORG_ID = 'default-tenant';
+    const DEFAULT_ORG_ID = 'mcb-ghana-tenant';
     
     (req as any).organizationId = DEFAULT_ORG_ID;
     

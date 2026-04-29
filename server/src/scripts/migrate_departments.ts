@@ -9,7 +9,7 @@ import { getOrgId } from '../controllers/enterprise.controller';
 export const migrateDepartmentsToTenant = async (req: Request, res: Response) => {
   try {
     const targetOrgId = getOrgId(req);
-    if (!targetOrgId || targetOrgId === 'default-tenant') {
+    if (!targetOrgId || targetOrgId === 'mcb-ghana-tenant') {
        return res.status(400).json({ error: 'Cannot migrate to default or undefined tenant' });
     }
 
@@ -18,7 +18,7 @@ export const migrateDepartmentsToTenant = async (req: Request, res: Response) =>
       where: {
         OR: [
           { organizationId: null },
-          { organizationId: 'default-tenant' }
+          { organizationId: 'mcb-ghana-tenant' }
         ]
       },
       data: { organizationId: targetOrgId }
@@ -28,7 +28,7 @@ export const migrateDepartmentsToTenant = async (req: Request, res: Response) =>
     // (Assuming DepartmentKPI also needs matching organizationId)
     const kpiUpdate = await prisma.departmentKPI.updateMany({
       where: {
-        organizationId: 'default-tenant'
+        organizationId: 'mcb-ghana-tenant'
       },
       data: { organizationId: targetOrgId }
     });

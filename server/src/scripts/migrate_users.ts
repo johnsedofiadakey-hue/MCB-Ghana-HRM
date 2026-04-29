@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Migrating all users to default-tenant...');
+  console.log('Migrating all users to mcb-ghana-tenant...');
 
   const result = await prisma.user.updateMany({
     where: {
@@ -13,11 +13,11 @@ async function main() {
       ]
     },
     data: {
-      organizationId: 'default-tenant'
+      organizationId: 'mcb-ghana-tenant'
     }
   });
 
-  console.log(`Successfully migrated ${result.count} users to default-tenant.`);
+  console.log(`Successfully migrated ${result.count} users to mcb-ghana-tenant.`);
 }
 
 main()

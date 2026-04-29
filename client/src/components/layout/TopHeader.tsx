@@ -40,9 +40,9 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
 
     const handleLogout = () => {
         // Clear MCB HRM Ghana session tokens
-        localStorage.removeItem('nexus_auth_token');
-        localStorage.removeItem('nexus_refresh_token');
-        localStorage.removeItem('nexus_user');
+        localStorage.removeItem('mcb_auth_token');
+        localStorage.removeItem('mcb_refresh_token');
+        localStorage.removeItem('mcb_user');
         
         // Clear legacy tokens to prevent ghost sessions
         localStorage.removeItem('app_auth_token');

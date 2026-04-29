@@ -4,7 +4,7 @@ import { getOrgId } from './enterprise.controller';
 
 export const getInboxActions = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
     
     const actions = await InboxService.getActions(organizationId, userId);

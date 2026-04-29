@@ -6,9 +6,9 @@ import { storage, StorageKey } from '../services/storage';
 import { toast } from '../utils/toast';
 
 const PERSONAS = [
-  { id: 'director', label: 'Director (MD)', role: 'DIRECTOR', email: 'director@nexus-demo.com', desc: 'Full Enterprise Oversight', icon: Shield, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-  { id: 'manager', label: 'Department Manager', role: 'MANAGER', email: 'manager@nexus-demo.com', desc: 'Team & Ops Command', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { id: 'staff', label: 'Staff Member', role: 'EMPLOYEE', email: 'staff@nexus-demo.com', desc: 'Personal Workflow', icon: Briefcase, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  { id: 'director', label: 'Director (MD)', role: 'DIRECTOR', email: 'director@mcb-demo.com', desc: 'Full Enterprise Oversight', icon: Shield, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+  { id: 'manager', label: 'Department Manager', role: 'MANAGER', email: 'manager@mcb-demo.com', desc: 'Team & Ops Command', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { id: 'staff', label: 'Staff Member', role: 'EMPLOYEE', email: 'staff@mcb-demo.com', desc: 'Personal Workflow', icon: Briefcase, color: 'text-amber-500', bg: 'bg-amber-500/10' },
 ];
 
 const DemoPersonaSwitcher = () => {
@@ -17,7 +17,7 @@ const DemoPersonaSwitcher = () => {
   const user = storage.getItem(StorageKey.USER, {});
   
   // Only show for demo accounts
-  if (!user?.email?.includes('nexus-demo.com') && !user?.email?.includes('guest')) return null;
+  if (!user?.email?.includes('mcb-demo.com') && !user?.email?.includes('guest')) return null;
 
   const handleSwitch = async (persona: typeof PERSONAS[0]) => {
     setSwitching(persona.id);
@@ -38,7 +38,7 @@ const DemoPersonaSwitcher = () => {
       toast.error('Failed to warp identity. Trying default demo...');
       try {
           // Fallback to guest
-          const res = await api.post('/auth/login', { email: 'guest@nexus-demo.com', password: 'nexusdemo' });
+          const res = await api.post('/auth/login', { email: 'guest@mcb-demo.com', password: 'nexusdemo' });
           storage.setItem(StorageKey.AUTH_TOKEN, res.data.token);
           window.location.reload();
       } catch {

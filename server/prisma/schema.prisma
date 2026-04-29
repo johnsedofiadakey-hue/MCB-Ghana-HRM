@@ -3,13 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model KpiSheet {
   id                 String    @id @default(uuid())
-  organizationId     String?   @default("default-tenant")
+  organizationId     String?   @default("mcb-ghana-tenant")
   month              Int
   year               Int
   lockedAt           DateTime?
@@ -34,7 +34,7 @@ model KpiSheet {
 
 model KpiItem {
   id             String      @id @default(uuid())
-  organizationId String?     @default("default-tenant")
+  organizationId String?     @default("mcb-ghana-tenant")
   name           String
   description    String      @default("")
   category       String      @default("General")
@@ -57,7 +57,7 @@ model KpiItem {
 
 model Target {
   id                 String                  @id @default(uuid())
-  organizationId     String?                 @default("default-tenant")
+  organizationId     String?                 @default("mcb-ghana-tenant")
   title              String
   description        String?
   level              String                  @default("INDIVIDUAL")
@@ -95,7 +95,7 @@ model Target {
 
 model TargetMetric {
   id                String         @id @default(uuid())
-  organizationId    String?        @default("default-tenant")
+  organizationId    String?        @default("mcb-ghana-tenant")
   targetId          String
   title             String
   description       String?
@@ -114,7 +114,7 @@ model TargetMetric {
 
 model TargetAcknowledgement {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   targetId       String
   userId         String
   status         String   @default("ACKNOWLEDGED")
@@ -128,7 +128,7 @@ model TargetAcknowledgement {
 
 model TargetUpdate {
   id             String        @id @default(uuid())
-  organizationId String?       @default("default-tenant")
+  organizationId String?       @default("mcb-ghana-tenant")
   targetId       String
   metricId       String?
   submittedById  String
@@ -145,7 +145,7 @@ model TargetUpdate {
 
 model Asset {
   id                String            @id @default(uuid())
-  organizationId    String?           @default("default-tenant")
+  organizationId    String?           @default("mcb-ghana-tenant")
   name              String
   description       String?
   isCompanyProperty Boolean           @default(true)
@@ -166,7 +166,7 @@ model Asset {
 
 model AuditLog {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   userId         String?
   action         String?
   entity         String?
@@ -183,7 +183,7 @@ model AuditLog {
 
 model EmployeeHistory {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   employeeId     String?
   createdById    String?
   title          String?
@@ -203,7 +203,7 @@ model EmployeeHistory {
 
 model ApiUsage {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   path           String
   method         String
   statusCode     Int
@@ -218,7 +218,7 @@ model ApiUsage {
 
 model AssetAssignment {
   id                String    @id @default(uuid())
-  organizationId    String?   @default("default-tenant")
+  organizationId    String?   @default("mcb-ghana-tenant")
   returnedAt        DateTime?
   details           String?
   status            String?   @default("OPEN")
@@ -243,6 +243,7 @@ model User {
   passwordHash                String
   fullName                    String
   role                        String                  @default("STAFF")
+  rank                        Int                     @default(40)
   employeeCode                String?
   status                      String                  @default("ACTIVE")
   position                    String?
@@ -286,7 +287,7 @@ model User {
   supervisorId                String?
   isArchived                  Boolean                 @default(false)
   archivedDate                DateTime?
-  organizationId              String?                 @default("default-tenant")
+  organizationId              String?                 @default("mcb-ghana-tenant")
   biometricId                 String?
   countryOfOrigin             String?
   hasManualLeaveOverride      Boolean                 @default(false)
@@ -368,7 +369,7 @@ model User {
 
 model CompensationHistory {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   employeeId     String
   type           String
   previousSalary Decimal
@@ -385,7 +386,7 @@ model CompensationHistory {
 
 model PasswordResetToken {
   id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
+  organizationId String?   @default("mcb-ghana-tenant")
   userId         String
   token          String    @unique
   expiresAt      DateTime
@@ -398,7 +399,7 @@ model PasswordResetToken {
 
 model EmployeeDocument {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   employeeId     String
   title          String
   category       String
@@ -411,7 +412,7 @@ model EmployeeDocument {
 
 model EmployeeQuery {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   employeeId     String
   issuedById     String
   subject        String
@@ -428,7 +429,7 @@ model EmployeeQuery {
 
 model Department {
   id             Int             @id @default(autoincrement())
-  organizationId String?         @default("default-tenant")
+  organizationId String?         @default("mcb-ghana-tenant")
   name           String
   managerId      String?
   createdAt      DateTime        @default(now())
@@ -447,7 +448,7 @@ model Department {
 
 model SubUnit {
   id             String     @id @default(uuid())
-  organizationId String?    @default("default-tenant")
+  organizationId String?    @default("mcb-ghana-tenant")
   name           String
   departmentId   Int
   managerId      String?
@@ -465,7 +466,7 @@ model SubUnit {
 
 model LeaveRequest {
   id                         String           @id @default(uuid())
-  organizationId             String?          @default("default-tenant")
+  organizationId             String?          @default("mcb-ghana-tenant")
   employeeId                 String
   startDate                  DateTime
   endDate                    DateTime
@@ -500,7 +501,7 @@ model LeaveRequest {
 
 model HandoverRecord {
   id             String       @id @default(uuid())
-  organizationId String?      @default("default-tenant")
+  organizationId String?      @default("mcb-ghana-tenant")
   leaveRequestId String
   requesterId    String
   relieverId     String
@@ -519,7 +520,7 @@ model HandoverRecord {
 
 model Cycle {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   name           String
   type           String
   startDate      DateTime
@@ -545,7 +546,7 @@ model ReviewCycle {
 
 model Announcement {
   id             String      @id @default(uuid())
-  organizationId String?     @default("default-tenant")
+  organizationId String?     @default("mcb-ghana-tenant")
   title          String
   content        String
   createdById    String
@@ -564,7 +565,7 @@ model Announcement {
 
 model AppraisalCycle {
   id             String            @id @default(uuid())
-  organizationId String?           @default("default-tenant")
+  organizationId String?           @default("mcb-ghana-tenant")
   title          String
   period         String
   startDate      DateTime
@@ -579,7 +580,7 @@ model AppraisalCycle {
 
 model AppraisalPacket {
   id                 String            @id @default(uuid())
-  organizationId     String?           @default("default-tenant")
+  organizationId     String?           @default("mcb-ghana-tenant")
   cycleId            String
   employeeId         String
   currentStage       String            @default("SELF_REVIEW")
@@ -612,7 +613,7 @@ model AppraisalPacket {
 
 model AppraisalReview {
   id               String          @id @default(uuid())
-  organizationId   String?         @default("default-tenant")
+  organizationId   String?         @default("mcb-ghana-tenant")
   packetId         String
   reviewerId       String
   reviewStage      String
@@ -667,7 +668,7 @@ model Organization {
   sidebarActive          String?               @default("#1e293b")
   sidebarText            String?               @default("#ffffff")
   subtitle               String                @default("HRM OS")
-  themePreset            String                @default("nexus-dark")
+  themePreset            String                @default("premium-monolith")
   lightMode              Boolean               @default(false)
   language               String                @default("en")
   discountPercentage     Decimal?              @default(0)
@@ -701,7 +702,7 @@ model Organization {
   idCardShowQrCode       Boolean               @default(true)
   idCardOrientation      String?               @default("VERTICAL")
   idCardTheme            String?               @default("DARK")
-  idCardBackMessage      String?               @db.Text
+  idCardBackMessage      String?
   idCardSecurityText     String?               @default("Terms of Use")
   attendanceScanningEnabled Boolean           @default(false)
   attendanceApiKey       String?               @unique
@@ -746,7 +747,7 @@ model SystemSettings {
 
 model Notification {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   userId         String
   title          String
   message        String
@@ -761,7 +762,7 @@ model Notification {
 
 model PayrollRun {
   id             String        @id @default(uuid())
-  organizationId String?       @default("default-tenant")
+  organizationId String?       @default("mcb-ghana-tenant")
   period         String
   month          Int
   year           Int
@@ -784,7 +785,7 @@ model PayrollRun {
 
 model PayrollItem {
   id              String     @id @default(uuid())
-  organizationId  String?    @default("default-tenant")
+  organizationId  String?    @default("mcb-ghana-tenant")
   runId           String
   employeeId      String
   baseSalary      Decimal
@@ -808,7 +809,7 @@ model PayrollItem {
 
 model OnboardingTemplate {
   id             String              @id @default(uuid())
-  organizationId String?             @default("default-tenant")
+  organizationId String?             @default("mcb-ghana-tenant")
   name           String
   description    String?
   isDefault      Boolean             @default(false)
@@ -821,7 +822,7 @@ model OnboardingTemplate {
 
 model OnboardingTask {
   id             String             @id @default(uuid())
-  organizationId String?            @default("default-tenant")
+  organizationId String?            @default("mcb-ghana-tenant")
   templateId     String
   title          String
   description    String?
@@ -836,7 +837,7 @@ model OnboardingTask {
 
 model OnboardingSession {
   id             String             @id @default(uuid())
-  organizationId String?            @default("default-tenant")
+  organizationId String?            @default("mcb-ghana-tenant")
   employeeId     String
   templateId     String
   startDate      DateTime           @default(now())
@@ -852,7 +853,7 @@ model OnboardingSession {
 
 model OnboardingItem {
   id             String            @id @default(uuid())
-  organizationId String?           @default("default-tenant")
+  organizationId String?           @default("mcb-ghana-tenant")
   sessionId      String
   taskId         String
   title          String
@@ -869,7 +870,7 @@ model OnboardingItem {
 
 model TrainingProgram {
   id             String               @id @default(uuid())
-  organizationId String?              @default("default-tenant")
+  organizationId String?              @default("mcb-ghana-tenant")
   title          String
   description    String?
   provider       String?
@@ -889,7 +890,7 @@ model TrainingProgram {
 
 model TrainingEnrollment {
   id             String          @id @default(uuid())
-  organizationId String?         @default("default-tenant")
+  organizationId String?         @default("mcb-ghana-tenant")
   programId      String
   employeeId     String
   enrolledAt     DateTime        @default(now())
@@ -906,7 +907,7 @@ model TrainingEnrollment {
 
 model PublicHoliday {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   name           String
   date           DateTime
   country        String   @default("GH")
@@ -919,7 +920,7 @@ model PublicHoliday {
 
 model Subscription {
   id                 String    @id @default(uuid())
-  organizationId     String?   @default("default-tenant")
+  organizationId     String?   @default("mcb-ghana-tenant")
   clientId           String
   plan               String    @default("MONTHLY")
   priceGHS           Decimal?
@@ -943,7 +944,7 @@ model Subscription {
 
 model Loan {
   id                String            @id @default(uuid())
-  organizationId    String?           @default("default-tenant")
+  organizationId    String?           @default("mcb-ghana-tenant")
   employeeId        String
   type              String            @default("ADVANCE")
   principalAmount   Decimal
@@ -967,7 +968,7 @@ model Loan {
 
 model LoanInstallment {
   id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
+  organizationId String?   @default("mcb-ghana-tenant")
   loanId         String
   amount         Decimal
   deductedRunId  String?
@@ -982,7 +983,7 @@ model LoanInstallment {
 
 model ExpenseClaim {
   id              String    @id @default(uuid())
-  organizationId  String?   @default("default-tenant")
+  organizationId  String?   @default("mcb-ghana-tenant")
   employeeId      String
   title           String
   description     String?
@@ -1004,7 +1005,7 @@ model ExpenseClaim {
 
 model AttendanceLog {
   id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
+  organizationId String?   @default("mcb-ghana-tenant")
   employeeId     String
   date           DateTime
   clockIn        DateTime?
@@ -1025,7 +1026,7 @@ model AttendanceLog {
 
 model SaasSubscription {
   id              String    @id @default(uuid())
-  organizationId  String?   @default("default-tenant")
+  organizationId  String?   @default("mcb-ghana-tenant")
   clientId        String
   plan            String    @default("MONTHLY")
   status          String    @default("ACTIVE")
@@ -1042,7 +1043,7 @@ model SaasSubscription {
 
 model BackupLog {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   filename       String
   sizeBytes      Int
   status         String   @default("SUCCESS")
@@ -1380,7 +1381,7 @@ model AssetReturn {
 
 model OffboardingTemplate {
   id             String               @id @default(uuid())
-  organizationId String?              @default("default-tenant")
+  organizationId String?              @default("mcb-ghana-tenant")
   name           String
   description    String?
   createdAt      DateTime             @default(now())
@@ -1392,7 +1393,7 @@ model OffboardingTemplate {
 
 model OffboardingTask {
   id             String              @id @default(uuid())
-  organizationId String?             @default("default-tenant")
+  organizationId String?             @default("mcb-ghana-tenant")
   templateId     String
   title          String
   description    String?
@@ -1407,7 +1408,7 @@ model OffboardingTask {
 
 model OffboardingItem {
   id             String             @id @default(uuid())
-  organizationId String?            @default("default-tenant")
+  organizationId String?            @default("mcb-ghana-tenant")
   offboardingId  String
   title          String
   category       String
@@ -1533,7 +1534,7 @@ model TaxBracket {
 
 model SystemLog {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   type           String?
   message        String?
   action         String?
@@ -1551,7 +1552,7 @@ model SystemLog {
 
 model EmployeeReporting {
   id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
+  organizationId String?   @default("mcb-ghana-tenant")
   employeeId     String
   managerId      String
   type           String    @default("DIRECT")
@@ -1569,7 +1570,7 @@ model EmployeeReporting {
 
 model KpiUpdate {
   id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
+  organizationId String?  @default("mcb-ghana-tenant")
   kpiItemId      String
   value          Decimal
   comment        String?
@@ -1583,7 +1584,7 @@ model KpiUpdate {
 
 model SupportTicket {
   id             String          @id @default(uuid())
-  organizationId String?         @default("default-tenant")
+  organizationId String?         @default("mcb-ghana-tenant")
   subject        String
   description    String
   category       String
@@ -1603,7 +1604,7 @@ model SupportTicket {
 
 model TicketComment {
   id             String        @id @default(uuid())
-  organizationId String?       @default("default-tenant")
+  organizationId String?       @default("mcb-ghana-tenant")
   ticketId       String
   userId         String
   content        String
@@ -1634,7 +1635,7 @@ model Lead {
 
 model DisciplinaryCase {
   id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
+  organizationId String?   @default("mcb-ghana-tenant")
   employeeId     String
   issuedById     String
   type           String
@@ -1659,7 +1660,7 @@ model DisciplinaryCase {
 
 model PolicyDocument {
   id              String                 @id @default(uuid())
-  organizationId  String?                @default("default-tenant")
+  organizationId  String?                @default("mcb-ghana-tenant")
   title           String
   description     String?
   content         String?
@@ -1682,7 +1683,7 @@ model PolicyDocument {
 
 model PolicyAcknowledgment {
   id             String         @id @default(uuid())
-  organizationId String?        @default("default-tenant")
+  organizationId String?        @default("mcb-ghana-tenant")
   policyId       String
   employeeId     String
   acknowledgedAt DateTime       @default(now())
@@ -1697,7 +1698,7 @@ model PolicyAcknowledgment {
 
 model ProbationRecord {
   id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
+  organizationId String?   @default("mcb-ghana-tenant")
   employeeId     String    @unique
   startDate      DateTime
   endDate        DateTime

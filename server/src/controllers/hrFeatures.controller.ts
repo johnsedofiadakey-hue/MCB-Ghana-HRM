@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const getOrgId = (req: Request): string =>
-    (req as any).user?.organizationId || 'default-tenant';
+    (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
 const getUser = (req: Request) => (req as any).user;
 

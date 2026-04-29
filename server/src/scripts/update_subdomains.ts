@@ -7,7 +7,7 @@ async function main() {
   
   const results = await Promise.all([
     prisma.organization.update({
-      where: { id: 'default-tenant' },
+      where: { id: 'mcb-ghana-tenant' },
       data: { subdomain: 'mcb-hrm-ghana' }
     }),
     prisma.organization.update({

@@ -8,7 +8,7 @@ const isValidHex = (hex: string) => /^#([A-Fa-f0-9]{3}){1,2}$/.test(hex);
  * Returns branding + config data for the client.
  * Branding lives on Organization; security/email/payment config on SystemSettings.
  */
-export const getSettings = async (organizationId = 'default-tenant', isAdmin = false) => {
+export const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false) => {
   console.log('[SettingsService] Attempting to fetch settings for OrgID:', organizationId, '| Admin:', isAdmin);
   const org = await (prisma.organization.findUnique({
     where: { id: organizationId },
@@ -149,10 +149,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     paystackPayLink: org.settings?.paystackPayLink,
   };
 
-  if (organizationId !== 'default-tenant' && (!pricing.monthlyPriceGHS || !pricing.paystackPublicKey)) {
+  if (organizationId !== 'mcb-ghana-tenant' && (!pricing.monthlyPriceGHS || !pricing.paystackPublicKey)) {
     try {
       const master = await (prisma.systemSettings.findUnique({
-        where: { organizationId: 'default-tenant' },
+        where: { organizationId: 'mcb-ghana-tenant' },
         select: {
             monthlyPriceGHS: true,
             annualPriceGHS: true,
@@ -245,7 +245,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
 };
 
 export const updateSettings = async (
-  organizationId = 'default-tenant',
+  organizationId = 'mcb-ghana-tenant',
   data: Record<string, any>
 ) => {
   // Split: branding → Organization, config → SystemSettings

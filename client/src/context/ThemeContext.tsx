@@ -76,7 +76,7 @@ export interface Settings {
 
 export const getOrgIdFromToken = () => {
   // STANDALONE MODE: Always return the primary organization ID
-  return 'default-tenant';
+  return 'mcb-ghana-tenant';
 };
 
 const hexToRgb = (hex: string) => {
@@ -144,13 +144,13 @@ export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolea
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeName>(() => {
     const orgId = getOrgIdFromToken();
-    const saved = localStorage.getItem(`nexus_theme_preference_${orgId}`) as ThemeName;
+    const saved = localStorage.getItem(`mcb_theme_preference_${orgId}`) as ThemeName;
     return saved || 'premium-monolith';
   });
   const [settings, setSettings] = useState<Settings | null>(() => {
     try {
       const orgId = getOrgIdFromToken();
-      const cached = localStorage.getItem(`nexus_branding_cache_${orgId}`);
+      const cached = localStorage.getItem(`mcb_branding_cache_${orgId}`);
       return cached ? JSON.parse(cached) : null;
     } catch(e) { return null; }
   });
@@ -396,22 +396,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // IDENTITY-AWARE PERSISTENCE: Save full branding context (Logo + Name + Colors)
     const orgId = getOrgIdFromToken();
-    localStorage.setItem(`nexus_branding_cache_${orgId}`, JSON.stringify(settingsToUse));
-    localStorage.setItem(`nexus_theme_preference_${orgId}`, themeName);
+    localStorage.setItem(`mcb_branding_cache_${orgId}`, JSON.stringify(settingsToUse));
+    localStorage.setItem(`mcb_theme_preference_${orgId}`, themeName);
 
     // --- ZERO-FLICKER SYNC: Align with index.html early-paint script ---
     const customColors: Record<string, string> = {};
     tokens.forEach(([key, value]) => { if (value) customColors[key] = value; });
-    localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(customColors));
-    localStorage.setItem('nexus_theme_custom_colors', JSON.stringify(customColors));
+    localStorage.setItem(`mcb_theme_custom_colors_${orgId}`, JSON.stringify(customColors));
+    localStorage.setItem('mcb_theme_custom_colors', JSON.stringify(customColors));
   }, []); // Explicitly stable to prevent dependency loops
 
   const refreshSettings = useCallback(async () => {
     try {
       const orgId = getOrgIdFromToken();
       const hostname = window.location.hostname;
-      const cached = localStorage.getItem(`nexus_branding_cache_${orgId}`);
-      const savedTheme = localStorage.getItem(`nexus_theme_preference_${orgId}`) as ThemeName || theme;
+      const cached = localStorage.getItem(`mcb_branding_cache_${orgId}`);
+      const savedTheme = localStorage.getItem(`mcb_theme_preference_${orgId}`) as ThemeName || theme;
       
       // Early apply from cache to prevent flash
       if (cached) {
@@ -432,16 +432,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setThemeState(targetTheme);
         
         const effectiveOrgId = data.organizationId || orgId;
-        localStorage.setItem(`nexus_theme_preference_${effectiveOrgId}`, targetTheme);
+        localStorage.setItem(`mcb_theme_preference_${effectiveOrgId}`, targetTheme);
         applyTheme(targetTheme, data);
 
         // Cache for next session
-        localStorage.setItem(`nexus_branding_cache_${effectiveOrgId}`, JSON.stringify(data));
+        localStorage.setItem(`mcb_branding_cache_${effectiveOrgId}`, JSON.stringify(data));
       }
     } catch (err) {
       console.warn('[ThemeContext] Unauthenticated or failed settings fetch, falling back to cached/default');
       const orgId = getOrgIdFromToken();
-      const savedTheme = localStorage.getItem(`nexus_theme_preference_${orgId}`) as ThemeName || theme;
+      const savedTheme = localStorage.getItem(`mcb_theme_preference_${orgId}`) as ThemeName || theme;
       applyTheme(savedTheme, null); 
     }
   }, [theme, applyTheme]);
@@ -477,13 +477,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { i18n } = useTranslation();
 
   const setLanguage = useCallback((lang: string) => {
-    localStorage.setItem('nexus_user_language', lang);
+    localStorage.setItem('mcb_user_language', lang);
     i18n.changeLanguage(lang);
     document.documentElement.lang = lang;
   }, [i18n]);
 
   useEffect(() => {
-    const userPref = localStorage.getItem('nexus_user_language');
+    const userPref = localStorage.getItem('mcb_user_language');
     const targetLang = userPref || settings?.defaultLanguage || i18n.language || 'en';
     
     if (i18n.language !== targetLang) {
@@ -506,7 +506,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const setTheme = (newTheme: ThemeName) => {
     const orgId = getOrgIdFromToken();
     setThemeState(newTheme);
-    localStorage.setItem(`nexus_theme_preference_${orgId}`, newTheme);
+    localStorage.setItem(`mcb_theme_preference_${orgId}`, newTheme);
     applyTheme(newTheme, settings);
   };
 

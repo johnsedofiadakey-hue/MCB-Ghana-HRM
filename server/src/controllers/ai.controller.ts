@@ -76,7 +76,7 @@ export const chat = async (req: Request, res: Response) => {
 
   try {
     const { message, history } = req.body;
-    const orgId = getOrgId(req) || 'default-tenant';
+    const orgId = getOrgId(req) || 'mcb-ghana-tenant';
     const user = (req as any).user;
 
     // 1. Fetch organizational baseline for context
@@ -195,7 +195,7 @@ export const parseResumeViaAI = async (req: Request, res: Response) => {
 
   try {
     const { candidateId } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     const candidate = await prisma.candidate.findUnique({
       where: { id: candidateId, organizationId },

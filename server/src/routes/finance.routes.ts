@@ -13,7 +13,7 @@ router.use(authenticate);
 router.get('/', async (req, res) => {
   try {
     const user = (req as any).user;
-    const orgId = user.organizationId || 'default-tenant';
+    const orgId = user.organizationId || 'mcb-ghana-tenant';
     const isAdmin = (user.rank || 0) >= 70;
     const [loans, expenses] = await Promise.all([
       prisma.loan.findMany({

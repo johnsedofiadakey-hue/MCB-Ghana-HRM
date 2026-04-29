@@ -8,7 +8,7 @@ import { HierarchyService } from '../services/hierarchy.service';
 import { notify } from '../services/websocket.service';
 import { errorLogger } from '../services/error-log.service';
 
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
 // Working-day calculator (weekends & holidays excluded) - Timezone Stable
 const calcWorkingDays = (start: Date, end: Date, holidayDates: string[] = []): number => {

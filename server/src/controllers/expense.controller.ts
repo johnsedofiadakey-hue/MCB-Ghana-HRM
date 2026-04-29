@@ -10,7 +10,7 @@ import { notify } from '../services/websocket.service';
 export const createExpenseClaim = async (req: Request, res: Response) => {
   try {
     const { title, category, amount, currency, description, receiptUrl } = req.body;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const employeeId = req.user?.id!;
 
     const claim = await prisma.expenseClaim.create({
@@ -44,7 +44,7 @@ export const createExpenseClaim = async (req: Request, res: Response) => {
 export const getMyExpenses = async (req: Request, res: Response) => {
   try {
     const employeeId = req.user?.id!;
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
     const claims = await prisma.expenseClaim.findMany({
       where: { employeeId, organizationId },
@@ -59,7 +59,7 @@ export const getMyExpenses = async (req: Request, res: Response) => {
 
 export const getPendingApprovals = async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId || 'default-tenant';
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const supervisorId = req.user?.id!;
     const rank = req.user?.rank || 0;
 

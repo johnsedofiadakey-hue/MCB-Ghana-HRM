@@ -4,7 +4,7 @@ import { getAuditLogs } from '../services/audit.service';
 export const getLogs = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user?.organizationId || 'default-tenant';
+        const organizationId = user?.organizationId || 'mcb-ghana-tenant';
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 50;
         const entity = req.query.entity as string | undefined;
@@ -20,7 +20,7 @@ export const getLogs = async (req: Request, res: Response) => {
 export const exportLogsCSV = async (req: Request, res: Response) => {
     try {
         const userReq = (req as any).user;
-        const organizationId = userReq?.organizationId || 'default-tenant';
+        const organizationId = userReq?.organizationId || 'mcb-ghana-tenant';
 
         const { PrismaClient } = await import('@prisma/client');
         const prismaLocal = new PrismaClient();

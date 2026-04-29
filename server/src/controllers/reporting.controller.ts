@@ -3,7 +3,7 @@ import prisma from '../prisma/client';
 import { getRoleRank } from '../middleware/auth.middleware';
 import { HierarchyService } from '../services/hierarchy.service';
 
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 const getUser = (req: Request) => (req as any).user;
 
 // GET /reporting/employee/:employeeId — all reporting lines for an employee

@@ -18,7 +18,7 @@ export const syncPunches = async (req: Request, res: Response) => {
     
     // Multi-tenancy: prioritize orgId from auth user, fallback to body
     const userRole = (req as any).user?.role;
-    const organizationId = (req as any).user?.organizationId || bodyOrgId || 'default-tenant';
+    const organizationId = (req as any).user?.organizationId || bodyOrgId || 'mcb-ghana-tenant';
 
     // Verification: Only Admin/MD/Developer can sync
     if (userRole && !['MD', 'DEV', 'HR', 'IT_ADMIN', 'IT_MANAGER'].includes(userRole)) {
@@ -113,7 +113,7 @@ export const syncPunches = async (req: Request, res: Response) => {
 export const kioskPunch = async (req: Request, res: Response) => {
   try {
     const { employeeCode, type } = req.body;
-    const organizationId = req.body.organizationId || 'default-tenant';
+    const organizationId = req.body.organizationId || 'mcb-ghana-tenant';
 
     if (!employeeCode || !type) {
        return res.status(400).json({ error: 'employeeCode and type (CHECKIN/CHECKOUT) are required.' });

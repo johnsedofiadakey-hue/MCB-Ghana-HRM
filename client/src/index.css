@@ -32,7 +32,7 @@ body {
 
 @media print {
   body { background: white !important; color: black !important; font-size: 10pt; }
-  .no-print, nav, aside, .sidebar, .nx-sidebar, button, .btn-primary, .btn-secondary, .nexus-guide, .command-palette { display: none !important; }
+  .no-print, nav, aside, .sidebar, .nx-sidebar, button, .btn-primary, .btn-secondary, .mcb-guide, .command-palette { display: none !important; }
   .nx-card { 
     border: 1px solid var(--primary) !important; 
     background: white !important; 
@@ -87,25 +87,25 @@ body {
   }
 
   /* 📱 MOBILE TABLE TO CARD TRANSFORMATION 
-     Usage: Add .nexus-responsive-table to <table />
+     Usage: Add .mcb-responsive-table to <table />
      Requirement: Each <td /> must have a data-label="Header Name" attribute.
   */
-  .nexus-responsive-table, 
-  .nexus-responsive-table thead, 
-  .nexus-responsive-table tbody, 
-  .nexus-responsive-table th, 
-  .nexus-responsive-table td, 
-  .nexus-responsive-table tr { 
+  .mcb-responsive-table, 
+  .mcb-responsive-table thead, 
+  .mcb-responsive-table tbody, 
+  .mcb-responsive-table th, 
+  .mcb-responsive-table td, 
+  .mcb-responsive-table tr { 
     display: block; 
   }
 
-  .nexus-responsive-table thead tr { 
+  .mcb-responsive-table thead tr { 
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
 
-  .nexus-responsive-table tr { 
+  .mcb-responsive-table tr { 
     margin-bottom: 1rem;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -114,7 +114,7 @@ body {
     box-shadow: var(--shadow-sm);
   }
   
-  .nexus-responsive-table td { 
+  .mcb-responsive-table td { 
     border: none;
     border-bottom: 1px solid var(--bg-elevated); 
     position: relative;
@@ -126,11 +126,11 @@ body {
     justify-content: flex-end;
   }
 
-  .nexus-responsive-table td:last-child {
+  .mcb-responsive-table td:last-child {
     border-bottom: none;
   }
 
-  .nexus-responsive-table td:before { 
+  .mcb-responsive-table td:before { 
     content: attr(data-label);
     position: absolute;
     left: 1rem;

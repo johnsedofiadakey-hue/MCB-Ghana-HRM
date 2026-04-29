@@ -187,7 +187,7 @@ export const checkBilling = async (req: Request, res: Response, next: NextFuncti
 
   try {
     const org = await prisma.organization.findUnique({
-      where: { id: user.organizationId || 'default-tenant' },
+      where: { id: user.organizationId || 'mcb-ghana-tenant' },
       select: {
         billingStatus: true,
         trialStartDate: true,

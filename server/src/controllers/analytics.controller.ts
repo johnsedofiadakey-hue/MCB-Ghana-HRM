@@ -4,7 +4,7 @@ import prisma from '../prisma/client';
 export const getExecutiveStats = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const rank = user.rank || 50;
         const userId = user.id;
 
@@ -104,7 +104,7 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
 export const getDepartmentGrowth = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
 
         const departments = await prisma.department.findMany({
             where: { organizationId },
@@ -126,7 +126,7 @@ export const getDepartmentGrowth = async (req: Request, res: Response) => {
 export const getPersonalStats = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const userId = user.id;
 
         // 1. Overall Performance (Average of all completed KPI Sheets)
@@ -183,7 +183,7 @@ import { PdfExportService } from '../services/pdf.service';
 export const downloadBoardReportPDF = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const organizationId = user.organizationId || 'mcb-ghana-tenant';
         
         // Ensure only executive/director rank can generate board reports
         if ((user.rank || 0) < 80) {

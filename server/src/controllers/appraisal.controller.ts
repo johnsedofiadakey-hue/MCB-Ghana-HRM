@@ -13,7 +13,7 @@ export const initAppraisalCycle = async (req: Request, res: Response) => {
     if (getRoleRank(userRole) < 85) {
       return res.status(403).json({ error: 'Only HR Managers or MD can initialize appraisal cycles' });
     }
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const result = await AppraisalService.initCycle(organizationId, req.body);
     
     await logAction((req as any).user.id, 'APPRAISAL_CYCLE_INIT', 'AppraisalCycle', result.cycle.id, {}, req.ip);
@@ -26,7 +26,7 @@ export const initAppraisalCycle = async (req: Request, res: Response) => {
 export const submitAppraisalReview = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
     const userRank = getRoleRank((req as any).user.role);
     const userDeptId = (req as any).user.departmentId;
@@ -42,7 +42,7 @@ export const submitAppraisalReview = async (req: Request, res: Response) => {
 export const getPacketDetail = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
     const userRole = (req as any).user.role;
     const userRank = getRoleRank(userRole);
@@ -58,7 +58,7 @@ export const getPacketDetail = async (req: Request, res: Response) => {
 
 export const getMyPackets = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
     const packets = await AppraisalService.getEmployeePackets(userId, organizationId);
     return res.json(packets);
@@ -69,7 +69,7 @@ export const getMyPackets = async (req: Request, res: Response) => {
 
 export const getTeamPackets = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
     const userRank = getRoleRank((req as any).user.role);
     const packets = await AppraisalService.getReviewerPackets(userId, organizationId, userRank);
@@ -81,7 +81,7 @@ export const getTeamPackets = async (req: Request, res: Response) => {
 
 export const getFinalVerdictList = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const packets = await AppraisalService.getFinalVerdictList(organizationId);
     return res.json(packets);
   } catch (error: any) {
@@ -92,7 +92,7 @@ export const getFinalVerdictList = async (req: Request, res: Response) => {
 export const finalSignOff = async (req: Request, res: Response) => {
   try {
     const { packetId, finalVerdict, finalScore, arbitrationLogic, assignedTargets } = req.body;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const user = (req as any).user;
     
     // Only HR Manager or higher (Rank 85+) can perform final signoff
@@ -114,7 +114,7 @@ export const finalSignOff = async (req: Request, res: Response) => {
 export const cancelAppraisalPacket = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     
     const packet = await (prisma as any).appraisalPacket.findUnique({
       where: { id: packetId, organizationId }
@@ -136,7 +136,7 @@ export const cancelAppraisalPacket = async (req: Request, res: Response) => {
 export const updateAppraisalCycle = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const cycle = await AppraisalService.updateCycle(organizationId, id, req.body);
     return res.json(cycle);
   } catch (err: any) {
@@ -147,7 +147,7 @@ export const updateAppraisalCycle = async (req: Request, res: Response) => {
 export const deleteAppraisalCycle = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     await AppraisalService.deleteCycle(organizationId, id);
     return res.json({ success: true });
   } catch (err: any) {
@@ -157,7 +157,7 @@ export const deleteAppraisalCycle = async (req: Request, res: Response) => {
 export const updateAppraisalPacket = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userRole = (req as any).user.role;
     
     // Only Director+ can modify active packets
@@ -175,7 +175,7 @@ export const updateAppraisalPacket = async (req: Request, res: Response) => {
 export const deleteAppraisalPacket = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userRole = (req as any).user.role;
 
     if (getRoleRank(userRole) < 80) {
@@ -193,7 +193,7 @@ export const raiseAppraisalDispute = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
     const { reason } = req.body;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
 
     const packet = await AppraisalService.raiseDispute(packetId, userId, organizationId, reason);
@@ -209,7 +209,7 @@ export const resolveAppraisalDispute = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
     const { resolution, finalScore, finalVerdict } = req.body;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
 
     // Only HR/MD (Rank 85+) can resolve
@@ -229,7 +229,7 @@ export const resolveAppraisalDispute = async (req: Request, res: Response) => {
 export const getCyclePackets = async (req: Request, res: Response) => {
   try {
     const { cycleId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const packets = await AppraisalService.getCyclePackets(organizationId, cycleId);
     return res.json(packets);
   } catch (error: any) {
@@ -238,7 +238,7 @@ export const getCyclePackets = async (req: Request, res: Response) => {
 };
 export const purgeOrphanPackets = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userRole = (req as any).user.role;
     
     // Only HR Manager or MD (Rank 85+) can trigger purge
@@ -258,7 +258,7 @@ export const purgeOrphanPackets = async (req: Request, res: Response) => {
 };
 export const resetAppraisalDomain = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userRole = (req as any).user.role;
     
     // ONLY MD (Rank 90+) can perform a Factory Reset
@@ -276,7 +276,7 @@ export const resetAppraisalDomain = async (req: Request, res: Response) => {
 export const getPerformanceTrend = async (req: Request, res: Response) => {
   try {
     const { employeeId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const trend = await AppraisalService.getEmployeePerformanceTrend(employeeId, organizationId);
     return res.json(trend);
   } catch (error: any) {

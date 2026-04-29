@@ -24,7 +24,7 @@ export const getPrograms = async (req: Request, res: Response) => {
 export const createProgram = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const user = (req as any).user;
     const createdById = user.id;
     const program = await prisma.trainingProgram.create({
@@ -43,7 +43,7 @@ export const createProgram = async (req: Request, res: Response) => {
 export const enroll = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const user = (req as any).user;
     const actorId = user.id;
     const { programId, employeeId } = req.body;

@@ -29,10 +29,10 @@ async function setup() {
 
   // ── 1. Default Organization ──────────────────────────────────────────────
   const org = await prisma.organization.upsert({
-    where: { id: 'default-tenant' },
+    where: { id: 'mcb-ghana-tenant' },
     update: {},
     create: {
-      id: 'default-tenant',
+      id: 'mcb-ghana-tenant',
       name: 'MC Bauchemie Ghana',
       email: 'admin@nexus.com',
       currency: 'GHS',
@@ -46,10 +46,10 @@ async function setup() {
 
   // ── 2. System Settings ───────────────────────────────────────────────────
   await prisma.systemSettings.upsert({
-    where: { organizationId: 'default-tenant' },
+    where: { organizationId: 'mcb-ghana-tenant' },
     update: {},
     create: {
-      organizationId: 'default-tenant',
+      organizationId: 'mcb-ghana-tenant',
       isMaintenanceMode: false,
       securityLockdown: false,
       trialDays: 30,
@@ -67,7 +67,7 @@ async function setup() {
 
   for (const acc of DEFAULT_ACCOUNTS) {
     const passwordHash = await bcrypt.hash(acc.password, SALT_ROUNDS);
-    const orgId = acc.role === 'DEV' ? null : 'default-tenant';
+    const orgId = acc.role === 'DEV' ? null : 'mcb-ghana-tenant';
 
     const user = await prisma.user.upsert({
       where: { email: acc.email },
@@ -121,9 +121,9 @@ async function setup() {
   let firstDeptId: number | null = null;
   for (const dept of depts) {
     const d = await prisma.department.upsert({
-      where: { name_organizationId: { name: dept.name, organizationId: 'default-tenant' } },
+      where: { name_organizationId: { name: dept.name, organizationId: 'mcb-ghana-tenant' } },
       update: {},
-      create: { name: dept.name, organizationId: 'default-tenant', managerId: dept.managerId },
+      create: { name: dept.name, organizationId: 'mcb-ghana-tenant', managerId: dept.managerId },
     });
     if (!firstDeptId) firstDeptId = d.id;
   }
@@ -159,7 +159,7 @@ async function setup() {
       update: {},
       create: {
         id: holidayId,
-        organizationId: 'default-tenant',
+        organizationId: 'mcb-ghana-tenant',
         name: h.name,
         date: h.date,
         country: 'GH',
@@ -179,7 +179,7 @@ async function setup() {
       update: {},
       create: {
         id: 'demo-target-001',
-        organizationId: 'default-tenant',
+        organizationId: 'mcb-ghana-tenant',
         title: 'Q2 2026 Performance Goal — Sample',
         description: 'Demonstrate how individual targets work. Update your progress and submit for review.',
         level: 'INDIVIDUAL',
@@ -193,8 +193,8 @@ async function setup() {
         weight: 1.0,
         metrics: {
           create: [
-            { organizationId: 'default-tenant', title: 'Tasks Completed', metricType: 'NUMERICAL', targetValue: 50, unit: 'tasks', weight: 0.5 },
-            { organizationId: 'default-tenant', title: 'Customer Satisfaction', metricType: 'PERCENTAGE', targetValue: 90, unit: '%', weight: 0.5 },
+            { organizationId: 'mcb-ghana-tenant', title: 'Tasks Completed', metricType: 'NUMERICAL', targetValue: 50, unit: 'tasks', weight: 0.5 },
+            { organizationId: 'mcb-ghana-tenant', title: 'Customer Satisfaction', metricType: 'PERCENTAGE', targetValue: 90, unit: '%', weight: 0.5 },
           ],
         },
       },
@@ -231,7 +231,7 @@ async function setup() {
 
   for (const t of offboardingTemplates) {
     const existing = await prisma.offboardingTemplate.findFirst({
-      where: { name: t.name, organizationId: 'default-tenant' }
+      where: { name: t.name, organizationId: 'mcb-ghana-tenant' }
     });
 
     if (existing) {
@@ -243,13 +243,13 @@ async function setup() {
     } else {
       await prisma.offboardingTemplate.create({
         data: {
-          organizationId: 'default-tenant',
+          organizationId: 'mcb-ghana-tenant',
           name: t.name,
           description: t.description,
           tasks: {
             create: t.tasks.map((task, i) => ({
               ...task,
-              organizationId: 'default-tenant',
+              organizationId: 'mcb-ghana-tenant',
               order: i
             }))
           }

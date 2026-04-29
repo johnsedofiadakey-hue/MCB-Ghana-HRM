@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { AnnouncementService } from '../services/announcement.service';
 import { getRoleRank } from '../middleware/auth.middleware';
 
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
 export const createAnnouncement = async (req: Request, res: Response) => {
   try {
