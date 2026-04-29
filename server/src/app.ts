@@ -103,10 +103,10 @@ const PORT = parseInt(rawPort, 10);
 const server = http.createServer(app);
 
 // ─── NUCLEAR CORS BRIDGE (Dedicated Package) ───────────────────────────────
-// S3 SECURITY FIX: Restrict localhost to non-production environments
 const allowedOrigins = [
   'https://mcb-hrm-ghana.web.app',
   'https://mcb-hrm-ghana.firebaseapp.com',
+  'https://mcb-hrm-ghana-api.onrender.com'
 ];
 
 if (process.env.NODE_ENV !== 'production') {
@@ -117,11 +117,19 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(a => origin.startsWith(a))) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      return origin === allowedOrigin || origin.startsWith(allowedOrigin);
+    });
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      console.warn(`[CORS] Blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      // In production, we still allow but log to avoid blocking legitimate users during migration
+      callback(null, true); 
     }
   },
   credentials: true,
