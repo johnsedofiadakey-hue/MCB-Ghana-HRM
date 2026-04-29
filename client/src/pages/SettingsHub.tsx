@@ -579,7 +579,7 @@ const SettingsHub = () => {
 
                 {activeTab === 'id_cards' && (
                   <div className="space-y-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 g                      {/* --- SECTION: CARD DESIGN --- */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                       <section className="space-y-8 p-10 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-left relative overflow-hidden group/card">
                          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover/card:bg-[var(--primary)]/10 transition-colors" />
                          
@@ -611,21 +611,21 @@ const SettingsHub = () => {
                             </div>
 
                             {/* Orientation & Theme */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                            <div className="grid grid-cols-1 gap-10">
                                 <div className="space-y-4">
                                    <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] ml-1">Architecture</label>
-                                   <div className="flex p-1.5 bg-[var(--bg-elevated)] rounded-[1.5rem] border border-[var(--border-subtle)] shadow-inner">
+                                   <div className="grid grid-cols-2 p-1.5 bg-[var(--bg-elevated)] rounded-[1.5rem] border border-[var(--border-subtle)] shadow-inner">
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
                                          className={cn(
-                                           "flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
+                                           "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
                                            formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-[0_10px_20px_-5px_rgba(var(--primary-rgb),0.3)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                          )}
                                       >Portrait</button>
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
                                          className={cn(
-                                           "flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
+                                           "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
                                            formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-[0_10px_20px_-5px_rgba(var(--primary-rgb),0.3)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                          )}
                                       >Landscape</button>
@@ -634,13 +634,13 @@ const SettingsHub = () => {
 
                                 <div className="space-y-4">
                                    <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] ml-1">Surface Theme</label>
-                                   <div className="flex p-1.5 bg-[var(--bg-elevated)] rounded-[1.5rem] border border-[var(--border-subtle)] shadow-inner">
+                                   <div className="grid grid-cols-3 p-1.5 bg-[var(--bg-elevated)] rounded-[1.5rem] border border-[var(--border-subtle)] shadow-inner">
                                       {['DARK', 'LIGHT', 'PRISTINE'].map(m => (
                                          <button 
                                             key={m}
                                             onClick={() => setFormData({...formData, idCardTheme: m as any})}
                                             className={cn(
-                                               "flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
+                                               "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
                                                formData.idCardTheme === m 
                                                 ? "bg-[var(--primary)] text-white shadow-[0_10px_20px_-5px_rgba(var(--primary-rgb),0.3)]" 
                                                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -652,7 +652,7 @@ const SettingsHub = () => {
                             </div>
                          </div>
                       </section>
-ection>
+
 
                       {/* --- SECTION: LOGO & SCANNER --- */}
                       <div className="space-y-10">
@@ -669,30 +669,30 @@ ection>
                               </div>
                            </div>
 
-                           <div className="space-y-6 relative z-10">
+                           <div className="space-y-4 relative z-10">
                               {[
-                                { id: 'idCardShowLogo', label: 'Company Identity', sub: 'Primary branding on card front' },
-                                { id: 'idCardShowQrCode', label: 'Biometric Access', sub: 'Real-time attendance QR code' }
+                                { id: 'idCardShowLogo', label: 'Company Identity', sub: 'Primary branding' },
+                                { id: 'idCardShowQrCode', label: 'Biometric Access', sub: 'Attendance QR code' }
                               ].map(toggle => (
                                 <button 
                                   key={toggle.id}
                                   onClick={() => setFormData({...formData, [toggle.id]: !(formData as any)[toggle.id]})}
                                   className={cn(
-                                    "w-full flex items-center justify-between p-6 rounded-[2rem] border-2 transition-all duration-500 text-left group/toggle",
-                                    (formData as any)[toggle.id] ? "bg-emerald-500/5 border-emerald-500/20 shadow-[0_10px_30px_-10px_rgba(16,185,129,0.1)]" : "bg-[var(--bg-elevated)] border-transparent hover:border-[var(--border-subtle)]"
+                                    "w-full flex items-center justify-between p-5 rounded-[1.8rem] border-2 transition-all duration-500 text-left group/toggle",
+                                    (formData as any)[toggle.id] ? "bg-emerald-500/5 border-emerald-500/20 shadow-lg" : "bg-[var(--bg-elevated)] border-transparent hover:border-[var(--border-subtle)]"
                                   )}
                                 >
-                                   <div>
-                                      <p className="text-[15px] font-black text-[var(--text-primary)] tracking-tight">{toggle.label}</p>
-                                      <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1.5 tracking-widest opacity-60">{toggle.sub}</p>
+                                   <div className="pr-4">
+                                      <p className="text-[14px] font-black text-[var(--text-primary)] tracking-tight whitespace-nowrap">{toggle.label}</p>
+                                      <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-widest opacity-60">{toggle.sub}</p>
                                    </div>
                                    <div className={cn(
-                                     "w-12 h-6.5 rounded-full relative transition-all duration-500 p-1 shadow-inner", 
+                                     "w-10 h-5.5 rounded-full relative transition-all duration-500 p-0.5 shadow-inner shrink-0", 
                                      (formData as any)[toggle.id] ? "bg-emerald-500" : "bg-[var(--text-muted)]/20"
                                    )}>
                                       <div className={cn(
-                                        "w-4.5 h-4.5 bg-white rounded-full transition-all duration-500 shadow-lg", 
-                                        (formData as any)[toggle.id] ? "translate-x-5.5" : "translate-x-0"
+                                        "w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-md", 
+                                        (formData as any)[toggle.id] ? "translate-x-4.5" : "translate-x-0"
                                       )} />
                                    </div>
                                 </button>
