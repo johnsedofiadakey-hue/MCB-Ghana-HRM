@@ -579,17 +579,17 @@ const SettingsHub = () => {
 
                 {activeTab === 'id_cards' && (
                   <div className="space-y-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                      <section className="space-y-8 p-10 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-left relative overflow-hidden group/card">
-                         <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover/card:bg-[var(--primary)]/10 transition-colors" />
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                      <section className="space-y-6 p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-left relative overflow-hidden group/card">
+                         <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/5 blur-2xl rounded-full -mr-12 -mt-12 group-hover/card:bg-[var(--primary)]/10 transition-colors" />
                          
                          <div className="flex items-center gap-4 relative z-10">
-                            <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)] shadow-inner">
-                                <Palette size={28} />
+                            <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
+                                <Palette size={22} />
                             </div>
                             <div>
-                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Card Design</h4>
-                               <p className="text-[11px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] mt-1 opacity-60">Visual DNA & Aesthetics</p>
+                               <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Card Design</h4>
+                               <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] opacity-60">Visual DNA & Aesthetics</p>
                             </div>
                          </div>
 
@@ -610,48 +610,42 @@ const SettingsHub = () => {
                                 />
                             </div>
 
-                            {/* Orientation & Theme - Forced Stacking for Billion-Dollar Clarity */}
-                            <div className="flex flex-col gap-10">
-                                <div className="space-y-5">
-                                   <div className="flex items-center justify-between px-1">
-                                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em]">Card Architecture</label>
-                                      <span className="text-[9px] font-bold text-[var(--primary)] opacity-40 uppercase tracking-widest">{formData.idCardOrientation}</span>
-                                   </div>
-                                   <div className="grid grid-cols-2 p-1.5 bg-[var(--bg-elevated)] rounded-[1.8rem] border border-[var(--border-subtle)] shadow-inner">
+                            {/* Orientation & Theme - Professional Sizing */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                <div className="space-y-3">
+                                   <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Architecture</label>
+                                   <div className="grid grid-cols-2 p-1 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
                                          className={cn(
-                                           "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
-                                           formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                           "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", 
+                                           formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-md" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                          )}
                                       >Portrait</button>
                                       <button 
                                          onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
                                          className={cn(
-                                           "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500", 
-                                           formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                           "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", 
+                                           formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-md" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                          )}
                                       >Landscape</button>
                                    </div>
                                 </div>
 
-                                <div className="space-y-5">
-                                   <div className="flex items-center justify-between px-1">
-                                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em]">Surface Theme</label>
-                                      <span className="text-[9px] font-bold text-[var(--primary)] opacity-40 uppercase tracking-widest">{formData.idCardTheme}</span>
-                                   </div>
-                                   <div className="grid grid-cols-3 p-1.5 bg-[var(--bg-elevated)] rounded-[1.8rem] border border-[var(--border-subtle)] shadow-inner">
+                                <div className="space-y-3">
+                                   <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Theme Axis</label>
+                                   <div className="grid grid-cols-3 p-1 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
                                       {['DARK', 'LIGHT', 'PRISTINE'].map(m => (
                                          <button 
                                             key={m}
                                             onClick={() => setFormData({...formData, idCardTheme: m as any})}
                                             className={cn(
-                                               "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 whitespace-nowrap px-2", 
+                                               "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", 
                                                formData.idCardTheme === m 
-                                                ? "bg-[var(--primary)] text-white shadow-xl" 
+                                                ? "bg-[var(--primary)] text-white shadow-md" 
                                                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                             )}
-                                         >{m === 'PRISTINE' ? 'White' : m.charAt(0) + m.slice(1).toLowerCase()}</button>
+                                         >{m === 'PRISTINE' ? 'White' : m.charAt(0)}</button>
                                       ))}
                                    </div>
                                 </div>
@@ -661,44 +655,44 @@ const SettingsHub = () => {
 
 
                       {/* --- SECTION: LOGO & SCANNER --- */}
-                      <div className="space-y-10">
-                        <section className="space-y-10 p-10 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-left h-full relative overflow-hidden group/visibility">
-                           <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full -ml-16 -mb-16 group-hover/visibility:bg-emerald-500/10 transition-colors" />
+                      <div className="space-y-8">
+                        <section className="space-y-6 p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-left h-full relative overflow-hidden group/visibility">
+                           <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full -ml-12 -mb-12 group-hover/visibility:bg-emerald-500/10 transition-colors" />
                            
                            <div className="flex items-center gap-4 relative z-10">
-                              <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner">
-                                  <ShieldCheck size={28} />
+                              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+                                  <ShieldCheck size={22} />
                               </div>
                               <div>
-                                 <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Security Tokens</h4>
-                                 <p className="text-[11px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] mt-1 opacity-60">Visibility & Verification</p>
+                                 <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Security Tokens</h4>
+                                 <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] opacity-60">Visibility & Verification</p>
                               </div>
                            </div>
 
                            <div className="space-y-4 relative z-10">
                               {[
                                 { id: 'idCardShowLogo', label: 'Company Identity', sub: 'Primary branding' },
-                                { id: 'idCardShowQrCode', label: 'Biometric Access', sub: 'Attendance QR code' }
+                                { id: 'idCardShowQrCode', label: 'Biometric Access', sub: 'Attendance QR' }
                               ].map(toggle => (
                                 <button 
                                   key={toggle.id}
                                   onClick={() => setFormData({...formData, [toggle.id]: !(formData as any)[toggle.id]})}
                                   className={cn(
-                                    "w-full flex items-center justify-between p-5 rounded-[1.8rem] border-2 transition-all duration-500 text-left group/toggle",
-                                    (formData as any)[toggle.id] ? "bg-emerald-500/5 border-emerald-500/20 shadow-lg" : "bg-[var(--bg-elevated)] border-transparent hover:border-[var(--border-subtle)]"
+                                    "w-full flex items-center justify-between p-4 rounded-[1.5rem] border transition-all duration-500 text-left",
+                                    (formData as any)[toggle.id] ? "bg-emerald-500/5 border-emerald-500/10 shadow-sm" : "bg-[var(--bg-elevated)] border-transparent"
                                   )}
                                 >
                                    <div className="pr-4">
-                                      <p className="text-[14px] font-black text-[var(--text-primary)] tracking-tight whitespace-nowrap">{toggle.label}</p>
-                                      <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-widest opacity-60">{toggle.sub}</p>
+                                      <p className="text-[13px] font-black text-[var(--text-primary)] tracking-tight whitespace-nowrap">{toggle.label}</p>
+                                      <p className="text-[8px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-widest opacity-50">{toggle.sub}</p>
                                    </div>
                                    <div className={cn(
-                                     "w-10 h-5.5 rounded-full relative transition-all duration-500 p-0.5 shadow-inner shrink-0", 
+                                     "w-9 h-5 rounded-full relative transition-all duration-500 p-0.5 shadow-inner shrink-0", 
                                      (formData as any)[toggle.id] ? "bg-emerald-500" : "bg-[var(--text-muted)]/20"
                                    )}>
                                       <div className={cn(
                                         "w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-md", 
-                                        (formData as any)[toggle.id] ? "translate-x-4.5" : "translate-x-0"
+                                        (formData as any)[toggle.id] ? "translate-x-4" : "translate-x-0"
                                       )} />
                                    </div>
                                 </button>
