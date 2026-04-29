@@ -126,7 +126,7 @@ const Inbox = () => {
             disabled={unreadCount === 0}
             className="px-6 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-all flex items-center gap-2 disabled:opacity-50"
           >
-            <Check size={16} /> Mark All Read
+            <Check size={16} /> {t('leave.mark_all_read', 'Mark All Read')}
           </button>
         </div>
       </div>
@@ -137,7 +137,7 @@ const Inbox = () => {
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={18} />
           <input 
             type="text" 
-            placeholder="Search communications..."
+            placeholder={t('leave.search_communications', 'Search communications...')}
             className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-2xl py-4 pl-14 pr-6 text-[14px] font-medium outline-none focus:border-[var(--primary)] transition-all"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
@@ -166,15 +166,15 @@ const Inbox = () => {
         {loading && notifications.length === 0 ? (
           <div className="py-40 flex flex-col items-center justify-center gap-6">
             <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] animate-pulse">Syncing Inbox...</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] animate-pulse">{t('leave.syncing_inbox', 'Syncing Inbox...')}</p>
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="py-40 text-center">
              <div className="w-24 h-24 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-8">
                <Mail size={32} className="text-[var(--text-muted)] opacity-20" />
              </div>
-             <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight mb-2">Your inbox is clear</h3>
-             <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest font-black opacity-40">All communications have been handled</p>
+             <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight mb-2">{t('leave.inbox_clear', 'Your inbox is clear')}</h3>
+             <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest font-black opacity-40">{t('leave.inbox_clear_desc', 'All communications have been handled')}</p>
           </div>
         ) : (
           <div className="divide-y divide-[var(--border-subtle)]/50">

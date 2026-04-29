@@ -7,7 +7,8 @@ import {
   ShieldAlert, BarChart3, ShieldCheck,
   Clock, Wallet, GraduationCap,
   ClipboardList, PanelLeftClose, PanelLeftOpen,
-  X, Briefcase, Network, Megaphone, BookOpen, AlertOctagon
+  X, Briefcase, Network, Megaphone, BookOpen, AlertOctagon,
+  Shield, AlertTriangle, History, Database
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -251,18 +252,16 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/announcements" icon={Megaphone} label={t('common.announcements')} isCollapsed={isCollapsed} />
                 {(rank >= 85 || isHR) && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart_label')} isCollapsed={isCollapsed} />}
                 {(rank >= 85 || isHR) && !isMD && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment')} isCollapsed={isCollapsed} />}
-                {/* New modules */}
-                <NavItem to="/policies" icon={BookOpen} label="Policies" isCollapsed={isCollapsed} />
-                {(rank >= 60 || isHR) && <NavItem to="/disciplinary" icon={AlertOctagon} label="Disciplinary" isCollapsed={isCollapsed} />}
-                {(rank >= 70 || isHR) && <NavItem to="/probation" icon={Clock} label="Probation" isCollapsed={isCollapsed} />}
+                <NavItem to="/policies" icon={Shield} label={t('common.policies')} isCollapsed={isCollapsed} />
+                {(rank >= 60 || isHR) && <NavItem to="/disciplinary" icon={AlertTriangle} label={t('common.disciplinary')} isCollapsed={isCollapsed} />}
+                {(rank >= 70 || isHR) && <NavItem to="/probation" icon={History} label={t('common.probation')} isCollapsed={isCollapsed} />}
               </NavGroup>
  
               <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
                 {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
                 {(isIT || isHR) && !isMD && (
-                   <NavItem to="/it-admin" icon={ShieldCheck} label="IT & Registries" isCollapsed={isCollapsed} />
+                   <NavItem to="/it-registries" icon={Database} label={t('common.it_registries')} isCollapsed={isCollapsed} />
                 )}
-                {/* BUG N2 FIX: Only IT/HR or Rank >= 85 can see Support tickets management */}
                 <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />
                 <NavItem to="/holidays" icon={Calendar} label={t('common.holidays_label')} isCollapsed={isCollapsed} />
@@ -275,7 +274,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               </NavGroup>
 
               {(isFinance || isHR || isMD) && (
-                <NavGroup label="Financial Operations" isCollapsed={isCollapsed}>
+                <NavGroup label={t('common.financial_operations')} isCollapsed={isCollapsed}>
                   <NavItem to="/payroll" icon={DollarSign} label={t('common.payroll_label')} isCollapsed={isCollapsed} />
                   <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
                 </NavGroup>

@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { toast } from '../../utils/toast';
+import { useTranslation } from 'react-i18next';
 
 const NOTIFICATION_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
 
@@ -25,6 +26,7 @@ interface NotificationInboxProps {
 }
 
 const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, onUnreadUpdate }) => {
+    const { t } = useTranslation();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -70,7 +72,7 @@ const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, 
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
             onUnreadUpdate(Math.max(0, notifications.filter(n => !n.isRead).length - 1));
         } catch (err) {
-            toast.error('Failed to update notification');
+            toast.error(t('notifications.mark_failed', 'Failed to update notification'));
         }
     };
 
@@ -80,7 +82,7 @@ const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, 
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             onUnreadUpdate(0);
         } catch (err) {
-            toast.error('Failed to update notifications');
+            toast.error(t('notifications.mark_all_failed', 'Failed to update notifications'));
         }
     };
 
@@ -91,7 +93,7 @@ const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, 
             const newUnread = notifications.filter(n => n.id !== id && !n.isRead).length;
             onUnreadUpdate(newUnread);
         } catch (err) {
-            toast.error('Failed to delete notification');
+            toast.error(t('notifications.delete_failed', 'Failed to delete notification'));
         }
     };
 
@@ -122,11 +124,11 @@ const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, 
                         >
                             <div className="p-8 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-elevated)]/30">
                                 <div>
-                                    <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight uppercase">Notifications</h2>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-1 opacity-60">System Alerts & Updates</p>
+                                    <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight uppercase">{t('common.notifications', 'Notifications')}</h2>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-1 opacity-60">{t('common.system_alerts', 'System Alerts & Updates')}</p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <button onClick={markAllRead} className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-emerald-500 transition-all" title="Mark all read">
+                                    <button onClick={markAllRead} className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-emerald-500 transition-all" title={t('common.mark_all_read', 'Mark all read')}>
                                         <Check size={18} />
                                     </button>
                                     <button onClick={onClose} className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-rose-500 transition-all">
@@ -139,7 +141,7 @@ const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, 
                                 {loading && notifications.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-20 opacity-40 italic">
                                         <div className="w-10 h-10 border-2 border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin mb-4" />
-                                        <p className="text-[10px] uppercase font-black tracking-widest">Syncing Inbox...</p>
+                                        <p className="text-[10px] uppercase font-black tracking-widest">{t('notifications.syncing_inbox', 'Syncing Inbox...')}</p>
                                     </div>
                                 ) : notifications.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-40">
@@ -147,8 +149,8 @@ const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, 
                                             <Bell size={32} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-black text-[var(--text-primary)] uppercase tracking-tight">Empty Inbox</p>
-                                            <p className="text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)]">No active notifications</p>
+                                            <p className="text-sm font-black text-[var(--text-primary)] uppercase tracking-tight">{t('notifications.inbox_clear', 'Empty Inbox')}</p>
+                                            <p className="text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)]">{t('notifications.no_notifications', 'No active notifications')}</p>
                                         </div>
                                     </div>
                                 ) : (
@@ -186,7 +188,7 @@ const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, 
                                                             <div className="flex gap-2">
                                                                 {!n.isRead && (
                                                                     <button onClick={() => markAsRead(n.id)} className="px-3 py-1.5 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] text-[9px] font-black uppercase tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all">
-                                                                        Mark Read
+                                                                        {t('common.mark_read', 'Mark Read')}
                                                                     </button>
                                                                 )}
                                                                 {n.link && (

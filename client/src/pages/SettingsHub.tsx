@@ -861,7 +861,7 @@ const SettingsHub = () => {
                         {!formData.isAiEnabled && (
                            <div className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
                              <AlertTriangle size={14} />
-                             <p className="text-[10px] font-black uppercase tracking-widest">Strategic Advisory Mode is currently deactivated</p>
+                             <p className="text-[10px] font-black uppercase tracking-widest">{t('settings.ai_deactivated', 'Strategic Advisory Mode is currently deactivated')}</p>
                            </div>
                         )}
                       </section>
@@ -1563,8 +1563,8 @@ const SettingsHub = () => {
                         <Server size={32} />
                       </div>
                       <div>
-                        <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">Hardware Infrastructure</h3>
-                        <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.25em] mt-2 italic">Institutional Node Management & Access Control</p>
+                        <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">{t('settings.infrastructure_title', 'Hardware Infrastructure')}</h3>
+                        <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.25em] mt-2 italic">{t('settings.infrastructure_subtitle', 'Institutional Node Management & Access Control')}</p>
                       </div>
                     </div>
 
@@ -1577,11 +1577,11 @@ const SettingsHub = () => {
                           <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
                             <Smartphone size={20} />
                           </div>
-                          <h4 className="text-lg font-black text-[var(--text-primary)]">QR/NFC Attendance Scanning</h4>
+                          <h4 className="text-lg font-black text-[var(--text-primary)]">{t('settings.qr_scanning', 'QR/NFC Attendance Scanning')}</h4>
                         </div>
                         <div className="flex items-center gap-3">
                            <span className={cn("text-[10px] font-black uppercase tracking-widest", formData.attendanceScanningEnabled ? "text-emerald-500" : "text-[var(--text-muted)]")}>
-                             {formData.attendanceScanningEnabled ? 'Active' : 'Disabled'}
+                             {formData.attendanceScanningEnabled ? t('settings.hardware_active', 'Active') : t('settings.hardware_disabled', 'Disabled')}
                            </span>
                            <input 
                              type="checkbox" 
@@ -1595,11 +1595,11 @@ const SettingsHub = () => {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                         <div className="space-y-6">
                            <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed font-medium">
-                             Enable automated attendance logging by connecting external hardware nodes (Scanners, NFC Readers, or Tablet Kiosks). This integration automatically tracks check-in/out events and calculates billable hours.
+                             {t('settings.qr_scanning_desc', 'Enable automated attendance logging by connecting external hardware nodes (Scanners, NFC Readers, or Tablet Kiosks). This integration automatically tracks check-in/out events and calculates billable hours.')}
                            </p>
 
                            <div className="p-6 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-subtle)] space-y-4">
-                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Hardware Node API Key</label>
+                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('settings.hardware_api_key', 'Hardware Node API Key')}</label>
                               <div className="flex items-center gap-3">
                                  <input 
                                    type="password" 

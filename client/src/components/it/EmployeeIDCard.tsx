@@ -243,14 +243,17 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
         {/* Safe Zone Boundary */}
         <div className={cn("absolute inset-4 border-2 border-dashed rounded-[1.8rem] z-50 pointer-events-none print:hidden", isPristine ? "border-slate-200" : "border-white/10")} />
 
-        <div className="p-8 flex flex-col items-center text-center h-full relative z-10">
-            <Fingerprint size={40} className={cn("mb-4", isPristine ? "text-slate-200" : "text-white/10")} />
+        <div className={cn(
+            "flex flex-col items-center text-center h-full relative z-10",
+            isVertical ? "p-8" : "p-6 pt-8"
+        )}>
+            <Fingerprint size={isVertical ? 40 : 32} className={cn(isVertical ? "mb-4" : "mb-2", isPristine ? "text-slate-200" : "text-white/10")} />
             
-            <h3 className={cn("text-[10px] font-black uppercase tracking-[0.4em] mb-4 italic", isPristine ? "text-slate-400" : "text-white/40")}>
+            <h3 className={cn("text-[10px] font-black uppercase tracking-[0.4em] italic", isVertical ? "mb-4" : "mb-2", isPristine ? "text-slate-400" : "text-white/40")}>
                 {organization.idCardSecurityText || 'Terms of Use'}
             </h3>
             
-            <p className={cn("text-[10px] leading-relaxed mb-6 font-medium px-4", isPristine ? "text-slate-600" : "text-white/60")}>
+            <p className={cn("text-[10px] leading-relaxed font-medium px-4", isVertical ? "mb-6" : "mb-4", isPristine ? "text-slate-600" : "text-white/60")}>
                 {organization.idCardBackMessage || (
                   <>
                     This Employee ID card belongs to <strong>{organization.name}</strong>. 
@@ -260,10 +263,14 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                 )}
             </p>
 
-            <div className={cn("w-full space-y-4 text-left border-t pt-6", isPristine ? "border-slate-100" : "border-white/5")}>
+            <div className={cn(
+                "w-full text-left border-t", 
+                isVertical ? "space-y-4 pt-6" : "space-y-2 pt-4",
+                isPristine ? "border-slate-100" : "border-white/5"
+            )}>
                 <div className="flex items-center gap-5">
-                    <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0", isPristine ? "bg-slate-50" : "bg-white/5")}>
-                        <MapPin size={18} className={isPristine ? "text-slate-400" : "text-white/40"} />
+                    <div className={cn("rounded-2xl flex items-center justify-center shrink-0", isVertical ? "w-10 h-10" : "w-8 h-8", isPristine ? "bg-slate-50" : "bg-white/5")}>
+                        <MapPin size={isVertical ? 18 : 14} className={isPristine ? "text-slate-400" : "text-white/40"} />
                     </div>
                     <div>
                         <p className={cn("text-[9px] font-black uppercase tracking-widest mb-0.5", isPristine ? "text-slate-300" : "text-white/30")}>Office Address</p>
@@ -271,8 +278,8 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                     </div>
                 </div>
                 <div className="flex items-center gap-5">
-                    <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0", isPristine ? "bg-slate-50" : "bg-white/5")}>
-                        <Globe size={18} className={isPristine ? "text-slate-400" : "text-white/40"} />
+                    <div className={cn("rounded-2xl flex items-center justify-center shrink-0", isVertical ? "w-10 h-10" : "w-8 h-8", isPristine ? "bg-slate-50" : "bg-white/5")}>
+                        <Globe size={isVertical ? 18 : 14} className={isPristine ? "text-slate-400" : "text-white/40"} />
                     </div>
                     <div>
                         <p className={cn("text-[9px] font-black uppercase tracking-widest mb-0.5", isPristine ? "text-slate-300" : "text-white/30")}>Website/Email</p>
