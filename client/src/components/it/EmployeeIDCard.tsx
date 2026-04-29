@@ -243,14 +243,14 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
         {/* Safe Zone Boundary */}
         <div className={cn("absolute inset-4 border-2 border-dashed rounded-[1.8rem] z-50 pointer-events-none print:hidden", isPristine ? "border-slate-200" : "border-white/10")} />
 
-        <div className="p-10 flex flex-col items-center text-center h-full relative z-10">
-            <Fingerprint size={48} className={cn("mb-8", isPristine ? "text-slate-200" : "text-white/10")} />
+        <div className="p-8 flex flex-col items-center text-center h-full relative z-10">
+            <Fingerprint size={40} className={cn("mb-4", isPristine ? "text-slate-200" : "text-white/10")} />
             
-            <h3 className={cn("text-[10px] font-black uppercase tracking-[0.4em] mb-8 italic", isPristine ? "text-slate-400" : "text-white/40")}>
+            <h3 className={cn("text-[10px] font-black uppercase tracking-[0.4em] mb-4 italic", isPristine ? "text-slate-400" : "text-white/40")}>
                 {organization.idCardSecurityText || 'Terms of Use'}
             </h3>
             
-            <p className={cn("text-[10px] leading-relaxed mb-10 font-medium px-4", isPristine ? "text-slate-600" : "text-white/60")}>
+            <p className={cn("text-[10px] leading-relaxed mb-6 font-medium px-4", isPristine ? "text-slate-600" : "text-white/60")}>
                 {organization.idCardBackMessage || (
                   <>
                     This Employee ID card belongs to <strong>{organization.name}</strong>. 
@@ -260,7 +260,7 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                 )}
             </p>
 
-            <div className={cn("w-full space-y-6 text-left border-t pt-8", isPristine ? "border-slate-100" : "border-white/5")}>
+            <div className={cn("w-full space-y-4 text-left border-t pt-6", isPristine ? "border-slate-100" : "border-white/5")}>
                 <div className="flex items-center gap-5">
                     <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0", isPristine ? "bg-slate-50" : "bg-white/5")}>
                         <MapPin size={18} className={isPristine ? "text-slate-400" : "text-white/40"} />
@@ -281,7 +281,7 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                 </div>
             </div>
 
-            <div className={cn("mt-auto flex items-center gap-2 opacity-30", isPristine ? "text-slate-400" : "text-white")}>
+            <div className={cn("mt-auto pt-6 flex items-center gap-2 opacity-30", isPristine ? "text-slate-400" : "text-white")}>
                 <Shield size={14} />
                 <p className="text-[10px] font-black tracking-[0.3em] uppercase">MCB Institutional Security</p>
             </div>
