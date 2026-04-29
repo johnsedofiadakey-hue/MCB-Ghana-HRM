@@ -186,31 +186,31 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
 
             {/* Grid Metadata */}
             <div className={cn(
-                "grid gap-x-8 gap-y-4 w-full",
+                "grid gap-x-6 gap-y-4 w-full relative z-10",
                 isVertical ? "grid-cols-2 text-center" : "grid-cols-2 text-left"
             )}>
-                <div>
+                <div className="shrink-0">
                     <span className={cn("text-[8px] font-black uppercase tracking-[0.2em] block mb-1 opacity-50", txtMuted)}>Dept</span>
-                    <span className={cn("text-[10px] font-bold uppercase", txtSecondary)}>{employee.departmentObj?.name || 'Operations'}</span>
+                    <span className={cn("text-[10px] font-bold uppercase truncate block max-w-[80px]", txtSecondary)}>{employee.departmentObj?.name || 'Operations'}</span>
                 </div>
-                <div>
+                <div className="shrink-0">
                     <span className={cn("text-[8px] font-black uppercase tracking-[0.2em] block mb-1 opacity-50", txtMuted)}>Card ID</span>
-                    <span className={cn("text-[10px] font-mono font-black tracking-widest", txtPrimary)}>{employee.employeeCode || 'MCB-000'}</span>
+                    <span className={cn("text-[10px] font-mono font-black tracking-widest block", txtPrimary)}>{employee.employeeCode || 'MCB-000'}</span>
                 </div>
             </div>
           </div>
 
           {/* Biometric Gateway (QR) */}
           <div className={cn(
-             "shrink-0",
-             isVertical ? "mt-auto" : "absolute bottom-8 right-8"
+             "shrink-0 relative z-20",
+             isVertical ? "mt-auto" : "ml-auto"
           )}>
              {showQr && (
                 <div className="flex flex-col items-center gap-3">
-                   <div className="p-3 bg-white rounded-[1.5rem] shadow-2xl relative group-hover:scale-110 transition-transform duration-500">
+                   <div className="p-2.5 bg-white rounded-[1.2rem] shadow-2xl relative group-hover:scale-110 transition-transform duration-500 border border-slate-100">
                       <QRCodeSVG 
                         value={`AGENT_ID:${employee.employeeCode}|NAME:${employee.fullName}|ORG:${organization.name}`} 
-                        size={isVertical ? 64 : 56} 
+                        size={isVertical ? 64 : 52} 
                         level="H"
                         includeMargin={false}
                         fgColor="#0f172a"
@@ -266,8 +266,8 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                         <MapPin size={18} className={isPristine ? "text-slate-400" : "text-white/40"} />
                     </div>
                     <div>
-                        <p className={cn("text-[9px] font-black uppercase tracking-widest mb-0.5", isPristine ? "text-slate-300" : "text-white/30")}>HQ Deployment</p>
-                        <p className={cn("text-xs font-bold", isPristine ? "text-slate-800" : "text-white/90")}>{organization.address || 'West Africa Operational Hub'}</p>
+                        <p className={cn("text-[9px] font-black uppercase tracking-widest mb-0.5", isPristine ? "text-slate-300" : "text-white/30")}>Office Address</p>
+                        <p className={cn("text-xs font-bold truncate max-w-[220px]", isPristine ? "text-slate-800" : "text-white/90")}>{organization.address || 'West Africa Operational Hub'}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-5">
@@ -275,8 +275,8 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                         <Globe size={18} className={isPristine ? "text-slate-400" : "text-white/40"} />
                     </div>
                     <div>
-                        <p className={cn("text-[9px] font-black uppercase tracking-widest mb-0.5", isPristine ? "text-slate-300" : "text-white/30")}>Digital Axis</p>
-                        <p className={cn("text-xs font-bold", isPristine ? "text-slate-800" : "text-white/90")}>mcb-hrm-ghana.web.app</p>
+                        <p className={cn("text-[9px] font-black uppercase tracking-widest mb-0.5", isPristine ? "text-slate-300" : "text-white/30")}>Website/Email</p>
+                        <p className={cn("text-xs font-bold truncate max-w-[220px]", isPristine ? "text-slate-800" : "text-white/90")}>mcb-hrm-ghana.web.app</p>
                     </div>
                 </div>
             </div>
