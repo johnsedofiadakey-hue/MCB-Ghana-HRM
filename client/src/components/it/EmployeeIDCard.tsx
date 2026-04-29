@@ -50,7 +50,7 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
   const glassBorder = isPristine ? 'border-slate-200' : (isDark ? 'border-white/10' : 'border-slate-900/10');
 
   return (
-    <div className="flex flex-col gap-12 items-center py-16 px-4 min-h-screen bg-[var(--bg-main)] font-display selection:bg-white/20">
+    <div className="flex flex-col gap-12 items-center py-8 px-4 font-display selection:bg-white/20">
       
       {/* ── FRONT SIDE: THE BILLION DOLLAR VIEW ─────────────────────────── */}
       <motion.div 
@@ -105,33 +105,33 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
         {/* Content Architecture */}
         <div className={cn(
             "relative z-10 h-full flex",
-            isVertical ? "flex-col items-center text-center p-8" : "flex-row items-center p-10 pt-16"
+            isVertical ? "flex-col items-center text-center p-8" : "flex-row items-center p-10 pt-12"
         )}>
           
           {/* Header/Side Branding */}
           <div className={cn(
             "flex shrink-0 z-20",
-            isVertical ? "flex-col items-center mb-10" : "absolute top-8 left-8 right-8 flex-row items-center justify-between"
+            isVertical ? "flex-col items-center mb-8" : "absolute top-8 left-8 right-8 flex-row items-center justify-between"
           )}>
              <div className="flex items-center gap-3">
                {showLogo && organization.logoUrl && (
-                  <img src={organization.logoUrl} alt="Logo" className={cn("object-contain", isVertical ? "h-12" : "h-10")} />
+                  <img src={organization.logoUrl} alt="Logo" className={cn("object-contain", isVertical ? "h-10" : "h-9")} />
                )}
                <div className="flex flex-col items-start">
                   <div className="flex items-center gap-2">
-                    {!organization.logoUrl && <Hexagon size={isVertical ? 24 : 18} style={{ color: accentColor }} fill={accentColor} fillOpacity={0.2} />}
-                    <span className={cn("font-black tracking-tighter uppercase italic", isVertical ? "text-xl" : "text-base", txtPrimary)}>{organization.name}</span>
+                    {!organization.logoUrl && <Hexagon size={isVertical ? 20 : 16} style={{ color: accentColor }} fill={accentColor} fillOpacity={0.2} />}
+                    <span className={cn("font-black tracking-tighter uppercase italic", isVertical ? "text-lg" : "text-sm", txtPrimary)}>{organization.name}</span>
                   </div>
                   {!isVertical && (
-                    <p className={cn("text-[7px] font-bold uppercase tracking-[0.3em] opacity-40", txtMuted)}>Enterprise Portal</p>
+                    <p className={cn("text-[7px] font-black uppercase tracking-[0.3em] opacity-40", txtMuted)}>ID System</p>
                   )}
                </div>
              </div>
              {!isVertical && (
                 <div className="flex items-center gap-2">
-                   <div className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1">
+                   <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5">
                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                       <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Verified</span>
+                       <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Active Status</span>
                    </div>
                 </div>
              )}
@@ -168,34 +168,34 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
             isVertical ? "items-center w-full" : "items-start border-l border-white/10 pl-10"
           )}>
             <h2 className={cn(
-                "font-black leading-none uppercase italic tracking-tighter mb-2",
-                isVertical ? "text-3xl" : "text-4xl",
+                "font-black leading-none uppercase italic tracking-tighter mb-3",
+                isVertical ? "text-2xl" : "text-3xl",
                 txtPrimary
             )}>{employee.fullName}</h2>
             
             <div className={cn(
-                "px-4 py-1.5 rounded-full mb-6 inline-flex items-center gap-2 border whitespace-nowrap",
-                isVertical ? glassBg : "bg-[var(--primary)]/20",
+                "px-4 py-2 rounded-full mb-6 inline-flex items-center gap-2 border",
+                isVertical ? glassBg : "bg-[var(--primary)]/10",
                 glassBorder
             )}>
                 <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
-                <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", txtPrimary)}>
+                <p className={cn("text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap", txtPrimary)}>
                     {employee.jobTitle}
                 </p>
             </div>
 
             {/* Grid Metadata */}
             <div className={cn(
-                "grid gap-x-10 gap-y-3 w-full",
-                isVertical ? "grid-cols-2 text-center" : "grid-cols-1 text-left"
+                "grid gap-x-8 gap-y-4 w-full",
+                isVertical ? "grid-cols-2 text-center" : "grid-cols-2 text-left"
             )}>
                 <div>
-                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Department</span>
-                    <span className={cn("text-xs font-bold uppercase", txtSecondary)}>{employee.departmentObj?.name || 'Central Hub'}</span>
+                    <span className={cn("text-[8px] font-black uppercase tracking-[0.2em] block mb-1 opacity-50", txtMuted)}>Dept</span>
+                    <span className={cn("text-[10px] font-bold uppercase", txtSecondary)}>{employee.departmentObj?.name || 'Operations'}</span>
                 </div>
                 <div>
-                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] block mb-1", txtMuted)}>Employee ID</span>
-                    <span className={cn("text-xs font-mono font-black tracking-widest", txtPrimary)}>{employee.employeeCode || 'MCB-000'}</span>
+                    <span className={cn("text-[8px] font-black uppercase tracking-[0.2em] block mb-1 opacity-50", txtMuted)}>Card ID</span>
+                    <span className={cn("text-[10px] font-mono font-black tracking-widest", txtPrimary)}>{employee.employeeCode || 'MCB-000'}</span>
                 </div>
             </div>
           </div>

@@ -575,187 +575,161 @@ const SettingsHub = () => {
                        </div>
                     </section>
                   </div>
-                )}
-
-                {activeTab === 'id_cards' && (
+                            {activeTab === 'id_cards' && (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    <div className="lg:col-span-7 space-y-12 text-left">
-                      {/* --- MODULE 1: AESTHETIC STANDARDS --- */}
-                      <section className="p-12 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
-                         <div className="flex items-center gap-6 mb-12">
-                            <div className="w-16 h-16 bg-[var(--primary)]/10 rounded-[1.5rem] flex items-center justify-center text-[var(--primary)] shadow-inner">
-                                <Palette size={32} />
+                    <div className="lg:col-span-7 space-y-10 text-left">
+                      {/* --- SECTION: CARD DESIGN --- */}
+                      <section className="space-y-8">
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
+                                <Palette size={24} />
                             </div>
                             <div>
-                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Design & Style</h4>
-                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Colors and Themes</p>
+                               <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Card Design</h4>
+                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Colors and visual theme</p>
                             </div>
                          </div>
 
-                         <div className="space-y-12">
-                            {/* Color Strategy */}
-                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]">
+                         <div className="space-y-8">
+                            {/* Color Selection */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                 <ColorPicker 
                                     id="idCardPrimaryColor" 
-                                    label="Primary ID Color" 
+                                    label="Main Card Color" 
                                     value={formData.idCardPrimaryColor || '#009EE3'} 
                                     onChange={val => setFormData({...formData, idCardPrimaryColor: val})} 
                                 />
                                 <ColorPicker 
                                     id="idCardAccentColor" 
-                                    label="Status Border Color" 
+                                    label="Accent Border Color" 
                                     value={formData.idCardAccentColor || '#EE7100'} 
                                     onChange={val => setFormData({...formData, idCardAccentColor: val})} 
                                 />
                             </div>
 
-                            {/* Theme Presets */}
-                            <div className="space-y-6">
-                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Ready-made Designs</label>
-                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                 {[
-                                   { id: 'mcb', label: 'MCB Dark', primary: '#009EE3', accent: '#EE7100', theme: 'DARK' },
-                                   { id: 'pristine', label: 'Classic White', primary: '#009EE3', accent: '#EE7100', theme: 'PRISTINE' },
-                                   { id: 'slate', label: 'Slate Gray', primary: '#1e293b', accent: '#64748b', theme: 'DARK' },
-                                   { id: 'ocean', label: 'Ocean Blue', primary: '#0ea5e9', accent: '#7dd3fc', theme: 'LIGHT' },
-                                 ].map((preset) => (
-                                   <button
-                                     key={preset.id}
-                                     onClick={() => setFormData({
-                                       ...formData, 
-                                       idCardPrimaryColor: preset.primary, 
-                                       idCardAccentColor: preset.accent, 
-                                       idCardTheme: preset.theme as any
-                                     })}
-                                     className={cn(
-                                       "p-6 rounded-[1.5rem] border-2 transition-all text-left group relative overflow-hidden min-h-[120px] flex flex-col justify-between",
-                                       formData.idCardPrimaryColor === preset.primary && formData.idCardTheme === preset.theme ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
-                                     )}
-                                   >
-                                     <div className="flex gap-1.5">
-                                       <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: preset.primary }} />
-                                       <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: preset.accent }} />
-                                     </div>
-                                     <p className="text-[11px] font-black text-[var(--text-primary)] leading-tight mt-4">{preset.label}</p>
-                                   </button>
-                                 ))}
-                               </div>
-                            </div>
+                            {/* Orientation & Theme */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Card Orientation</label>
+                                   <div className="flex flex-wrap gap-2 p-1 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
+                                      <button 
+                                         onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
+                                         className={cn("flex-1 min-w-[80px] py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
+                                      >Portrait</button>
+                                      <button 
+                                         onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
+                                         className={cn("flex-1 min-w-[80px] py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
+                                      >Landscape</button>
+                                   </div>
+                                </div>
 
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                                {/* Base Mode */}
-                                <div className="space-y-6">
-                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Background Theme</label>
-                                   <div className="grid grid-cols-3 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
+                                <div className="space-y-4">
+                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Background Theme</label>
+                                   <div className="flex flex-wrap gap-2 p-1 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
                                       {['DARK', 'LIGHT', 'PRISTINE'].map(m => (
                                          <button 
                                             key={m}
                                             onClick={() => setFormData({...formData, idCardTheme: m as any})}
                                             className={cn(
-                                               "py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", 
+                                               "flex-1 min-w-[60px] py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", 
                                                formData.idCardTheme === m 
                                                 ? "bg-[var(--primary)] text-white shadow-lg" 
                                                 : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]"
                                             )}
-                                         >{m === 'PRISTINE' ? 'Pristine' : m}</button>
+                                         >{m === 'PRISTINE' ? 'White' : m.charAt(0) + m.slice(1).toLowerCase()}</button>
                                       ))}
                                    </div>
                                 </div>
-
-                                {/* Orientation */}
-                                <div className="space-y-6">
-                                   <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Card Shape</label>
-                                   <div className="grid grid-cols-2 gap-2 p-1.5 bg-[var(--bg-elevated)]/50 rounded-[1.5rem] border border-[var(--border-subtle)]">
-                                      <button 
-                                         onClick={() => setFormData({...formData, idCardOrientation: 'VERTICAL'})}
-                                         className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'VERTICAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
-                                      >Portrait</button>
-                                      <button 
-                                         onClick={() => setFormData({...formData, idCardOrientation: 'HORIZONTAL'})}
-                                         className={cn("py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", formData.idCardOrientation === 'HORIZONTAL' ? "bg-indigo-600 text-white shadow-lg" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]")}
-                                      >Landscape</button>
-                                   </div>
-                                </div>
-                            </div>
-                         </div>
-                       </section>
-                      <section className="p-12 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
-                         <div className="flex items-center gap-6 mb-12">
-                            <div className="w-16 h-16 bg-emerald-500/10 rounded-[1.5rem] flex items-center justify-center text-emerald-600 shadow-inner">
-                                <ShieldCheck size={32} />
-                            </div>
-                            <div>
-                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Card Features</h4>
-                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Logo and Scanner Settings</p>
-                            </div>
-                         </div>
-
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="flex items-center justify-between p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] group hover:border-emerald-500/30 transition-all">
-                               <div>
-                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Show Company Logo</p>
-                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">Visible on card front</p>
-                               </div>
-                               <input 
-                                 type="checkbox" 
-                                 className="toggle-checkbox" 
-                                 checked={formData.idCardShowLogo}
-                                 onChange={e => setFormData({...formData, idCardShowLogo: e.target.checked})}
-                               />
-                            </div>
-
-                            <div className="flex items-center justify-between p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] group hover:border-emerald-500/30 transition-all">
-                               <div>
-                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Attendance QR Code</p>
-                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">For clock-in scans</p>
-                               </div>
-                               <input 
-                                 type="checkbox" 
-                                 className="toggle-checkbox" 
-                                 checked={formData.idCardShowQrCode}
-                                 onChange={e => setFormData({...formData, idCardShowQrCode: e.target.checked})}
-                               />
                             </div>
                          </div>
                       </section>
 
-                      {/* --- MODULE 3: INSTITUTIONAL METADATA --- */}
-                      <section className="p-12 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
-                         <div className="flex items-center gap-6 mb-12">
-                            <div className="w-16 h-16 bg-blue-500/10 rounded-[1.5rem] flex items-center justify-center text-blue-600 shadow-inner">
-                                <Mail size={32} />
+                      <hr className="border-[var(--border-subtle)]" />
+
+                      {/* --- SECTION: LOGO & SCANNER --- */}
+                      <section className="space-y-8">
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+                                <ShieldCheck size={24} />
                             </div>
                             <div>
-                               <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Institutional Info</h4>
-                               <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Ownership & Legal Terms</p>
+                               <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Logo & Scanner</h4>
+                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Visibility and security features</p>
                             </div>
                          </div>
 
-                         <div className="space-y-10">
-                            <div className="space-y-6">
-                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Back Side Title</label>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <button 
+                              onClick={() => setFormData({...formData, idCardShowLogo: !formData.idCardShowLogo})}
+                              className={cn(
+                                "flex items-center justify-between p-6 rounded-3xl border transition-all text-left",
+                                formData.idCardShowLogo ? "bg-emerald-500/5 border-emerald-500/20" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]"
+                              )}
+                            >
+                               <div>
+                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Show Company Logo</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">Visible on card front</p>
+                               </div>
+                               <div className={cn("w-10 h-6 rounded-full relative transition-colors", formData.idCardShowLogo ? "bg-emerald-500" : "bg-[var(--text-muted)]/20")}>
+                                  <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all", formData.idCardShowLogo ? "right-1" : "left-1")} />
+                               </div>
+                            </button>
+
+                            <button 
+                              onClick={() => setFormData({...formData, idCardShowQrCode: !formData.idCardShowQrCode})}
+                              className={cn(
+                                "flex items-center justify-between p-6 rounded-3xl border transition-all text-left",
+                                formData.idCardShowQrCode ? "bg-emerald-500/5 border-emerald-500/20" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]"
+                              )}
+                            >
+                               <div>
+                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Attendance QR Code</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">For clock-in scans</p>
+                               </div>
+                               <div className={cn("w-10 h-6 rounded-full relative transition-colors", formData.idCardShowQrCode ? "bg-emerald-500" : "bg-[var(--text-muted)]/20")}>
+                                  <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all", formData.idCardShowQrCode ? "right-1" : "left-1")} />
+                               </div>
+                            </button>
+                         </div>
+                      </section>
+
+                      <hr className="border-[var(--border-subtle)]" />
+
+                      {/* --- SECTION: CARD INFORMATION --- */}
+                      <section className="space-y-8">
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-600">
+                                <Building2 size={24} />
+                            </div>
+                            <div>
+                               <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Card Information</h4>
+                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Ownership and legal terms</p>
+                            </div>
+                         </div>
+
+                         <div className="space-y-6">
+                            <div className="space-y-3">
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Back Side Title</label>
                                <input 
                                  type="text"
-                                 className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-[1.5rem] px-8 py-5 text-sm font-black text-[var(--text-primary)] focus:border-[var(--primary)] outline-none shadow-inner transition-all"
+                                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none transition-all"
                                  placeholder="Terms of Use"
                                  value={formData.idCardSecurityText}
                                  onChange={e => setFormData({...formData, idCardSecurityText: e.target.value})}
                                />
                             </div>
 
-                            <div className="space-y-6">
-                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Ownership Statement</label>
+                            <div className="space-y-3">
+                               <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Card Message (Back)</label>
                                <textarea 
-                                 className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-[2rem] px-8 py-6 text-sm font-bold leading-relaxed text-[var(--text-primary)] focus:border-[var(--primary)] outline-none min-h-[160px] resize-none shadow-inner transition-all"
+                                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-6 py-5 text-sm font-bold leading-relaxed text-[var(--text-primary)] focus:border-[var(--primary)] outline-none min-h-[120px] resize-none transition-all"
                                  placeholder="This card belongs to..."
                                  value={formData.idCardBackMessage}
                                  onChange={e => setFormData({...formData, idCardBackMessage: e.target.value})}
                                />
-                               <div className="p-6 rounded-[1.5rem] bg-indigo-500/5 border border-indigo-500/10">
-                                 <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest leading-relaxed">
-                                   Note: Default statement will append organization hub address automatically if left blank.
-                                 </p>
-                               </div>
+                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest opacity-60 px-1">
+                                 Note: Default text is used if left blank.
+                               </p>
                             </div>
                          </div>
                       </section>
@@ -765,8 +739,8 @@ const SettingsHub = () => {
                        <div className="sticky top-12 space-y-8">
                           <div className="text-center space-y-4">
                              <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Identity Real-time Preview</h4>
-                             <div className="p-8 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed overflow-hidden flex justify-center items-center min-h-[480px]">
-                                <div className={cn("transition-all duration-700 origin-center scale-[0.65] lg:scale-[0.7]")}>
+                             <div className="p-4 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed overflow-hidden flex justify-center items-center min-h-[480px]">
+                                <div className={cn("transition-all duration-700 origin-center", formData.idCardOrientation === 'HORIZONTAL' ? "scale-[0.55] lg:scale-[0.6]" : "scale-[0.65] lg:scale-[0.7]")}>
                                 <EmployeeIDCard 
                                   employee={{ 
                                     fullName: currentUser?.fullName || 'John Doe', 
