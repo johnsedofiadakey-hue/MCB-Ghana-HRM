@@ -320,9 +320,9 @@ const SettingsHub = () => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 pb-32">
+    <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-8 pb-32 px-4 xl:px-8">
       {/* Sidebar Nav */}
-      <div className="w-full lg:w-72 shrink-0">
+      <div className="w-full xl:w-72 shrink-0">
         <div className="mb-8 px-4">
           <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{t('common.settings')}</h2>
           <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2 opacity-60">{t('settings.system_config')}</p>
@@ -365,7 +365,7 @@ const SettingsHub = () => {
 
       {/* Content Area */}
       <div className="flex-1">
-        <div className="nx-card p-10 lg:p-14 min-h-[700px] border-[var(--border-subtle)] shadow-[0_30px_60px_rgba(0,0,0,0.02)] relative overflow-hidden">
+        <div className="nx-card p-8 lg:p-12 xl:p-16 min-h-[800px] border-[var(--border-subtle)] shadow-[0_30px_60px_rgba(0,0,0,0.02)] relative">
           {/* Subtle Background Glow */}
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-[var(--primary)]/5 blur-[120px] rounded-full pointer-events-none" />
           
@@ -578,10 +578,10 @@ const SettingsHub = () => {
                 )}
 
                 {activeTab === 'id_cards' && (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    <div className="lg:col-span-7 space-y-10 text-left">
+                  <div className="space-y-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                       {/* --- SECTION: CARD DESIGN --- */}
-                      <section className="space-y-8">
+                      <section className="space-y-8 p-10 rounded-[3rem] bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] text-left">
                          <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
                                 <Palette size={24} />
@@ -593,7 +593,6 @@ const SettingsHub = () => {
                          </div>
 
                          <div className="space-y-8">
-                            {/* Color Selection */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                 <ColorPicker 
                                     id="idCardPrimaryColor" 
@@ -609,8 +608,7 @@ const SettingsHub = () => {
                                 />
                             </div>
 
-                            {/* Orientation & Theme */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                    <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Card Orientation</label>
                                    <div className="flex flex-wrap gap-2 p-1 bg-[var(--bg-elevated)] rounded-2xl border border-[var(--border-subtle)]">
@@ -646,75 +644,75 @@ const SettingsHub = () => {
                          </div>
                       </section>
 
-                      <hr className="border-[var(--border-subtle)]" />
-
                       {/* --- SECTION: LOGO & SCANNER --- */}
-                      <section className="space-y-8">
-                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
-                                <ShieldCheck size={24} />
-                            </div>
-                            <div>
-                               <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Logo & Scanner</h4>
-                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Visibility and security features</p>
-                            </div>
-                         </div>
+                      <div className="space-y-10">
+                        <section className="space-y-8 p-10 rounded-[3rem] bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] text-left h-full">
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+                                  <ShieldCheck size={24} />
+                              </div>
+                              <div>
+                                 <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Visibility Controls</h4>
+                                 <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Logo and scanner features</p>
+                              </div>
+                           </div>
 
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <button 
-                              onClick={() => setFormData({...formData, idCardShowLogo: !formData.idCardShowLogo})}
-                              className={cn(
-                                "flex items-center justify-between p-6 rounded-3xl border transition-all text-left",
-                                formData.idCardShowLogo ? "bg-emerald-500/5 border-emerald-500/20" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]"
-                              )}
-                            >
-                               <div>
-                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Show Company Logo</p>
-                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">Visible on card front</p>
-                               </div>
-                               <div className={cn("w-10 h-6 rounded-full relative transition-colors", formData.idCardShowLogo ? "bg-emerald-500" : "bg-[var(--text-muted)]/20")}>
-                                  <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all", formData.idCardShowLogo ? "right-1" : "left-1")} />
-                               </div>
-                            </button>
+                           <div className="space-y-4">
+                              <button 
+                                onClick={() => setFormData({...formData, idCardShowLogo: !formData.idCardShowLogo})}
+                                className={cn(
+                                  "w-full flex items-center justify-between p-6 rounded-3xl border transition-all text-left",
+                                  formData.idCardShowLogo ? "bg-emerald-500/5 border-emerald-500/20" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]"
+                                )}
+                              >
+                                 <div>
+                                    <p className="text-[14px] font-black text-[var(--text-primary)]">Show Company Logo</p>
+                                    <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">Visible on card front</p>
+                                 </div>
+                                 <div className={cn("w-10 h-6 rounded-full relative transition-colors", formData.idCardShowLogo ? "bg-emerald-500" : "bg-[var(--text-muted)]/20")}>
+                                    <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all", formData.idCardShowLogo ? "right-1" : "left-1")} />
+                                 </div>
+                              </button>
 
-                            <button 
-                              onClick={() => setFormData({...formData, idCardShowQrCode: !formData.idCardShowQrCode})}
-                              className={cn(
-                                "flex items-center justify-between p-6 rounded-3xl border transition-all text-left",
-                                formData.idCardShowQrCode ? "bg-emerald-500/5 border-emerald-500/20" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]"
-                              )}
-                            >
-                               <div>
-                                  <p className="text-[14px] font-black text-[var(--text-primary)]">Attendance QR Code</p>
-                                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">For clock-in scans</p>
-                               </div>
-                               <div className={cn("w-10 h-6 rounded-full relative transition-colors", formData.idCardShowQrCode ? "bg-emerald-500" : "bg-[var(--text-muted)]/20")}>
-                                  <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all", formData.idCardShowQrCode ? "right-1" : "left-1")} />
-                               </div>
-                            </button>
-                         </div>
-                      </section>
+                              <button 
+                                onClick={() => setFormData({...formData, idCardShowQrCode: !formData.idCardShowQrCode})}
+                                className={cn(
+                                  "w-full flex items-center justify-between p-6 rounded-3xl border transition-all text-left",
+                                  formData.idCardShowQrCode ? "bg-emerald-500/5 border-emerald-500/20" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]"
+                                )}
+                              >
+                                 <div>
+                                    <p className="text-[14px] font-black text-[var(--text-primary)]">Attendance QR Code</p>
+                                    <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase mt-1 tracking-wider">For clock-in scans</p>
+                                 </div>
+                                 <div className={cn("w-10 h-6 rounded-full relative transition-colors", formData.idCardShowQrCode ? "bg-emerald-500" : "bg-[var(--text-muted)]/20")}>
+                                    <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all", formData.idCardShowQrCode ? "right-1" : "left-1")} />
+                                 </div>
+                              </button>
+                           </div>
+                        </section>
+                      </div>
+                    </div>
 
-                      <hr className="border-[var(--border-subtle)]" />
-
-                      {/* --- SECTION: CARD INFORMATION --- */}
-                      <section className="space-y-8">
+                    {/* --- SECTION: CARD INFORMATION --- */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                      <section className="lg:col-span-8 space-y-8 p-10 rounded-[3rem] bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] text-left">
                          <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-600">
                                 <Building2 size={24} />
                             </div>
                             <div>
-                               <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Card Information</h4>
-                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Ownership and legal terms</p>
+                               <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Legal & Terms</h4>
+                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Reverse side card information</p>
                             </div>
                          </div>
 
-                         <div className="space-y-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-3">
                                <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Back Side Title</label>
                                <input 
                                  type="text"
-                                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none transition-all"
+                                 className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none transition-all"
                                  placeholder="Terms of Use"
                                  value={formData.idCardSecurityText}
                                  onChange={e => setFormData({...formData, idCardSecurityText: e.target.value})}
@@ -724,66 +722,77 @@ const SettingsHub = () => {
                             <div className="space-y-3">
                                <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-1">Card Message (Back)</label>
                                <textarea 
-                                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-6 py-5 text-sm font-bold leading-relaxed text-[var(--text-primary)] focus:border-[var(--primary)] outline-none min-h-[120px] resize-none transition-all"
+                                 className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-sm font-bold leading-relaxed text-[var(--text-primary)] focus:border-[var(--primary)] outline-none min-h-[100px] resize-none transition-all"
                                  placeholder="This card belongs to..."
                                  value={formData.idCardBackMessage}
                                  onChange={e => setFormData({...formData, idCardBackMessage: e.target.value})}
                                />
-                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest opacity-60 px-1">
-                                 Note: Default text is used if left blank.
-                               </p>
                             </div>
                          </div>
                       </section>
+
+                      <div className="lg:col-span-4 flex flex-col justify-center">
+                        <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 text-left">
+                           <div className="flex items-center gap-3 text-amber-600 mb-4">
+                              <AlertTriangle size={18} />
+                              <h5 className="text-[11px] font-black uppercase tracking-widest">Hardware Sync</h5>
+                           </div>
+                           <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                              Ensure high-fidelity edge-to-edge printing. For Node QR features, ensure IT Hub "Infrastructure" keys are active.
+                           </p>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="lg:col-span-5">
-                       <div className="sticky top-12 space-y-8">
-                          <div className="text-center space-y-4">
-                             <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Identity Real-time Preview</h4>
-                             <div className="p-4 bg-[var(--bg-elevated)]/30 rounded-[3rem] border border-[var(--border-subtle)] border-dashed overflow-hidden flex justify-center items-center min-h-[480px]">
-                                <div className={cn("transition-all duration-700 origin-center", formData.idCardOrientation === 'HORIZONTAL' ? "scale-[0.55] lg:scale-[0.6]" : "scale-[0.65] lg:scale-[0.7]")}>
-                                <EmployeeIDCard 
-                                  employee={{ 
-                                    fullName: currentUser?.fullName || 'John Doe', 
-                                    jobTitle: currentUser?.jobTitle || 'Executive Personnel', 
-                                    employeeCode: currentUser?.employeeCode || 'MCB-001-GH',
-                                    avatarUrl: currentUser?.avatarUrl,
-                                    departmentObj: { name: 'EXECUTIVE_HUB' },
-                                    email: currentUser?.email || 'j.doe@mcb-ghana.com'
-                                  }} 
-                                  organization={{
-                                    ...settings,
-                                    name: formData.companyName,
-                                    logoUrl: getLogoUrl(formData.companyLogoUrl) as string,
-                                    idCardPrimaryColor: formData.idCardPrimaryColor,
-                                    idCardAccentColor: formData.idCardAccentColor,
-                                    idCardTheme: formData.idCardTheme,
-                                    idCardOrientation: formData.idCardOrientation,
-                                    idCardShowLogo: formData.idCardShowLogo,
-                                    idCardShowQrCode: formData.idCardShowQrCode,
-                                    idCardBackMessage: formData.idCardBackMessage,
-                                    idCardSecurityText: formData.idCardSecurityText
-                                  }} 
-                                />
-                                 </div>
-                              </div>
-                              <div className="flex flex-col items-center gap-2">
-                                 <p className="text-[11px] font-black text-[var(--primary)] uppercase tracking-widest">CR80 ISO Standard: 85.6mm × 54.0mm</p>
-                                 <p className="text-[10px] font-medium text-[var(--text-muted)] italic leading-relaxed">High-fidelity 300 DPI Physical Print Representation.</p>
-                              </div>
-                          </div>
+                    {/* --- REAL-TIME PREVIEW WORKSPACE (Full Width at Bottom) --- */}
+                    <div className="pt-12 border-t border-[var(--border-subtle)] border-dashed">
+                        <div className="text-center space-y-8">
+                           <div className="flex flex-col items-center gap-3">
+                              <h4 className="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-[0.5em]">Identity Workspace Preview</h4>
+                              <p className="text-[12px] font-medium text-[var(--text-muted)] max-w-lg">Preview the final production output for both Portrait and Landscape physical tags.</p>
+                           </div>
 
-                          <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 text-left">
-                             <div className="flex items-center gap-3 text-amber-600 mb-4">
-                                <AlertTriangle size={18} />
-                                <h5 className="text-[11px] font-black uppercase tracking-widest">Hardware Dependency</h5>
-                             </div>
-                             <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                                Ensure your physical card printers support high-fidelity edge-to-edge printing. For Node QR features, ensure the IT Hub "Infrastructure" keys are configured correctly.
-                             </p>
-                          </div>
-                       </div>
+                           <div className="p-12 lg:p-20 bg-[var(--bg-elevated)]/30 rounded-[4rem] border border-[var(--border-subtle)] border-dashed flex justify-center items-center min-h-[600px] relative overflow-hidden group">
+                               <div className="absolute inset-0 bg-[var(--primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none blur-3xl" />
+                               
+                               <div className={cn(
+                                 "transition-all duration-1000 origin-center flex items-center justify-center", 
+                                 formData.idCardOrientation === 'HORIZONTAL' 
+                                  ? "scale-[0.6] lg:scale-[0.8] xl:scale-[0.95]" 
+                                  : "scale-[0.7] lg:scale-[0.9] xl:scale-[1.1]"
+                               )}>
+                                 <EmployeeIDCard 
+                                   employee={{ 
+                                     fullName: currentUser?.fullName || 'John Doe', 
+                                     jobTitle: currentUser?.jobTitle || 'Executive Personnel', 
+                                     employeeCode: currentUser?.employeeCode || 'MCB-001-GH',
+                                     avatarUrl: currentUser?.avatarUrl,
+                                     departmentObj: { name: 'EXECUTIVE_HUB' },
+                                     email: currentUser?.email || 'j.doe@mcb-ghana.com'
+                                   }} 
+                                   organization={{
+                                     ...settings,
+                                     name: formData.companyName,
+                                     logoUrl: getLogoUrl(formData.companyLogoUrl) as string,
+                                     idCardPrimaryColor: formData.idCardPrimaryColor,
+                                     idCardAccentColor: formData.idCardAccentColor,
+                                     idCardTheme: formData.idCardTheme,
+                                     idCardOrientation: formData.idCardOrientation,
+                                     idCardShowLogo: formData.idCardShowLogo,
+                                     idCardShowQrCode: formData.idCardShowQrCode,
+                                     idCardBackMessage: formData.idCardBackMessage,
+                                     idCardSecurityText: formData.idCardSecurityText
+                                   }} 
+                                 />
+                               </div>
+                           </div>
+
+                           <div className="flex flex-col items-center gap-4">
+                              <div className="px-6 py-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                                 <p className="text-[11px] font-black text-[var(--primary)] uppercase tracking-widest">CR80 ISO Standard: 85.6mm × 54.0mm • 300 DPI Rendering</p>
+                              </div>
+                           </div>
+                        </div>
                     </div>
                   </div>
                 )}
