@@ -745,22 +745,23 @@ const SettingsHub = () => {
                     </div>
 
                     {/* --- REAL-TIME PREVIEW WORKSPACE (Full Width at Bottom) --- */}
-                    <div className="pt-12 border-t border-[var(--border-subtle)] border-dashed">
-                        <div className="text-center space-y-8">
-                           <div className="flex flex-col items-center gap-3">
-                              <h4 className="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-[0.5em]">Identity Workspace Preview</h4>
-                              <p className="text-[12px] font-medium text-[var(--text-muted)] max-w-lg">Preview the final production output for both Portrait and Landscape physical tags.</p>
+                    <div className="pt-20">
+                        <div className="space-y-10">
+                           <div className="flex flex-col items-center text-center gap-4">
+                              <div className="px-4 py-1.5 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20">
+                                 <span className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.3em]">Institutional ID Axis</span>
+                              </div>
+                              <h4 className="text-3xl font-black text-[var(--text-primary)] tracking-tight">Identity Workspace Preview</h4>
+                              <p className="text-[14px] font-medium text-[var(--text-muted)] max-w-xl mx-auto">
+                                Final production output rendering. Check both Portrait and Landscape orientations for physical print accuracy.
+                              </p>
                            </div>
 
-                           <div className="p-12 lg:p-20 bg-[var(--bg-elevated)]/30 rounded-[4rem] border border-[var(--border-subtle)] border-dashed flex justify-center items-center min-h-[600px] relative overflow-hidden group">
-                               <div className="absolute inset-0 bg-[var(--primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none blur-3xl" />
+                           <div className="p-8 lg:p-16 bg-[var(--bg-elevated)]/30 rounded-[4rem] border-2 border-[var(--border-subtle)] border-dashed flex justify-center items-center min-h-[700px] relative">
+                               {/* Background Aesthetic */}
+                               <div className="absolute inset-0 bg-[var(--primary)]/5 blur-3xl opacity-30 pointer-events-none" />
                                
-                               <div className={cn(
-                                 "transition-all duration-1000 origin-center flex items-center justify-center", 
-                                 formData.idCardOrientation === 'HORIZONTAL' 
-                                  ? "scale-[0.6] lg:scale-[0.8] xl:scale-[0.95]" 
-                                  : "scale-[0.7] lg:scale-[0.9] xl:scale-[1.1]"
-                               )}>
+                               <div className="relative z-10 transition-all duration-700 transform scale-90 lg:scale-100 xl:scale-110">
                                  <EmployeeIDCard 
                                    employee={{ 
                                      fullName: currentUser?.fullName || 'John Doe', 
@@ -788,8 +789,14 @@ const SettingsHub = () => {
                            </div>
 
                            <div className="flex flex-col items-center gap-4">
-                              <div className="px-6 py-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
-                                 <p className="text-[11px] font-black text-[var(--primary)] uppercase tracking-widest">CR80 ISO Standard: 85.6mm × 54.0mm • 300 DPI Rendering</p>
+                              <div className="px-8 py-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl">
+                                 <p className="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-4">
+                                    <span>CR80 ISO Standard</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
+                                    <span>85.6mm × 54.0mm</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
+                                    <span>300 DPI Rendering</span>
+                                 </p>
                               </div>
                            </div>
                         </div>
