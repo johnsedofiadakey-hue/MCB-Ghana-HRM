@@ -106,7 +106,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
   'https://mcb-hrm-ghana.web.app',
   'https://mcb-hrm-ghana.firebaseapp.com',
-  'https://mcb-hrm-ghana-api.onrender.com'
+  'https://mcb-ghana-hrm-api.onrender.com'
 ];
 
 if (process.env.NODE_ENV !== 'production') {
