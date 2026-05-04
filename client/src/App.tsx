@@ -69,6 +69,7 @@ const Onboarding = lazy(() => import('./pages/Onboarding'));
 const EnterpriseSuite = lazy(() => import('./pages/EnterpriseSuite'));
 const ITAdmin = lazy(() => import('./pages/ITAdmin'));
 const FinalSignOff = lazy(() => import('./pages/FinalSignOff'));
+const PrintIDsPage = lazy(() => import('./pages/PrintIDsPage'));
 const AppraisalPacketView = lazy(() => import('./pages/performance/AppraisalPacketView'));
 const CalibrationView = lazy(() => import('./pages/performance/CalibrationView'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
@@ -443,7 +444,8 @@ const AppContent = () => {
             <Route path="/employees" element={<RoleGuard minRank={70}><EmployeeManagement /></RoleGuard>} />
             <Route path="/employees/history" element={<RoleGuard minRank={70}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
-            <Route path="/assets" element={<AssetManagement />} />
+            <Route path="/print/ids" element={<RoleGuard minRank={70}><PrintIDsPage /></RoleGuard>} />
+            <Route path="/assets" element={<AssetManagement /></Route>
             <Route path="/audit" element={<RoleGuard minRank={85}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
             <Route path="/settings" element={<RoleGuard minRank={85}><SettingsHub /></RoleGuard>} />

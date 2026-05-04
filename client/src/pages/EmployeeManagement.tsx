@@ -92,6 +92,7 @@ export default function EmployeeManagement() {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'hard_delete' | 'view' | null>(null);
   const [selected, setSelected] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const modalAvatarRef = useRef<HTMLInputElement>(null);
@@ -438,6 +439,44 @@ export default function EmployeeManagement() {
         </select>
       </div>
 
+      {/* Bulk Actions Bar */}
+      <AnimatePresence>
+        {selectedIds.length > 0 && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0, y: -20 }}
+            animate={{ height: 'auto', opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -20 }}
+            className="overflow-hidden"
+          >
+            <div className="nx-card p-4 bg-[var(--primary)] text-white flex items-center justify-between mb-8 shadow-2xl shadow-[var(--primary)]/20 rounded-[2rem]">
+              <div className="flex items-center gap-6 px-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-lg">
+                  {selectedIds.length}
+                </div>
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] opacity-90">Personnel Ready for Batch Printing</p>
+                  <p className="text-[9px] font-bold opacity-60 uppercase tracking-widest">Optimized for direct PVC card production</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button 
+                    onClick={() => setSelectedIds([])}
+                    className="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                >
+                    {t('common.cancel')}
+                </button>
+                <button 
+                    onClick={() => navigate(`/print/ids?ids=${selectedIds.join(',')}`)}
+                    className="px-8 py-4 rounded-xl bg-white text-[var(--primary)] text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center gap-2 hover:scale-105 transition-all"
+                >
+                    <Printer size={16} /> {t('employees.bulk_print_ids', 'Execute Bulk ID Print')}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {loading ? (
         <div className="py-40 flex flex-col items-center justify-center gap-6">
           <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
@@ -453,8 +492,23 @@ export default function EmployeeManagement() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="nx-card group relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30 hover:shadow-2xl transition-all duration-500"
+                  className={cn(
+                       "nx-card group relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30 hover:shadow-2xl transition-all duration-500",
+                       selectedIds.includes(emp.id) && "ring-2 ring-[var(--primary)] border-[var(--primary)]/40 shadow-xl shadow-[var(--primary)]/5"
+                   )}
                 >
+                    {/* Checkbox Overlay */}
+                    <div className="absolute top-6 left-6 z-30">
+                        <input 
+                            type="checkbox"
+                            checked={selectedIds.includes(emp.id)}
+                            onChange={(e) => {
+                                if (e.target.checked) setSelectedIds([...selectedIds, emp.id]);
+                                else setSelectedIds(selectedIds.filter(id => id !== emp.id));
+                            }}
+                            className="w-5 h-5 rounded-lg border-2 border-[var(--border-subtle)] bg-[var(--bg-card)] checked:bg-[var(--primary)] checked:border-[var(--primary)] transition-all cursor-pointer appearance-none flex items-center justify-center after:content-['✓'] after:text-white after:text-[10px] after:hidden checked:after:block"
+                        />
+                    </div>
                    <div className="p-8 pb-32">
                       <div className="flex justify-between items-start mb-6">
                          <div className="relative group/avatar">
@@ -531,18 +585,43 @@ export default function EmployeeManagement() {
              <div className="nx-card overflow-hidden border-[var(--border-subtle)]">
                 <div className="overflow-x-auto">
                    <table className="nexus-responsive-table w-full">
-                      <thead>
-                         <tr className="bg-[var(--bg-elevated)]/20">
-                            <th className="px-8">{t('employees.personnel')}</th>
+                       <thead>
+                          <tr className="bg-[var(--bg-elevated)]/20">
+                             <th className="px-8 w-16">
+                                <input 
+                                    type="checkbox"
+                                    checked={filtered.length > 0 && selectedIds.length === filtered.length}
+                                    onChange={(e) => {
+                                        if (e.target.checked) setSelectedIds(filtered.map(emp => emp.id));
+                                        else setSelectedIds([]);
+                                    }}
+                                    className="w-5 h-5 rounded-lg border-2 border-[var(--border-subtle)] bg-[var(--bg-card)] checked:bg-[var(--primary)] checked:border-[var(--primary)] transition-all cursor-pointer appearance-none flex items-center justify-center after:content-['✓'] after:text-white after:text-[10px] after:hidden checked:after:block"
+                                />
+                             </th>
+                             <th className="px-4">{t('employees.personnel')}</th>
                             <th>{t('employees.rank_dept')}</th>
                             <th>{t('employees.operational_status')}</th>
                             <th className="text-right px-8">{t('common.actions')}</th>
                          </tr>
                       </thead>
                       <tbody className="divide-y divide-[var(--border-subtle)]/50">
-                         {filtered.map((emp) => (
-                            <tr key={emp.id} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
-                               <td className="px-8 py-5" data-label={t('employees.personnel')}>
+                          {filtered.map((emp) => (
+                             <tr key={emp.id} className={cn(
+                                 "hover:bg-[var(--bg-elevated)]/30 transition-all group",
+                                 selectedIds.includes(emp.id) && "bg-[var(--primary)]/5"
+                             )}>
+                                <td className="px-8 py-5">
+                                    <input 
+                                        type="checkbox"
+                                        checked={selectedIds.includes(emp.id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) setSelectedIds([...selectedIds, emp.id]);
+                                            else setSelectedIds(selectedIds.filter(id => id !== emp.id));
+                                        }}
+                                        className="w-5 h-5 rounded-lg border-2 border-[var(--border-subtle)] bg-[var(--bg-card)] checked:bg-[var(--primary)] checked:border-[var(--primary)] transition-all cursor-pointer appearance-none flex items-center justify-center after:content-['✓'] after:text-white after:text-[10px] after:hidden checked:after:block"
+                                    />
+                                </td>
+                               <td className="px-4 py-5" data-label={t('employees.personnel')}>
                                   <div className="flex items-center gap-4">
                                      <Avatar user={emp} size={10} />
                                      <div>
