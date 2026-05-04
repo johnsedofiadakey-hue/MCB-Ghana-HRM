@@ -1,10 +1,6 @@
 import * as admin from 'firebase-admin';
 
 const initializeFirebase = () => {
-    // TEMPORARY BYPASS: Firebase key is corrupted
-    console.warn('[FirebaseAdmin] BYPASSING INITIALIZATION (Corrupted Key)');
-    return;
-    
     if (admin.apps.length > 0) return;
 
     try {
