@@ -28,7 +28,7 @@ const statusColors: Record<string, string> = {
 const TeamReview = () => {
   const currentUser = getStoredUser();
   const { t } = useTranslation();
-  const canManageTeam = getRankFromRole(currentUser.role) >= 60;
+  const canManageTeam = getRankFromRole(currentUser?.role) >= 60;
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [mandates, setMandates] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -149,7 +149,7 @@ const TeamReview = () => {
                   <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic KPI Mandates</h2>
                   <div className="flex items-center gap-4 mt-2">
                     <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest">Top-Down Directives set by MD / HQ</p>
-                    {getRankFromRole(currentUser.role) >= 70 && (
+                    {getRankFromRole(currentUser?.role) >= 70 && (
                       <select 
                         value={selectedDeptId}
                         onChange={(e) => setSelectedDeptId(e.target.value)}

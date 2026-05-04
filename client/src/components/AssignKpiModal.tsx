@@ -3,7 +3,7 @@ import api from '../services/api';
 import { X, Plus, Trash2, Save, Target, AlertCircle, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 
 interface AssignKpiModalProps {
   isOpen: boolean;
