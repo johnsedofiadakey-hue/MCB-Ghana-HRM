@@ -717,9 +717,11 @@ export class AppraisalService {
   }
 
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
+    let packets: any[] = [];
+    
     // If Director or MD, they see ALL open packets for their organization (Global Oversight)
     if (userRank >= 80) {
-      return prisma.appraisalPacket.findMany({
+      packets = await prismaClient.appraisalPacket.findMany({
         where: { 
           organizationId,
           status: { not: 'CANCELLED' }
@@ -730,25 +732,31 @@ export class AppraisalService {
         },
         orderBy: { updatedAt: 'desc' }
       });
+    } else {
+      packets = await prismaClient.appraisalPacket.findMany({
+        where: {
+          organizationId,
+          OR: [
+            { supervisorId: userId },
+            { matrixSupervisorId: userId },
+            { managerId: userId },
+            { hrReviewerId: userId },
+            { finalReviewerId: userId }
+          ]
+        },
+        include: {
+          cycle: true,
+          employee: { select: { fullName: true, avatarUrl: true, jobTitle: true } }
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
     }
 
-    return prisma.appraisalPacket.findMany({
-      where: {
-        organizationId,
-        OR: [
-          { supervisorId: userId },
-          { matrixSupervisorId: userId },
-          { managerId: userId },
-          { hrReviewerId: userId },
-          { finalReviewerId: userId }
-        ]
-      },
-      include: {
-        cycle: true,
-        employee: { select: { fullName: true, avatarUrl: true, jobTitle: true } }
-      },
-      orderBy: { updatedAt: 'desc' }
-    });
+    // 🔒 Safe Serialization: Convert Prisma Decimals to Numbers to prevent 500 JSON serialization errors
+    return packets.map(p => ({
+      ...p,
+      finalScore: p.finalScore ? Number(p.finalScore) : null
+    }));
   }
 
   /**
