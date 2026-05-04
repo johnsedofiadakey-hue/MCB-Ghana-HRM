@@ -23,7 +23,7 @@ const PromotionRequests = () => {
     const fetchRequests = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/hr-features/promotions');
+            const res = await api.get('/hr/promotions');
             setRequests(res.data);
         } catch (err) {
             toast.error('Failed to load promotion requests');
@@ -39,7 +39,7 @@ const PromotionRequests = () => {
     const handleAction = async (id: string, status: 'APPROVED' | 'REJECTED') => {
         setProcessingId(id);
         try {
-            await api.patch(`/hr-features/promotions/${id}`, {
+            await api.patch(`/hr/promotions/${id}`, {
                 status,
                 hrComment
             });

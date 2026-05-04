@@ -87,7 +87,7 @@ const EmployeeProfile = () => {
 
         setSubmittingPromotion(true);
         try {
-            await api.post('/hr-features/promotions', {
+            await api.post('/hr/promotions', {
                 employeeId: id,
                 ...promotionForm
             });

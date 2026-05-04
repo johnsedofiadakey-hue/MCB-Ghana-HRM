@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prisma/client';
 import * as admin from 'firebase-admin';
 import fs from 'fs';
 import path from 'path';
-
-const prisma = new PrismaClient();
 
 export class BackupService {
   private static isFirebaseInitialized = false;

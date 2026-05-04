@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { getAuditLogs } from '../services/audit.service';
+import prisma from '../prisma/client';
 
 export const getLogs = async (req: Request, res: Response) => {
     try {
@@ -22,11 +23,8 @@ export const exportLogsCSV = async (req: Request, res: Response) => {
         const userReq = (req as any).user;
         const organizationId = userReq?.organizationId || 'mcb-ghana-tenant';
 
-        const { PrismaClient } = await import('@prisma/client');
-        const prismaLocal = new PrismaClient();
-        
         // Fetch last 5000 audit logs
-        const logs = await prismaLocal.systemLog.findMany({
+        const logs = await prisma.systemLog.findMany({
             where: { organizationId },
             orderBy: { createdAt: 'desc' },
             take: 5000
@@ -49,8 +47,6 @@ export const exportLogsCSV = async (req: Request, res: Response) => {
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="audit_trail_${new Date().toISOString().split('T')[0]}.csv"`);
         res.status(200).send(csvContent);
-        
-        await prismaLocal.$disconnect();
     } catch (error: any) {
         console.error('Audit CSV Export failed:', error);
         res.status(500).json({ message: error.message });
