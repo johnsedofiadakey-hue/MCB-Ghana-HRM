@@ -100,10 +100,10 @@ export default function EmployeeManagement() {
   const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
   const isPrivileged = privilegedRoles.includes(user?.role) && rank >= 80;
 
-  const isAdmin = rank >= 80;
-  const canManage = isPrivileged; // Only IT, HR, MD can edit records now
-  const canManageBiometric = rank >= 85 && isPrivileged;
-  const canAddPersonnel = (rank >= 90 || user?.role === 'IT_MANAGER') && isPrivileged;
+  const isAdmin = rank >= 85;
+  const canManage = rank >= 85; // IT Admin, HR Manager, MD can edit records
+  const canManageBiometric = rank >= 85;
+  const canAddPersonnel = rank >= 85;
 
   // Real-time Persistence for "Create" / "Edit" flow
   const { data: draftData, updateDraft, loading: draftLoading } = usePersistentDraft(
@@ -507,12 +507,12 @@ export default function EmployeeManagement() {
                                 {t('employees.view_dossier')}
                             </button>
                          )}
-                         {isAdmin && (
+                         {canManage && (
                             <div className="flex gap-2">
                                 <button onClick={() => openEdit(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all flex items-center justify-center">
                                     <Edit2 size={14} />
                                 </button>
-                                {getRankFromRole(user.role) >= 90 && (
+                                {rank >= 85 && (
                                     <button onClick={() => openArchive(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--error)] text-[var(--text-muted)] hover:text-[var(--error)] transition-all flex items-center justify-center">
                                         <Trash2 size={14} />
                                     </button>
@@ -578,11 +578,11 @@ export default function EmployeeManagement() {
                                           <ArrowRight size={16} />
                                         </button>
                                       ) : (
-                                        canManage && (
+                                        {rank >= 85 && (
                                           <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
                                             <Edit2 size={16} />
                                           </button>
-                                        )
+                                        )}
                                       )}
                                   </div>
                                </td>

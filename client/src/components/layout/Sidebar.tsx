@@ -106,9 +106,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   const rank = getRankFromRole(user.role);
   const role = (user.role || '').toUpperCase();
   
-  const isHR = role.includes('HR') || rank >= 95;
-  const isFinance = role.includes('FINANCE') || rank >= 95;
-  const isIT = role.includes('IT') || rank >= 95;
+  const isHR = role.includes('HR') || rank >= 90;
+  const isFinance = role.includes('FINANCE') || rank >= 90;
+  const isIT = role.includes('IT') || rank >= 90;
   const isMD = rank >= 95;
   
   const [pendingAppraisals, setPendingAppraisals] = useState(0);
@@ -225,7 +225,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
               <NavGroup label={t('common.performance_label')} isCollapsed={isCollapsed}>
                 <NavItem to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} isCollapsed={isCollapsed} />
-                {rank >= 80 && (
+                {rank >= 75 && (
                   <NavItem to="/kpi/department" icon={Building2} label={t('common.departmental_goals')} isCollapsed={isCollapsed} />
                 )}
                 {rank >= 70 && (
@@ -238,7 +238,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                     <NavItem to="/performance/calibration" icon={Zap} label={t('common.calibration')} isCollapsed={isCollapsed} />
                   </>
                 )}
-                {rank >= 80 && (
+                {rank >= 75 && (
                   <>
                     <NavItem to="/reviews/final" icon={ShieldAlert} label={t('common.executive_sign_off')} isCollapsed={isCollapsed} />
                     <NavItem to="/reviews/cycles" icon={ClipboardList} label={t('common.appraisal_cycles')} isCollapsed={isCollapsed} />

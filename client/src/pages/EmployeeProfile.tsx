@@ -41,7 +41,7 @@ const EmployeeProfile = () => {
             const [empRes, kpiRes, riskRes] = await Promise.all([
                 api.get(`/employees/${id}`),
                 api.get(`/kpis/summary/individual?employeeId=${id}`).catch(() => ({ data: { averageScore: 0 } })),
-                getRankFromRole(currentUser?.role) >= 80 ? api.get(`/employees/${id}/risk`).catch(() => null) : Promise.resolve(null)
+                getRankFromRole(currentUser?.role) >= 75 ? api.get(`/employees/${id}/risk`).catch(() => null) : Promise.resolve(null)
             ]);
             setEmployee(empRes.data);
             setKpiSummary(kpiRes.data);
@@ -149,12 +149,12 @@ const EmployeeProfile = () => {
                             <Key size={14} /> Reset Password
                         </motion.button>
                     )}
-                    {((currentUser?.rank || 0) >= 80 || currentUser?.role === 'DEV') && (
+                    {((currentUser?.rank || 0) >= 75 || currentUser?.role === 'DEV') && (
                         <motion.button onClick={() => setShowLeaveModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-500 hover:text-white transition-all flex items-center gap-2">
                             <Umbrella size={14} /> Adjust Leave
                         </motion.button>
                     )}
-                    {((currentUser?.rank || 0) >= 80 || currentUser?.id === employee.id) ? (
+                    {((currentUser?.rank || 0) >= 85 || currentUser?.id === employee.id) ? (
                         <motion.button onClick={() => navigate('/employees?edit=' + employee.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
                             <Edit2 size={14} /> Update Profile
                         </motion.button>
