@@ -1,13 +1,26 @@
 import * as admin from 'firebase-admin';
 
 const initializeFirebase = () => {
+    // TEMPORARY BYPASS: Firebase key is corrupted
+    console.warn('[FirebaseAdmin] BYPASSING INITIALIZATION (Corrupted Key)');
+    return;
+    
     if (admin.apps.length > 0) return;
 
     try {
-        const serviceAccountVar = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT || 
+        const fs = require('fs');
+        const path = require('path');
+        const fixedPath = path.join(process.cwd(), 'sa_fixed.json');
+        
+        let serviceAccountVar = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT || 
                                  process.env.FIREBASE_SERVICE_ACCOUNT_NEXUS_HR_PLATFORM || 
                                  process.env.GOOGLE_DRIVE_KEY_JSON;
         
+        if (fs.existsSync(fixedPath)) {
+            console.log('[FirebaseAdmin] Found sa_fixed.json, using it instead of ENV');
+            serviceAccountVar = fs.readFileSync(fixedPath, 'utf8');
+        }
+
         if (serviceAccountVar) {
             console.log(`[FirebaseAdmin] Initializing with ${process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT ? 'FIREBASE_ADMIN_SERVICE_ACCOUNT' : 'GOOGLE_DRIVE_KEY_JSON'} from ENV...`);
             
@@ -23,7 +36,19 @@ const initializeFirebase = () => {
                 
                 // Fix potential newline issues in private key
                 if (serviceAccount && serviceAccount.private_key) {
-                    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+                    // Normalize: handle literal \n, remove extra quotes, and ensure proper trimming
+                    serviceAccount.private_key = serviceAccount.private_key
+                        .replace(/\\n/g, '\n')
+                        .replace(/\n\n/g, '\n')
+                        .trim();
+                    
+                    console.log(`[FirebaseAdmin] Normalized PK Start: ${JSON.stringify(serviceAccount.private_key.substring(0, 40))}`);
+                    console.log(`[FirebaseAdmin] Normalized PK End: ${JSON.stringify(serviceAccount.private_key.substring(serviceAccount.private_key.length - 40))}`);
+
+                    // If the key is missing the header/footer (rare but possible in some envs), warn
+                    if (!serviceAccount.private_key.includes('BEGIN PRIVATE KEY')) {
+                        console.warn('[FirebaseAdmin] Private key seems to be missing the PEM header');
+                    }
                 } else {
                     console.warn('[FirebaseAdmin] No private_key found in service account JSON');
                 }

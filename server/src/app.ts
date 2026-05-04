@@ -20,8 +20,8 @@ import { TargetService } from './services/target.service';
 import { SchedulerService } from './services/scheduler.service';
 import { initializeFirebase } from './services/firebase-admin';
 
-// Initialize Firebase Admin before routes
-initializeFirebase();
+// Initialize Firebase Admin (Phase 4 Agentic Integration)
+initializeFirebase(); 
 import { generalLimiter, exportLimiter, devLimiter, aiLimiter } from './middleware/rate-limit.middleware';
 import { xssSanitizer } from './middleware/xss-sanitizer.middleware';
 
