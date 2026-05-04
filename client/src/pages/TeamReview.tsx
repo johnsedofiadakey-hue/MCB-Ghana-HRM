@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import { Users, Target, ShieldCheck, AlertCircle, CheckCircle, PlusCircle, History } from 'lucide-react';
 import AssignKpiModal from '../components/AssignKpiModal';
@@ -26,6 +27,7 @@ const statusColors: Record<string, string> = {
 
 const TeamReview = () => {
   const currentUser = getStoredUser();
+  const { t } = useTranslation();
   const canManageTeam = getRankFromRole(currentUser.role) >= 60;
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [mandates, setMandates] = useState<any[]>([]);
