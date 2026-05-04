@@ -14,6 +14,43 @@ const APPRAISAL_STAGES = [
 
 export class AppraisalService {
   /**
+   * Helper to convert Prisma objects to safe POJOs (handling Decimals/BigInts)
+   */
+  private static toSafePOJO(data: any): any {
+    if (data === null || data === undefined) return data;
+    
+    // Handle Arrays
+    if (Array.isArray(data)) {
+      return data.map(item => this.toSafePOJO(item));
+    }
+    
+    // Handle Objects
+    if (typeof data === 'object') {
+      // Check for Prisma Decimal (often has d, s, e properties or a toJSON method)
+      if (data.constructor?.name === 'Decimal' || (data.d && data.s !== undefined && data.e !== undefined)) {
+        return Number(data);
+      }
+      
+      const clone: any = {};
+      for (const key in data) {
+        const val = data[key];
+        if (typeof val === 'bigint') {
+          clone[key] = val.toString();
+        } else if (val instanceof Date) {
+          clone[key] = val.toISOString();
+        } else if (typeof val === 'object') {
+          clone[key] = this.toSafePOJO(val);
+        } else {
+          clone[key] = val;
+        }
+      }
+      return clone;
+    }
+    
+    return data;
+  }
+
+  /**
    * Initialize a new Appraisal Cycle and generate packets for employees
    */
   static async initCycle(organizationId: string, data: any) {
@@ -683,7 +720,7 @@ export class AppraisalService {
   }
 
   static async getEmployeePackets(employeeId: string, organizationId: string) {
-    return prisma.appraisalPacket.findMany({
+    const packets = await prisma.appraisalPacket.findMany({
       where: { employeeId, organizationId },
       include: {
         cycle: true,
@@ -691,6 +728,7 @@ export class AppraisalService {
       },
       orderBy: { createdAt: 'desc' }
     });
+    return this.toSafePOJO(packets);
   }
 
   static async getEmployeePerformanceTrend(employeeId: string, organizationId: string) {
@@ -718,7 +756,7 @@ export class AppraisalService {
 
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
     try {
-      console.log(`[AppraisalService] getReviewerPackets: SIMPLIFIED FETCH - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
+      console.log(`[AppraisalService] getReviewerPackets: RECOVERED FETCH - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
       
       const where: any = { organizationId };
 
@@ -732,32 +770,20 @@ export class AppraisalService {
         ];
       }
 
-      // 1. Try a very simple fetch first
       const rawPackets = await prisma.appraisalPacket.findMany({
         where,
-        take: 100 // Limit for safety
+        include: {
+          cycle: { select: { id: true, title: true, period: true, status: true } },
+          employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true } }
+        },
+        orderBy: { updatedAt: 'desc' }
       });
 
-      console.log(`[AppraisalService] Found ${rawPackets.length} raw packets`);
-
-      if (rawPackets.length === 0) return [];
-
-      // 2. Map to safe POJO
-      return rawPackets.map(p => ({
-        id: p.id,
-        cycleId: p.cycleId,
-        employeeId: p.employeeId,
-        currentStage: p.currentStage,
-        status: p.status,
-        finalScore: p.finalScore ? Number(p.finalScore) : null,
-        finalVerdict: p.finalVerdict,
-        updatedAt: p.updatedAt
-      }));
+      return this.toSafePOJO(rawPackets);
 
     } catch (err: any) {
-      console.error('[AppraisalService] SIMPLIFIED FETCH ERROR:', err);
-      // Return a safe error object instead of crashing the whole request
-      return [{ id: 'INTERNAL_ERROR', status: 'ERROR', message: err.message }];
+      console.error('[AppraisalService] FETCH ERROR:', err);
+      throw err;
     }
   }
 
@@ -765,7 +791,7 @@ export class AppraisalService {
    * Get packets awaiting final institutional sign-off (for MD/Director)
    */
   static async getFinalVerdictList(organizationId: string) {
-    return prisma.appraisalPacket.findMany({
+    const packets = await prisma.appraisalPacket.findMany({
       where: {
         organizationId,
         currentStage: 'FINAL_REVIEW',
@@ -780,6 +806,7 @@ export class AppraisalService {
       },
       orderBy: { updatedAt: 'asc' }
     });
+    return this.toSafePOJO(packets);
   }
 
   /**
