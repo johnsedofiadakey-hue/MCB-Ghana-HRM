@@ -230,7 +230,7 @@ const Expenses = () => {
                       "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-inner",
                       getStatusColor(item.status)
                     )}>
-                      {item.status}
+                      {t(`finance.status.${item.status}`)}
                     </span>
                   </td>
                   <td className="px-8 py-6" data-label="Control">

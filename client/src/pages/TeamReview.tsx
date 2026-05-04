@@ -253,7 +253,7 @@ const TeamReview = () => {
                         statusColors[emp.kpiSheets[0].status] || statusColors.NO_GOALS
                       )}>
                         {emp.kpiSheets[0].status === 'LOCKED' ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
-                        {emp.kpiSheets[0].status.replace('_', ' ')}
+                        {t(`performance.status.${emp.kpiSheets[0].status}`)}
                       </div>
                     ) : (
                       <div className={cn("px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest flex items-center gap-2", statusColors.NO_GOALS)}>

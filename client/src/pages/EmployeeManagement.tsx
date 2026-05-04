@@ -578,11 +578,11 @@ export default function EmployeeManagement() {
                                           <ArrowRight size={16} />
                                         </button>
                                       ) : (
-                                        {rank >= 85 && (
+                                        rank >= 85 && (
                                           <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
                                             <Edit2 size={16} />
                                           </button>
-                                        )}
+                                        )
                                       )}
                                   </div>
                                </td>

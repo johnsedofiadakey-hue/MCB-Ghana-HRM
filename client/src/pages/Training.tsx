@@ -159,7 +159,7 @@ const Training = () => {
                       <div className="w-12 h-12 rounded-xl bg-[var(--bg-card)] flex items-center justify-center border border-[var(--border-subtle)] shadow-sm text-[var(--primary)]">
                         <BookOpen size={22} />
                       </div>
-                      <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[e.status])}>{e.status}</span>
+                      <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[e.status])}>{t(`training.status_types.${e.status}`)}</span>
                     </div>
                     <div className="space-y-3 relative z-10 min-h-[100px]">
                       <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--primary)] transition-colors">{e.program.title}</h3>
@@ -217,7 +217,7 @@ const Training = () => {
                     >
                       <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/5 blur-[30px] rounded-full group-hover:scale-150 transition-transform" />
                       <div className="mb-6 flex flex-wrap gap-2 relative z-10">
-                        <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{p.status}</span>
+                        <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{t(`training.status_types.${p.status}`)}</span>
                         {isFull && <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-500/20 text-rose-600 bg-rose-500/5">{t('training.form.max_load')}</span>}
                       </div>
 
@@ -304,7 +304,7 @@ const Training = () => {
                               {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'TBD'}` : t('training.table.flexible')}
                             </td>
                             <td className="py-6">
-                              <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{p.status}</span>
+                              <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{t(`training.status_types.${p.status}`)}</span>
                             </td>
                             <td className="py-6 text-[11px] font-black text-[var(--text-primary)]">
                               {p.enrollments?.length || 0} <span className="text-[var(--text-muted)]">/</span> {p.maxSeats || '∞'}

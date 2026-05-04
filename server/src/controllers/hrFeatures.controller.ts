@@ -376,3 +376,109 @@ export const getProbationStats = async (req: Request, res: Response) => {
         res.status(500).json({ error: err.message });
     }
 };
+// ─────────────────────────────────────────────────────────────────────────────
+// PROMOTION REQUESTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const listPromotionRequests = async (req: Request, res: Response) => {
+    try {
+        const orgId = getOrgId(req);
+        const { employeeId, status } = req.query;
+
+        const requests = await prisma.promotionRequest.findMany({
+            where: {
+                organizationId: orgId,
+                ...(employeeId ? { employeeId: employeeId as string } : {}),
+                ...(status ? { status: status as string } : {}),
+            },
+            include: {
+                employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
+                manager: { select: { id: true, fullName: true, jobTitle: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        res.json(requests);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+export const createPromotionRequest = async (req: Request, res: Response) => {
+    try {
+        const orgId = getOrgId(req);
+        const user = getUser(req);
+        const { employeeId, targetRole, targetJobTitle, proposedSalary, reason } = req.body;
+
+        if (!employeeId || !targetRole || !reason) {
+            return res.status(400).json({ error: 'employeeId, targetRole, and reason are required' });
+        }
+
+        const request = await prisma.promotionRequest.create({
+            data: {
+                organizationId: orgId,
+                employeeId,
+                managerId: user.id,
+                targetRole,
+                targetJobTitle,
+                proposedSalary: proposedSalary ? Number(proposedSalary) : null,
+                reason,
+            },
+            include: {
+                employee: { select: { id: true, fullName: true, jobTitle: true } },
+                manager: { select: { id: true, fullName: true } },
+            },
+        });
+
+        res.status(201).json(request);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+export const updatePromotionStatus = async (req: Request, res: Response) => {
+    try {
+        const orgId = getOrgId(req);
+        const { id } = req.params;
+        const { status, hrComment } = req.body;
+
+        if (!['APPROVED', 'REJECTED'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+
+        const request = await prisma.promotionRequest.update({
+            where: { id },
+            data: { status, hrComment },
+        });
+
+        // If approved, update the employee's role/jobTitle/salary
+        if (status === 'APPROVED') {
+            const updateData: any = {
+                role: request.targetRole,
+                jobTitle: request.targetJobTitle || undefined,
+                salary: request.proposedSalary ? Number(request.proposedSalary) : undefined,
+            };
+
+            await prisma.user.update({
+                where: { id: request.employeeId },
+                data: updateData
+            });
+
+            // Log history
+            await prisma.employeeHistory.create({
+                data: {
+                    organizationId: orgId,
+                    employeeId: request.employeeId,
+                    title: 'Promotion Approved',
+                    description: `Promoted to ${request.targetJobTitle || request.targetRole}.`,
+                    type: 'PROMOTION',
+                    severity: 'INFO'
+                }
+            });
+        }
+
+        res.json(request);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+};

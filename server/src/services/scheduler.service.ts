@@ -17,55 +17,60 @@ export class SchedulerService {
   static async checkUpcomingBirthdays() {
     try {
       const today = new Date();
-      const targetDate = new Date();
-      targetDate.setDate(today.getDate() + 2);
+      
+      // Check for 7 days (1 week) and 1 day before
+      const targets = [
+        { days: 7, label: 'one week' },
+        { days: 1, label: 'tomorrow' }
+      ];
 
-      const targetMonth = targetDate.getMonth() + 1; // 1-12
-      const targetDay = targetDate.getDate();
+      for (const target of targets) {
+        const targetDate = new Date();
+        targetDate.setDate(today.getDate() + target.days);
 
-      // Find all employees whose DOB month and day match the target date
-      // Note: We use Prisma's $queryRaw because complex date extraction on Decimal/DateTime fields 
-      // can be database-specific, but PostgreSQL handle it well with extract.
-      const usersWithBirthday = await prisma.user.findMany({
-        where: {
-          isArchived: false,
-          status: 'ACTIVE',
-          dob: { not: null }
-        },
-        select: {
-          id: true,
-          fullName: true,
-          dob: true,
-          organizationId: true
-        }
-      });
+        const targetMonth = targetDate.getMonth() + 1; // 1-12
+        const targetDay = targetDate.getDate();
 
-      const upcomingBirthdayList = usersWithBirthday.filter(u => {
-        if (!u.dob) return false;
-        const d = new Date(u.dob);
-        return (d.getMonth() + 1) === targetMonth && d.getDate() === targetDay;
-      });
-
-      if (upcomingBirthdayList.length === 0) return;
-
-      console.log(`[Scheduler] Found ${upcomingBirthdayList.length} birthdays in 2 days.`);
-
-      for (const emp of upcomingBirthdayList) {
-        // Find MDs and HR Officers for this organization
-        const admins = await prisma.user.findMany({
+        const usersWithBirthday = await prisma.user.findMany({
           where: {
-            organizationId: emp.organizationId,
-            role: { in: ['MD', 'HR_OFFICER'] },
+            isArchived: false,
             status: 'ACTIVE',
-            isArchived: false
+            dob: { not: null }
           },
-          select: { id: true }
+          select: {
+            id: true,
+            fullName: true,
+            dob: true,
+            organizationId: true
+          }
         });
 
-        const alertMessage = `🎂 Birthday Heads-up: ${emp.fullName} has a birthday coming up in 2 days (${targetMonth}/${targetDay})!`;
+        const upcomingBirthdayList = usersWithBirthday.filter(u => {
+          if (!u.dob) return false;
+          const d = new Date(u.dob);
+          return (d.getMonth() + 1) === targetMonth && d.getDate() === targetDay;
+        });
 
-        for (const admin of admins) {
-          await notify(admin.id, '🎈 Upcoming Birthday Alert', alertMessage, 'INFO', '/employees');
+        if (upcomingBirthdayList.length === 0) continue;
+
+        console.log(`[Scheduler] Found ${upcomingBirthdayList.length} birthdays in ${target.days} days.`);
+
+        for (const emp of upcomingBirthdayList) {
+          const admins = await prisma.user.findMany({
+            where: {
+              organizationId: emp.organizationId,
+              role: { in: ['MD', 'HR_OFFICER'] },
+              status: 'ACTIVE',
+              isArchived: false
+            },
+            select: { id: true }
+          });
+
+          const alertMessage = `🎂 Birthday Alert: ${emp.fullName} has a birthday ${target.label} (${targetMonth}/${targetDay})!`;
+
+          for (const admin of admins) {
+            await notify(admin.id, '🎈 Upcoming Birthday Alert', alertMessage, 'INFO', '/employees');
+          }
         }
       }
 

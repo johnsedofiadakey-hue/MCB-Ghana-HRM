@@ -20,6 +20,9 @@ const Profile = () => {
         fullName: user?.name || '',
         email: user?.email || '',
         phone: '',
+        bankName: '',
+        bankAccountNumber: '',
+        bankBranch: '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
@@ -28,12 +31,12 @@ const Profile = () => {
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history'>('info');
     const [history, setHistory] = useState<any[]>([]);
     
-    // 🛡️ AUTHORIZATION LOCKDOWN: MD, HR, or IT Only
-    // 🛡️ AUTHORIZATION LOCKDOWN
+    // 🛡️ AUTHORIZATION LOCKDOWN: MD, HR, or IT Only for Identity (Name/Email)
     const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
     const rank = getRankFromRole(user?.role || 'EMPLOYEE');
     
-    // canEditIdentity refers to the core fields (Name, Email). Everyone can edit their signature.
+    // canEditIdentity refers to the core fields (Name, Email). 
+    // Phone and Bank details are now self-service.
     const canEditIdentity = privilegedRoles.includes(user?.role || '') && rank >= 80;
     
     const [showRequestModal, setShowRequestModal] = useState(false);
@@ -45,17 +48,27 @@ const Profile = () => {
     const { data: draftData, updateDraft } = usePersistentDraft('profile_drafts', `profile_${user?.id || 'unknown'}`, {
         fullName: user?.name || '',
         email: user?.email || '',
-        phone: ''
+        phone: '',
+        bankName: '',
+        bankAccountNumber: '',
+        bankBranch: ''
     });
 
     // Auto-save contact info when it changes
     useEffect(() => {
-        const infoOnly = { fullName: formData.fullName, email: formData.email, phone: formData.phone };
+        const infoOnly = { 
+            fullName: formData.fullName, 
+            email: formData.email, 
+            phone: formData.phone,
+            bankName: formData.bankName,
+            bankAccountNumber: formData.bankAccountNumber,
+            bankBranch: formData.bankBranch
+        };
         const timer = setTimeout(() => {
             updateDraft(infoOnly);
         }, 1000);
         return () => clearTimeout(timer);
-    }, [formData.fullName, formData.email, formData.phone]);
+    }, [formData.fullName, formData.email, formData.phone, formData.bankName, formData.bankAccountNumber, formData.bankBranch]);
 
     // Restore draft if it exists and is different from current
     useEffect(() => {
@@ -64,10 +77,13 @@ const Profile = () => {
                 ...prev,
                 fullName: draftData.fullName || prev.fullName,
                 email: draftData.email || prev.email,
-                phone: draftData.phone || prev.phone
+                phone: draftData.phone || prev.phone,
+                bankName: draftData.bankName || prev.bankName,
+                bankAccountNumber: draftData.bankAccountNumber || prev.bankAccountNumber,
+                bankBranch: draftData.bankBranch || prev.bankBranch
             }));
         }
-    }, [draftData?.fullName, draftData?.email, draftData?.phone]);
+    }, [draftData?.fullName, draftData?.email, draftData?.phone, draftData?.bankName, draftData?.bankAccountNumber, draftData?.bankBranch]);
 
 
     useEffect(() => {
@@ -79,7 +95,10 @@ const Profile = () => {
                     ...d,
                     fullName: res.data.fullName,
                     email: res.data.email,
-                    phone: res.data.contactNumber || ''
+                    phone: res.data.contactNumber || '',
+                    bankName: res.data.bankName || '',
+                    bankAccountNumber: res.data.bankAccountNumber || '',
+                    bankBranch: res.data.bankBranch || ''
                 }));
                 setSignatureUrl(res.data.signatureUrl || null);
                 setHistory(res.data.historyLogs || []);
@@ -96,20 +115,32 @@ const Profile = () => {
         setError('');
         setSuccess('');
         try {
-            await api.patch(`/users/${user.id}`, {
-                fullName: formData.fullName,
-                email: formData.email,
-                contactNumber: formData.phone
-            });
-            setSuccess('Profile updated successfully.');
-            // Update local storage if fields changed
+            const payload: any = {
+                contactNumber: formData.phone,
+                bankName: formData.bankName,
+                bankAccountNumber: formData.bankAccountNumber,
+                bankBranch: formData.bankBranch
+            };
+
+            // Only include identity fields if privileged
+            if (canEditIdentity) {
+                payload.fullName = formData.fullName;
+                payload.email = formData.email;
+            }
+
+            await api.patch(`/users/${user.id}`, payload);
+            setSuccess(t('profile.success_update'));
+            
+            // Update local storage
             const stored = JSON.parse(localStorage.getItem('mcb_user') || '{}');
-            stored.name = formData.fullName;
-            stored.email = formData.email;
+            if (canEditIdentity) {
+                stored.name = formData.fullName;
+                stored.email = formData.email;
+            }
             stored.contactNumber = formData.phone;
             localStorage.setItem('mcb_user', JSON.stringify(stored));
         } catch (err: any) {
-            setError(err?.response?.data?.error || 'Failed to update profile.');
+            setError(err?.response?.data?.error || t('profile.error_update'));
         } finally {
             setLoading(false);
         }
@@ -331,17 +362,57 @@ const Profile = () => {
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Phone Number</label>
                                                 <div className="relative group">
-                                                    <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
-                                                    <input
-                                                        type="tel"
-                                                        value={formData.phone}
-                                                        onChange={e => setFormData(d => ({ ...d, phone: e.target.value }))}
-                                                        className="nx-input nx-input-l"
-                                                        placeholder="+233 XX XXX XXXX"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
+                                                     <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
+                                                     <input
+                                                         type="tel"
+                                                         value={formData.phone}
+                                                         onChange={e => setFormData(d => ({ ...d, phone: e.target.value }))}
+                                                         className="nx-input nx-input-l"
+                                                         placeholder="+233 XX XXX XXXX"
+                                                     />
+                                                 </div>
+                                             </div>
+                                         </div>
+
+                                         <div className="pt-6 border-t border-[var(--border-subtle)]/30 space-y-6">
+                                             <div className="flex items-center gap-3">
+                                                 <Building2 size={18} className="text-[var(--primary)]" />
+                                                 <h4 className="text-sm font-black uppercase tracking-widest text-[var(--text-primary)]">Bank Account Details</h4>
+                                             </div>
+                                             
+                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                 <div className="space-y-2">
+                                                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Bank Name</label>
+                                                     <input
+                                                         type="text"
+                                                         value={formData.bankName}
+                                                         onChange={e => setFormData(d => ({ ...d, bankName: e.target.value }))}
+                                                         className="nx-input"
+                                                         placeholder="e.g. GCB Bank"
+                                                     />
+                                                 </div>
+                                                 <div className="space-y-2">
+                                                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Account Number</label>
+                                                     <input
+                                                         type="text"
+                                                         value={formData.bankAccountNumber}
+                                                         onChange={e => setFormData(d => ({ ...d, bankAccountNumber: e.target.value }))}
+                                                         className="nx-input"
+                                                         placeholder="Account No."
+                                                     />
+                                                 </div>
+                                                 <div className="space-y-2">
+                                                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Bank Branch</label>
+                                                     <input
+                                                         type="text"
+                                                         value={formData.bankBranch}
+                                                         onChange={e => setFormData(d => ({ ...d, bankBranch: e.target.value }))}
+                                                         className="nx-input"
+                                                         placeholder="Branch Name"
+                                                     />
+                                                 </div>
+                                             </div>
+                                         </div>
 
                                         <div className="flex justify-between items-center pt-4">
                                             {!canEditIdentity && (

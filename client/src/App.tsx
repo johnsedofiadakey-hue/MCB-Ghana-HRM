@@ -79,6 +79,7 @@ const Disciplinary = lazy(() => import('./pages/Disciplinary'));
 const PolicyLibrary = lazy(() => import('./pages/PolicyLibrary'));
 const ProbationTracker = lazy(() => import('./pages/ProbationTracker'));
 const AttendanceKiosk = lazy(() => import('./pages/AttendanceKiosk'));
+const PromotionRequests = lazy(() => import('./pages/PromotionRequests'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64 bg-[var(--bg-main)]">
@@ -470,6 +471,7 @@ const AppContent = () => {
             <Route path="/policies" element={<PolicyLibrary />} />
             <Route path="/probation" element={<RoleGuard minRank={70}><ProbationTracker /></RoleGuard>} />
             <Route path="/kiosk" element={<AttendanceKiosk />} />
+            <Route path="/promotions" element={<RoleGuard minRank={80}><PromotionRequests /></RoleGuard>} />
           </Route>
 
 

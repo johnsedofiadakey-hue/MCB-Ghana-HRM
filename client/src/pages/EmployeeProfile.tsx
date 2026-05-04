@@ -15,6 +15,7 @@ import { useAI } from '../context/AIContext';
 import { getSafeAvatarUrl } from '../utils/avatar';
 import HistoryLog from '../components/profile/HistoryLog';
 import EmployeePrintDossier from '../components/profile/EmployeePrintDossier';
+import EmployeeIDCard from '../components/profile/EmployeeIDCard';
 
 const EmployeeProfile = () => {
     const { id } = useParams();
@@ -30,6 +31,15 @@ const EmployeeProfile = () => {
     const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', reason: '' });
     const [adjustingLeave, setAdjustingLeave] = useState(false);
     const [riskProfile, setRiskProfile] = useState<any>(null);
+    const [printType, setPrintType] = useState<'dossier' | 'idcard'>('dossier');
+    const [showPromotionModal, setShowPromotionModal] = useState(false);
+    const [submittingPromotion, setSubmittingPromotion] = useState(false);
+    const [promotionForm, setPromotionForm] = useState({
+        targetRole: 'STAFF',
+        targetJobTitle: '',
+        proposedSalary: '',
+        reason: ''
+    });
     const { t } = useTranslation();
     const { setContextData } = useAI();
 
@@ -46,6 +56,9 @@ const EmployeeProfile = () => {
             setEmployee(empRes.data);
             setKpiSummary(kpiRes.data);
             if (riskRes) setRiskProfile(riskRes.data);
+            
+            // Default promotion job title
+            setPromotionForm(prev => ({ ...prev, targetJobTitle: empRes.data.jobTitle }));
         } catch (e) {
             console.error(e);
             toast.error('Error: Staff record not found');
@@ -65,6 +78,28 @@ const EmployeeProfile = () => {
         }
         return () => setContextData(null);
     }, [employee, kpiSummary, setContextData]);
+
+    const handlePromotionSubmit = async () => {
+        if (!promotionForm.reason || !promotionForm.targetRole) {
+            toast.error('Please provide a target role and reason');
+            return;
+        }
+
+        setSubmittingPromotion(true);
+        try {
+            await api.post('/hr-features/promotions', {
+                employeeId: id,
+                ...promotionForm
+            });
+            toast.success('Promotion request submitted to HR');
+            setShowPromotionModal(false);
+            setPromotionForm({ targetRole: 'STAFF', targetJobTitle: employee?.jobTitle || '', proposedSalary: '', reason: '' });
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to submit promotion request');
+        } finally {
+            setSubmittingPromotion(false);
+        }
+    };
 
     const handleResetPassword = async () => {
         if (!newPassword || newPassword.length < 8) {
@@ -141,12 +176,30 @@ const EmployeeProfile = () => {
                     <ChevronLeft size={18} /> Back to Directory
                 </button>
                 <div className="flex gap-4">
-                    <motion.button onClick={() => window.print()} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2">
+                    <motion.button 
+                        onClick={() => { setPrintType('dossier'); setTimeout(() => window.print(), 100); }} 
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
+                        className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
+                    >
                         <Download size={14} /> Export PDF
                     </motion.button>
+                    {(currentUser?.rank || 0) >= 80 && (
+                        <motion.button 
+                            onClick={() => { setPrintType('idcard'); setTimeout(() => window.print(), 100); }} 
+                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
+                            className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
+                        >
+                            <FileText size={14} /> Print ID Card
+                        </motion.button>
+                    )}
                     {((currentUser?.rank || 0) >= 85 || currentUser?.role === 'DEV') && currentUser?.id !== employee.id && (
                         <motion.button onClick={() => setShowResetModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-2">
                             <Key size={14} /> Reset Password
+                        </motion.button>
+                    )}
+                    {(currentUser?.id === employee.supervisorId || (currentUser?.rank || 0) >= 85) && currentUser?.id !== employee.id && (
+                        <motion.button onClick={() => setShowPromotionModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-2">
+                            <Zap size={14} /> Suggest Promotion
                         </motion.button>
                     )}
                     {((currentUser?.rank || 0) >= 75 || currentUser?.role === 'DEV') && (
@@ -273,7 +326,7 @@ const EmployeeProfile = () => {
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Rank</p>
-                                        <p className="text-[15px] font-black text-[var(--text-primary)] italic underline decoration-[var(--primary)]/30 underline-offset-4">{employee.role}</p>
+                                        <p className="text-[15px] font-black text-[var(--text-primary)] italic underline decoration-[var(--primary)]/30 underline-offset-4">{t(`employees.roles.${employee.role}`)}</p>
                                     </div>
                                 </div>
                                 <div className="mt-10 p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] italic text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -515,7 +568,7 @@ const EmployeeProfile = () => {
                                                 </div>
                                                 <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", 
                                                     target.status === 'COMPLETED' ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/5" : "border-[var(--primary)]/20 text-[var(--primary)] bg-[var(--primary)]/5")}>
-                                                    {target.status}
+                                                    {t(`targets.status.${target.status}`)}
                                                 </span>
                                             </div>
                                             <div className="space-y-2">
@@ -556,7 +609,8 @@ const EmployeeProfile = () => {
             </div>
 
             {/* Premium Print Dossier Component (Hidden in UI, Visible on Print) */}
-            <EmployeePrintDossier employee={employee} />
+            {printType === 'dossier' && <EmployeePrintDossier employee={employee} />}
+            {printType === 'idcard' && <EmployeeIDCard employee={employee} />}
 
             {/* Reset Password Modal Overlay */}
             <AnimatePresence>
@@ -660,6 +714,86 @@ const EmployeeProfile = () => {
                                     </button>
                                     <button 
                                         onClick={() => setShowLeaveModal(false)}
+                                        className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            
+            {/* Promotion Request Modal */}
+            <AnimatePresence>
+                {showPromotionModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[2.5rem] p-10 shadow-2xl relative"
+                        >
+                            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-6">
+                                <Zap size={28} />
+                            </div>
+                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Promotion Suggestion</h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Recommend <span className="text-[var(--primary)]">{employee.fullName}</span> for advancement</p>
+
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Target Role</label>
+                                    <select 
+                                        value={promotionForm.targetRole}
+                                        onChange={(e) => setPromotionForm({...promotionForm, targetRole: e.target.value})}
+                                        className="nx-input"
+                                    >
+                                        {Object.keys(t('employees.roles', { returnObjects: true })).map((role) => (
+                                            <option key={role} value={role}>{t(`employees.roles.${role}`)}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Target Job Title</label>
+                                    <input 
+                                        type="text"
+                                        value={promotionForm.targetJobTitle}
+                                        onChange={(e) => setPromotionForm({...promotionForm, targetJobTitle: e.target.value})}
+                                        className="nx-input"
+                                        placeholder="e.g. Senior Software Engineer"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Proposed Salary (Annual)</label>
+                                    <input 
+                                        type="number"
+                                        value={promotionForm.proposedSalary}
+                                        onChange={(e) => setPromotionForm({...promotionForm, proposedSalary: e.target.value})}
+                                        className="nx-input"
+                                        placeholder="GHS"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Rationale / Reason</label>
+                                    <textarea 
+                                        value={promotionForm.reason}
+                                        onChange={(e) => setPromotionForm({...promotionForm, reason: e.target.value})}
+                                        placeholder="Explain why this employee deserves a promotion..."
+                                        className="nx-input min-h-[100px] text-sm"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-3 pt-4">
+                                    <button 
+                                        onClick={handlePromotionSubmit}
+                                        disabled={submittingPromotion}
+                                        className="btn-primary bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20 w-full py-4 text-xs font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-50"
+                                    >
+                                        {submittingPromotion ? 'Submitting...' : 'Submit Suggestion'}
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowPromotionModal(false)}
                                         className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
                                     >
                                         Cancel

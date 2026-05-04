@@ -223,7 +223,7 @@ const AttendanceDashboard = () => {
                                                 <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm",
                                                     log.status === 'PRESENT' ? "bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10" :
                                                         "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"
-                                                )}>{log.status}</span>
+                                                )}>{t(`attendance.status_types.${log.status}`)}</span>
                                             </td>
                                         </motion.tr>
                                     ))}

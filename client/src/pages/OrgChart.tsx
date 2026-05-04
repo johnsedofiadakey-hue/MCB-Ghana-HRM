@@ -119,7 +119,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
             <div className="flex items-center gap-1.5 flex-wrap">
               <p className="text-[9px] text-[var(--text-muted)] truncate uppercase font-black tracking-lighter">{node.title}</p>
               <div className="w-1 h-1 rounded-full bg-[var(--border-subtle)]" />
-              <p className="text-[8px] text-[var(--text-secondary)] font-bold uppercase">{node.role}</p>
+              <p className="text-[8px] text-[var(--text-secondary)] font-bold uppercase">{t(`employees.roles.${node.role}`)}</p>
             </div>
           </div>
           {hasChildren && (
@@ -266,7 +266,7 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
                 "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest",
                 node.role === 'MD' ? "bg-[var(--primary)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
               )}>
-                {node.role}
+                {t(`employees.roles.${node.role}`)}
               </span>
             </div>
             <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase tracking-tight flex items-center gap-2">

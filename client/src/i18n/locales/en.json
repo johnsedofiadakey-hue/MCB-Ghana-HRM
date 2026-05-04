@@ -220,23 +220,23 @@
     "all_ranks": "All Roles",
     "all_statuses": "All Statuses",
     "roles": {
-      "DEV": "Engineer",
+      "DEV": "System Developer",
       "MD": "Managing Director",
       "DIRECTOR": "Director",
       "IT_MANAGER": "IT Manager",
       "HR_OFFICER": "HR Officer",
       "MANAGER": "Manager",
-      "MID_MANAGER": "Mid Manager",
+      "MID_MANAGER": "Manager",
       "SUPERVISOR": "Supervisor",
       "IT_ADMIN": "IT Admin",
       "STAFF": "Staff Member",
       "CASUAL": "Casual Staff"
     },
     "statuses": {
-      "ACTIVE": "ACTIVE",
-      "PROBATION": "PROBATION",
-      "NOTICE_PERIOD": "NOTICE PERIOD",
-      "TERMINATED": "TERMINATED"
+      "ACTIVE": "Active",
+      "PROBATION": "Probation",
+      "NOTICE_PERIOD": "Notice Period",
+      "TERMINATED": "Terminated"
     },
     "alerts": {
       "fetch_error": "Failed to load profile",
@@ -971,7 +971,7 @@
     "strategic_assignment": "Assigned To",
     "deploy": "Assign",
     "recover": "Return",
-    "decommissioned": "REMOVED",
+    "decommissioned": "Removed",
     "no_assets": "No items found",
     "sync_hardware": "Save Item",
     "machine_identity": "Item Name",
@@ -1173,9 +1173,9 @@
     "clock_out": "Clock Out",
     "shift_status": "Work Status",
     "operational_status": "Status",
-    "completed": "DONE",
-    "active": "WORKING",
-    "idle": "AWAY",
+    "completed": "Done",
+    "active": "Working",
+    "idle": "Away",
     "initiate_clock_in": "Clock In",
     "terminate_session": "Clock Out",
     "day_complete": "Day Done",
@@ -1185,10 +1185,16 @@
     "no_logs": "No logs",
     "employee": "Employee",
     "date": "Date",
-    "status": "Status",
     "success_clock_in": "Clocked in successfully",
     "success_clock_out": "Clocked out successfully",
-    "error_action": "Failed, try again"
+    "error_action": "Failed, try again",
+    "status_types": {
+      "PRESENT": "Present",
+      "ABSENT": "Absent",
+      "LATE": "Late",
+      "ON_LEAVE": "On Leave",
+      "OFF_DUTY": "Off Duty"
+    }
   },
   "training": {
     "title": "Training",
@@ -1224,7 +1230,14 @@
     "error_enroll": "Failed to enroll",
     "cancel": "Cancel",
     "save": "Save Program",
-    "internal": "Internal"
+    "internal": "Internal",
+    "status_types": {
+      "ENROLLED": "Enrolled",
+      "COMPLETED": "Completed",
+      "UPCOMING": "Upcoming",
+      "IN_PROGRESS": "In Progress",
+      "CANCELLED": "Cancelled"
+    }
   },
   "it_admin": {
     "title": "IT Admin",
@@ -1549,7 +1562,10 @@
       "UNDER_REVIEW": "Checking",
       "COMPLETED": "Finished",
       "OVERDUE": "Late",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "LOCKED": "Finished",
+      "PENDING_APPROVAL": "Awaiting Review",
+      "NO_GOALS": "No Goals"
     },
     "expectation": {
       "AHEAD": "Ahead",
@@ -1663,5 +1679,40 @@
       "copyright": "All Rights Reserved",
       "confidential": "Confidential Document. Unauthorized sharing is prohibited."
     }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Manage your personal information and security settings",
+    "personal_info": "Personal Information",
+    "update_contact": "Update your contact details",
+    "bank_details": "Bank Details",
+    "update_bank": "Update your bank account information",
+    "bank_name": "Bank Name",
+    "bank_account_number": "Account Number",
+    "bank_branch": "Bank Branch",
+    "digital_identity": "Digital Identity",
+    "update_signature": "Manage your electronic Wet-Signature",
+    "security_credentials": "Security Credentials",
+    "rotate_key": "Rotate your security key regularly",
+    "request_update": "Request Update",
+    "formal_report": "Formal Update Report",
+    "success_update": "Profile updated successfully.",
+    "error_update": "Failed to update profile."
+  },
+  "promotions": {
+    "title": "Promotion Requests",
+    "request": "Suggest Promotion",
+    "target_role": "Target Role",
+    "target_job_title": "Target Job Title",
+    "proposed_salary": "Proposed Salary",
+    "reason": "Reason for Promotion",
+    "status": "Status",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "submit_request": "Submit Promotion Request",
+    "approve": "Approve",
+    "reject": "Reject",
+    "hr_comment": "HR/MD Comment"
   }
 }

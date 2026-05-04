@@ -16,9 +16,17 @@ import { getStoredUser } from '../utils/session';
 import EmployeeIDCard from '../components/it/EmployeeIDCard';
 
 const roleLabel: Record<string, string> = {
-  DEV: 'Sys Developer (L100)', MD: 'Managing Director (L90)', DIRECTOR: 'Director (L80)',
-  HR_OFFICER: 'HR Officer (L85)', IT_MANAGER: 'IT Manager (L85)',
-  MANAGER: 'Global Manager (L70)', SUPERVISOR: 'Supervisor (L60)', STAFF: 'Personnel (L40)', CASUAL: 'Adjunct (L30)'
+  DEV: 'System Developer', 
+  MD: 'Managing Director', 
+  DIRECTOR: 'Director',
+  IT_ADMIN: 'IT Admin',
+  HR_MANAGER: 'HR Manager',
+  HR_OFFICER: 'HR Officer', 
+  IT_MANAGER: 'IT Manager',
+  MANAGER: 'Manager', 
+  SUPERVISOR: 'Supervisor', 
+  STAFF: 'Staff Member', 
+  CASUAL: 'Casual Staff'
 };
 
 const statusBadge: Record<string, string> = {
@@ -361,7 +369,7 @@ const ITAdmin = () => {
                        <h2 className="text-4xl font-black text-gray-900 tracking-tight uppercase italic leading-tight">Personnel Identity <br /><span className="text-[var(--primary)]">Tag Generation</span></h2>
                        <div className="space-y-8">
                           <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100"><p className="text-sm font-medium text-gray-700 leading-relaxed">Printing this card will finalize the digital-to-physical identity link for {selectedUser.fullName}. Standard CR80 Dimensions.</p></div>
-                          <button onClick={() => window.print()} className="w-full h-16 rounded-2xl bg-gray-900 text-white font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-4">Initialize Print Protocol</button>
+                          <button onClick={() => window.print()} className="w-full h-16 rounded-2xl bg-gray-900 text-white font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-4">Print ID Card</button>
                        </div>
                     </div>
                     <div className="flex justify-center items-start lg:pt-12"><EmployeeIDCard employee={selectedUser} organization={orgSettings} /></div>

@@ -357,6 +357,8 @@ model User {
   subUnit                     SubUnit?                @relation("SubUnitEmployees", fields: [subUnitId], references: [id])
   supervisor                  User?                   @relation("Hierarchy", fields: [supervisorId], references: [id])
   subordinates                User[]                  @relation("Hierarchy")
+  promotionRequestsByMe       PromotionRequest[]      @relation("ManagerPromotionRequests")
+  promotionRequestsForMe      PromotionRequest[]      @relation("EmployeePromotionRequests")
 
   @@unique([employeeCode, organizationId])
   @@index([role, status])
@@ -365,6 +367,25 @@ model User {
   @@index([organizationId])
   @@index([jobTitle])
   @@index([fullName])
+}
+
+model PromotionRequest {
+  id              String   @id @default(uuid())
+  organizationId  String?  @default("mcb-ghana-tenant")
+  employeeId      String
+  managerId       String
+  targetRole      String
+  targetJobTitle  String?
+  proposedSalary  Decimal?
+  reason          String
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  hrComment       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  employee        User     @relation("EmployeePromotionRequests", fields: [employeeId], references: [id], onDelete: Cascade)
+  manager         User     @relation("ManagerPromotionRequests", fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
 }
 
 model CompensationHistory {

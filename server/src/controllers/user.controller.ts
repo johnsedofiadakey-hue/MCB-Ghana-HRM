@@ -356,14 +356,44 @@ export const updateEmployee = async (req: Request, res: Response) => {
     const rank = getRoleRank(userReq.role);
     const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
 
-    // 🛡️ REQUISITE: Only MD, HR, or IT can update employee details
-    if (rank < 80 || !privilegedRoles.includes(userReq.role)) {
-      return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can update personnel profiles.' });
-    }
     const actorId = userReq.id;
     const actorRole = userReq.role;
     const actorRank = getRoleRank(actorRole);
     const targetId = req.params.id;
+
+    // 🛡️ REQUISITE: Only MD, HR, or IT can update employee details
+    // 🔄 SELF-SERVICE OVERRIDE: Allow any user to update their own contact/bank details
+    const isSelfUpdate = actorId === targetId;
+    const allowedSelfFields = [
+      'contactNumber', 'bankName', 'bankAccountNumber', 'bankBranch', 
+      'address', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 
+      'emergencyContactName', 'emergencyContactPhone', 'gender', 'maritalStatus', 'bloodGroup'
+    ];
+
+    if (!privilegedRoles.includes(actorRole) && actorRank < 80) {
+      if (!isSelfUpdate) {
+        return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can update personnel profiles.' });
+      }
+
+      // Filter body to only allowed self-service fields
+      const filteredBody: any = {};
+      let hasForbiddenFields = false;
+      
+      Object.keys(req.body).forEach(field => {
+        if (allowedSelfFields.includes(field)) {
+          filteredBody[field] = req.body[field];
+        } else {
+          hasForbiddenFields = true;
+        }
+      });
+
+      if (Object.keys(filteredBody).length === 0) {
+        return res.status(400).json({ error: 'No permitted fields provided for self-service update.' });
+      }
+
+      // Replace body with filtered version to prevent unauthorized field injection
+      req.body = filteredBody;
+    }
 
     // Fetch target to check hierarchy
     const targetUser = await prisma.user.findUnique({ where: { id: targetId, organizationId } });

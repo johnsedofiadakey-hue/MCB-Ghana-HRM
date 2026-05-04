@@ -255,6 +255,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/policies" icon={Shield} label={t('common.policies')} isCollapsed={isCollapsed} />
                 {(rank >= 60 || isHR) && <NavItem to="/disciplinary" icon={AlertTriangle} label={t('common.disciplinary')} isCollapsed={isCollapsed} />}
                 {(rank >= 70 || isHR) && <NavItem to="/probation" icon={History} label={t('common.probation')} isCollapsed={isCollapsed} />}
+                {(rank >= 80 || isHR) && <NavItem to="/promotions" icon={Zap} label="Promotion Pipeline" isCollapsed={isCollapsed} />}
               </NavGroup>
  
               <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>

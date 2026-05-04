@@ -18,6 +18,10 @@ import {
     createProbationRecord,
     updateProbationRecord,
     getProbationStats,
+    // Promotions
+    listPromotionRequests,
+    createPromotionRequest,
+    updatePromotionStatus,
 } from '../controllers/hrFeatures.controller';
 
 const router = Router();
@@ -42,5 +46,10 @@ router.get('/probation', listProbationRecords);
 router.get('/probation/stats', getProbationStats);
 router.post('/probation', createProbationRecord);
 router.patch('/probation/:id', updateProbationRecord);
+
+// ── Promotions ───────────────────────────────────────────────────────────────
+router.get('/promotions', listPromotionRequests);
+router.post('/promotions', createPromotionRequest);
+router.patch('/promotions/:id', updatePromotionStatus);
 
 export default router;
