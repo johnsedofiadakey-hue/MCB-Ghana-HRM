@@ -760,7 +760,6 @@ export class AppraisalService {
       return [{ id: 'INTERNAL_ERROR', status: 'ERROR', message: err.message }];
     }
   }
-  }
 
   /**
    * Get packets awaiting final institutional sign-off (for MD/Director)
