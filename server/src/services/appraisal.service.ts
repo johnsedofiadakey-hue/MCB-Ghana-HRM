@@ -717,46 +717,53 @@ export class AppraisalService {
   }
 
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
-    let packets: any[] = [];
-    
-    // If Director or MD, they see ALL open packets for their organization (Global Oversight)
-    if (userRank >= 80) {
-      packets = await prismaClient.appraisalPacket.findMany({
-        where: { 
-          organizationId,
-          status: { not: 'CANCELLED' }
-        },
-        include: {
-          cycle: true,
-          employee: { select: { fullName: true, avatarUrl: true, jobTitle: true } }
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
-    } else {
-      packets = await prismaClient.appraisalPacket.findMany({
-        where: {
-          organizationId,
-          OR: [
-            { supervisorId: userId },
-            { matrixSupervisorId: userId },
-            { managerId: userId },
-            { hrReviewerId: userId },
-            { finalReviewerId: userId }
-          ]
-        },
-        include: {
-          cycle: true,
-          employee: { select: { fullName: true, avatarUrl: true, jobTitle: true } }
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
-    }
+    try {
+      console.log(`[AppraisalService] getReviewerPackets: User=${userId}, Rank=${userRank}, Org=${organizationId}`);
+      
+      const where: any = {
+        organizationId,
+        status: { not: 'CANCELLED' }
+      };
 
-    // 🔒 Safe Serialization: Convert Prisma Decimals to Numbers to prevent 500 JSON serialization errors
-    return packets.map(p => ({
-      ...p,
-      finalScore: p.finalScore ? Number(p.finalScore) : null
-    }));
+      // If not Director/MD (Rank 80+), restrict to assigned reviews
+      if (userRank < 80) {
+        where.OR = [
+          { supervisorId: userId },
+          { matrixSupervisorId: userId },
+          { managerId: userId },
+          { hrReviewerId: userId },
+          { finalReviewerId: userId }
+        ];
+      }
+
+      const packets = await prisma.appraisalPacket.findMany({
+        where,
+        include: {
+          cycle: true,
+          employee: { 
+            select: { 
+              id: true, 
+              fullName: true, 
+              avatarUrl: true, 
+              jobTitle: true,
+              departmentId: true 
+            } 
+          }
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
+
+      console.log(`[AppraisalService] Found ${packets.length} team packets for reviewer.`);
+
+      // 🔒 Safe Serialization: Explicitly convert Decimal fields to Number for JSON safety
+      return packets.map(p => ({
+        ...p,
+        finalScore: p.finalScore !== null && p.finalScore !== undefined ? Number(p.finalScore) : null
+      }));
+    } catch (err: any) {
+      console.error('[AppraisalService] CRITICAL: getReviewerPackets failure:', err.message);
+      throw new Error(`Failed to retrieve team appraisal data: ${err.message}`);
+    }
   }
 
   /**
