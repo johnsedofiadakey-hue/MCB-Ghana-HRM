@@ -42,113 +42,143 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
     const year = new Date().getFullYear();
 
     return (
-        <div className="hidden print:block bg-white text-slate-900 p-12 max-w-[1000px] mx-auto min-h-screen relative overflow-hidden font-sans">
+    return (
+        <div className="hidden print:block bg-white text-slate-900 p-0 m-0 min-h-screen relative overflow-hidden font-sans">
             <style dangerouslySetInnerHTML={{ __html: `
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:ital,wght@0,900;1,900&display=swap');
-                .print-dossier { font-family: 'Inter', sans-serif; }
+                .print-dossier { font-family: 'Inter', sans-serif; padding: 60px; }
                 .print-serif { font-family: 'Playfair Display', serif; }
+                @media print {
+                    @page { margin: 0; size: auto; }
+                    body { margin: 0; padding: 0; }
+                    .no-break { break-inside: avoid; }
+                }
             ` }} />
             
             <div className="print-dossier">
             {/* Header / Brand Matrix */}
-            <div className="flex justify-between items-start border-b-2 border-slate-900 pb-10 mb-10 relative z-10">
-                <div className="flex gap-8 items-start">
-                    {/* Member Photo - Added per user request */}
-                    <div className="w-32 h-40 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
-                        <img 
-                            src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
-                            alt={employee.fullName} 
-                            className="w-full h-full object-cover" 
-                        />
+            <div className="flex justify-between items-start border-b-4 border-slate-900 pb-12 mb-12 relative z-10">
+                <div className="flex gap-10 items-start">
+                    {/* Branding */}
+                    <div className="space-y-6">
+                        {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) && (
+                            <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="h-16 w-auto object-contain" />
+                        )}
+                        <div className="w-40 h-52 rounded-2xl overflow-hidden bg-slate-50 border-4 border-slate-100 shadow-xl">
+                            <img 
+                                src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
+                                alt={employee.fullName} 
+                                className="w-full h-full object-cover" 
+                            />
+                        </div>
                     </div>
 
-                    <div className="space-y-6 pt-2">
-                        <div className="space-y-1">
-                            <p className="text-[9px] font-black tracking-[0.4em] text-slate-400 uppercase">{t('print_dossier.official_record')}</p>
-                            <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none print-serif italic">{employee.fullName}</h1>
+                    <div className="space-y-8 pt-4">
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black tracking-[0.5em] text-slate-400 uppercase leading-none">Official Personnel Dossier</p>
+                            <h1 className="text-6xl font-black text-slate-900 tracking-tighter uppercase leading-none print-serif italic">{employee.fullName}</h1>
                         </div>
                         
-                        <div className="flex items-center gap-4">
-                            <span className="text-lg font-bold text-slate-600">{employee.jobTitle}</span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                            <span className="text-[9px] font-black tracking-[0.2em] uppercase text-slate-500 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                        <div className="flex flex-wrap items-center gap-6">
+                            <div className="flex items-center gap-3">
+                                <Briefcase className="text-slate-400" size={18} />
+                                <span className="text-xl font-bold text-slate-700">{employee.jobTitle}</span>
+                            </div>
+                            <span className="w-2 h-2 rounded-full bg-slate-200" />
+                            <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white px-4 py-2 bg-slate-900 rounded-xl">
                                 {employee.employeeCode || `MEM-${employee.id.slice(0, 8).toUpperCase()}`}
                             </span>
+                        </div>
+
+                        {/* Professional Summary - NEW */}
+                        <div className="max-w-xl">
+                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <BookOpen size={12} className="text-[var(--primary)]" />
+                                Professional Profile Summary
+                            </p>
+                            <p className="text-sm leading-relaxed text-slate-600 font-medium italic">
+                                {employee.fullName} is a verified member of the {employee.department || employee.departmentObj?.name || 'Operations'} unit, 
+                                currently serving as {employee.jobTitle}. Since joining on {new Date(employee.joinDate).toLocaleDateString(undefined, { dateStyle: 'long' })}, 
+                                they have maintained a status of {employee.status}. This dossier contains the comprehensive professional, financial, 
+                                and performance records as of {new Date().toLocaleDateString(undefined, { dateStyle: 'full' })}.
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="text-right space-y-4">
+                <div className="text-right space-y-6">
                     <div className="inline-flex flex-col items-end">
-                        <span className="px-4 py-1.5 rounded-lg border-2 border-slate-900 text-slate-900 text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                            <ShieldCheck size={12} />
-                            {t('print_dossier.labels.authenticated')}
-                        </span>
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">{t('print_dossier.verified')}</p>
+                        <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-emerald-50 border-2 border-emerald-500/20 text-emerald-700">
+                            <ShieldCheck size={20} />
+                            <div className="text-left">
+                                <p className="text-[10px] font-black uppercase tracking-widest leading-none">Authenticated</p>
+                                <p className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">System Verified Record</p>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div className="pt-2">
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">{t('print_dossier.date_created')}</p>
-                        <p className="text-[11px] font-bold text-slate-900">{new Date().toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
-                        <p className="text-[9px] font-medium text-slate-400 opacity-60">ID: {employee.id.slice(0, 10).toUpperCase()}</p>
+                    <div className="pt-4">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Generated On</p>
+                        <p className="text-[13px] font-black text-slate-900">{new Date().toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
+                        <p className="text-[9px] font-bold text-slate-400 opacity-60 uppercase tracking-widest mt-1">Ref: {employee.id.slice(0, 14).toUpperCase()}</p>
                     </div>
                 </div>
             </div>
 
             {/* Content Core */}
-            <div className="grid grid-cols-2 gap-x-20 relative z-10">
+            <div className="grid grid-cols-2 gap-x-24 relative z-10">
                 {/* 01: Identity Core */}
-                <Section title={t('print_dossier.sections.identity')} icon={User}>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        <InfoRow label={t('print_dossier.labels.gender')} value={employee.gender} />
-                        <InfoRow label={t('print_dossier.labels.dob')} value={employee.dob ? new Date(employee.dob).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
-                        <InfoRow label={t('print_dossier.labels.country')} value={employee.countryOfOrigin} icon={Globe} />
-                        <InfoRow label={t('print_dossier.labels.nationality')} value={employee.nationality} icon={Globe} />
-                        <InfoRow label={t('print_dossier.labels.marital')} value={employee.maritalStatus} />
-                        <InfoRow label={t('print_dossier.labels.id')} value={employee.nationalId} icon={ShieldCheck} />
-                        <InfoRow label={t('print_dossier.labels.email')} value={employee.email} icon={Mail} full />
-                        <InfoRow label={t('print_dossier.labels.phone')} value={employee.contactNumber} icon={Phone} full />
-                        <InfoRow label={t('print_dossier.labels.address')} value={employee.address} icon={MapPin} full />
+                <Section title="Personnel Identity" icon={User}>
+                    <div className="grid grid-cols-2 gap-x-10 gap-y-4">
+                        <InfoRow label="Biological Gender" value={employee.gender} />
+                        <InfoRow label="Birth Chronology" value={employee.dob ? new Date(employee.dob).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
+                        <InfoRow label="Region of Origin" value={employee.countryOfOrigin} icon={Globe} />
+                        <InfoRow label="Nationality" value={employee.nationality} icon={Globe} />
+                        <InfoRow label="Social Status" value={employee.maritalStatus} />
+                        <InfoRow label="National ID" value={employee.nationalId} icon={ShieldCheck} />
+                        <InfoRow label="Official Email" value={employee.email} icon={Mail} full />
+                        <InfoRow label="Primary Contact" value={employee.contactNumber} icon={Phone} full />
+                        <InfoRow label="Residential Address" value={employee.address} icon={MapPin} full />
                     </div>
                 </Section>
 
-                {/* 02: Work Matrix */}
-                <Section title={t('print_dossier.sections.work')} icon={Briefcase}>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                {/* 02: Deployment Matrix */}
+                <Section title="Strategic Deployment" icon={Briefcase}>
+                    <div className="grid grid-cols-2 gap-x-10 gap-y-4">
                         <InfoRow 
-                            label={t('print_dossier.labels.department')} 
-                            value={employee.department || employee.departmentObj?.name || t('common.unassigned_dept')} 
+                            label="Organizational Unit" 
+                            value={employee.department || employee.departmentObj?.name || 'Central Operations'} 
                             icon={Building}
                         />
-                        <InfoRow label={t('print_dossier.labels.role')} value={employee.role} />
-                        <InfoRow label={t('print_dossier.labels.contract')} value={employee.employmentType} />
-                        <InfoRow label={t('print_dossier.labels.start_date')} value={employee.joinDate ? new Date(employee.joinDate).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
-                        <InfoRow label={t('print_dossier.labels.manager')} value={employee.supervisor?.fullName || t('common.unassigned')} full />
-                        <InfoRow label={t('print_dossier.labels.matrix_manager')} value={employee.employeeReportingLines?.find((r: any) => !r.isPrimary)?.manager?.fullName || t('common.none')} full />
+                        <InfoRow label="System Authority" value={employee.role} />
+                        <InfoRow label="Engagement Model" value={employee.employmentType} />
+                        <InfoRow label="Commission Date" value={employee.joinDate ? new Date(employee.joinDate).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
+                        <InfoRow label="Primary Supervisor" value={employee.supervisor?.fullName || 'Internal Management'} full />
+                        <InfoRow label="Reporting Protocol" value={employee.employeeReportingLines?.find((r: any) => !r.isPrimary)?.manager?.fullName || 'Standard Hierarchy'} full />
                     </div>
                 </Section>
 
                 {/* 03: Financial Protocol */}
-                <Section title={t('print_dossier.sections.finance')} icon={Landmark}>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        <InfoRow label={t('print_dossier.labels.salary')} value={formatCurrency(employee.salary || 0)} />
-                        <InfoRow label={t('print_dossier.labels.bank')} value={employee.bankName} />
-                        <InfoRow label={t('print_dossier.labels.account')} value={employee.bankAccountNumber} />
-                        <InfoRow label={t('print_dossier.labels.branch')} value={employee.bankBranch} />
-                        <InfoRow label={t('print_dossier.labels.ssn')} value={employee.ssnitNumber} full />
+                <Section title="Financial Remuneration" icon={Landmark}>
+                    <div className="grid grid-cols-2 gap-x-10 gap-y-4">
+                        <InfoRow label="Base Compensation" value={formatCurrency(employee.salary || 0)} />
+                        <InfoRow label="Banking Institution" value={employee.bankName} />
+                        <InfoRow label="Account Identifier" value={employee.bankAccountNumber} />
+                        <InfoRow label="Institutional Branch" value={employee.bankBranch} />
+                        <InfoRow label="SSNIT Identification" value={employee.ssnitNumber} full />
                     </div>
                 </Section>
 
-                {/* 04: Family & Emergency */}
-                <Section title={t('print_dossier.sections.family')} icon={Heart}>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        <InfoRow label={t('print_dossier.labels.kin_name')} value={employee.nextOfKinName} />
-                        <InfoRow label={t('print_dossier.labels.kin_relation')} value={employee.nextOfKinRelation} />
-                        <InfoRow label={t('print_dossier.labels.emergency_contact')} value={employee.nextOfKinContact} full />
-                        <div className="col-span-2 pt-4 border-t border-slate-50 mt-2 space-y-4">
-                             <div className="flex gap-10">
-                                <InfoRow label={t('print_dossier.labels.sos_name')} value={employee.emergencyContactName} />
-                                <InfoRow label={t('print_dossier.labels.sos_phone')} value={employee.emergencyContactPhone} />
+                {/* 04: Emergency & Kinship */}
+                <Section title="Emergency Protocol" icon={Heart}>
+                    <div className="grid grid-cols-2 gap-x-10 gap-y-4">
+                        <InfoRow label="Next of Kin Designation" value={employee.nextOfKinName} />
+                        <InfoRow label="Kinship Relation" value={employee.nextOfKinRelation} />
+                        <InfoRow label="Kinship Contact" value={employee.nextOfKinContact} full />
+                        <div className="col-span-2 pt-6 border-t border-slate-100 mt-2 space-y-4">
+                             <div className="flex gap-12">
+                                <InfoRow label="SOS Representative" value={employee.emergencyContactName} />
+                                <InfoRow label="SOS Protocol Link" value={employee.emergencyContactPhone} />
                              </div>
                         </div>
                     </div>
@@ -156,24 +186,24 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             </div>
 
             {/* Extended Dossier Data */}
-            <div className="mt-8 relative z-10">
+            <div className="mt-12 relative z-10">
                 {/* 05: Academic Portfolio */}
-                <Section title={t('print_dossier.sections.education')} icon={BookOpen}>
-                    <div className="space-y-8">
-                        <InfoRow label={t('print_dossier.labels.education_level')} value={employee.education} full />
+                <Section title="Academic & Certification Portfolio" icon={BookOpen}>
+                    <div className="space-y-10">
+                        <InfoRow label="Highest Academic Attainment" value={employee.education} full />
                         {employee.certifications && (
-                            <div className="mt-6">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">{t('print_dossier.labels.certificates')}</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="mt-8">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Verified Certifications</p>
+                                <div className="grid grid-cols-2 gap-6">
                                 {(() => {
                                     try {
                                         const certs = typeof employee.certifications === 'string' ? JSON.parse(employee.certifications) : employee.certifications;
                                         return Array.isArray(certs) && certs.length > 0 ? certs.map((c: any, i: number) => (
-                                            <div key={i} className="flex flex-col p-4 rounded-xl border border-slate-100 bg-slate-50/30">
-                                                <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight">{c.name}</span>
-                                                <span className="text-[9px] text-slate-500 font-bold mt-1">{c.authority} <span className="mx-2 opacity-30">|</span> Issued: {c.issueDate}</span>
+                                            <div key={i} className="flex flex-col p-6 rounded-2xl border-2 border-slate-50 bg-slate-50/20">
+                                                <span className="text-[13px] font-black text-slate-900 uppercase tracking-tight mb-1">{c.name}</span>
+                                                <span className="text-[10px] text-slate-500 font-bold">{c.authority} <span className="mx-2 opacity-30">|</span> Validated: {c.issueDate}</span>
                                             </div>
-                                        )) : <p className="text-xs italic text-slate-400 pl-2">{t('common.no_data')}</p>;
+                                        )) : <p className="text-xs italic text-slate-400 pl-4">No certification records available in system.</p>;
                                     } catch { return null; }
                                 })()}
                                 </div>
@@ -183,25 +213,25 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                 </Section>
 
                 {/* 06: Performance Intelligence */}
-                <Section title={t('print_dossier.sections.performance')} icon={Activity}>
-                    <div className="space-y-10">
-                        <div className="grid grid-cols-2 gap-16">
-                            <div className="space-y-6">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">{t('print_dossier.labels.review_history')}</p>
+                <Section title="Performance Matrix & Growth" icon={Activity}>
+                    <div className="space-y-12">
+                        <div className="grid grid-cols-2 gap-24">
+                            <div className="space-y-8">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-b-2 border-slate-900 pb-3">Evaluation Chronology</p>
                                 {employee.appraisalPackets?.length > 0 ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-5">
                                         {employee.appraisalPackets.filter((p: any) => p.status !== 'CANCELLED').slice(0, 5).map((packet: any) => {
                                             const score = packet.finalScore ?? (packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW' || r.reviewStage === 'SUPERVISOR')?.overallRating || 0);
                                             return (
-                                                <div key={packet.id} className="flex justify-between items-center py-2 group">
+                                                <div key={packet.id} className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] font-black text-slate-800 uppercase leading-none">{packet.cycle?.title}</span>
-                                                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-1">{packet.cycle?.period || 'Historic'}</span>
+                                                        <span className="text-[11px] font-black text-slate-900 uppercase leading-none">{packet.cycle?.title}</span>
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">{packet.cycle?.period} cycle</span>
                                                     </div>
-                                                    <div className="flex items-center gap-3">
-                                                        {packet.finalScore != null && <span className="text-[7px] font-black text-slate-400 border border-slate-200 px-1.5 py-0.5 rounded uppercase">Arbitrated</span>}
-                                                        <span className={cn("text-sm font-black tracking-tighter", score >= 80 ? "text-slate-900 underline decoration-slate-300 decoration-2 font-black" : "text-slate-500")}>
-                                                            {score > 0 || packet.status === 'COMPLETED' ? `${score}%` : 'N/A'}
+                                                    <div className="flex items-center gap-4">
+                                                        {packet.finalScore != null && <span className="text-[8px] font-black text-[var(--primary)] bg-[var(--primary)]/5 border border-[var(--primary)]/20 px-2 py-0.5 rounded uppercase tracking-tighter">Arbitrated</span>}
+                                                        <span className={cn("text-lg font-black tracking-tighter", score >= 80 ? "text-slate-900" : "text-slate-500")}>
+                                                            {score > 0 || packet.status === 'COMPLETED' ? `${score}%` : 'Pending'}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -209,27 +239,27 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                                         })}
                                     </div>
                                 ) : (
-                                    <p className="text-xs italic text-slate-400">{t('common.no_data')}</p>
+                                    <p className="text-xs italic text-slate-400">No performance evaluations recorded yet.</p>
                                 )}
                             </div>
-                            <div className="space-y-6">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">{t('print_dossier.labels.goal_progress')}</p>
+                            <div className="space-y-8">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-b-2 border-slate-900 pb-3">Strategic Goal Progress</p>
                                 {employee.targetsAssignedToMe?.length > 0 ? (
-                                    <div className="space-y-5">
-                                        {employee.targetsAssignedToMe.slice(0, 4).map((target: any) => (
-                                            <div key={target.id} className="space-y-2">
+                                    <div className="space-y-6">
+                                        {employee.targetsAssignedToMe.slice(0, 5).map((target: any) => (
+                                            <div key={target.id} className="space-y-3">
                                                 <div className="flex justify-between items-end">
-                                                    <span className="text-[9px] font-black text-slate-800 uppercase tracking-tight truncate pr-4">{target.title}</span>
-                                                    <span className="text-[10px] font-black text-slate-900 tracking-tighter">{Math.round(target.progress || 0)}%</span>
+                                                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight truncate pr-6">{target.title}</span>
+                                                    <span className="text-[11px] font-black text-slate-900 tracking-tighter">{Math.round(target.progress || 0)}%</span>
                                                 </div>
-                                                <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-slate-800 transition-all duration-1000" style={{ width: `${target.progress || 0}%` }} />
+                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-slate-900" style={{ width: `${target.progress || 0}%` }} />
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-xs italic text-slate-400">{t('common.no_data')}</p>
+                                    <p className="text-xs italic text-slate-400">No strategic goals currently tracked.</p>
                                 )}
                             </div>
                         </div>
@@ -238,26 +268,42 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             </div>
 
             {/* Official Certification Footer */}
-            <div className="mt-12 pt-10 border-t-2 border-slate-900 grid grid-cols-2 gap-20 relative z-10">
-                <div className="space-y-10">
-                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">{t('print_dossier.labels.sign_off')}</p>
-                    <div className="space-y-2">
-                        <div className="border-b border-slate-900 w-full h-10 relative">
+            <div className="mt-20 pt-12 border-t-4 border-slate-900 grid grid-cols-2 gap-24 relative z-10 no-break">
+                <div className="space-y-12">
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400">Official Certification & Sign-off</p>
+                    <div className="space-y-4">
+                        <div className="border-b-2 border-slate-900 w-full h-16 relative">
                              {/* Space for digital/physical stamp */}
+                             <div className="absolute top-0 right-0 opacity-10">
+                                <ShieldCheck size={40} />
+                             </div>
                         </div>
-                        <p className="text-[9px] font-black text-slate-900 uppercase tracking-widest">MD / HR Manager</p>
-                        <p className="text-[7px] font-bold text-slate-300 uppercase italic">ID: {employee.id.toUpperCase()}</p>
+                        <div className="flex justify-between items-center">
+                            <p className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em]">Managing Director / HR Head</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Seal Required</p>
+                        </div>
+                        <p className="text-[8px] font-bold text-slate-300 uppercase italic tracking-widest leading-none">System ID Auth Reference: {employee.id.toUpperCase()}</p>
                     </div>
                 </div>
                 
-                <div className="flex flex-col justify-end text-right space-y-3">
-                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                        {t('print_dossier.confidential')}
-                    </p>
-                    <div className="pt-2 text-[9px] font-black text-slate-900">
-                        &copy; {year} {settings?.companyName}. {t('print_dossier.labels.copyright')}
+                <div className="flex flex-col justify-end text-right space-y-4">
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] leading-relaxed">
+                            This document is a confidential internal record and contains sensitive personal data. 
+                            Unauthorized duplication or distribution is strictly prohibited under organizational security protocols.
+                        </p>
+                    </div>
+                    <div className="pt-4 text-[10px] font-black text-slate-900 uppercase tracking-widest">
+                        &copy; {year} {settings?.companyName}. All Rights Reserved.
                     </div>
                 </div>
+            </div>
+
+            {/* Background Decorative Element */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.015] pointer-events-none">
+                 {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
+                    <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="" className="w-[800px] h-[800px] object-contain grayscale" />
+                 ) : <Globe size={800} />}
             </div>
             </div>
         </div>

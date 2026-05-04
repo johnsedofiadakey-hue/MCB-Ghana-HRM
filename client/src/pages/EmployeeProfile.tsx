@@ -177,7 +177,7 @@ const EmployeeProfile = () => {
                 </button>
                 <div className="flex gap-4">
                     <motion.button 
-                        onClick={() => { setPrintType('dossier'); setTimeout(() => window.print(), 100); }} 
+                        onClick={() => { setPrintType('dossier'); setTimeout(() => window.print(), 500); }} 
                         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
                         className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
                     >
@@ -185,7 +185,7 @@ const EmployeeProfile = () => {
                     </motion.button>
                     {(currentUser?.role === 'IT_MANAGER' || currentUser?.role === 'IT_ADMIN' || currentUser?.role === 'DEV') && (
                         <motion.button 
-                            onClick={() => { setPrintType('idcard'); setTimeout(() => window.print(), 100); }} 
+                            onClick={() => { setPrintType('idcard'); setTimeout(() => window.print(), 500); }} 
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
                             className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
                         >
