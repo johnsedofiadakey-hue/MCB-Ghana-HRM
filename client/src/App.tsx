@@ -455,7 +455,7 @@ const AppContent = () => {
             <Route path="/attendance" element={<AttendanceDashboard />} />
             <Route path="/org-chart" element={<RoleGuard minRank={85}><OrgChart /></RoleGuard>} />
             <Route path="/enterprise" element={<RoleGuard minRank={95}><EnterpriseSuite /></RoleGuard>} />
-            <Route path="/it-admin" element={<RoleGuard minRank={85} allowedRoles={['IT_ADMIN', 'DEV']}><ITAdmin /></RoleGuard>} />
+            <Route path="/it-admin" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'DEV']}><ITAdmin /></RoleGuard>} />
             <Route path="/training" element={<Training />} />
             <Route path="/holidays" element={<HolidayCalendar />} />
             <Route path="/announcements" element={<AnnouncementsPage />} />

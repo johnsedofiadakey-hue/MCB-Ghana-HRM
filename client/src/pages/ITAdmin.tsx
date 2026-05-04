@@ -268,7 +268,9 @@ const ITAdmin = () => {
                                   <td className="text-[11px] font-bold uppercase text-[var(--text-secondary)]">{u.departmentObj?.name || 'CENTRAL_HUB'}</td>
                                   <td className="px-10 py-6 text-right">
                                      <div className="flex justify-end gap-3">
-                                        <button onClick={() => handlePrintId(u)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><Key size={14} /></button>
+                                        {(currentUser?.role === 'IT_MANAGER' || currentUser?.role === 'IT_ADMIN' || currentUser?.role === 'DEV') && (
+                                           <button onClick={() => handlePrintId(u)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><Key size={14} /></button>
+                                        )}
                                         <button onClick={() => handlePasswordReset(u.id, u.fullName)} className="p-2.5 rounded-xl bg-indigo-500/5 text-indigo-600 border border-indigo-500/10 hover:bg-indigo-600 hover:text-white transition-all"><RotateCcw size={14} /></button>
                                      </div>
                                   </td>

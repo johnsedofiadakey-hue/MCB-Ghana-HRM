@@ -183,7 +183,7 @@ const EmployeeProfile = () => {
                     >
                         <Download size={14} /> Export PDF
                     </motion.button>
-                    {(currentUser?.rank || 0) >= 80 && (
+                    {(currentUser?.role === 'IT_MANAGER' || currentUser?.role === 'IT_ADMIN' || currentUser?.role === 'DEV') && (
                         <motion.button 
                             onClick={() => { setPrintType('idcard'); setTimeout(() => window.print(), 100); }} 
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
