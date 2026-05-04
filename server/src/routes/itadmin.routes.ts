@@ -9,11 +9,11 @@ router.use(authenticate);
 // System overview — Director+ can view
 router.get('/overview', requireRole(80), itSystemOverview);
 
-// User management — Manager+ can manage accounts
-router.get('/users', requireRole(70), itGetUsers);
-router.post('/users', requireRole(70), itCreateEmployee);
-router.post('/users/:userId/reset-password', requireRole(70), itResetPassword);
-router.patch('/users/:userId/deactivate', requireRole(70), itDeactivateUser);
+// User management — IT Admin+ (Rank 85+) can manage accounts
+router.get('/users', requireRole(85), itGetUsers);
+router.post('/users', requireRole(85), itCreateEmployee);
+router.post('/users/:userId/reset-password', requireRole(85), itResetPassword);
+router.patch('/users/:userId/deactivate', requireRole(85), itDeactivateUser);
 
 // Maintenance — MD only
 router.post('/maintenance/cleanup-logs', requireRole(90), itCleanupLogs);
