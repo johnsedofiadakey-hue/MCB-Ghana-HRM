@@ -24,8 +24,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg-main);
   color: var(--text-primary);
-  /* Prevent overscroll bounce on mobile for a more native feel */
-  overscroll-behavior-y: none;
   /* Support for mobile safe areas */
   padding-bottom: env(safe-area-inset-bottom);
 }

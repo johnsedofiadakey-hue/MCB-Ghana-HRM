@@ -30,10 +30,10 @@ const roleLabel: Record<string, string> = {
 };
 
 const statusBadge: Record<string, string> = {
-  ACTIVE: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
-  PROBATION: 'bg-amber-500/5 text-amber-600 border-amber-500/10',
-  NOTICE_PERIOD: 'bg-indigo-500/5 text-indigo-600 border-indigo-500/10',
-  TERMINATED: 'bg-rose-500/5 text-rose-600 border-rose-500/10'
+  ACTIVE: 'bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10',
+  PROBATION: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10',
+  NOTICE_PERIOD: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10',
+  TERMINATED: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10'
 };
 
 const ITAdmin = () => {
@@ -133,7 +133,7 @@ const ITAdmin = () => {
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {loading ? (
              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-40 flex flex-col items-center gap-6">
                 <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
@@ -203,9 +203,9 @@ const ITAdmin = () => {
                           <h4 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)] mb-8 flex items-center gap-3"><Activity size={16} className="text-[var(--primary)]" /> System Pulse</h4>
                           <div className="space-y-6">
                              {[
-                               { label: 'DB Engine', value: overview.systemHealth?.dbConnectivity ? 'READY' : 'DEGRADED', color: 'text-emerald-500' },
-                               { label: 'Sync State', value: overview.systemHealth?.syncState || 'STABLE', color: 'text-emerald-500' },
-                               { label: 'Uptime', value: `${Math.floor(overview.systemHealth?.uptime / 3600)}h Active`, color: 'text-[var(--text-primary)]' }
+                               { label: 'DB Engine', value: overview.systemHealth?.dbConnectivity ? 'READY' : 'DEGRADED', color: 'text-[var(--success)]' },
+                               { label: 'Sync State', value: overview.systemHealth?.syncState || 'STABLE', color: 'text-[var(--success)]' },
+                               { label: 'Uptime', value: `${Math.floor((overview.systemHealth?.uptime || 0) / 3600)}h Active`, color: 'text-[var(--text-primary)]' }
                              ].map(item => (
                                <div key={item.label} className="flex justify-between items-center py-3 border-b border-[var(--border-subtle)]/50 last:border-0">
                                   <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{item.label}</span>
@@ -271,7 +271,7 @@ const ITAdmin = () => {
                                         {(currentUser?.role === 'IT_MANAGER' || currentUser?.role === 'IT_ADMIN' || currentUser?.role === 'DEV') && (
                                            <button onClick={() => handlePrintId(u)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><Key size={14} /></button>
                                         )}
-                                        <button onClick={() => handlePasswordReset(u.id, u.fullName)} className="p-2.5 rounded-xl bg-indigo-500/5 text-indigo-600 border border-indigo-500/10 hover:bg-indigo-600 hover:text-white transition-all"><RotateCcw size={14} /></button>
+                                        <button onClick={() => handlePasswordReset(u.id, u.fullName)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><RotateCcw size={14} /></button>
                                      </div>
                                   </td>
                                 </tr>
@@ -305,7 +305,7 @@ const ITAdmin = () => {
                                       <p className="text-[11px] font-black text-[var(--text-primary)] uppercase">{n.name}</p>
                                       <p className="text-[9px] text-[var(--text-muted)] font-bold">{n.description || 'Hardware Node'} • {n.id.split('-')[0]}</p>
                                    </div>
-                                   <div className={cn("w-2 h-2 rounded-full", n.status === 'AVAILABLE' || n.status === 'ACTIVE' ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
+                                   <div className={cn("w-2 h-2 rounded-full", n.status === 'AVAILABLE' || n.status === 'ACTIVE' ? "bg-[var(--success)] animate-pulse" : "bg-[var(--error)]")} />
                                 </div>
                              )) : (
                                 <div className="p-8 text-center border border-dashed border-[var(--border-subtle)] rounded-xl opacity-40">
@@ -322,7 +322,7 @@ const ITAdmin = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
                    <div className="lg:col-span-8 nx-card p-12 border-[var(--border-subtle)] bg-[var(--bg-card)]">
                       <div className="flex items-center gap-4 mb-10">
-                          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600"><Server size={28} /></div>
+                          <div className="w-14 h-14 rounded-2xl bg-[var(--info)]/10 flex items-center justify-center text-[var(--info)]"><Server size={28} /></div>
                           <div>
                               <h3 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight">Email Integration</h3>
                               <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">SMTP Gateway Configuration</p>
