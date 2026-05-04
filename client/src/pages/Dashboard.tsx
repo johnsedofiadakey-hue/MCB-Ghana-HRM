@@ -137,13 +137,14 @@ const Dashboard = () => {
     </div>
   );
 
+  const userRank = getRankFromRole(user?.role);
   const quickActions = [
     { label: t('dashboard.actions.post_job'), icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
     { label: t('dashboard.actions.file_expense'), icon: Wallet, color: 'bg-[var(--primary)]', onClick: () => setModalType('expense'), rank: 0 },
     { label: t('dashboard.actions.get_support'), icon: LifeBuoy, color: 'bg-[var(--error)]', onClick: () => setModalType('support'), rank: 0 },
     { label: t('dashboard.actions.employee_exit'), icon: UserX, color: 'bg-[var(--text-muted)]', onClick: () => setModalType('offboarding'), rank: 80 },
     { label: t('dashboard.actions.system_boost'), icon: Rocket, color: 'bg-[var(--primary)]', onClick: () => {}, rank: 90 },
-  ].filter(a => getRankFromRole(user.role) >= a.rank);
+  ].filter(a => userRank >= a.rank);
 
   return (
     <div className="space-y-10 pb-20 max-w-[1600px] mx-auto bg-[var(--bg-main)] !bg-[var(--bg-main)]">

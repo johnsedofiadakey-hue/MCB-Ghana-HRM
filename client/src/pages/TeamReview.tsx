@@ -25,10 +25,23 @@ const statusColors: Record<string, string> = {
   LOCKED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
 };
 
+// 🔒 LOCAL HELPER (Inlined to prevent ReferenceError in production bundle)
+const ROLE_RANK_MAP: Record<string, number> = {
+    DEV: 100, MD: 95, DIRECTOR: 90, HR_MANAGER: 88, FINANCE_MANAGER: 87,
+    IT_MANAGER: 85, IT_ADMIN: 85, HR_OFFICER: 80, MANAGER: 75,
+    SUPERVISOR: 65, STAFF: 50, CASUAL: 40,
+    'MANAGING DIRECTOR': 95, 'SYSTEM DEVELOPER': 100
+};
+
+const getRank = (role?: string): number => {
+  if (!role) return 0;
+  return ROLE_RANK_MAP[role.toUpperCase()] ?? 0;
+};
+
 const TeamReview = () => {
   const currentUser = getStoredUser();
   const { t } = useTranslation();
-  const canManageTeam = getRankFromRole(currentUser?.role) >= 60;
+  const canManageTeam = getRank(currentUser?.role) >= 60;
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [mandates, setMandates] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -149,7 +162,7 @@ const TeamReview = () => {
                   <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic KPI Mandates</h2>
                   <div className="flex items-center gap-4 mt-2">
                     <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest">Top-Down Directives set by MD / HQ</p>
-                    {getRankFromRole(currentUser?.role) >= 70 && (
+                    {getRank(currentUser?.role) >= 70 && (
                       <select 
                         value={selectedDeptId}
                         onChange={(e) => setSelectedDeptId(e.target.value)}

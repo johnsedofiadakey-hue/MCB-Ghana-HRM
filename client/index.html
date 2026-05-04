@@ -3,14 +3,20 @@
 <html lang="en">
   <head>
     <script>
-      /* --- EMERGENCY RESCUE SCRIPT (v1.7) ---
+      /* --- EMERGENCY RESCUE SCRIPT (v1.8) --- */
       window.onerror = function(msg) {
-        if (msg && (msg.toString().includes('showDeleteConfirm') || msg.toString().includes('ReferenceError'))) {
-          console.warn('[RESCUE] Stale code detected. Forcing hard reload...');
-          window.location.reload(true);
+        if (msg && (msg.toString().includes('getRankFromRole') || msg.toString().includes('ReferenceError'))) {
+          console.warn('[RESCUE] Stale code or ReferenceError detected. Forcing hard reload...');
+          // Prevent infinite reload loops
+          const lastReload = localStorage.getItem('mcb_last_rescue_reload');
+          const now = Date.now();
+          if (!lastReload || (now - parseInt(lastReload) > 30000)) {
+            localStorage.setItem('mcb_last_rescue_reload', now.toString());
+            window.location.reload(true);
+          }
         }
       };
-      */
+    </script>
 
       /* --- HYPER-SPECIFIC ATOMIC THEME ENGINE (v1.7) --- */
       (function() {
