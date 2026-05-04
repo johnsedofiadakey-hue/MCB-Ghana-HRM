@@ -67,6 +67,8 @@ model Target {
   weight             Decimal                 @default(1.0)
   progress           Decimal                 @default(0)
   contributionWeight Decimal                 @default(0)
+  confidenceLevel    String                  @default("ON_TRACK") // ON_TRACK, AT_RISK, BLOCKED
+  blockers           String?
   parentTargetId     String?
   departmentId       Int?
   assigneeId         String?
@@ -105,6 +107,8 @@ model TargetMetric {
   unit              String?
   currency          String?        @default("GHS")
   weight            Decimal        @default(1.0)
+  isAutomated       Boolean        @default(false)
+  automationSource  String?        // e.g., "ATTENDANCE_LATE_COUNT", "PAYROLL_COST_RATIO"
   qualitativePrompt String?
   target            Target         @relation(fields: [targetId], references: [id], onDelete: Cascade)
   updates           TargetUpdate[]
@@ -619,6 +623,7 @@ model AppraisalPacket {
   resolvedById       String?
   finalScore         Decimal?
   finalVerdict       String?
+  kpiScore           Int?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   arbitrationLogic   String?
@@ -646,6 +651,7 @@ model AppraisalReview {
   weaknesses       String?
   achievements     String?
   developmentNeeds String?
+  aiCalibrationScore Int?
   responses        String?         @default("{}")
   packet           AppraisalPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
   reviewer         User            @relation("ReviewerAppraisalReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
@@ -737,6 +743,8 @@ model Organization {
 model SystemSettings {
   id                      String        @id @default(uuid())
   organizationId          String?       @unique
+  aiEnabled               Boolean       @default(true)
+  lastAiPulseAt           DateTime?
   isMaintenanceMode       Boolean       @default(false)
   maintenanceNotice       String?
   securityLockdown        Boolean       @default(false)

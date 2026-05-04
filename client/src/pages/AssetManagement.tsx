@@ -149,7 +149,7 @@ const AssetManagement = () => {
         {[
           { label: t('assets.total_inventory'), value: stats.total, icon: Box, color: 'text-blue-600 bg-blue-500/5' },
           { label: t('assets.operational'), value: stats.available, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
-          { label: t('assets.deployed'), value: stats.assigned, icon: ShieldCheck, color: 'text-indigo-600 bg-indigo-500/5' },
+          { label: t('assets.deployed'), value: stats.assigned, icon: ShieldCheck, color: 'text-[var(--primary)] bg-[var(--primary)]/5' },
           { label: t('assets.maintenance'), value: stats.maintenance, icon: Activity, color: 'text-amber-600 bg-amber-500/5' },
         ].map((s, idx) => (
           <motion.div 

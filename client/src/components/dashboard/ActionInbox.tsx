@@ -20,8 +20,8 @@ interface InboxAction {
 }
 
 const typeConfig: Record<string, { icon: any; color: string; bg: string }> = {
-  TARGET_ACK: { icon: Target, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-  TARGET_REVIEW: { icon: Target, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+  TARGET_ACK: { icon: Target, color: 'text-[var(--primary)]', bg: 'bg-[var(--primary)]/10' },
+  TARGET_REVIEW: { icon: Target, color: 'text-[var(--primary)]', bg: 'bg-[var(--primary)]/10' },
   APPRAISAL_REVIEW: { icon: ClipboardCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
   LEAVE_RELIEF: { icon: Users, color: 'text-amber-400', bg: 'bg-amber-500/10' },
   LEAVE_APPROVE: { icon: Calendar, color: 'text-blue-400', bg: 'bg-blue-500/10' },

@@ -355,3 +355,27 @@ export const cascadeTarget = async (req: Request, res: Response) => {
     return res.status(400).json({ error: err.message });
   }
 };
+
+// ── AI: GENERATE SMART DRAFT ──────────────────────────────────────────────────
+export const generateSmartDraft = async (req: Request, res: Response) => {
+  try {
+    const { title, level, department } = req.body;
+    if (!title) return res.status(400).json({ error: 'Goal title is required for AI drafting' });
+    
+    const draft = await TargetService.generateSmartDraft(title, level || 'INDIVIDUAL', department);
+    res.json({ draft });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── RISK PULSE: GET ENDANGERED TARGETS ────────────────────────────────────────
+export const getRiskPulse = async (req: Request, res: Response) => {
+  try {
+    const orgId = getOrgId(req);
+    const insights = await TargetService.getRiskInsights(orgId);
+    res.json(insights);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};

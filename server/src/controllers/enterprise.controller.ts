@@ -1,6 +1,7 @@
-import { getRoleRank } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { AIService } from '../services/ai.service';
+import { logAction } from '../services/audit.service';
 
 export const getOrgId = (req: Request): string | undefined => {
   if (req.user?.role === 'DEV') return undefined;
@@ -784,6 +785,48 @@ export const listShifts = async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('[enterprise.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI Intelligence Features (Phase 4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * AI Job Architect: Generates a professional JD draft
+ */
+export const generateJobDraft = async (req: Request, res: Response) => {
+  try {
+    const { title, departmentId } = req.body;
+    if (!title) return res.status(400).json({ error: 'Job title is required' });
+
+    let departmentName = 'General';
+    if (departmentId) {
+       const dept = await prisma.department.findUnique({ where: { id: Number(departmentId) } });
+       if (dept) departmentName = dept.name;
+    }
+
+    const draft = await AIService.generateJobDescription(title, departmentName);
+    
+    return res.json({ draft });
+  } catch (err: any) {
+    console.error('[EnterpriseAI] Job Architect Failure:', err);
+    res.status(500).json({ error: 'AI generation failed' });
+  }
+};
+
+/**
+ * Culture Pulse: Analyzes institutional sentiment
+ */
+export const getCulturePulse = async (req: Request, res: Response) => {
+  try {
+    const orgId = getOrgId(req) || 'mcb-ghana-tenant';
+    const insights = await AIService.getCultureInsights(orgId);
+    
+    return res.json(insights);
+  } catch (err: any) {
+    console.error('[EnterpriseAI] Culture Pulse Failure:', err);
+    res.status(500).json({ error: 'AI insight generation failed' });
   }
 };
 

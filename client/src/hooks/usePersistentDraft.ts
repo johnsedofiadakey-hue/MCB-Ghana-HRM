@@ -23,13 +23,18 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
     
     const isPlaceholder = db.app.options.apiKey === 'PLACEHOLDER' || !db.app.options.apiKey;
     
-    // 🛡️ Fail-safe Timeout: Unblock UI after 3 seconds if Firebase is hanging/offline
+    // 🛡️ Fail-safe Timeout: Unblock UI after 8 seconds if Firebase is hanging/offline
     const timeout = setTimeout(() => {
       setLoading(false);
       if (!isPlaceholder) {
-        console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}. If this persists in production, please verify that VITE_FIREBASE_* environment variables are correctly injected into your build.`);
+        console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}.`);
+        console.info(`[Diagnostics] Please verify:
+          1. Network connectivity to Firestore.
+          2. VITE_FIREBASE_PROJECT_ID: "${db.app.options.projectId}"
+          3. Firestore Rules for collection "${collectionName}".
+          4. Environment variables are correctly injected if running in production.`);
       }
-    }, 10000);
+    }, 8000);
 
     if (isPlaceholder) {
       clearTimeout(timeout);

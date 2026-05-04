@@ -8,10 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { getSafeAvatarUrl } from '../utils/avatar';
 
 const categoryColors: Record<string, string> = {
-  HR: 'text-primary border-[var(--primary)]/20 bg-[var(--primary)]/5',
-  IT: 'text-blue-500 border-blue-500/20 bg-blue-500/5',
-  Admin: 'text-amber-500 border-amber-500/20 bg-amber-500/5',
-  Manager: 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5',
+  HR: 'text-[var(--primary)] border-[var(--primary)]/20 bg-[var(--primary)]/5',
+  IT: 'text-[var(--info)] border-[var(--info)]/20 bg-[var(--info)]/5',
+  Admin: 'text-[var(--warning)] border-[var(--warning)]/20 bg-[var(--warning)]/5',
+  Manager: 'text-[var(--success)] border-[var(--success)]/20 bg-[var(--success)]/5',
   General: 'text-[var(--text-muted)] border-[var(--border-subtle)] bg-[var(--bg-elevated)]'
 };
 
@@ -167,10 +167,10 @@ const Onboarding = () => {
           {/* Success Track Guides */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             {[
-              { icon: Building2, label: t('onboarding.guides.handbook'), desc: t('onboarding.guides.handbook_desc'), color: 'blue' },
-              { icon: Zap, label: t('onboarding.guides.it'), desc: t('onboarding.guides.it_desc'), color: 'amber' },
-              { icon: ShieldCheck, label: t('onboarding.guides.culture'), desc: t('onboarding.guides.culture_desc'), color: 'emerald' },
-              { icon: GraduationCap, label: t('onboarding.guides.career'), desc: t('onboarding.guides.career_desc'), color: 'purple' }
+              { icon: Building2, label: t('onboarding.guides.handbook'), desc: t('onboarding.guides.handbook_desc'), color: 'info' },
+              { icon: Zap, label: t('onboarding.guides.it'), desc: t('onboarding.guides.it_desc'), color: 'warning' },
+              { icon: ShieldCheck, label: t('onboarding.guides.culture'), desc: t('onboarding.guides.culture_desc'), color: 'success' },
+              { icon: GraduationCap, label: t('onboarding.guides.career'), desc: t('onboarding.guides.career_desc'), color: 'primary' }
             ].map((guide, idx) => (
               <motion.div
                 key={guide.label}
@@ -181,10 +181,10 @@ const Onboarding = () => {
               >
                 <div className={cn(
                   "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-xl",
-                  guide.color === 'blue' ? "bg-blue-500/10 text-blue-500" :
-                  guide.color === 'amber' ? "bg-amber-500/10 text-amber-500" :
-                  guide.color === 'emerald' ? "bg-emerald-500/10 text-emerald-500" :
-                  "bg-purple-500/10 text-purple-500"
+                  guide.color === 'info' ? "bg-[var(--info)]/10 text-[var(--info)]" :
+                  guide.color === 'warning' ? "bg-[var(--warning)]/10 text-[var(--warning)]" :
+                  guide.color === 'success' ? "bg-[var(--success)]/10 text-[var(--success)]" :
+                  "bg-[var(--primary)]/10 text-[var(--primary)]"
                 )}>
                   <guide.icon size={22} />
                 </div>

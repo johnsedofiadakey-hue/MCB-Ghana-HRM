@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   TrendingUp, Clock, CheckCircle, X, Flag,
   Percent, DollarSign, Hash,
-  List, Target, Plus, Building2, Users, Download
+  List, Target, Plus, Building2, Users, Download, Sparkles, AlertTriangle, ShieldCheck
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
@@ -64,7 +64,31 @@ const CreateTargetModal: React.FC<{
     departmentId: initialData?.departmentId?.toString() || '',
     weight: initialData?.weight?.toString() || '1.0',
     status: initialData?.status || 'ASSIGNED',
+    confidenceLevel: initialData?.confidenceLevel || 'ON_TRACK',
+    blockers: initialData?.blockers || '',
   });
+  
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+
+  const handleAiDraft = async () => {
+     if (!form.title.trim()) {
+        toast.error('Enter a goal title first for the AI to analyze.');
+        return;
+     }
+     setIsAiGenerating(true);
+     try {
+        const res = await api.post('/targets/generate-smart-draft', { 
+           title: form.title, 
+           level: form.level 
+        });
+        setForm(prev => ({ ...prev, description: res.data.draft }));
+        toast.success('AI Goal Drafted successfully!');
+     } catch {
+        toast.error('AI drafting failed. Please check your connection.');
+     } finally {
+        setIsAiGenerating(false);
+     }
+  };
   
   const [metrics, setMetrics] = useState(
     initialData?.metrics?.length 
@@ -176,6 +200,32 @@ const CreateTargetModal: React.FC<{
                 <textarea className="nx-input" value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
                   placeholder={t('targets.description_placeholder')} />
+                <button 
+                  type="button" 
+                  onClick={handleAiDraft}
+                  disabled={isAiGenerating}
+                  className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--primary)]/70 mt-2 transition-all"
+                >
+                  {isAiGenerating ? <div className="w-3 h-3 border-2 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin" /> : <Sparkles size={12} />}
+                  Enhance with Cortex AI
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Institutional Confidence</label>
+                    <select className="nx-input" value={form.confidenceLevel} onChange={e => setForm({ ...form, confidenceLevel: e.target.value })}>
+                       <option value="ON_TRACK">🟢 On Track</option>
+                       <option value="AT_RISK">🟡 At Risk</option>
+                       <option value="BLOCKED">🔴 Blocked / Needs Support</option>
+                    </select>
+                 </div>
+                 {form.confidenceLevel !== 'ON_TRACK' && (
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-rose-500">Critical Blockers</label>
+                       <input className="nx-input border-rose-500/30" value={form.blockers} onChange={e => setForm({ ...form, blockers: e.target.value })} placeholder="What is stopping this goal?" />
+                    </div>
+                 )}
               </div>
 
               {initialData && (
@@ -322,6 +372,13 @@ const TargetDashboard: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [editingTarget, setEditingTarget] = useState<any | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [riskPulse, setRiskPulse] = useState<any>(null);
+
+  useEffect(() => {
+     if (rank >= 85) {
+        api.get('/targets/pulse/risk').then(res => setRiskPulse(res.data)).catch(() => {});
+     }
+  }, [rank]);
 
   const fetchTargets = useCallback(async () => {
     try {
@@ -430,7 +487,7 @@ const TargetDashboard: React.FC = () => {
           title={t('targets.title')}
           description={t('targets.subtitle')}
           icon={Target}
-          variant="indigo"
+          variant="primary"
         />
         <div className="flex gap-4">
           <button 
@@ -470,6 +527,41 @@ const TargetDashboard: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* RISK PULSE WIDGET */}
+      {rank >= 85 && riskPulse && riskPulse.endangeredCount > 0 && (
+         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
+            className="nx-card p-10 bg-gradient-to-br from-rose-500/10 to-transparent border-rose-500/20 relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 p-3 bg-rose-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg flex items-center gap-2">
+               <AlertTriangle size={10} />
+               Critical Strategic Risk
+            </div>
+            <div className="flex flex-col md:flex-row items-center gap-10">
+               <div className="w-24 h-24 rounded-[2rem] bg-rose-500/20 flex items-center justify-center text-rose-600 shrink-0 border-4 border-white shadow-xl">
+                  <ShieldCheck size={48} />
+               </div>
+               <div className="flex-1 space-y-4">
+                  <div>
+                     <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Institutional Risk Pulse</h3>
+                     <p className="text-sm font-bold text-[var(--text-secondary)] mt-1">{riskPulse.insights}</p>
+                  </div>
+                  <div className="flex gap-4">
+                     <div className="px-5 py-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Blocked Goals</div>
+                        <div className="text-lg font-black text-rose-500">{riskPulse.criticalBlockers?.length || 0}</div>
+                     </div>
+                     <div className="px-5 py-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">At Risk</div>
+                        <div className="text-lg font-black text-amber-500">{riskPulse.atRisk?.length || 0}</div>
+                     </div>
+                  </div>
+               </div>
+               <button onClick={() => setFilter('BLOCKED')} className="px-8 h-14 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-rose-500/40 hover:scale-[1.05] active:scale-95 transition-all">
+                  Investigate Blockers
+               </button>
+            </div>
+         </motion.div>
+      )}
 
       {/* Tabs + Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -511,7 +603,7 @@ const TargetDashboard: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--border-subtle)]" />
                 <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
-                  <Building2 size={14} className="text-indigo-500" /> {t('targets.dept_objectives')}
+                  <Building2 size={14} className="text-[var(--primary)]" /> {t('targets.dept_objectives')}
                 </h2>
                 <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--border-subtle)]" />
               </div>

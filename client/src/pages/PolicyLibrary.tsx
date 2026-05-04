@@ -11,7 +11,7 @@ const CATEGORIES = ['GENERAL', 'HR', 'IT', 'SAFETY', 'FINANCE', 'CONDUCT'];
 const catColors: Record<string, string> = {
     GENERAL: 'bg-slate-100 text-slate-600',
     HR: 'bg-blue-100 text-blue-700',
-    IT: 'bg-indigo-100 text-indigo-700',
+    IT: 'bg-[var(--info)]/10 text-[var(--info)]',
     SAFETY: 'bg-amber-100 text-amber-700',
     FINANCE: 'bg-emerald-100 text-emerald-700',
     CONDUCT: 'bg-rose-100 text-rose-700',
@@ -113,7 +113,7 @@ const PolicyLibrary: React.FC = () => {
                 </div>
                 {rank >= 80 && (
                     <button onClick={() => setShowCreate(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
                     >
                         <Plus size={16} /> Add Policy
                     </button>
@@ -142,17 +142,17 @@ const PolicyLibrary: React.FC = () => {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type="text" placeholder="Search policies..."
                         value={search} onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                     />
                 </div>
                 <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                 >
                     <option value="">All Categories</option>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                 >
                     <option value="">All Statuses</option>
                     <option value="DRAFT">Draft</option>
@@ -164,7 +164,7 @@ const PolicyLibrary: React.FC = () => {
             {/* Policy Grid */}
             {loading ? (
                 <div className="flex items-center justify-center h-40">
-                    <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center bg-white border border-slate-200 rounded-xl h-40 text-slate-400">
@@ -180,8 +180,8 @@ const PolicyLibrary: React.FC = () => {
                             <div key={p.id} className="bg-white border border-slate-200 rounded-xl p-6 hover:border-slate-300 transition-colors">
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex items-start gap-4 flex-1">
-                                        <div className="p-2.5 bg-indigo-50 rounded-xl flex-shrink-0">
-                                            <BookOpen size={18} className="text-indigo-600" />
+                                        <div className="p-2.5 bg-[var(--primary)]/5 rounded-xl flex-shrink-0">
+                                            <BookOpen size={18} className="text-[var(--primary)]" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -212,7 +212,7 @@ const PolicyLibrary: React.FC = () => {
                                         {/* Employee acknowledge button */}
                                         {p.status === 'PUBLISHED' && !hasAcked && (
                                             <button onClick={() => handleAcknowledge(p.id)}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 border border-indigo-300 text-indigo-600 rounded-lg text-xs font-semibold hover:bg-indigo-50 transition-colors"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--primary)]/30 text-[var(--primary)] rounded-lg text-xs font-semibold hover:bg-[var(--primary)]/5 transition-colors"
                                             >
                                                 <CheckCircle2 size={13} /> Acknowledge
                                             </button>
@@ -226,7 +226,7 @@ const PolicyLibrary: React.FC = () => {
                                         {/* HR actions */}
                                         {rank >= 70 && (
                                             <button onClick={() => loadAcks(p)}
-                                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                className="p-1.5 text-slate-400 hover:text-[var(--primary)] hover:bg-[var(--primary)]/5 rounded-lg transition-colors"
                                                 title="View acknowledgments"
                                             ><Users size={14} /></button>
                                         )}
@@ -267,28 +267,28 @@ const PolicyLibrary: React.FC = () => {
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Title *</label>
                                     <input type="text" placeholder="e.g. Remote Work Policy"
                                         value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     />
                                 </div>
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Description</label>
                                     <input type="text" placeholder="Brief summary..."
                                         value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     />
                                 </div>
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Policy Content</label>
                                     <textarea rows={5} placeholder="Write or paste the full policy text here..."
                                         value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 resize-none"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)] resize-none"
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Category</label>
                                         <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                         >
                                             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
@@ -297,13 +297,13 @@ const PolicyLibrary: React.FC = () => {
                                         <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Version</label>
                                         <input type="text" placeholder="1.0"
                                             value={form.version} onChange={e => setForm(p => ({ ...p, version: e.target.value }))}
-                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                         />
                                     </div>
                                 </div>
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <input type="checkbox" checked={form.isRequired} onChange={e => setForm(p => ({ ...p, isRequired: e.target.checked }))}
-                                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        className="w-4 h-4 rounded border-slate-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                                     />
                                     <span className="text-sm text-slate-700">Require all employees to acknowledge this policy</span>
                                 </label>
@@ -313,7 +313,7 @@ const PolicyLibrary: React.FC = () => {
                                     className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
                                 >Cancel</button>
                                 <button onClick={handleCreate} disabled={saving}
-                                    className="flex-[2] py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+                                    className="flex-[2] py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
                                 >{saving ? 'Creating...' : 'Create Policy'}</button>
                             </div>
                         </motion.div>
@@ -340,14 +340,14 @@ const PolicyLibrary: React.FC = () => {
                             <div className="flex-1 overflow-y-auto p-6">
                                 {!acks ? (
                                     <div className="flex items-center justify-center h-20">
-                                        <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                        <div className="w-5 h-5 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
                                     </div>
                                 ) : (
                                     <>
                                         <div className="flex items-center justify-between mb-4">
                                             <span className="text-sm text-slate-500">{acks.acknowledged} of {acks.totalEmployees} acknowledged</span>
                                             <div className="w-32 bg-slate-200 rounded-full h-1.5">
-                                                <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${(acks.acknowledged / Math.max(acks.totalEmployees, 1)) * 100}%` }} />
+                                                <div className="bg-[var(--primary)] h-1.5 rounded-full" style={{ width: `${(acks.acknowledged / Math.max(acks.totalEmployees, 1)) * 100}%` }} />
                                             </div>
                                         </div>
                                         <div className="space-y-2">

@@ -81,7 +81,7 @@ const current = announcements[currentIdx];
     const priorityColors = {
         URGENT: 'text-rose-600 bg-rose-50 border-rose-200',
         HIGH: 'text-amber-600 bg-amber-50 border-amber-200',
-        NORMAL: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+        NORMAL: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/20',
         LOW: 'text-emerald-600 bg-emerald-50 border-emerald-200',
     };
 
@@ -134,7 +134,7 @@ const current = announcements[currentIdx];
                             {announcements.length > 1 && (
                                 <button 
                                     onClick={() => setCurrentIdx((currentIdx + 1) % announcements.length)}
-                                    className="p-3 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 transition-all rounded-xl"
+                                    className="p-3 text-slate-400 hover:text-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all rounded-xl"
                                     title="Next Announcement"
                                 >
                                     <ChevronRight size={20} />

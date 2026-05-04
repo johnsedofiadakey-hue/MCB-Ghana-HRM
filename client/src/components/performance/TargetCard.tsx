@@ -32,6 +32,8 @@ interface TargetProps {
     progress?: number;
     weight?: number;
     metrics: TargetMetric[];
+    confidenceLevel?: 'ON_TRACK' | 'AT_RISK' | 'BLOCKED';
+    blockers?: string;
     assignee?: { fullName: string; avatarUrl?: string };
     department?: { name: string };
     originator?: { fullName: string };
@@ -50,7 +52,7 @@ interface TargetProps {
 
 const getStatusConfig = (t: any): Record<string, { label: string; badge: string; color: string; ring: string }> => ({
   DRAFT: { label: t('targets.status.DRAFT'), badge: 'bg-slate-100 text-slate-600 border-slate-200', color: '#64748b', ring: 'ring-slate-400/20' },
-  ASSIGNED: { label: t('targets.status.ASSIGNED'), badge: 'bg-indigo-50 text-indigo-700 border-indigo-100', color: '#6366f1', ring: 'ring-indigo-400/20' },
+  ASSIGNED: { label: t('targets.status.ASSIGNED'), badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20', color: 'var(--primary)', ring: 'ring-[var(--primary)]/20' },
   ACKNOWLEDGED: { label: t('targets.status.ACKNOWLEDGED'), badge: 'bg-blue-50 text-blue-700 border-blue-100', color: '#3b82f6', ring: 'ring-blue-400/20' },
   IN_PROGRESS: { label: t('targets.status.IN_PROGRESS'), badge: 'bg-amber-50 text-amber-700 border-amber-100', color: '#f59e0b', ring: 'ring-amber-400/20' },
   UNDER_REVIEW: { label: t('targets.status.UNDER_REVIEW'), badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20', color: 'var(--primary)', ring: 'ring-[var(--primary)]/20' },
@@ -164,7 +166,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
         <div className="flex-1 min-w-0 flex gap-4 pr-4">
           <div className={cn(
             "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner",
-            isDepartmentTarget ? "bg-indigo-50 text-indigo-600" : "bg-slate-50 text-slate-500"
+            isDepartmentTarget ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-slate-50 text-slate-500"
           )}>
             {isDepartmentTarget ? <Building2 size={22} /> : <User size={22} />}
           </div>
@@ -176,6 +178,14 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
               {expStatus && (
                 <span className={cn("px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1 border border-current/20", EXPECTATION_CONFIG[expStatus].bg, EXPECTATION_CONFIG[expStatus].color)}>
                   {React.createElement(EXPECTATION_CONFIG[expStatus].icon, { size: 10 })} {EXPECTATION_CONFIG[expStatus].label}
+                </span>
+              )}
+              {target.confidenceLevel && target.confidenceLevel !== 'ON_TRACK' && (
+                <span className={cn(
+                  "px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shadow-sm",
+                  target.confidenceLevel === 'BLOCKED' ? "bg-rose-500 text-white border-rose-600" : "bg-amber-500 text-white border-amber-600"
+                )}>
+                  {target.confidenceLevel}
                 </span>
               )}
             </div>
@@ -224,11 +234,20 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                   <p className="text-sm text-slate-600 leading-relaxed font-medium">
                     {target.description || t('targets.no_description')}
                   </p>
+                  {target.blockers && (
+                     <div className="mt-4 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
+                        <AlertCircle className="text-rose-500 shrink-0" size={16} />
+                        <div>
+                           <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Critical Blocker</p>
+                           <p className="text-xs font-bold text-slate-700">{target.blockers}</p>
+                        </div>
+                     </div>
+                  )}
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-3 shrink-0">
                   {isDepartmentTarget && canReview && onCascade && (
-                    <button onClick={(e) => { e.stopPropagation(); onCascade(); }} className="px-5 py-2.5 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:-translate-y-0.5 transition-all active:scale-95">
+                    <button onClick={(e) => { e.stopPropagation(); onCascade(); }} className="px-5 py-2.5 rounded-2xl bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/20 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:-translate-y-0.5 transition-all active:scale-95">
                       <Plus size={14} strokeWidth={3} /> {t('targets.cascade')}
                     </button>
                   )}
@@ -268,7 +287,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
 
                   <button 
                     onClick={handleExportPdf}
-                    className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all shadow-sm group/export"
+                    className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-[var(--primary)] hover:border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-all shadow-sm group/export"
                     title={t('common.export_pdf', 'Export to PDF')}
                   >
                     <Download size={18} className="group-hover/export:scale-110 transition-transform" />

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { aiGuard } from '../middleware/ai-guard.middleware';
 import {
   getRoleDashboard,
   createDepartmentKPI,
@@ -35,6 +36,8 @@ import {
   listTaxRules,
   createTaxBracket,
   getEnterpriseSummary,
+  generateJobDraft,
+  getCulturePulse,
 } from '../controllers/enterprise.controller';
 
 const router = Router();
@@ -61,6 +64,8 @@ router.post('/recruitment/jobs', requireRole(80), createJobPosition);
 router.get('/recruitment/candidates', requireRole(60), listCandidates);
 router.post('/recruitment/candidates', requireRole(60), createCandidate);
 router.patch('/recruitment/candidates/:id/status', requireRole(70), updateCandidateStatus);
+router.post('/recruitment/ai-generate-jd', requireRole(80), aiGuard, generateJobDraft);
+router.get('/culture-pulse', requireRole(85), aiGuard, getCulturePulse);
 
 // Onboarding / Offboarding
 router.get('/onboarding/checklists', requireRole(60), listOnboardingChecklists);

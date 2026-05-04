@@ -1,4 +1,5 @@
 import prisma from '../prisma/client';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 
@@ -586,5 +587,60 @@ export class TargetService {
     });
 
     return totalWeight > 0 ? totalProgress / totalWeight : 0;
+  }
+
+  /**
+   * Cortex AI: Generates a SMART goal description based on a title and level
+   */
+  static async generateSmartDraft(title: string, level: string, department?: string): Promise<string> {
+     const apiKey = process.env.GEMINI_API_KEY;
+     if (!apiKey) return "AI drafting unavailable. Please set GEMINI_API_KEY.";
+
+     const genAI = new GoogleGenerativeAI(apiKey);
+     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+     const prompt = `
+        As an expert HR consultant, convert this raw goal into a professional SMART goal (Specific, Measurable, Achievable, Relevant, Time-bound).
+        Goal Title: "${title}"
+        Level: ${level}
+        Department Context: ${department || 'General'}
+        
+        Provide a concise description (max 200 words) that includes:
+        1. The specific outcome expected.
+        2. How success will be measured.
+        3. The institutional relevance.
+        
+        Tone: Professional, direct, and motivating.
+        Return ONLY the drafted description text.
+     `;
+
+     const result = await model.generateContent(prompt);
+     return result.response.text().trim();
+  }
+
+  /**
+   * Risk Pulse: Analyzes confidence levels and progress to flag endangered goals
+   */
+  static async getRiskInsights(organizationId: string) {
+     const endangered = await prisma.target.findMany({
+        where: {
+           organizationId,
+           isArchived: false,
+           status: { in: ['ACKNOWLEDGED', 'IN_PROGRESS'] },
+           OR: [
+              { confidenceLevel: 'BLOCKED' },
+              { confidenceLevel: 'AT_RISK' },
+              { progress: { lt: 20 } } // Low progress
+           ]
+        },
+        include: { assignee: true, department: true }
+     });
+
+     return {
+        endangeredCount: endangered.length,
+        criticalBlockers: endangered.filter(t => t.confidenceLevel === 'BLOCKED'),
+        atRisk: endangered.filter(t => t.confidenceLevel === 'AT_RISK'),
+        insights: `There are ${endangered.length} targets currently flagged as high-risk. Institutional intervention is recommended for ${endangered.filter(t => t.confidenceLevel === 'BLOCKED').length} blocked initiatives.`
+     };
   }
 }

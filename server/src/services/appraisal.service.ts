@@ -1,4 +1,5 @@
 import { prisma, prismaClient } from '../prisma/client';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 
@@ -359,7 +360,87 @@ export class AppraisalService {
           await notify(packet.hrReviewerId, '⚖️ Appraisal Gap Flagged', `A significant rating gap was detected in ${packetId}. No formal dispute raised yet.`, 'INFO', `/reviews/packet/${packetId}`);
         }
       }
+
+      // ── AI CALIBRATION SYNC ──────────────────────────────────────────────
+      // Use Cortex AI to analyze the sentiment of the manager's review
+      if (managerReview.summary) {
+         try {
+            const aiScore = await this.analyzeSentiment(managerReview.summary, managerScore);
+            await prisma.appraisalReview.update({
+               where: { id: managerReview.id },
+               data: { aiCalibrationScore: aiScore }
+            });
+         } catch (e) { console.warn('[AppraisalService] AI Calibration failed:', e); }
+      }
     }
+  }
+
+  /**
+   * AI Sentiment Calibration: Checks if the written summary matches the numerical rating
+   */
+  private static async analyzeSentiment(summary: string, score: number): Promise<number> {
+     const apiKey = process.env.GEMINI_API_KEY;
+     if (!apiKey) return 100; // Skip if no AI key
+
+     const genAI = new GoogleGenerativeAI(apiKey);
+     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+     const prompt = `
+        Analyze the relationship between a performance review comment and its score (0-100 scale).
+        Comment: "${summary}"
+        Numerical Score: ${score}
+        
+        Return a single number representing the "Calibration Score" (0-100).
+        - 100: The tone perfectly matches the score.
+        - 0: The tone and score are completely contradictory (e.g., glowing text but low score, or critical text but 100/100 score).
+        
+        Return ONLY the number.
+     `;
+
+     const result = await model.generateContent(prompt);
+     const text = result.response.text().trim();
+     return parseInt(text) || 100;
+  }
+
+  /**
+   * KPI Pulse Sync: Pulls real-time target completion data for the appraisal period
+   */
+  static async syncKpiScores(packetId: string, organizationId: string) {
+     const packet = await prisma.appraisalPacket.findUnique({
+        where: { id: packetId, organizationId },
+        include: { cycle: true }
+     });
+     if (!packet) return 0;
+
+     const targets = await prisma.target.findMany({
+        where: {
+           organizationId,
+           assigneeId: packet.employeeId,
+           dueDate: { gte: packet.cycle.startDate, lte: packet.cycle.endDate },
+           isArchived: false
+        },
+        include: { metrics: true }
+     });
+
+     if (targets.length === 0) return 0;
+
+     let totalProgress = 0;
+     targets.forEach(t => {
+        const targetProgress = t.metrics.reduce((acc, m) => {
+           const prog = (Number(m.currentValue || 0) / Number(m.targetValue || 1)) * 100;
+           return acc + Math.min(100, prog);
+        }, 0) / (t.metrics.length || 1);
+        totalProgress += targetProgress;
+     });
+
+     const finalKpiScore = Math.round(totalProgress / targets.length);
+     
+     await prisma.appraisalPacket.update({
+        where: { id: packetId },
+        data: { kpiScore: finalKpiScore }
+     });
+
+     return finalKpiScore;
   }
 
   /**

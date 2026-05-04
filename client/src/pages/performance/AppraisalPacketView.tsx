@@ -27,7 +27,7 @@ const getCompetencyFramework = (t: any) => [
     id: 'delivery',
     category: t('appraisals.packet.categories.results'),
     icon: Target,
-    color: '#6366f1',
+    color: 'var(--info)',
     competencies: [
       { id: 'goal_achievement', name: t('appraisals.packet.competencies.goal_achievement.name'), desc: t('appraisals.packet.competencies.goal_achievement.desc') },
       { id: 'quality_of_work', name: t('appraisals.packet.competencies.quality_of_work.name'), desc: t('appraisals.packet.competencies.quality_of_work.desc') },
@@ -39,7 +39,7 @@ const getCompetencyFramework = (t: any) => [
     id: 'skills',
     category: t('appraisals.packet.categories.skills'),
     icon: BookOpen,
-    color: '#10b981',
+    color: 'var(--success)',
     competencies: [
       { id: 'job_knowledge', name: t('appraisals.packet.competencies.job_knowledge.name'), desc: t('appraisals.packet.competencies.job_knowledge.desc') },
       { id: 'problem_solving', name: t('appraisals.packet.competencies.problem_solving.name'), desc: t('appraisals.packet.competencies.problem_solving.desc') },
@@ -50,7 +50,7 @@ const getCompetencyFramework = (t: any) => [
     id: 'people',
     category: t('appraisals.packet.categories.people'),
     icon: ThumbsUp,
-    color: '#f59e0b',
+    color: 'var(--warning)',
     competencies: [
       { id: 'teamwork', name: t('appraisals.packet.competencies.teamwork.name'), desc: t('appraisals.packet.competencies.teamwork.desc') },
       { id: 'communication', name: t('appraisals.packet.competencies.communication.name'), desc: t('appraisals.packet.competencies.communication.desc') },
@@ -61,7 +61,7 @@ const getCompetencyFramework = (t: any) => [
     id: 'leadership',
     category: t('appraisals.packet.categories.leadership'),
     icon: Zap,
-    color: '#a855f7',
+    color: 'var(--primary)',
     competencies: [
       { id: 'ownership', name: t('appraisals.packet.competencies.ownership.name'), desc: t('appraisals.packet.competencies.ownership.desc') },
       { id: 'adaptability', name: t('appraisals.packet.competencies.adaptability.name'), desc: t('appraisals.packet.competencies.adaptability.desc') },
@@ -556,7 +556,7 @@ const AppraisalPacketView: React.FC = () => {
           title={`${t('appraisals.packet.title')}: ${packet.employee?.fullName}`}
           description={`${packet.cycle?.title} · Status: ${t(`appraisals.stages.${packet.currentStage}`, { defaultValue: packet.currentStage.replace(/_/g, ' ').replace(/\./g, ' ') })}`}
           icon={ClipboardCheck}
-          variant="indigo"
+          variant="primary"
         />
 
       <div className="nx-card p-10">
@@ -585,16 +585,16 @@ const AppraisalPacketView: React.FC = () => {
       </div>
 
       {needsFinalSignoff && (
-        <div className="nx-card p-10 border-amber-500/20 bg-amber-500/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-3 bg-amber-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Final Review Active</div>
+        <div className="nx-card p-10 border-indigo-500/20 bg-indigo-500/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 p-3 bg-indigo-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Institutional Arbiter Active</div>
           <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-3xl bg-amber-500/20 flex items-center justify-center text-amber-600 shadow-inner">
+            <div className="w-16 h-16 rounded-3xl bg-indigo-500/20 flex items-center justify-center text-indigo-600 shadow-inner">
                <Scale size={32} />
             </div>
             <div>
-              <p className="font-black text-amber-600 text-[11px] uppercase tracking-[0.2em] mb-2">Final Approval</p>
+              <p className="font-black text-indigo-600 text-[11px] uppercase tracking-[0.2em] mb-2">Final Leadership Verdict</p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-xl leading-relaxed">
-                As a Director, you are tasked with the final review of this appraisal. Your decision will form the official record.
+                As an institutional arbiter, you are tasked with the final calibration of this appraisal. Your decision will form the official performance record and determine promotion eligibility.
               </p>
             </div>
           </div>
@@ -691,8 +691,8 @@ const AppraisalPacketView: React.FC = () => {
                                      </div>
                                      {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds && (
                                         <div className="pt-2">
-                                           <p className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter mb-1">Development Goals</p>
-                                           <p className="text-[10px] text-indigo-500/60 leading-tight">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds}</p>
+                                           <p className="text-[8px] font-black text-[var(--primary)] uppercase tracking-tighter mb-1">Development Goals</p>
+                                           <p className="text-[10px] text-[var(--primary)]/60 leading-tight">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds}</p>
                                         </div>
                                      )}
                                   </div>
@@ -890,7 +890,7 @@ const AppraisalPacketView: React.FC = () => {
             {isAIEnabled && (
               <button 
                 onClick={() => setIsAIOpen(true)}
-                className="w-full h-20 rounded-[2.5rem] bg-gradient-to-br from-purple-600 to-indigo-700 text-white shadow-xl shadow-purple-500/20 flex items-center p-6 gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
+                className="w-full h-20 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover,var(--primary))] text-white shadow-xl shadow-[var(--primary)]/20 flex items-center p-6 gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
               >
                 <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
                    <Sparkles size={24} className="text-white animate-pulse" />

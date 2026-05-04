@@ -36,12 +36,12 @@ const HardwareGuide: React.FC<HardwareGuideProps> = ({ isOpen, onClose, apiKey }
                         {/* Header Architecture */}
                         <div className="p-10 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-transparent to-white/[0.02]">
                             <div className="flex items-center gap-6">
-                                <div className="w-16 h-16 rounded-[1.8rem] bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-lg shadow-indigo-500/10">
+                                <div className="w-16 h-16 rounded-[1.8rem] bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)] shadow-lg shadow-[var(--primary)]/10">
                                     <Cpu size={32} />
                                 </div>
                                 <div>
                                     <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Biometric Uplink Protocol</h2>
-                                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mt-1">Hardware Integration Guidance v2.4</p>
+                                    <p className="text-[10px] font-black text-[var(--primary)] opacity-80 uppercase tracking-[0.4em] mt-1">Hardware Integration Guidance v2.4</p>
                                 </div>
                             </div>
                             <button onClick={onClose} className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all">&times;</button>
@@ -53,7 +53,7 @@ const HardwareGuide: React.FC<HardwareGuideProps> = ({ isOpen, onClose, apiKey }
                             {/* Step 1: Authentication */}
                             <section className="space-y-6">
                                 <div className="flex items-center gap-3">
-                                    <span className="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white">01</span>
+                                    <span className="w-6 h-6 rounded-lg bg-[var(--primary)] flex items-center justify-center text-[10px] font-black text-white">01</span>
                                     <h3 className="text-sm font-black uppercase tracking-widest text-white/90">Node Authentication</h3>
                                 </div>
                                 <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
@@ -74,17 +74,17 @@ const HardwareGuide: React.FC<HardwareGuideProps> = ({ isOpen, onClose, apiKey }
                             {/* Step 2: Implementation */}
                             <section className="space-y-6">
                                 <div className="flex items-center gap-3">
-                                    <span className="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white">02</span>
+                                    <span className="w-6 h-6 rounded-lg bg-[var(--primary)] flex items-center justify-center text-[10px] font-black text-white">02</span>
                                     <h3 className="text-sm font-black uppercase tracking-widest text-white/90">Uplink Endpoint</h3>
                                 </div>
                                 <div className="space-y-4">
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 font-mono text-[11px] space-y-2">
-                                        <p className="text-indigo-400"># POST Request Structure</p>
+                                        <p className="text-[var(--primary)] opacity-80"># POST Request Structure</p>
                                         <p className="text-white/40">URL: <span className="text-white">https://mcb-hrm-ghana.render.com/api/attendance/node-scan</span></p>
                                         <p className="text-white/40">METHOD: <span className="text-emerald-400">POST</span></p>
                                         <p className="text-white/40">HEADER: <span className="text-amber-400">Authorization: {apiKey || 'YOUR_KEY'}</span></p>
                                         <div className="mt-4 pt-4 border-t border-white/5">
-                                            <p className="text-indigo-400"># Payload</p>
+                                            <p className="text-[var(--primary)] opacity-80"># Payload</p>
                                             <p className="text-white/80">{'{ "employeeCode": "MCB-GH-001" }'}</p>
                                         </div>
                                     </div>
@@ -93,8 +93,8 @@ const HardwareGuide: React.FC<HardwareGuideProps> = ({ isOpen, onClose, apiKey }
 
                             {/* Step 3: Logistics */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="p-8 rounded-[2.5rem] bg-indigo-500/5 border border-indigo-500/10 space-y-4">
-                                    <div className="flex items-center gap-3 text-indigo-400 mb-2">
+                                <div className="p-8 rounded-[2.5rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10 space-y-4">
+                                    <div className="flex items-center gap-3 text-[var(--primary)] mb-2">
                                         <Zap size={20} />
                                         <h4 className="text-[10px] font-black uppercase tracking-widest">Real-time Feedback</h4>
                                     </div>

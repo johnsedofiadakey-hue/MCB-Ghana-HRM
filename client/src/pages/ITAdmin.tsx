@@ -45,6 +45,9 @@ const ITAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [liveLogs, setLiveLogs] = useState<any[]>([]);
+  const [securityPulse, setSecurityPulse] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const currentUser = getStoredUser();
   const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets' | 'integrations'>(
     (currentUser?.rank || 0) >= 85 ? 'accounts' : 'overview'
@@ -57,18 +60,40 @@ const ITAdmin = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [oRes, uRes, sRes] = await Promise.all([
+      const [oRes, uRes, sRes, lRes, pRes] = await Promise.all([
         api.get('/it/overview'), 
         api.get('/it/users'),
-        api.get('/settings')
+        api.get('/settings'),
+        api.get('/it/live-logs'),
+        api.get('/it/security-threats')
       ]);
       setOverview(oRes.data || null);
       setUsers(Array.isArray(uRes.data) ? uRes.data : []);
       setOrgSettings(sRes.data || null);
+      setLiveLogs(Array.isArray(lRes.data) ? lRes.data : []);
+      setSecurityPulse(pRes.data || null);
       
       console.log('[ITAdmin] Active Org Context:', sRes.data?.organizationId || 'default');
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  }, []);
+
+  const refreshLivePulse = async () => {
+     setIsRefreshing(true);
+     try {
+        const [lRes, pRes] = await Promise.all([
+           api.get('/it/live-logs'),
+           api.get('/it/security-threats')
+        ]);
+        setLiveLogs(lRes.data);
+        setSecurityPulse(pRes.data);
+     } catch {}
+     finally { setIsRefreshing(false); }
+  };
+
+  useEffect(() => {
+     const interval = setInterval(refreshLivePulse, 30000); // Pulse every 30s
+     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -100,7 +125,7 @@ const ITAdmin = () => {
   );
 
   return (
-    <div className="space-y-12 pb-32">
+    <div className="space-y-12 pb-32 overflow-y-visible min-h-screen">
       <div className="flex items-center gap-4">
         <button 
           onClick={() => navigate('/dashboard')}
@@ -158,6 +183,63 @@ const ITAdmin = () => {
                          <h4 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">{s.value}</h4>
                       </motion.div>
                     ))}
+                  </div>
+
+                  {/* STRATEGIC SECURITY HUB */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+                     <div className="lg:col-span-4 space-y-6">
+                        <div className="nx-card p-8 bg-[var(--bg-card)] border-[var(--border-subtle)] relative overflow-hidden shadow-sm">
+                           <div className="flex items-center justify-between mb-8">
+                              <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Security Threat Matrix</h3>
+                              <div className={cn("px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter", 
+                                 securityPulse?.threatLevel === 'CRITICAL' ? "bg-rose-500 text-white animate-pulse" : "bg-emerald-500 text-white")}>
+                                 {securityPulse?.threatLevel || 'STABLE'}
+                              </div>
+                           </div>
+                           <div className="space-y-4">
+                              {securityPulse?.alerts?.length > 0 ? securityPulse.alerts.map((a: string, i: number) => (
+                                 <div key={i} className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 flex items-start gap-3">
+                                    <AlertTriangle size={14} className="text-rose-500 shrink-0 mt-0.5" />
+                                    <p className="text-[11px] font-bold text-rose-600 leading-tight">{a}</p>
+                                 </div>
+                              )) : (
+                                 <div className="p-8 text-center border border-dashed border-[var(--border-subtle)] rounded-2xl opacity-40">
+                                    <ShieldCheck size={32} className="mx-auto mb-3 text-emerald-500" />
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">No active threats detected</p>
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="lg:col-span-8">
+                        <div className="nx-card bg-[var(--bg-card)] border-[var(--border-subtle)] h-full flex flex-col overflow-hidden shadow-sm">
+                           <div className="p-6 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex justify-between items-center">
+                              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-2">
+                                 <Activity size={14} className="text-[var(--primary)]" /> Real-Time Observability Pulse
+                              </h3>
+                              <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                 <div className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
+                                 Live Feed
+                              </div>
+                           </div>
+                           <div className="flex-grow max-h-[400px] overflow-y-auto p-4 space-y-3 custom-scrollbar font-mono bg-black/5">
+                              {liveLogs.map((log: any, idx: number) => (
+                                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={log.id || idx} 
+                                    className="p-3 bg-[var(--bg-card)] rounded-lg border border-[var(--border-subtle)]/50 flex items-center justify-between group hover:border-[var(--primary)]/30 transition-all">
+                                    <div className="flex items-center gap-4">
+                                       <span className="text-[9px] font-black text-[var(--text-muted)] w-16 opacity-40">{new Date(log.createdAt).toLocaleTimeString()}</span>
+                                       <div className="space-y-0.5">
+                                          <p className="text-[10px] font-black text-[var(--text-primary)] tracking-tight uppercase group-hover:text-[var(--primary)] transition-colors">{log.action?.replace(/_/g, ' ')}</p>
+                                          <p className="text-[9px] font-bold text-[var(--text-muted)]">{log.user?.fullName} · {log.user?.role}</p>
+                                       </div>
+                                    </div>
+                                    <div className="text-[9px] font-black text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest">{log.targetModel}</div>
+                                 </motion.div>
+                              ))}
+                           </div>
+                        </div>
+                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

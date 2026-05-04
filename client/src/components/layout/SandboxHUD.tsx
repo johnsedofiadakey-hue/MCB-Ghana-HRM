@@ -54,7 +54,7 @@ const SandboxHUD = () => {
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 p-2 rounded-[2rem] bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-2xl"
         >
             <div className="px-6 flex flex-col justify-center border-r border-white/10 mr-2">
-                <p className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-400">Sandbox Simulation</p>
+                <p className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Sandbox Simulation</p>
                 <p className="text-[10px] font-bold text-white leading-none mt-1">Role: {user.role}</p>
             </div>
 
@@ -66,7 +66,7 @@ const SandboxHUD = () => {
                         disabled={user.role === tier.role}
                         className={`group px-4 py-3 rounded-2xl flex items-center gap-2 transition-all ${
                             user.role === tier.role 
-                            ? 'bg-indigo-600 text-white' 
+                            ? 'bg-[var(--primary)] text-white' 
                             : 'text-slate-400 hover:bg-white/5 hover:text-white'
                         }`}
                     >

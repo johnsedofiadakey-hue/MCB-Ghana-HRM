@@ -18,7 +18,7 @@ interface CandidateListModalProps {
 
 const statusThemes: Record<string, string> = {
   APPLIED: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  SCREENING: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+  SCREENING: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20',
   INTERVIEW_SCHEDULED: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
   OFFERED: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
   REJECTED: 'bg-rose-500/10 text-rose-500 border-rose-500/20',

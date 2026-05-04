@@ -53,7 +53,7 @@ const Signup = () => {
       {/* ── Background Aesthetics ── */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-5%] w-[30%] h-[30%] bg-indigo-600/10 blur-[100px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[30%] h-[30%] bg-[var(--primary)]/10 blur-[100px] rounded-full" />
       </div>
 
       <motion.div

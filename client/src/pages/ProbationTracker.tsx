@@ -102,7 +102,7 @@ const ProbationTracker: React.FC = () => {
                 </div>
                 {rank >= 70 && (
                     <button onClick={() => setShowCreate(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
                     >
                         <Plus size={16} /> Add Probation
                     </button>
@@ -131,11 +131,11 @@ const ProbationTracker: React.FC = () => {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type="text" placeholder="Search employee..."
                         value={search} onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                     />
                 </div>
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                 >
                     <option value="">All Statuses</option>
                     {Object.entries(statusConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -149,7 +149,7 @@ const ProbationTracker: React.FC = () => {
                 </div>
                 {loading ? (
                     <div className="flex items-center justify-center h-40">
-                        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-6 h-6 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-slate-400">
@@ -238,7 +238,7 @@ const ProbationTracker: React.FC = () => {
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Employee *</label>
                                     <select value={form.employeeId} onChange={e => setForm(p => ({ ...p, employeeId: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     >
                                         <option value="">Select employee...</option>
                                         {employees.map((e: any) => <option key={e.id} value={e.id}>{e.fullName} — {e.jobTitle}</option>)}
@@ -248,13 +248,13 @@ const ProbationTracker: React.FC = () => {
                                     <div>
                                         <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Start Date *</label>
                                         <input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))}
-                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                         />
                                     </div>
                                     <div>
                                         <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Duration (days)</label>
                                         <select value={form.period} onChange={e => setForm(p => ({ ...p, period: Number(e.target.value) }))}
-                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                         >
                                             <option value={30}>30 days</option>
                                             <option value={60}>60 days</option>
@@ -266,14 +266,14 @@ const ProbationTracker: React.FC = () => {
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Review Date</label>
                                     <input type="date" value={form.reviewDate} onChange={e => setForm(p => ({ ...p, reviewDate: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     />
                                 </div>
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Notes</label>
                                     <textarea rows={2} placeholder="Performance goals or notes..."
                                         value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 resize-none"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)] resize-none"
                                     />
                                 </div>
                             </div>
@@ -282,7 +282,7 @@ const ProbationTracker: React.FC = () => {
                                     className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
                                 >Cancel</button>
                                 <button onClick={handleCreate} disabled={saving}
-                                    className="flex-[2] py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+                                    className="flex-[2] py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
                                 >{saving ? 'Creating...' : 'Add Probation'}</button>
                             </div>
                         </motion.div>
@@ -310,7 +310,7 @@ const ProbationTracker: React.FC = () => {
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Status</label>
                                     <select value={editForm.status} onChange={e => setEditForm((p: any) => ({ ...p, status: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     >
                                         {Object.entries(statusConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                                     </select>
@@ -318,20 +318,20 @@ const ProbationTracker: React.FC = () => {
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Review Date</label>
                                     <input type="date" value={editForm.reviewDate || ''} onChange={e => setEditForm((p: any) => ({ ...p, reviewDate: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     />
                                 </div>
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Outcome</label>
                                     <textarea rows={3} placeholder="Summary of performance and outcome decision..."
                                         value={editForm.outcome || ''} onChange={e => setEditForm((p: any) => ({ ...p, outcome: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 resize-none"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)] resize-none"
                                     />
                                 </div>
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Notes</label>
                                     <textarea rows={2} value={editForm.notes || ''} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 resize-none"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)] resize-none"
                                     />
                                 </div>
                             </div>
@@ -340,7 +340,7 @@ const ProbationTracker: React.FC = () => {
                                     className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
                                 >Cancel</button>
                                 <button onClick={handleUpdate} disabled={saving}
-                                    className="flex-[2] py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+                                    className="flex-[2] py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
                                 >{saving ? 'Saving...' : 'Save Changes'}</button>
                             </div>
                         </motion.div>

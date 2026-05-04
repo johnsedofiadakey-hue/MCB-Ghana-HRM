@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 const statusColors: Record<string, { badge: string; dot: string }> = {
   DRAFT: { badge: 'bg-slate-500/10 text-slate-600 border-slate-500/20', dot: 'bg-slate-500' },
   PENDING_HR: { badge: 'bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20', dot: 'bg-[var(--warning)]' },
-  PENDING_MD: { badge: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20', dot: 'bg-indigo-500' },
+  PENDING_MD: { badge: 'bg-[var(--info)]/10 text-[var(--info)] border-[var(--info)]/20', dot: 'bg-[var(--info)]' },
   APPROVED: { badge: 'bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20', dot: 'bg-[var(--success)]' },
   PAID: { badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20', dot: 'bg-[var(--primary)]' },
   CANCELLED: { badge: 'bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20', dot: 'bg-[var(--error)]' },
@@ -26,7 +26,7 @@ const currencyGradients: Record<string, string> = {
   USD: 'from-blue-500/10 to-blue-500/5',
   GNF: 'from-rose-500/10 to-rose-500/5',
   EUR: 'from-amber-500/10 to-amber-500/5',
-  GBP: 'from-indigo-500/10 to-indigo-500/5',
+  GBP: 'from-[var(--primary)]/10 to-[var(--primary)]/5',
 };
 
 const fmt = (n: number | string, currency = '', lang = 'en') =>
@@ -451,7 +451,7 @@ const Payroll = () => {
                                {selectedRun.status === 'PENDING_HR' && isHR && (
                                  <button 
                                   onClick={() => handleApprove(selectedRun.id)}
-                                  className="px-8 h-[52px] rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                  className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95 transition-all"
                                  >
                                    Approve & Send to MD
                                  </button>
@@ -525,7 +525,7 @@ const Payroll = () => {
                                        <td className="text-[13px] font-medium text-[var(--text-secondary)]" data-label={t('payroll.headers.baseline')}>{fmt(item.baseSalary, item.currency, i18n.language)}</td>
                                        <td data-label={t('payroll.headers.adjustments')}>
                                          {extras > 0 ? (
-                                           <div className="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-500 border border-indigo-100 text-[10px] font-black w-fit">+{fmt(extras, '', i18n.language)}</div>
+                                           <div className="px-3 py-1 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 text-[10px] font-black w-fit">+{fmt(extras, '', i18n.language)}</div>
                                          ) : <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase opacity-30">—</span>}
                                        </td>
                                        <td data-label={t('payroll.headers.bonuses')}>

@@ -211,8 +211,8 @@ const PromotionRequests = () => {
                             )}
 
                             {req.hrComment && (
-                                <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 mt-4">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-indigo-600 mb-1">HR/MD Comment</p>
+                                <div className="p-4 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 mt-4">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] mb-1">HR/MD Comment</p>
                                     <p className="text-xs font-medium text-[var(--text-secondary)]">{req.hrComment}</p>
                                 </div>
                             )}

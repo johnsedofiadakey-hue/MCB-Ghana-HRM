@@ -16,7 +16,7 @@ const STATUSES = ['OPEN', 'ACKNOWLEDGED', 'APPEALED', 'CLOSED'];
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
     OPEN: { label: 'Open', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' },
     ACKNOWLEDGED: { label: 'Acknowledged', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' },
-    APPEALED: { label: 'Appealed', color: 'text-violet-600', bg: 'bg-violet-50 border-violet-200' },
+    APPEALED: { label: 'Appealed', color: 'text-[var(--primary)]', bg: 'bg-[var(--primary)]/5 border-[var(--primary)]/20' },
     CLOSED: { label: 'Closed', color: 'text-slate-500', bg: 'bg-slate-100 border-slate-200' },
 };
 
@@ -25,7 +25,7 @@ const typeConfig: Record<string, { label: string; color: string }> = {
     FINAL_WARNING: { label: 'Final Warning', color: 'text-orange-600' },
     SUSPENSION: { label: 'Suspension', color: 'text-rose-600' },
     DISMISSAL: { label: 'Dismissal', color: 'text-red-700' },
-    GRIEVANCE: { label: 'Grievance', color: 'text-violet-600' },
+    GRIEVANCE: { label: 'Grievance', color: 'text-[var(--primary)]' },
 };
 
 const StatCard = ({ label, value, color, icon: Icon }: any) => (
@@ -130,7 +130,7 @@ const Disciplinary: React.FC = () => {
                 {rank >= 70 && (
                     <button
                         onClick={() => setShowModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary)] hover:opacity-90 text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
                     >
                         <Plus size={16} /> New Case
                     </button>
@@ -142,7 +142,7 @@ const Disciplinary: React.FC = () => {
                 <StatCard label="Total Cases" value={stats.total} icon={ShieldAlert} color="bg-slate-600" />
                 <StatCard label="Open Cases" value={stats.open} icon={AlertTriangle} color="bg-amber-500" />
                 <StatCard label="Warnings" value={stats.warnings} icon={FileText} color="bg-orange-500" />
-                <StatCard label="Grievances" value={stats.grievances} icon={Eye} color="bg-violet-500" />
+                <StatCard label="Grievances" value={stats.grievances} icon={Eye} color="bg-[var(--primary)]" />
             </div>
 
             {/* Filters */}
@@ -151,17 +151,17 @@ const Disciplinary: React.FC = () => {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type="text" placeholder="Search employee or reason..."
                         value={search} onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                     />
                 </div>
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                 >
                     <option value="">All Statuses</option>
                     {STATUSES.map(s => <option key={s} value={s}>{statusConfig[s].label}</option>)}
                 </select>
                 <select value={filterType} onChange={e => setFilterType(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                 >
                     <option value="">All Types</option>
                     {CASE_TYPES.map(t => <option key={t} value={t}>{typeConfig[t]?.label}</option>)}
@@ -175,7 +175,7 @@ const Disciplinary: React.FC = () => {
                 </div>
                 {loading ? (
                     <div className="flex items-center justify-center h-40">
-                        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-6 h-6 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-slate-400">
@@ -251,7 +251,7 @@ const Disciplinary: React.FC = () => {
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Employee *</label>
                                     <select value={form.employeeId} onChange={e => setForm(p => ({ ...p, employeeId: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     >
                                         <option value="">Select employee...</option>
                                         {employees.map((e: any) => <option key={e.id} value={e.id}>{e.fullName} — {e.jobTitle}</option>)}
@@ -261,7 +261,7 @@ const Disciplinary: React.FC = () => {
                                     <div>
                                         <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Type *</label>
                                         <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
-                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                         >
                                             {CASE_TYPES.map(t => <option key={t} value={t}>{typeConfig[t]?.label}</option>)}
                                         </select>
@@ -269,7 +269,7 @@ const Disciplinary: React.FC = () => {
                                     <div>
                                         <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Category</label>
                                         <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                         >
                                             {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase()}</option>)}
                                         </select>
@@ -279,21 +279,21 @@ const Disciplinary: React.FC = () => {
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Reason *</label>
                                     <input type="text" placeholder="Brief reason for this case"
                                         value={form.reason} onChange={e => setForm(p => ({ ...p, reason: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     />
                                 </div>
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Details (optional)</label>
                                     <textarea rows={3} placeholder="Full description of the incident..."
                                         value={form.details} onChange={e => setForm(p => ({ ...p, details: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 resize-none"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)] resize-none"
                                     />
                                 </div>
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Hearing Date (optional)</label>
                                     <input type="date"
                                         value={form.hearingDate} onChange={e => setForm(p => ({ ...p, hearingDate: e.target.value }))}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-[var(--primary)]"
                                     />
                                 </div>
                             </div>
@@ -302,7 +302,7 @@ const Disciplinary: React.FC = () => {
                                     className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
                                 >Cancel</button>
                                 <button onClick={handleSubmit} disabled={saving}
-                                    className="flex-[2] py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+                                    className="flex-[2] py-2.5 bg-[var(--primary)] hover:opacity-90 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
                                 >{saving ? 'Opening Case...' : 'Open Case'}</button>
                             </div>
                         </motion.div>

@@ -9,7 +9,7 @@ const actionColor: Record<string, string> = {
   LEAVE_APPLIED: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
   LEAVE_APPROVED: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
   LEAVE_REJECTED: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
-  KPI_ASSIGNED: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+  KPI_ASSIGNED: 'text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/20',
   KPI_SUBMITTED: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
   KPI_REVIEW: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
   APPRAISAL_SELF_SUBMIT: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
@@ -144,7 +144,7 @@ const AuditLogs = () => {
                            {log.action?.replace(/_/g, ' ')}
                          </span>
                       </td>
-                      <td className="px-6 py-4 text-indigo-400 font-bold tracking-wider">{log.entity}</td>
+                      <td className="px-6 py-4 text-[var(--primary)] font-bold tracking-wider">{log.entity}</td>
                       <td className="px-6 py-4 max-w-[250px] truncate">
                         {log.details && (
                           <span className="text-slate-400 bg-black/60 px-2.5 py-1.5 rounded border border-white/5 whitespace-nowrap">

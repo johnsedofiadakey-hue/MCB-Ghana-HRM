@@ -6,13 +6,17 @@ import { getStorage } from 'firebase/storage';
 const isPlaceholder = (val?: string) => !val || val === 'PLACEHOLDER' || val.includes('REPLACE_ME');
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAL20uzqPnXWbJNGmqgHZ2-UsEmMdbrAGw",
-  authDomain: "mcb-hrm-ghana.firebaseapp.com",
-  projectId: "mcb-hrm-ghana",
-  storageBucket: "mcb-hrm-ghana.firebasestorage.app",
-  messagingSenderId: "709525010185",
-  appId: "1:709525010185:web:1b3ba1e1ddf82307a6c5d8"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAL20uzqPnXWbJNGmqgHZ2-UsEmMdbrAGw",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "mcb-hrm-ghana.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "mcb-hrm-ghana",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "mcb-hrm-ghana.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "709525010185",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:709525010185:web:1b3ba1e1ddf82307a6c5d8"
 };
+
+if (isPlaceholder(firebaseConfig.apiKey)) {
+  console.warn('[Firebase] Warning: API Key is missing or set to placeholder. Firestore persistence will be disabled.');
+}
 
 const app = initializeApp(firebaseConfig);
 

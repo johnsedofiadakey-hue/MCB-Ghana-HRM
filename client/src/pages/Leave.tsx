@@ -78,6 +78,7 @@ const Leave = () => {
   const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'HISTORY' | 'REGISTER' | 'ADMIN'>('MY');
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<any[]>([]);
   const [handoverHistory, setHandoverHistory] = useState<any[]>([]);
   const { setContextData } = useAI();
 
@@ -93,12 +94,14 @@ const Leave = () => {
         api.get('/leave/balance'),
         api.get('/leave/my-relief-requests'),
         api.get('/leave/handover/history'),
+        api.get('/holidays'),
       ]);
 
       setLeaves(Array.isArray(leavesRes.data?.leaves) ? leavesRes.data.leaves : Array.isArray(leavesRes.data) ? leavesRes.data : []);
       setBalance(balanceRes.data || { leaveBalance: 0, leaveAllowance: 0 });
       setReliefRequests(Array.isArray(reliefRes.data) ? reliefRes.data : []);
       setHandoverHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
+      setHolidays(Array.isArray(holidaysRes.data) ? holidaysRes.data : []);
 
       // BUG L4 FIX: Ensure rank thresholds are standardized (Rank 60+ for Team Hub)
       if (userRank >= 60) {
@@ -160,7 +163,6 @@ const Leave = () => {
     } finally { setSaving(false); }
   };
 
-  // 🧮 Auto-calculate Days logic (Skips Weekends for Preview)
   useEffect(() => {
     if (form.startDate && form.endDate) {
       const start = new Date(form.startDate);
@@ -168,9 +170,15 @@ const Leave = () => {
       if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
         let count = 0;
         const cur = new Date(start);
+        const holidayDates = new Set(holidays.map(h => new Date(h.date).toISOString().split('T')[0]));
+        
         while (cur <= end) {
           const day = cur.getDay();
-          if (day !== 0 && day !== 6) count++;
+          const dateStr = cur.toISOString().split('T')[0];
+          const isWeekend = (day === 0 || day === 6);
+          const isHoliday = holidayDates.has(dateStr);
+          
+          if (!isWeekend && !isHoliday) count++;
           cur.setDate(cur.getDate() + 1);
         }
         setCalculatedDays(Math.max(1, count));
@@ -180,7 +188,7 @@ const Leave = () => {
     } else {
       setCalculatedDays(null);
     }
-  }, [form.startDate, form.endDate]);
+  }, [form.startDate, form.endDate, holidays]);
 
   const filteredEmployees = employees.filter(e => 
     e.id !== user.id && 
@@ -391,10 +399,33 @@ const Leave = () => {
            </motion.div>
          )}
 
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                className="nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-1"
-           >
+         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {userRank >= 95 && (
+               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                    className="nx-card p-8 bg-gradient-to-br from-indigo-600 to-indigo-900 border-indigo-500/30 text-white col-span-1 flex flex-col justify-between relative overflow-hidden group shadow-2xl shadow-indigo-500/20"
+               >
+                 <ShieldCheck className="absolute -bottom-10 -right-10 opacity-10 group-hover:scale-125 transition-transform duration-1000" size={200} />
+                 <div className="relative z-10 space-y-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10">
+                       <Zap size={20} />
+                    </div>
+                    <div>
+                       <h4 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Oversight Pulse</h4>
+                       <p className="text-xl font-black tracking-tight mt-1">Institutional Governance</p>
+                    </div>
+                 </div>
+                 <div className="relative z-10 mt-8 space-y-2">
+                    <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Senior Queue</p>
+                    <p className="text-3xl font-black tracking-tighter">
+                       {teamLeaves.filter(l => (getRoleRank(l.employee?.role) >= 85)).length} <span className="text-sm opacity-60 italic">Critical</span>
+                    </p>
+                 </div>
+               </motion.div>
+            )}
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                 className={cn("nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group shadow-xl", userRank >= 95 ? "lg:col-span-1" : "md:col-span-1")}
+            >
              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px] group-hover:scale-125 transition-transform" />
           
           <div className="flex items-center justify-between mb-8 relative z-10">
@@ -425,7 +456,7 @@ const Leave = () => {
 
         {reliefRequests.length > 0 && activeTab !== 'RELIEF' && (
            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="nx-card md:col-span-2 p-6 sm:p-10 bg-gradient-to-br from-[var(--accent)]/5 to-[var(--accent)]/10 border-[var(--accent)]/20 flex flex-col items-center justify-center text-center space-y-6 relative overflow-hidden"
+                className={cn("nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--accent)]/5 to-[var(--accent)]/10 border-[var(--accent)]/20 flex flex-col items-center justify-center text-center space-y-6 relative overflow-hidden shadow-xl", userRank >= 95 ? "lg:col-span-2" : "md:col-span-2")}
            >
               <Users className="text-[var(--accent)] opacity-20 absolute -bottom-10 -right-10" size={160} />
               <div className="w-16 h-16 rounded-[2rem] bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] shadow-xl">

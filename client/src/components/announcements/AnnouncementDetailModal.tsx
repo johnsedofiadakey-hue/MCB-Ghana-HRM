@@ -29,7 +29,7 @@ const AnnouncementDetailModal: React.FC<AnnouncementDetailModalProps> = ({ isOpe
   const priorityConfig = {
     URGENT: { color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200', icon: Zap, label: 'URGENT DISPATCH' },
     HIGH: { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: AlertTriangle, label: 'HIGH PRIORITY' },
-    NORMAL: { color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', icon: Info, label: 'OFFICIAL NOTICE' },
+    NORMAL: { color: 'text-[var(--primary)]', bg: 'bg-[var(--primary)]/5', border: 'border-[var(--primary)]/10', icon: Info, label: 'OFFICIAL NOTICE' },
     LOW: { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: Info, label: 'INFORMATION' },
   };
 
@@ -121,7 +121,7 @@ const AnnouncementDetailModal: React.FC<AnnouncementDetailModalProps> = ({ isOpe
                 {/* Footer Signature Look */}
                 <div className="pt-12 mt-12 border-t border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500">
+                    <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
                       <User size={24} />
                     </div>
                     <div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Megaphone, ShieldCheck, Target, UserCheck, Users2 } from 'lucide-react';
+import { Sparkles, Briefcase, Megaphone, ShieldCheck, Target, UserCheck, Users2, Activity, Zap } from 'lucide-react';
 import api from '../services/api';
+import { useAI } from '../context/AIContext';
 
 type TabKey = 'dashboard' | 'performance' | 'recruitment' | 'onboarding' | 'benefits' | 'shifts' | 'announcements' | 'tax';
 
@@ -38,7 +39,11 @@ const SectionCard = ({ title, children }: { title: string; children: React.React
 const EnterpriseSuite = () => {
   const [tab, setTab] = useState<TabKey>('dashboard');
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState('');
+  const { isEnabled: aiEnabled } = useAI();
+
+  const [culturePulse, setCulturePulse] = useState<any>(null);
 
   const [dashboard, setDashboard] = useState<Record<string, unknown>>({});
   const [deptKpis, setDeptKpis] = useState<any[]>([]);
@@ -73,6 +78,10 @@ const EnterpriseSuite = () => {
       setShifts(Array.isArray(data.shifts?.data) ? data.shifts.data : []);
       setAnnouncements(Array.isArray(data.announcements?.data) ? data.announcements.data : []);
       setTaxRules(Array.isArray(data.taxRules?.data) ? data.taxRules.data : []);
+
+      if (aiEnabled) {
+         api.get('/enterprise/culture-pulse').then(res => setCulturePulse(res.data)).catch(() => {});
+      }
     } catch (e: any) {
       setError(e?.response?.data?.error || 'Failed to load enterprise suite data');
     } finally {
@@ -102,6 +111,22 @@ const EnterpriseSuite = () => {
     } catch (e: any) {
       setError(e?.response?.data?.error || 'Action failed');
     }
+  };
+
+  const handleAiGenerateJD = async () => {
+     if (!newJob.title) {
+        setError('Please enter a job title first');
+        return;
+     }
+     setAiLoading(true);
+     try {
+        const { data } = await api.post('/enterprise/recruitment/ai-generate-jd', { title: newJob.title });
+        setNewJob(prev => ({ ...prev, description: data.draft }));
+     } catch (e: any) {
+        setError('AI Job Architect failed to respond. Ensure AI features are enabled.');
+     } finally {
+        setAiLoading(false);
+     }
   };
 
   return (
@@ -142,6 +167,60 @@ const EnterpriseSuite = () => {
             </div>
           ))}
         </div>
+      )}
+
+      {tab === 'dashboard' && aiEnabled && culturePulse && (
+         <div className="glass p-5 border-l-4 border-l-[var(--primary)] animate-in fade-in slide-in-from-left-4">
+            <div className="flex items-center gap-3 mb-4">
+               <div className="p-2 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
+                  <Activity size={20} />
+               </div>
+               <div>
+                  <h3 className="font-display font-bold text-[var(--text-primary)]">Institutional Culture Pulse</h3>
+                  <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">Strategic AI Analysis</p>
+               </div>
+               <div className="ml-auto flex gap-2">
+                  <div className="px-2 py-1 rounded bg-black/20 text-[10px] font-bold text-[var(--text-primary)] border border-white/5">
+                     ENGAGEMENT: {culturePulse.engagementScore}%
+                  </div>
+                  <div className={`px-2 py-1 rounded text-[10px] font-bold border ${
+                     culturePulse.sentiment === 'VIBRANT' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                     culturePulse.sentiment === 'BURNT_OUT' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' :
+                     'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                  }`}>
+                     {culturePulse.sentiment}
+                  </div>
+               </div>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+               <div className="space-y-3">
+                  <div className="p-3 rounded-xl bg-black/10 border border-white/5">
+                     <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold mb-1">Primary Risk</p>
+                     <p className="text-sm text-[var(--text-primary)]">{culturePulse.primaryRisk}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10">
+                     <p className="text-[10px] text-[var(--primary)] uppercase font-bold mb-1">AI Recommendation</p>
+                     <p className="text-sm text-[var(--text-primary)]">{culturePulse.recommendation}</p>
+                  </div>
+               </div>
+               <div className="flex flex-col justify-center items-center p-4 glass bg-gradient-to-br from-[var(--primary)]/10 to-transparent">
+                  <div className="relative w-24 h-24 flex items-center justify-center">
+                     <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" 
+                           strokeDasharray={251.2}
+                           strokeDashoffset={251.2 - (251.2 * culturePulse.strategicAlignment) / 100}
+                           className="text-[var(--primary)] transition-all duration-1000" />
+                     </svg>
+                     <div className="absolute text-center">
+                        <p className="text-xl font-black text-[var(--text-primary)]">{culturePulse.strategicAlignment}%</p>
+                        <p className="text-[8px] text-[var(--text-muted)] uppercase font-bold">Alignment</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
       )}
 
       {tab === 'performance' && (
@@ -195,6 +274,27 @@ const EnterpriseSuite = () => {
                 <input className="nx-input" placeholder="Location" value={newJob.location} onChange={(e) => setNewJob((p) => ({ ...p, location: e.target.value }))} />
                 <input className="nx-input" placeholder="Employment Type" value={newJob.employmentType} onChange={(e) => setNewJob((p) => ({ ...p, employmentType: e.target.value }))} />
               </div>
+              
+              {aiEnabled && (
+                 <div className="relative">
+                    <textarea 
+                       className="nx-input min-h-[120px] text-xs font-mono" 
+                       placeholder="Job Description (Drafted by AI or Manual)" 
+                       value={(newJob as any).description || ''} 
+                       onChange={(e) => setNewJob((p) => ({ ...p, description: e.target.value }))} 
+                    />
+                    <button 
+                       type="button"
+                       disabled={aiLoading}
+                       onClick={handleAiGenerateJD}
+                       className="absolute top-2 right-2 p-1.5 rounded-lg bg-[var(--primary)] text-white hover:scale-105 transition-transform disabled:opacity-50"
+                       title="Generate JD with AI"
+                    >
+                       {aiLoading ? <Zap size={14} className="animate-pulse" /> : <Sparkles size={14} />}
+                    </button>
+                 </div>
+              )}
+
               <button className="btn-primary justify-center" onClick={() => submit(() => api.post('/enterprise/recruitment/jobs', newJob))}>Post Job</button>
             </div>
           </SectionCard>

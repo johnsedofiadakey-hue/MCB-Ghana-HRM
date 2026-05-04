@@ -108,7 +108,7 @@ const Performance = () => {
                     { label: 'performance.stats.completion_rate', value: `${stats?.avgProgress || 0}%`, icon: Zap, color: 'text-amber-600 bg-amber-500/5' },
                     { label: 'performance.stats.active_objectives', value: stats?.activeCount || 0, icon: Target, color: 'text-blue-600 bg-blue-500/5' },
                     { label: 'performance.stats.strategic_alignment', value: t('performance.stats.high'), icon: Shield, color: 'text-emerald-600 bg-emerald-500/5' },
-                    { label: 'performance.stats.growth_velocity', value: '+12%', icon: TrendingUp, color: 'text-purple-600 bg-purple-500/5' }
+                    { label: 'performance.stats.growth_velocity', value: '+12%', icon: TrendingUp, color: 'text-[var(--primary)] bg-[var(--primary)]/5' }
                 ].map((stat, i) => (
                     <motion.div 
                         key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}

@@ -202,3 +202,56 @@ export const itCleanupLogs = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// ── OBSERVABILITY: LIVE AUDIT LOGS ───────────────────────────────────────────
+export const getLiveLogs = async (req: Request, res: Response) => {
+  try {
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+    const logs = await prisma.auditLog.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: { user: { select: { fullName: true, role: true } } }
+    });
+    res.json(logs);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ── SECURITY: THREAT DETECTION MATRIX ────────────────────────────────────────
+export const getSecurityThreats = async (req: Request, res: Response) => {
+  try {
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    // 1. Check for rapid password resets
+    const suspiciousResets = await prisma.auditLog.count({
+      where: {
+        organizationId,
+        action: 'IT_PASSWORD_RESET',
+        createdAt: { gte: hourAgo }
+      }
+    });
+
+    // 2. Check for bulk deactivations
+    const suspiciousDeactivations = await prisma.auditLog.count({
+      where: {
+        organizationId,
+        action: 'IT_ACCOUNT_DEACTIVATED',
+        createdAt: { gte: hourAgo }
+      }
+    });
+
+    res.json({
+      threatLevel: suspiciousResets > 5 || suspiciousDeactivations > 3 ? 'CRITICAL' : 'STABLE',
+      alerts: [
+        suspiciousResets > 5 ? 'Rapid password reset activity detected (5+ in 1hr)' : null,
+        suspiciousDeactivations > 3 ? 'Unusual bulk deactivation activity detected' : null
+      ].filter(Boolean),
+      metrics: { suspiciousResets, suspiciousDeactivations }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

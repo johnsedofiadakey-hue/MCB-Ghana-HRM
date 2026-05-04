@@ -96,9 +96,9 @@ const Recruitment = () => {
             <div className="flex items-center gap-4">
               <div className={cn(
                 "w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner",
-                stat.color === 'blue' ? "bg-blue-500/10 text-blue-500" :
-                stat.color === 'purple' ? "bg-purple-500/10 text-purple-500" :
-                "bg-emerald-500/10 text-emerald-500"
+                stat.color === 'blue' ? "bg-[var(--info)]/10 text-[var(--info)]" :
+                stat.color === 'purple' ? "bg-[var(--primary)]/10 text-[var(--primary)]" :
+                "bg-[var(--success)]/10 text-[var(--success)]"
               )}>
                 <stat.icon size={28} />
               </div>

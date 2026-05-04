@@ -203,7 +203,7 @@ const EmployeeProfile = () => {
                         </motion.button>
                     )}
                     {((currentUser?.rank || 0) >= 75 || currentUser?.role === 'DEV') && (
-                        <motion.button onClick={() => setShowLeaveModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-500 hover:text-white transition-all flex items-center gap-2">
+                        <motion.button onClick={() => setShowLeaveModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--info)]/10 border border-[var(--info)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--info)] hover:bg-[var(--info)] hover:text-white transition-all flex items-center gap-2">
                             <Umbrella size={14} /> Adjust Leave
                         </motion.button>
                     )}
@@ -284,7 +284,7 @@ const EmployeeProfile = () => {
                                 icon={Building} 
                                 label={t('employees.dept') || "Departmental Unit"} 
                                 value={employee.department || employee.departmentObj?.name || t('common.unassigned_dept')} 
-                                color="text-indigo-500 bg-indigo-500/5" 
+                                color="text-[var(--primary)] bg-[var(--primary)]/5" 
                             />
                             <StatMini icon={Calendar} label="Hire Date" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />
                         </div>

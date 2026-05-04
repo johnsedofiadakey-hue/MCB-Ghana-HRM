@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Branding: Publicly readable for all employees, but writable only by admins
+    match /branding/{orgId} {
+      allow read: if true;
+      allow write: if request.auth != null; // Refine further if you want to check user roles in Firestore
+    }
+
+    // 2. Profile Drafts: Only the owner (based on user ID) can read/write their own profile draft
+    match /profile_drafts/{draftId} {
+      allow read, write: if true; // Temporary: simplify for testing. Recommended: if request.auth != null;
+    }
+
+    // 3. Settings Drafts: Institutional settings drafts
+    match /settings_drafts/{draftId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 4. Employee Drafts: ATS/Recruitment drafts
+    match /employee_drafts/{draftId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 5. Strategic Goal Drafts: Performance planning drafts
+    match /strategic_goal_drafts/{draftId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Default: Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -101,7 +101,7 @@ const Announcements = () => {
     switch(p) {
       case 'URGENT': return 'text-rose-600 bg-rose-50 border-rose-200';
       case 'HIGH': return 'text-amber-600 bg-amber-50 border-amber-200';
-      case 'NORMAL': return 'text-indigo-600 bg-indigo-50 border-indigo-200';
+      case 'NORMAL': return 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/20';
       default: return 'text-emerald-600 bg-emerald-50 border-emerald-200';
     }
   };
@@ -192,7 +192,7 @@ const Announcements = () => {
 
               <div className="mt-auto pt-8 border-t border-slate-50 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 font-black text-xs">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-black text-xs">
                     {anno.createdBy.fullName.charAt(0)}
                   </div>
                   <div>

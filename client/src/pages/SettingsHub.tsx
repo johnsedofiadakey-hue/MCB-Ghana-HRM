@@ -832,6 +832,36 @@ const SettingsHub = () => {
                     <div className="space-y-10">
                       <section className="space-y-6">
                         <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">{t('settings.general_info', 'General Information')}</h4>
+                        
+                        {/* Cortex AI Strategy Toggle */}
+                        <div className="p-6 rounded-3xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 group hover:border-[var(--primary)]/30 transition-all mb-8">
+                           <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3">
+                                 <div className="p-2 rounded-xl bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20">
+                                    <Sparkles size={16} />
+                                 </div>
+                                 <div>
+                                    <p className="text-[14px] font-black uppercase tracking-tight text-[var(--text-primary)]">Cortex AI Intelligence</p>
+                                    <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Strategy & Prediction Engine</p>
+                                 </div>
+                              </div>
+                              <button 
+                                 onClick={() => setFormData({ ...formData, isAiEnabled: !formData.isAiEnabled })}
+                                 className={cn(
+                                    "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none",
+                                    formData.isAiEnabled ? "bg-[var(--primary)]" : "bg-[var(--text-muted)]/20"
+                                 )}
+                              >
+                                 <span className={cn(
+                                    "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out",
+                                    formData.isAiEnabled ? "translate-x-5" : "translate-x-0"
+                                 )} />
+                              </button>
+                           </div>
+                           <p className="text-[12px] text-[var(--text-secondary)] mt-4 leading-relaxed font-medium">
+                              Activate institutional intelligence features including predictive attrition risk, AI Job Architect, and organizational sentiment heatmap.
+                           </p>
+                        </div>
                         <div className="space-y-8">
                           <div>
                             <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.company_name', 'Company Name')}</label>
@@ -1181,7 +1211,7 @@ const SettingsHub = () => {
                          <Sparkles size={120} />
                       </div>
                       <div className="flex items-center gap-4 mb-10">
-                        <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500">
+                        <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
                           <Sparkles size={24} />
                         </div>
                         <div>
@@ -1196,7 +1226,7 @@ const SettingsHub = () => {
                         <Lock size={120} />
                       </div>
                       <div className="flex items-center gap-4 mb-10">
-                        <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                        <div className="w-12 h-12 bg-[var(--info)]/10 rounded-2xl flex items-center justify-center text-[var(--info)]">
                           <Lock size={24} />
                         </div>
                         <div>
@@ -1707,7 +1737,7 @@ const SettingsHub = () => {
                     } catch (e) { toast.error('Sync failed'); }
                     finally { setLoading(false); }
                   }}
-                  className="px-8 py-5 rounded-2xl bg-indigo-600/10 text-indigo-600 font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-3"
+                  className="px-8 py-5 rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-widest hover:bg-[var(--primary)]/90 transition-all flex items-center gap-3 shadow-xl shadow-[var(--primary)]/20"
                 >
                   <Zap size={18} />
                   <span>Sync to All Devices</span>

@@ -6,7 +6,7 @@ import { storage, StorageKey } from '../services/storage';
 import { toast } from '../utils/toast';
 
 const PERSONAS = [
-  { id: 'director', label: 'Director (MD)', role: 'DIRECTOR', email: 'director@mcb-demo.com', desc: 'Full Enterprise Oversight', icon: Shield, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+  { id: 'director', label: 'Director (MD)', role: 'DIRECTOR', email: 'director@mcb-demo.com', desc: 'Full Enterprise Oversight', icon: Shield, color: 'text-[var(--primary)]', bg: 'bg-[var(--primary)]/10' },
   { id: 'manager', label: 'Department Manager', role: 'MANAGER', email: 'manager@mcb-demo.com', desc: 'Team & Ops Command', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   { id: 'staff', label: 'Staff Member', role: 'EMPLOYEE', email: 'staff@mcb-demo.com', desc: 'Personal Workflow', icon: Briefcase, color: 'text-amber-500', bg: 'bg-amber-500/10' },
 ];

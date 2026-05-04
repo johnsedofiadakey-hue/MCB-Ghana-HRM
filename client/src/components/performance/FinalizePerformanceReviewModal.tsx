@@ -109,11 +109,11 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Scoring Area */}
           <div className="space-y-10">
-            <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 relative overflow-hidden">
+            <div className="p-8 rounded-[2rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
-                   <Target size={80} className="text-indigo-400" />
+                   <Target size={80} className="text-[var(--primary)]" />
                 </div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8 flex items-center gap-2">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-8 flex items-center gap-2">
                     <Award size={14} /> Scoring Summary
                 </h4>
 
@@ -123,7 +123,7 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                       <div className="text-5xl font-black text-white">{suggestion}%</div>
                    </div>
                    <div className="flex-1">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2 italic">Final Approved Score</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] mb-2 italic">Final Approved Score</p>
                       <input 
                         type="number" 
                         className="nx-input !text-3xl !font-black !py-2 !px-4"
@@ -135,7 +135,7 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                    </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--text-primary)] opacity-80">
                    <Info size={16} className="shrink-0" />
                    <p className="text-xs font-medium">This suggestion is calculated based on 20% of the employee's self-review and 80% of the manager's assessment.</p>
                 </div>
