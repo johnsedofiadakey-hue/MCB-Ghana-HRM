@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, getDocFromCache, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db, isFirebaseReady } from '../lib/firebase';
 
 export interface BrandingData {
@@ -60,9 +60,20 @@ export const BrandingService = {
     
     try {
       const brandingRef = doc(db, 'branding', orgId);
+      // Attempt network fetch first
       const docSnap = await getDoc(brandingRef);
       return docSnap.exists() ? docSnap.data() as BrandingData : null;
-    } catch (error) {
+    } catch (error: any) {
+      // If network fails (e.g. offline), try to get from cache
+      if (error.code === 'unavailable' || error.message?.includes('offline')) {
+        try {
+          const brandingRef = doc(db, 'branding', orgId);
+          const cacheSnap = await getDocFromCache(brandingRef);
+          return cacheSnap.exists() ? cacheSnap.data() as BrandingData : null;
+        } catch (cacheError) {
+          console.warn('[BrandingService] Cache retrieval also failed:', cacheError);
+        }
+      }
       console.error('[BrandingService] Retrieval failed:', error);
       return null;
     }

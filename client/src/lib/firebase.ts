@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDocFromCache } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 // Environment variable validation
 const isPlaceholder = (val?: string) => !val || val === 'PLACEHOLDER' || val.includes('REPLACE_ME');
@@ -13,18 +14,16 @@ const firebaseConfig = {
   appId: "1:709525010185:web:1b3ba1e1ddf82307a6c5d8"
 };
 
-const hasCredentials = true; // Hardcoded for production reliability
-
-import { getStorage } from 'firebase/storage';
-
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const isFirebaseReady = hasCredentials;
 
-// Diagnostic: Force a fresh connection if we were stuck in offline mode
-if (hasCredentials && (import.meta as any).env.DEV) {
-    console.log('[Firebase] Initializing Sync Protocol for Project:', firebaseConfig.projectId);
-}
+// Initialize Firestore with Persistence enabled for production stability
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ 
+    tabManager: persistentMultipleTabManager() 
+  })
+});
+
+export const storage = getStorage(app);
+export const isFirebaseReady = true;
 
 export default app;
