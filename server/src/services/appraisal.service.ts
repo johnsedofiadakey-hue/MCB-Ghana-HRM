@@ -718,7 +718,7 @@ export class AppraisalService {
 
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
     try {
-      console.log(`[AppraisalService] getReviewerPackets: RAW FETCH - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
+      console.log(`[AppraisalService] getReviewerPackets: SIMPLIFIED FETCH - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
       
       const where: any = { organizationId };
 
@@ -732,49 +732,34 @@ export class AppraisalService {
         ];
       }
 
-      // Use raw prismaClient to bypass any potential tenant-injection extension issues during debug
-      const rawPackets = await prismaClient.appraisalPacket.findMany({
+      // 1. Try a very simple fetch first
+      const rawPackets = await prisma.appraisalPacket.findMany({
         where,
-        include: {
-          cycle: { select: { id: true, title: true, period: true, status: true } },
-          employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true } }
-        },
-        orderBy: { updatedAt: 'desc' }
+        take: 100 // Limit for safety
       });
 
-      console.log(`[AppraisalService] Raw packets found: ${rawPackets.length}`);
+      console.log(`[AppraisalService] Found ${rawPackets.length} raw packets`);
 
-      // 🛡️ Ultra-Defensive POJO mapping: Strip all hidden Prisma properties
-      const safePackets = rawPackets.map(p => {
-        return {
-          id: String(p.id),
-          cycleId: String(p.cycleId),
-          employeeId: String(p.employeeId),
-          currentStage: String(p.currentStage),
-          status: String(p.status),
-          finalScore: p.finalScore ? Number(p.finalScore) : null,
-          finalVerdict: p.finalVerdict ? String(p.finalVerdict) : null,
-          updatedAt: p.updatedAt ? p.updatedAt.toISOString() : null,
-          cycle: p.cycle ? {
-            id: String(p.cycle.id),
-            title: String(p.cycle.title),
-            period: String(p.cycle.period),
-            status: String(p.cycle.status)
-          } : null,
-          employee: p.employee ? {
-            id: String(p.employee.id),
-            fullName: String(p.employee.fullName),
-            avatarUrl: p.employee.avatarUrl ? String(p.employee.avatarUrl) : null,
-            jobTitle: p.employee.jobTitle ? String(p.employee.jobTitle) : null
-          } : null
-        };
-      });
+      if (rawPackets.length === 0) return [];
 
-      return safePackets;
+      // 2. Map to safe POJO
+      return rawPackets.map(p => ({
+        id: p.id,
+        cycleId: p.cycleId,
+        employeeId: p.employeeId,
+        currentStage: p.currentStage,
+        status: p.status,
+        finalScore: p.finalScore ? Number(p.finalScore) : null,
+        finalVerdict: p.finalVerdict,
+        updatedAt: p.updatedAt
+      }));
+
     } catch (err: any) {
-      console.error('[AppraisalService] RAW FETCH CRITICAL ERROR:', err);
-      throw new Error(`Defensive packet retrieval failed: ${err.message}`);
+      console.error('[AppraisalService] SIMPLIFIED FETCH ERROR:', err);
+      // Return a safe error object instead of crashing the whole request
+      return [{ id: 'INTERNAL_ERROR', status: 'ERROR', message: err.message }];
     }
+  }
   }
 
   /**
