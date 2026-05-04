@@ -69,34 +69,17 @@ export const getMyPackets = async (req: Request, res: Response) => {
 
 export const getTeamPackets = async (req: Request, res: Response) => {
   try {
-    // DIAGNOSTIC BYPASS: Test if the route and middleware are functional
-    console.log('[AppraisalController] Diagnostic Bypass: getTeamPackets');
-    
-    // Check if user exists to verify authentication middleware
-    const user = (req as any).user;
-    if (!user) return res.status(401).json({ error: 'Diagnostic: No user found' });
-
-    // Try a very simple query to verify DB connection
-    const count = await prisma.user.count();
-    
-    return res.json({ 
-      diagnostic: true, 
-      message: 'Route and Auth are functional',
-      user: { id: user.id, role: user.role },
-      dbStatus: 'Connected',
-      userCount: count
-    });
-
-    /* Original Logic (Disabled for diagnostics)
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
     const userRank = getRoleRank((req as any).user.role);
+    
+    console.log(`[AppraisalController] Fetching team packets: User=${userId}, Rank=${userRank}, Org=${organizationId}`);
+    
     const packets = await AppraisalService.getReviewerPackets(userId, organizationId, userRank);
     return res.json(packets);
-    */
   } catch (error: any) {
-    console.error('[AppraisalController] Diagnostic Failure:', error.message);
-    return res.status(500).json({ error: `Diagnostic Error: ${error.message}` });
+    console.error('[AppraisalController] Failed to get team packets:', error.message);
+    return res.status(500).json({ error: error.message });
   }
 };
 
