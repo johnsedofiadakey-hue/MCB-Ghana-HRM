@@ -16,7 +16,7 @@ import { getStoredUser } from '../utils/session';
 import EmployeeIDCard from '../components/it/EmployeeIDCard';
 
 const roleLabel: Record<string, string> = {
-  DEV: 'System Developer', 
+  DEV: 'Management', 
   MD: 'Managing Director', 
   DIRECTOR: 'Director',
   IT_ADMIN: 'IT Admin',

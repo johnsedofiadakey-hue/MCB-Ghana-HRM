@@ -235,7 +235,7 @@ const EmployeeProfile = () => {
                         </div>
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl whitespace-nowrap">
                             <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                                RANK: {t(`employees.roles.${employee.role}`)} <span className="opacity-40 px-1">·</span> LEVEL {getRankFromRole(employee.role)}
+                                {employee.role === 'DEV' ? 'MANAGEMENT' : `RANK: ${t(`employees.roles.${employee.role}`)}`} <span className="opacity-40 px-1">·</span> {employee.role === 'DEV' ? 'VERIFIED' : `LEVEL ${getRankFromRole(employee.role)}`}
                             </p>
                         </div>
                     </div>

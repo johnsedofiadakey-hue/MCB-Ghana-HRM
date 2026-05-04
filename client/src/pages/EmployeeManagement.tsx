@@ -429,7 +429,7 @@ export default function EmployeeManagement() {
         <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
         <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
           <option value="">{t('employees.all_ranks')}</option>
-          {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
+          {ROLES.filter(r => r !== 'DEV' || user?.role === 'DEV').map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
         </select>
         <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
         <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
@@ -743,7 +743,7 @@ export default function EmployeeManagement() {
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.system_rank', 'System Rank')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                   {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
+                                   {ROLES.filter(r => r !== 'DEV' || user?.role === 'DEV').map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
                                 </select>
                              </FormField>
                              <FormField label={t('employees.department', 'Department')}>

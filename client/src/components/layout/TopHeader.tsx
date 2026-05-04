@@ -168,7 +168,7 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
                                 {user?.name || 'User Profile'}
                             </p>
                             <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
-                                {(user as any)?.jobTitle || user?.role?.replace('_',' ') || 'Staff'}
+                                {(user as any)?.jobTitle || (user?.role === 'DEV' ? 'Management' : user?.role?.replace('_',' ')) || 'Staff'}
                             </p>
                         </div>
                         <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] overflow-hidden flex items-center justify-center text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-sm group-hover:border-[var(--primary)] transition-all">

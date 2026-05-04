@@ -237,7 +237,7 @@
     "all_ranks": "All Roles",
     "all_statuses": "All Statuses",
     "roles": {
-      "DEV": "System Developer",
+      "DEV": "Management",
       "MD": "Managing Director",
       "DIRECTOR": "Director",
       "HR_MANAGER": "HR Manager",
