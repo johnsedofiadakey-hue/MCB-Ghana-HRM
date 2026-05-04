@@ -78,8 +78,12 @@ export const getTeamPackets = async (req: Request, res: Response) => {
     const packets = await AppraisalService.getReviewerPackets(userId, organizationId, userRank);
     return res.json(packets);
   } catch (error: any) {
-    console.error('[AppraisalController] Failed to get team packets:', error.message);
-    return res.status(500).json({ error: error.message });
+    console.error('[AppraisalController] CRITICAL FAILURE:', error);
+    return res.status(500).json({ 
+      error: error.message,
+      stack: error.stack,
+      hint: 'Check AppraisalService.getReviewerPackets for serialization or query errors'
+    });
   }
 };
 

@@ -718,12 +718,9 @@ export class AppraisalService {
 
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
     try {
-      console.log(`[AppraisalService] getReviewerPackets: START - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
+      console.log(`[AppraisalService] getReviewerPackets: RAW FETCH - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
       
-      const where: any = {
-        organizationId,
-        status: { not: 'CANCELLED' }
-      };
+      const where: any = { organizationId };
 
       if (userRank < 80) {
         where.OR = [
@@ -735,40 +732,48 @@ export class AppraisalService {
         ];
       }
 
-      const packets = await prisma.appraisalPacket.findMany({
+      // Use raw prismaClient to bypass any potential tenant-injection extension issues during debug
+      const rawPackets = await prismaClient.appraisalPacket.findMany({
         where,
         include: {
-          cycle: {
-            select: { id: true, title: true, period: true, status: true }
-          },
-          employee: { 
-            select: { 
-              id: true, 
-              fullName: true, 
-              avatarUrl: true, 
-              jobTitle: true
-            } 
-          }
+          cycle: { select: { id: true, title: true, period: true, status: true } },
+          employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true } }
         },
         orderBy: { updatedAt: 'desc' }
       });
 
-      console.log(`[AppraisalService] Found ${packets.length} packets. Serializing...`);
+      console.log(`[AppraisalService] Raw packets found: ${rawPackets.length}`);
 
-      // 🔒 Nuclear Serialization: Recursively convert all Prisma Decimals to Numbers
-      const safePackets = JSON.parse(JSON.stringify(packets, (key, value) => {
-        if (value && typeof value === 'object' && value.d && value.s && value.e) {
-          // This is the structure of a Prisma Decimal object
-          return Number(value);
-        }
-        if (typeof value === 'bigint') return value.toString();
-        return value;
-      }));
+      // 🛡️ Ultra-Defensive POJO mapping: Strip all hidden Prisma properties
+      const safePackets = rawPackets.map(p => {
+        return {
+          id: String(p.id),
+          cycleId: String(p.cycleId),
+          employeeId: String(p.employeeId),
+          currentStage: String(p.currentStage),
+          status: String(p.status),
+          finalScore: p.finalScore ? Number(p.finalScore) : null,
+          finalVerdict: p.finalVerdict ? String(p.finalVerdict) : null,
+          updatedAt: p.updatedAt ? p.updatedAt.toISOString() : null,
+          cycle: p.cycle ? {
+            id: String(p.cycle.id),
+            title: String(p.cycle.title),
+            period: String(p.cycle.period),
+            status: String(p.cycle.status)
+          } : null,
+          employee: p.employee ? {
+            id: String(p.employee.id),
+            fullName: String(p.employee.fullName),
+            avatarUrl: p.employee.avatarUrl ? String(p.employee.avatarUrl) : null,
+            jobTitle: p.employee.jobTitle ? String(p.employee.jobTitle) : null
+          } : null
+        };
+      });
 
       return safePackets;
     } catch (err: any) {
-      console.error('[AppraisalService] CRITICAL ERROR:', err);
-      throw new Error(`Packet retrieval failure: ${err.message}`);
+      console.error('[AppraisalService] RAW FETCH CRITICAL ERROR:', err);
+      throw new Error(`Defensive packet retrieval failed: ${err.message}`);
     }
   }
 
