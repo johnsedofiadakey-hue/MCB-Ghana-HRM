@@ -15,13 +15,16 @@ import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { optimizeImage } from '../utils/image';
 
 
-const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'];
+import { GET_ORDERED_ROLES } from '../types/roles';
+const ROLES = GET_ORDERED_ROLES();
 // ROLE_LABELS is now handled by i18n in the render
 
 const ROLE_THEMES: Record<string, string> = {
   DEV: 'text-[var(--success)] bg-[var(--success)]/5 border-[var(--success)]/10',
   MD: 'text-[var(--error)] bg-[var(--error)]/5 border-[var(--error)]/10',
   DIRECTOR: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
+  HR_MANAGER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
+  FINANCE_MANAGER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
   HR_OFFICER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
   IT_MANAGER: 'text-[var(--info)] bg-[var(--info)]/5 border-[var(--info)]/10',
   IT_ADMIN: 'text-[var(--info)] bg-[var(--info)]/5 border-[var(--info)]/10',
@@ -97,7 +100,7 @@ export default function EmployeeManagement() {
   const user = getStoredUser();
   const role = user?.role || 'STAFF';
   const rank = getRankFromRole(role);
-  const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+  const privilegedRoles = ['MD', 'DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
   const isPrivileged = privilegedRoles.includes(user?.role) && rank >= 80;
 
   const isAdmin = rank >= 85;
