@@ -3,7 +3,7 @@ import api from '../services/api';
 import { X, Plus, Trash2, Save, Target, AlertCircle, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 
 interface AssignKpiModalProps {
   isOpen: boolean;
@@ -204,7 +204,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                   </div>
                 </div>
 
-                {getRankFromRole(getStoredUser().role) >= 80 && (
+                {getRoleRankValue(getStoredUser().role) >= 80 && (
                   <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center border border-[var(--primary)]/20">

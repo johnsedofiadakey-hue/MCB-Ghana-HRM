@@ -3,14 +3,14 @@ import { LayoutDashboard, Users, Clock, Calendar, Inbox, User } from 'lucide-rea
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { useTranslation } from 'react-i18next';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 
 const MobileNav = () => {
     const { t } = useTranslation();
     const location = useLocation();
 
     const user = getStoredUser();
-    const rank = getRankFromRole(user?.role);
+    const rank = getRoleRankValue(user?.role);
 
     const navItems = [
         { icon: LayoutDashboard, label: t('common.dashboard'), path: '/dashboard' },

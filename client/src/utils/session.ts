@@ -16,7 +16,7 @@ export type SessionUser = {
 
 export { ROLE_LABELS, ROLE_RANK_MAP as ROLE_RANKS };
 
-export const getRankFromRole = (role?: string): number => {
+export const getRoleRankValue = (role?: string): number => {
   if (!role) return 0;
   const normalized = role.toUpperCase();
   return ROLE_RANK_MAP[normalized] ?? 0;
@@ -26,7 +26,7 @@ export const getStoredUser = (): SessionUser => {
   const parsed = storage.getItem(StorageKey.USER, {} as any);
   if (!parsed || typeof parsed !== 'object') return {};
   // Always compute rank from role so it's never stale
-  const rank = getRankFromRole(parsed.role);
+  const rank = getRoleRankValue(parsed.role);
   return { ...parsed, rank } as SessionUser;
 };
 

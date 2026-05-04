@@ -9,7 +9,7 @@ import EmptyState from '../components/common/EmptyState';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 
 const Appraisals: React.FC = () => {
   const { t } = useTranslation();
@@ -17,7 +17,7 @@ const Appraisals: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const user = getStoredUser();
-  const rank = getRankFromRole(user?.role);
+  const rank = getRoleRankValue(user?.role);
 
   useEffect(() => { 
     fetchPackets(); 

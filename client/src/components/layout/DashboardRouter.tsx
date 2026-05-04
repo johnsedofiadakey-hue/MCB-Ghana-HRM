@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 
 const MDDashboard       = lazy(() => import('../../pages/dashboards/MDDashboard'));
 const DirectorDashboard = lazy(() => import('../../pages/dashboards/DirectorDashboard'));
@@ -22,7 +22,7 @@ const Spinner = () => (
 const DashboardRouter: React.FC = () => {
   const user = getStoredUser();
   // Always derive rank from role — never trust a stale stored rank
-  const rank = getRankFromRole(user.role);
+  const rank = getRoleRankValue(user.role);
 
   const renderDashboard = () => {
     if (rank >= 90) return <MDDashboard />;

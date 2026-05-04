@@ -6,7 +6,7 @@ import AssignKpiModal from '../components/AssignKpiModal';
 import ReviewKpiModal from '../components/ReviewKpiModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import PageHeader from '../components/common/PageHeader';
 import FlowSteps from '../components/common/FlowSteps';
 import EmptyState from '../components/common/EmptyState';

@@ -4,7 +4,7 @@ import { BookOpen, Plus, X, CheckCircle2, Clock, Eye, Trash2, Search, Upload, Us
 import api from '../services/api';
 import { toast } from '../utils/toast';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 
 const CATEGORIES = ['GENERAL', 'HR', 'IT', 'SAFETY', 'FINANCE', 'CONDUCT'];
 
@@ -19,7 +19,7 @@ const catColors: Record<string, string> = {
 
 const PolicyLibrary: React.FC = () => {
     const user = getStoredUser();
-    const rank = getRankFromRole(user?.role);
+    const rank = getRoleRankValue(user?.role);
     const [policies, setPolicies] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');

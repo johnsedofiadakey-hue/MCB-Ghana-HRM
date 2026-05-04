@@ -12,7 +12,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { format } from 'date-fns';
 import { useAI } from '../context/AIContext';
 
@@ -83,8 +83,8 @@ const Leave = () => {
   const { setContextData } = useAI();
 
   const user = getStoredUser();
-  // BUG L2 FIX: Use getRankFromRole to prevent stale rank issues
-  const userRank = getRankFromRole(user?.role);
+  // BUG L2 FIX: Use getRoleRankValue to prevent stale rank issues
+  const userRank = getRoleRankValue(user?.role);
 
   const fetchData = useCallback(async () => {
     setLoading(true);

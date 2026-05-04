@@ -7,7 +7,7 @@ import {
 import api from '../services/api';
 import { toast } from '../utils/toast';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 
 const CASE_TYPES = ['WARNING', 'FINAL_WARNING', 'SUSPENSION', 'DISMISSAL', 'GRIEVANCE'];
 const CATEGORIES = ['CONDUCT', 'PERFORMANCE', 'ATTENDANCE', 'POLICY', 'SAFETY', 'GRIEVANCE'];
@@ -42,7 +42,7 @@ const StatCard = ({ label, value, color, icon: Icon }: any) => (
 
 const Disciplinary: React.FC = () => {
     const user = getStoredUser();
-    const rank = getRankFromRole(user?.role);
+    const rank = getRoleRankValue(user?.role);
     const [cases, setCases] = useState<any[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);

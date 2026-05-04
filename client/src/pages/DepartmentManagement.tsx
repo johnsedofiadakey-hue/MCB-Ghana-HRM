@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Building2, Plus, X, Loader2, Users, Edit2, ShieldCheck, Trash2, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRankFromRole, getStoredUser } from '../utils/session';
+import { getRoleRankValue, getStoredUser } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 import { toast } from '../utils/toast';
@@ -25,7 +25,7 @@ const DepartmentManagement = () => {
   const [deleting, setDeleting] = useState(false);
 
   const currentUser = getStoredUser();
-  const rank = getRankFromRole(currentUser.role);
+  const rank = getRoleRankValue(currentUser.role);
   const canDelete = rank >= 80;
   const canManageDept = rank >= 75;
 
@@ -267,7 +267,7 @@ const DepartmentManagement = () => {
                     <div className="relative">
                       <select className="nx-input appearance-none pr-10" value={form.managerId} onChange={e => setForm({ ...form, managerId: e.target.value })}>
                         <option value="">-- {t('departments.no_manager')} --</option>
-                        {employees.filter(e => getRankFromRole(e.role) >= 70).map(e => {
+                        {employees.filter(e => getRoleRankValue(e.role) >= 70).map(e => {
                           const managingCount = departments.filter((d: any) => d.managerId === e.id).length;
                           return (
                             <option key={e.id} value={e.id}>

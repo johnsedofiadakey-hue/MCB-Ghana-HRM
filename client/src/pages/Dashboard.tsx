@@ -10,7 +10,7 @@ import {
 import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import ActionInbox from '../components/dashboard/ActionInbox';
 
 // Pulse Suite Modals
@@ -137,7 +137,7 @@ const Dashboard = () => {
     </div>
   );
 
-  const userRank = getRankFromRole(user?.role);
+  const userRank = getRoleRankValue(user?.role);
   const quickActions = [
     { label: t('dashboard.actions.post_job'), icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
     { label: t('dashboard.actions.file_expense'), icon: Wallet, color: 'bg-[var(--primary)]', onClick: () => setModalType('expense'), rank: 0 },
@@ -165,7 +165,7 @@ const Dashboard = () => {
             {t('dashboard.welcome')} <span className="text-[var(--text-primary)] font-bold">{now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. {t('common.status')}: <span className="text-[var(--success)] font-bold">{t('dashboard.stable')}</span>.
           </p>
         </div>
-        {getRankFromRole(user.role) >= 60 && (
+        {getRoleRankValue(user.role) >= 60 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -173,7 +173,7 @@ const Dashboard = () => {
             className="flex flex-wrap items-center gap-3"
           >
             {/* Department Switcher (MD/Manager) */}
-            {getRankFromRole(user.role) >= 70 && (
+            {getRoleRankValue(user.role) >= 70 && (
               <div className="relative group min-w-[200px]">
                 <Globe size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
                 <select
@@ -202,7 +202,7 @@ const Dashboard = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {getRankFromRole(user.role) >= 60 ? (
+        {getRoleRankValue(user.role) >= 60 ? (
           <>
             <StatCard
               index={0}

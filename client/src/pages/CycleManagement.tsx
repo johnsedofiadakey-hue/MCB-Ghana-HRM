@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
 import { Calendar, Clock, Play, Plus, RefreshCw, Layers, ShieldCheck, X, Trash2, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import PageHeader from '../components/common/PageHeader';
@@ -30,7 +30,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 const CycleManagement: React.FC = () => {
     const { t } = useTranslation();
     const currentUser = getStoredUser() as { role?: string };
-    const canManageCycles = getRankFromRole(currentUser.role) >= 80;
+    const canManageCycles = getRoleRankValue(currentUser.role) >= 80;
     const [cycles, setCycles] = useState<Cycle[]>([]);
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -240,7 +240,7 @@ const CycleManagement: React.FC = () => {
                 )}
             </div>
 
-            {getRankFromRole(currentUser.role) >= 90 && (
+            {getRoleRankValue(currentUser.role) >= 90 && (
                 <div className="mt-10 p-10 rounded-[2.5rem] border border-red-500/20 bg-red-500/5 backdrop-blur-3xl overflow-hidden relative group">
                     <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity translate-x-1/4 -translate-y-1/4">
                         <AlertTriangle size={240} />

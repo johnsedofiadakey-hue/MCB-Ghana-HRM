@@ -5,7 +5,7 @@ import { Plus, Edit2, Award, TrendingUp, Calendar, Trash2, CheckCircle, Clock, A
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 import ConfirmDeleteModal from '../common/ConfirmDeleteModal';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
@@ -74,7 +74,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
   const [isTargetDeleteModalOpen, setIsTargetDeleteModalOpen] = useState(false);
 
   const user = getStoredUser();
-  const userRank = getRankFromRole(user?.role);
+  const userRank = getRoleRankValue(user?.role);
   const rank = (user?.role?.toUpperCase() === 'MANAGING DIRECTOR' || user?.role?.toUpperCase() === 'MD') ? 90 : userRank;
 
   const isOwner = target.assignee?.fullName === user.name;

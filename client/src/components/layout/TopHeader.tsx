@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { User, Settings, LogOut, Bell, Search, Menu, Inbox as InboxIcon, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 import { storage } from '../../services/storage';
 import { useTranslation } from 'react-i18next';
 import NotificationInbox from '../common/NotificationInbox';
@@ -92,29 +92,29 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
             {/* Identity & Actions */}
             <div className="flex items-center gap-3 sm:gap-6 lg:gap-10">
                 {/* MCB AI Intelligence Trigger */}
-                {/* BUG 7 FIX: Use getRankFromRole to prevent visibility issues from stale user properties */}
-                {isAIEnabled && getRankFromRole(user?.role) >= 70 && (
+                {/* BUG 7 FIX: Use getRoleRankValue to prevent visibility issues from stale user properties */}
+                {isAIEnabled && getRoleRankValue(user?.role) >= 70 && (
                     <button 
                         onClick={() => setIsAIOpen(true)}
                          className={cn(
                            "group relative p-2 sm:px-4 rounded-xl border transition-all flex items-center gap-2 overflow-hidden",
-                           getRankFromRole(user?.role) >= 85 
+                           getRoleRankValue(user?.role) >= 85 
                              ? "text-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/25 ring-2 ring-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.2)]" 
                              : "text-[var(--primary)] bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10 border-[var(--primary)]/20 hover:border-[var(--primary)]/40"
                          )}
-                         title={getRankFromRole(user?.role) >= 85 ? "Management Insights Active" : "AI Helper Active"}
+                         title={getRoleRankValue(user?.role) >= 85 ? "Management Insights Active" : "AI Helper Active"}
                      >
                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                         <Sparkles size={18} className={cn("shrink-0", getRankFromRole(user?.role) >= 85 ? "animate-pulse scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "")} />
+                         <Sparkles size={18} className={cn("shrink-0", getRoleRankValue(user?.role) >= 85 ? "animate-pulse scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "")} />
                          <div className="flex flex-col items-start leading-none hidden sm:flex">
                            <span className="text-[10px] font-black uppercase tracking-tighter">AI Assistant</span>
-                           <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-80", getRankFromRole(user?.role) >= 85 ? "text-amber-500/80" : "text-[var(--primary)]")}>
-                             {getRankFromRole(user?.role) >= 85 ? "Management" : "Personal"}
+                           <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-80", getRoleRankValue(user?.role) >= 85 ? "text-amber-500/80" : "text-[var(--primary)]")}>
+                             {getRoleRankValue(user?.role) >= 85 ? "Management" : "Personal"}
                            </span>
                          </div>
                          <span className={cn(
                            "absolute top-1 right-1 w-2 h-2 rounded-full",
-                           getRankFromRole(user?.role) >= 85 ? "bg-amber-500 animate-ping" : "bg-[var(--primary)]"
+                           getRoleRankValue(user?.role) >= 85 ? "bg-amber-500 animate-ping" : "bg-[var(--primary)]"
                          )} />
                     </button>
                 )}

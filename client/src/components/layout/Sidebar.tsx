@@ -17,7 +17,7 @@ import { cn } from '../../utils/cn';
 import api from '../../services/api';
 import { useState, useEffect } from 'react';
 import { getLogoUrl } from '../../utils/logo';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 
 interface NavItemProps {
   to: string;
@@ -103,7 +103,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
   const { t } = useTranslation();
   const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+  const rank = getRoleRankValue(user.role);
   const role = (user.role || '').toUpperCase();
   
   const isHR = role.includes('HR') || rank >= 90;

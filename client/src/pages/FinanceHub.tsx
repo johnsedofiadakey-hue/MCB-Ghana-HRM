@@ -5,7 +5,7 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { useTheme } from '../context/ThemeContext';
 
 const fmt = (n: number | string, currency = '', lang = 'en') =>
@@ -28,7 +28,7 @@ const FinanceHub = () => {
     const [error, setError] = useState('');
 
     const user = getStoredUser();
-    const isAdmin = getRankFromRole(user.role) >= 70;
+    const isAdmin = getRoleRankValue(user.role) >= 70;
 
     const fetchData = async () => {
         setLoading(true);

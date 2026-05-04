@@ -9,7 +9,7 @@ import { toast } from '../../utils/toast';
 import PageHeader from '../../components/common/PageHeader';
 import TargetCard from '../../components/performance/TargetCard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 import EmptyState from '../../components/common/EmptyState';
 import TargetCascadeModal from '../../components/performance/TargetCascadeModal';
 import { cn } from '../../utils/cn';
@@ -362,7 +362,7 @@ const CreateTargetModal: React.FC<{
 const TargetDashboard: React.FC = () => {
   const { t } = useTranslation();
   const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+  const rank = getRoleRankValue(user.role);
   const [myTargets, setMyTargets] = useState<any[]>([]);
   const [teamTargets, setTeamTargets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

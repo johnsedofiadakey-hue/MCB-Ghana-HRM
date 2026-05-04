@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { toast } from 'react-hot-toast';
@@ -37,7 +37,7 @@ const Announcements = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   
   const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+  const rank = getRoleRankValue(user.role);
   const canPost = rank >= 85 || user.role === 'MD';
 
   const [formData, setFormData] = useState({

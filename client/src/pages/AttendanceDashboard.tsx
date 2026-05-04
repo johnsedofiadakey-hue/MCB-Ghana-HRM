@@ -4,7 +4,7 @@ import { Clock, CheckCircle, LogIn, LogOut, Loader2, Calendar, Search, Activity,
 import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 
 const AttendanceDashboard = () => {
@@ -16,7 +16,7 @@ const AttendanceDashboard = () => {
     const [search, setSearch] = useState('');
 
     const user = getStoredUser();
-    const isAdmin = getRankFromRole(user.role) >= 70;
+    const isAdmin = getRoleRankValue(user.role) >= 70;
 
     const fetchLogs = async () => {
         setLoading(true);

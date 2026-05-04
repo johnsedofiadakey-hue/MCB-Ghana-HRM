@@ -9,7 +9,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 
 const statusColors: Record<string, { badge: string; dot: string }> = {
@@ -52,7 +52,7 @@ const Payroll = () => {
   const [form, setForm] = useState({ month: String(new Date().getMonth() + 1), year: String(currentYear) });
 
   const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+  const rank = getRoleRankValue(user.role);
   const isAdmin = rank >= 87; // Finance Manager or above
   const isFinance = rank >= 87;
   const isHR = rank >= 88;

@@ -4,7 +4,7 @@ import { Clock, Plus, X, CheckCircle2, AlertTriangle, Search, Users, Calendar, T
 import api from '../services/api';
 import { toast } from '../utils/toast';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
     IN_PROGRESS: { label: 'In Progress', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200', dot: 'bg-blue-500' },
@@ -15,7 +15,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string; d
 
 const ProbationTracker: React.FC = () => {
     const user = getStoredUser();
-    const rank = getRankFromRole(user?.role);
+    const rank = getRoleRankValue(user?.role);
     const [records, setRecords] = useState<any[]>([]);
     const [stats, setStats] = useState<any>({});
     const [employees, setEmployees] = useState<any[]>([]);

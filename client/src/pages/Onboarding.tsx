@@ -3,7 +3,7 @@ import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket,
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 import { getSafeAvatarUrl } from '../utils/avatar';
 
@@ -30,7 +30,7 @@ const Onboarding = () => {
   const [viewMode, setViewMode] = useState<'PERSONAL' | 'MANAGEMENT'>('PERSONAL');
 
   const user = getStoredUser();
-  const userRank = getRankFromRole(user.role);
+  const userRank = getRoleRankValue(user.role);
   const isAdmin = userRank >= 80;
 
   const fetchData = async () => {

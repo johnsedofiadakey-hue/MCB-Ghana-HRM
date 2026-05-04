@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2, Trash2, Fingerprint } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import api from '../services/api';
 import { cn } from '../utils/cn';
 import HistoryLog from '../components/profile/HistoryLog';
@@ -33,7 +33,7 @@ const Profile = () => {
     
     // 🛡️ AUTHORIZATION LOCKDOWN: MD, HR, or IT Only for Identity (Name/Email)
     const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
-    const rank = getRankFromRole(user?.role || 'EMPLOYEE');
+    const rank = getRoleRankValue(user?.role || 'EMPLOYEE');
     
     // canEditIdentity refers to the core fields (Name, Email). 
     // Phone and Bank details are now self-service.

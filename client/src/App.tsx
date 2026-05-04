@@ -22,7 +22,7 @@ import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
 import MCBAIInsight from './components/layout/MCBAIInsight';
 import { getLogoUrl } from './utils/logo';
-import { getStoredUser, getRankFromRole } from './utils/session';
+import { getStoredUser } from './utils/session';
 import SandboxHUD from './components/layout/SandboxHUD';
 import { storage, StorageKey } from './services/storage';
 
@@ -61,7 +61,7 @@ const HolidayCalendar = lazy(() => import('./pages/HolidayCalendar'));
 const MDKpiView = lazy(() => import('./pages/kpi/MDKpiView'));
 const MyTargetsPage = lazy(() => import('./pages/performance/TargetDashboard'));
 const PerformanceHub = lazy(() => import('./pages/Performance'));
-const TeamReview = lazy(() => import('./pages/TeamReview'));
+const TeamReview = lazy(() => import('./pages/TeamOperationalReview'));
 const AnnouncementsPage = lazy(() => import('./pages/Announcements'));
 const Profile = lazy(() => import('./pages/Profile'));
 const StrategicGoalBuilder = lazy(() => import('./pages/performance/StrategicGoalBuilder'));
@@ -94,6 +94,19 @@ const ProtectedRoute = () => {
   return <Layout />;
 };
 
+// 🔒 LOCAL HELPER (Inlined to prevent ReferenceError in production bundle)
+const ROLE_RANK_MAP: Record<string, number> = {
+    DEV: 100, MD: 95, DIRECTOR: 90, HR_MANAGER: 88, FINANCE_MANAGER: 87,
+    IT_MANAGER: 85, IT_ADMIN: 85, HR_OFFICER: 80, MANAGER: 75,
+    SUPERVISOR: 65, STAFF: 50, CASUAL: 40,
+    'MANAGING DIRECTOR': 95, 'SYSTEM DEVELOPER': 100
+};
+
+const getRoleRankValueLocal = (role?: string): number => {
+  if (!role) return 0;
+  return ROLE_RANK_MAP[role.toUpperCase()] ?? 0;
+};
+
 const AdminGuard = () => {
   const user = getStoredUser();
   const token = storage.getItem(StorageKey.AUTH_TOKEN, null);
@@ -123,7 +136,7 @@ const Layout = () => {
   const user = React.useMemo(() => {
     return storage.getItem(StorageKey.USER, null);
   }, []);
-  const rank = React.useMemo(() => getRankFromRole(user?.role), [user?.role]);
+  const rank = React.useMemo(() => getRoleRankValueLocal(user?.role), [user?.role]);
   const isImpersonating = user?.isImpersonating;
 
   const handleExitImpersonation = () => {
@@ -254,7 +267,7 @@ const Layout = () => {
 
 const RoleGuard = ({ children, minRank, allowedRoles }: { children: React.ReactNode; minRank?: number; allowedRoles?: string[] }) => {
   const user = getStoredUser();
-  const rank = getRankFromRole(user?.role);
+  const rank = getRoleRankValue(user?.role);
   const role = (user?.role || '').toUpperCase();
   
   const hasRank = minRank !== undefined && rank >= minRank;

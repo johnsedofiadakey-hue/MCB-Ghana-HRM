@@ -7,7 +7,7 @@ import {
 import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { toast } from '../utils/toast';
 
 const Performance = () => {
@@ -18,7 +18,7 @@ const Performance = () => {
     const [activeTab, setActiveTab] = useState<'my' | 'team'>('my');
 
     const user = getStoredUser();
-    const isAdmin = getRankFromRole(user.role) >= 70;
+    const isAdmin = getRoleRankValue(user.role) >= 70;
 
     const fetchData = useCallback(async () => {
         setLoading(true);

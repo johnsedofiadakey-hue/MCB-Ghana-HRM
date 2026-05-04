@@ -9,7 +9,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { toast } from '../utils/toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { optimizeImage } from '../utils/image';
@@ -100,7 +100,7 @@ export default function EmployeeManagement() {
 
   const user = getStoredUser();
   const role = user?.role || 'STAFF';
-  const rank = getRankFromRole(role);
+  const rank = getRoleRankValue(role);
   const privilegedRoles = ['MD', 'DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
   const isPrivileged = privilegedRoles.includes(user?.role) && rank >= 80;
 
@@ -258,7 +258,7 @@ export default function EmployeeManagement() {
           return;
         }
         const targetSup = supervisors.find(s => s.id === submittedForm.supervisorId);
-        if (targetSup && getRankFromRole(targetSup.role) <= 60) {
+        if (targetSup && getRoleRankValue(targetSup.role) <= 60) {
           toast.error(t('employees.alerts.supervisor_rank_rule', 'Supervisors must report to a Manager or higher.'));
           setSaving(false);
           return;
@@ -633,7 +633,7 @@ export default function EmployeeManagement() {
                                <td data-label={t('employees.rank_dept')}>
                                   <div className="space-y-1.5 md:items-start items-end flex flex-col">
                                      <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
-                                        {t(`employees.roles.${emp.role}`)} (L{getRankFromRole(emp.role)})
+                                        {t(`employees.roles.${emp.role}`)} (L{getRoleRankValue(emp.role)})
                                      </span>
                                      <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || t('common.unassigned_dept')}</p>
                                   </div>
@@ -841,8 +841,8 @@ export default function EmployeeManagement() {
                                     <option value="">{t('common.independent')}</option>
                                     {supervisors.filter((s: any) => {
                                         if (s.id === selected?.id) return false;
-                                        const supervisorRank = getRankFromRole(s.role);
-                                        const currentRank = getRankFromRole(form.role);
+                                        const supervisorRank = getRoleRankValue(s.role);
+                                        const currentRank = getRoleRankValue(form.role);
                                         if (currentRank === 60) return supervisorRank >= 70; // Supervisor must report to Manager+
                                         return supervisorRank >= 60; // Others can report to Supervisor+
                                     }).map((s: any) => (
@@ -858,8 +858,8 @@ export default function EmployeeManagement() {
                                     <option value="">{t('common.none', 'None Assigned')}</option>
                                     {supervisors.filter((s: any) => {
                                         if (s.id === selected?.id || s.id === form.supervisorId) return false;
-                                        const supervisorRank = getRankFromRole(s.role);
-                                        const currentRank = getRankFromRole(form.role);
+                                        const supervisorRank = getRoleRankValue(s.role);
+                                        const currentRank = getRoleRankValue(form.role);
                                         if (currentRank === 60) return supervisorRank >= 70;
                                         return supervisorRank >= 60;
                                     }).map((s: any) => (

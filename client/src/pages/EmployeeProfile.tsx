@@ -8,7 +8,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { useAI } from '../context/AIContext';
@@ -51,7 +51,7 @@ const EmployeeProfile = () => {
             const [empRes, kpiRes, riskRes] = await Promise.all([
                 api.get(`/employees/${id}`),
                 api.get(`/kpis/summary/individual?employeeId=${id}`).catch(() => ({ data: { averageScore: 0 } })),
-                getRankFromRole(currentUser?.role) >= 75 ? api.get(`/employees/${id}/risk`).catch(() => null) : Promise.resolve(null)
+                getRoleRankValue(currentUser?.role) >= 75 ? api.get(`/employees/${id}/risk`).catch(() => null) : Promise.resolve(null)
             ]);
             setEmployee(empRes.data);
             setKpiSummary(kpiRes.data);
@@ -235,7 +235,7 @@ const EmployeeProfile = () => {
                         </div>
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl whitespace-nowrap">
                             <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                                {employee.role === 'DEV' ? 'MANAGEMENT' : `RANK: ${t(`employees.roles.${employee.role}`)}`} <span className="opacity-40 px-1">·</span> {employee.role === 'DEV' ? 'VERIFIED' : `LEVEL ${getRankFromRole(employee.role)}`}
+                                {employee.role === 'DEV' ? 'MANAGEMENT' : `RANK: ${t(`employees.roles.${employee.role}`)}`} <span className="opacity-40 px-1">·</span> {employee.role === 'DEV' ? 'VERIFIED' : `LEVEL ${getRoleRankValue(employee.role)}`}
                             </p>
                         </div>
                     </div>

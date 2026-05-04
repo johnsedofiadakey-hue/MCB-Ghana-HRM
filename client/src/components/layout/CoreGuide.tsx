@@ -10,7 +10,7 @@ import {
   ClipboardCheck, Megaphone, FileText, Check
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 import { useTheme } from '../../context/ThemeContext';
 
 // ─── Inline Icons ──────────────────────────────────────────────────────────
@@ -635,7 +635,7 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                 <div>
                   <h2 className="text-sm font-black text-white tracking-tight uppercase">{companyName} Guide</h2>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                    {user.role ? `${user.role} · Rank ${getRankFromRole(user.role)}` : 'AI Assistant'}
+                    {user.role ? `${user.role} · Rank ${getRoleRankValue(user.role)}` : 'AI Assistant'}
                   </p>
                 </div>
               </div>
@@ -800,14 +800,14 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-light mb-2">Hierarchy Protocol</h4>
                    <p className="text-[11px] text-slate-400 leading-relaxed">System access is governed by numeric rank. Higher ranks inherit all permissions from lower ranks.</p>
                 </div>
-                {Object.entries(ROLE_SUMMARIES).sort((a,b) => getRankFromRole(b[0]) - getRankFromRole(a[0])).map(([id, r]) => (
+                {Object.entries(ROLE_SUMMARIES).sort((a,b) => getRoleRankValue(b[0]) - getRoleRankValue(a[0])).map(([id, r]) => (
                   <div key={id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] group hover:border-white/20 transition-all">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Shield size={14} style={{ color: r.color }} />
                         <span className="text-[12px] font-black text-white uppercase tracking-tight">{r.label}</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-md bg-white/5 text-[9px] font-black text-slate-500">RANK {getRankFromRole(id)}</span>
+                      <span className="px-2 py-0.5 rounded-md bg-white/5 text-[9px] font-black text-slate-500">RANK {getRoleRankValue(id)}</span>
                     </div>
                     <p className="text-[11.5px] text-slate-400 leading-relaxed mb-4">{r.desc}</p>
                     <div className="space-y-1.5 border-t border-white/[0.05] pt-3">

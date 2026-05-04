@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, ChevronRight, X, LayoutDashboard, Clock, Calendar, BarChart3, Users, DollarSign, Zap } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 import { useTheme } from '../../context/ThemeContext';
 
 const STORAGE_KEY = 'app_welcome_seen_v2';
@@ -77,7 +77,7 @@ export default function FirstRunWelcome() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+  const rank = getRoleRankValue(user.role);
 
   const steps = rank >= 70 ? [...STEPS, ...MANAGER_EXTRAS] : STEPS;
   const total = steps.length;

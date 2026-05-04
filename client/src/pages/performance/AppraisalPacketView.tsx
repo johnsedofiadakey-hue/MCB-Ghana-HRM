@@ -11,7 +11,7 @@ import { toast } from '../../utils/toast';
 import PageHeader from '../../components/common/PageHeader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
-import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { getStoredUser, getRoleRankValue } from '../../utils/session';
 import { useTranslation } from 'react-i18next';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import FinalizePerformanceReviewModal from '../../components/performance/FinalizePerformanceReviewModal';
@@ -336,7 +336,7 @@ const AppraisalPacketView: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
   const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+  const rank = getRoleRankValue(user.role);
   const canManage = rank >= 80;
 
   useEffect(() => {
