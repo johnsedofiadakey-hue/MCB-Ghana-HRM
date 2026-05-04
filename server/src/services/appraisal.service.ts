@@ -718,14 +718,13 @@ export class AppraisalService {
 
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
     try {
-      console.log(`[AppraisalService] getReviewerPackets: User=${userId}, Rank=${userRank}, Org=${organizationId}`);
+      console.log(`[AppraisalService] getReviewerPackets: START - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
       
       const where: any = {
         organizationId,
         status: { not: 'CANCELLED' }
       };
 
-      // If not Director/MD (Rank 80+), restrict to assigned reviews
       if (userRank < 80) {
         where.OR = [
           { supervisorId: userId },
@@ -739,30 +738,37 @@ export class AppraisalService {
       const packets = await prisma.appraisalPacket.findMany({
         where,
         include: {
-          cycle: true,
+          cycle: {
+            select: { id: true, title: true, period: true, status: true }
+          },
           employee: { 
             select: { 
               id: true, 
               fullName: true, 
               avatarUrl: true, 
-              jobTitle: true,
-              departmentId: true 
+              jobTitle: true
             } 
           }
         },
         orderBy: { updatedAt: 'desc' }
       });
 
-      console.log(`[AppraisalService] Found ${packets.length} team packets for reviewer.`);
+      console.log(`[AppraisalService] Found ${packets.length} packets. Serializing...`);
 
-      // 🔒 Safe Serialization: Explicitly convert Decimal fields to Number for JSON safety
-      return packets.map(p => ({
-        ...p,
-        finalScore: p.finalScore !== null && p.finalScore !== undefined ? Number(p.finalScore) : null
+      // 🔒 Nuclear Serialization: Recursively convert all Prisma Decimals to Numbers
+      const safePackets = JSON.parse(JSON.stringify(packets, (key, value) => {
+        if (value && typeof value === 'object' && value.d && value.s && value.e) {
+          // This is the structure of a Prisma Decimal object
+          return Number(value);
+        }
+        if (typeof value === 'bigint') return value.toString();
+        return value;
       }));
+
+      return safePackets;
     } catch (err: any) {
-      console.error('[AppraisalService] CRITICAL: getReviewerPackets failure:', err.message);
-      throw new Error(`Failed to retrieve team appraisal data: ${err.message}`);
+      console.error('[AppraisalService] CRITICAL ERROR:', err);
+      throw new Error(`Packet retrieval failure: ${err.message}`);
     }
   }
 
