@@ -755,36 +755,19 @@ export class AppraisalService {
   }
 
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
-    try {
-      console.log(`[AppraisalService] getReviewerPackets: RECOVERED FETCH - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
-      
-      const where: any = { organizationId };
-
-      if (userRank < 80) {
-        where.OR = [
-          { supervisorId: userId },
-          { matrixSupervisorId: userId },
-          { managerId: userId },
-          { hrReviewerId: userId },
-          { finalReviewerId: userId }
-        ];
+    // 🧪 EMERGENCY DEBUG BYPASS: Return hardcoded data to test route integrity
+    return [
+      {
+        id: 'debug-001',
+        cycleId: 'debug-cycle',
+        employeeId: 'debug-emp',
+        currentStage: 'SELF_REVIEW',
+        status: 'OPEN',
+        finalScore: 0,
+        finalVerdict: 'DEBUG_MODE_ACTIVE',
+        updatedAt: new Date().toISOString()
       }
-
-      const rawPackets = await prisma.appraisalPacket.findMany({
-        where,
-        include: {
-          cycle: { select: { id: true, title: true, period: true, status: true } },
-          employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true } }
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
-
-      return this.toSafePOJO(rawPackets);
-
-    } catch (err: any) {
-      console.error('[AppraisalService] FETCH ERROR:', err);
-      throw err;
-    }
+    ];
   }
 
   /**
