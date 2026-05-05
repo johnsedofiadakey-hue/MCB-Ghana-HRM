@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getLogoUrl } from '../utils/logo';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { toast } from 'react-hot-toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { BrandingService } from '../services/branding.service';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Calendar, DollarSign, Activity, TrendingUp, Shield, FileText, Bell, ArrowUp, Target, Award, Globe, Zap, ArrowRight } from 'lucide-react';
+import { Users, Calendar, DollarSign, Activity, TrendingUp, Shield, FileText, Bell, ArrowUp, Target, Award, Globe, Zap, ArrowRight, BarChart3 } from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -77,7 +77,7 @@ const MDDashboard = () => {
         {/* Executive Actions */}
         <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} className="flex pb-1">
            <button
-             onClick={() => window.open('/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('mcb_auth_token'))}
+             onClick={() => window.open('https://mcb-ghana-hrm-api.onrender.com/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('mcb_auth_token'), '_blank')}
              className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white text-sm font-black uppercase tracking-widest flex items-center gap-3 hover:bg-[var(--accent)] hover:shadow-[0_0_20px_var(--primary)] hover:shadow-[var(--primary)]/30 transition-all active:scale-95"
            >
              <FileText size={18} /> Download Board Report
@@ -235,9 +235,19 @@ const MDDashboard = () => {
           { icon: Target, label: "Corporate Strategy", desc: "Define Long-term Objectives", href: '/performance/strategic', color: 'var(--primary)' },
           { icon: DollarSign, label: "Payroll Authorization", desc: "Final Disbursement Approval", href: '/payroll', color: 'var(--success)' },
           { icon: Award, label: "Institutional Growth", desc: "Talent & Culture Pulse", href: '/enterprise', color: 'var(--accent)' },
-          { icon: FileText, label: "Executive Board Report", desc: "Generate Monthly Summary", href: '#', onClick: () => window.open('/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('mcb_auth_token')), color: 'var(--warning)' },
+          { icon: FileText, label: "Executive Board Report", desc: "Generate Monthly Summary", href: '#', onClick: () => window.open('https://mcb-ghana-hrm-api.onrender.com/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('mcb_auth_token'), '_blank'), color: 'var(--warning)' },
         ].map((item, i) => (
-          <Link key={i} to={item.href} onClick={item.onClick} className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all no-underline block">
+          <Link 
+            key={i} 
+            to={item.href} 
+            onClick={(e) => {
+              if (item.onClick) {
+                e.preventDefault();
+                item.onClick();
+              }
+            }} 
+            className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all no-underline block"
+          >
             <div className="flex items-center justify-between mb-8">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all">
                 <item.icon size={22} style={{ color: item.color }} className="opacity-80" />
