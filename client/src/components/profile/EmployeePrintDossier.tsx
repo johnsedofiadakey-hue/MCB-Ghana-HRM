@@ -1,9 +1,9 @@
-import { Activity, Briefcase, Landmark, User, BookOpen, Heart, ShieldCheck, Globe, Mail, Phone, MapPin } from 'lucide-react';
+import { Activity, Briefcase, Landmark, User, BookOpen, Heart, ShieldCheck, Globe, Mail, Phone, MapPin, Building } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useTheme } from '../../context/ThemeContext';
+import { getLogoUrl } from '../../utils/logo';
 import { getSafeAvatarUrl } from '../../utils/avatar';
 import { useTranslation } from 'react-i18next';
-import { Building } from 'lucide-react';
 
 const EmployeePrintDossier = ({ employee }: { employee: any }) => {
     const { settings, formatCurrency } = useTheme();
