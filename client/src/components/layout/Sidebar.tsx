@@ -106,9 +106,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   const rank = getRoleRankValue(user.role);
   const role = (user.role || '').toUpperCase();
   
-  const isHR = role.includes('HR') || rank >= 90;
-  const isFinance = role.includes('FINANCE') || rank >= 90;
-  const isIT = role.includes('IT') || rank >= 90;
+  const isHR = role.includes('HR') || (rank >= 88 && rank < 95);
+  const isFinance = role.includes('FINANCE') || (rank >= 87 && rank < 95);
+  const isIT = role.includes('IT') || (rank >= 85 && rank < 95);
   const isMD = rank >= 95;
   
   const [pendingAppraisals, setPendingAppraisals] = useState(0);
@@ -248,9 +248,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
                  <NavGroup label={t('common.organization')} isCollapsed={isCollapsed}>
                 <NavItem to="/departments" icon={Briefcase} label={rank < 70 ? t('common.my_department') : t('common.departments_label')} isCollapsed={isCollapsed} />
-                {(rank >= 70 || isHR) && <NavItem to="/employees" icon={Users} label={t('common.employees_label')} isCollapsed={isCollapsed} />}
+                {(rank >= 70 || isHR) && !isMD && <NavItem to="/employees" icon={Users} label={t('common.employees_label')} isCollapsed={isCollapsed} />}
                 <NavItem to="/announcements" icon={Megaphone} label={t('common.announcements')} isCollapsed={isCollapsed} />
-                {(rank >= 85 || isHR) && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart_label')} isCollapsed={isCollapsed} />}
+                {(rank >= 85 || isHR) && !isMD && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart_label')} isCollapsed={isCollapsed} />}
                 {(rank >= 85 || isHR) && !isMD && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment')} isCollapsed={isCollapsed} />}
                 <NavItem to="/policies" icon={Shield} label={t('common.policies')} isCollapsed={isCollapsed} />
                 {(rank >= 60 || isHR) && !isMD && <NavItem to="/disciplinary" icon={AlertTriangle} label={t('common.disciplinary')} isCollapsed={isCollapsed} />}
@@ -258,21 +258,23 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 {(rank >= 80 || isHR) && <NavItem to="/promotions" icon={Zap} label="Promotion Pipeline" isCollapsed={isCollapsed} />}
               </NavGroup>
  
-              <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
-                {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
-                {(isIT || isHR) && !isMD && (
-                   <NavItem to="/it-admin" icon={Database} label={t('common.it_registries')} isCollapsed={isCollapsed} />
-                )}
-                <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
-                <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />
-                <NavItem to="/holidays" icon={Calendar} label={t('common.holidays_label')} isCollapsed={isCollapsed} />
-                {(rank >= 85 || isHR) && !isMD && (
-                   <>
-                     <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding_label')} isCollapsed={isCollapsed} />
-                     <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding')} isCollapsed={isCollapsed} />
-                   </>
-                )}
-              </NavGroup>
+              {!isMD && (
+                <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
+                  {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
+                  {(isIT || isHR) && (
+                    <NavItem to="/it-admin" icon={Database} label={t('common.it_registries')} isCollapsed={isCollapsed} />
+                  )}
+                  <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
+                  <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />
+                  <NavItem to="/holidays" icon={Calendar} label={t('common.holidays_label')} isCollapsed={isCollapsed} />
+                  {(rank >= 85 || isHR) && (
+                    <>
+                      <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding_label')} isCollapsed={isCollapsed} />
+                      <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding')} isCollapsed={isCollapsed} />
+                    </>
+                  )}
+                </NavGroup>
+              )}
 
               {(isFinance || isHR || isMD) && (
                 <NavGroup label={t('common.financial_operations')} isCollapsed={isCollapsed}>

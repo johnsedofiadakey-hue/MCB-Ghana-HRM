@@ -230,14 +230,14 @@ const MDDashboard = () => {
       {/* Quick Action Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
-          { icon: Users, label: t('md_dashboard.manage_employees'), desc: t('md_dashboard.view_staff'), href: '/employees', color: 'var(--primary)' },
-          { icon: DollarSign, label: t('md_dashboard.run_payroll'), desc: t('md_dashboard.process_payroll'), href: '/payroll', color: 'var(--success)' },
-          { icon: FileText, label: t('md_dashboard.audit_logs'), desc: t('md_dashboard.audit_trail'), href: '/audit', color: 'var(--warning)' },
-          { icon: Bell, label: t('md_dashboard.announcements'), desc: t('md_dashboard.broadcast'), href: '/announcements', color: 'var(--accent)' },
           { icon: BarChart3, label: "Strategic KPI Pulse", desc: "Institutional Performance Analytics", href: '/kpi/executive', color: 'var(--primary)' },
           { icon: Shield, label: "Governance & Branding", desc: "Corporate Identity Control", href: '/settings', color: 'var(--primary)' },
+          { icon: Target, label: "Corporate Strategy", desc: "Define Long-term Objectives", href: '/performance/strategic', color: 'var(--primary)' },
+          { icon: DollarSign, label: "Payroll Authorization", desc: "Final Disbursement Approval", href: '/payroll', color: 'var(--success)' },
+          { icon: Award, label: "Institutional Growth", desc: "Talent & Culture Pulse", href: '/enterprise', color: 'var(--accent)' },
+          { icon: FileText, label: "Executive Board Report", desc: "Generate Monthly Summary", href: '#', onClick: () => window.open('/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('mcb_auth_token')), color: 'var(--warning)' },
         ].map((item, i) => (
-          <Link key={i} to={item.href} className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all no-underline block">
+          <Link key={i} to={item.href} onClick={item.onClick} className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all no-underline block">
             <div className="flex items-center justify-between mb-8">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all">
                 <item.icon size={22} style={{ color: item.color }} className="opacity-80" />
