@@ -267,7 +267,7 @@ const Layout = () => {
 
 const RoleGuard = ({ children, minRank, allowedRoles }: { children: React.ReactNode; minRank?: number; allowedRoles?: string[] }) => {
   const user = getStoredUser();
-  const rank = getRoleRankValue(user?.role);
+  const rank = getRoleRankValueLocal(user?.role);
   const role = (user?.role || '').toUpperCase();
   
   const hasRank = minRank !== undefined && rank >= minRank;
