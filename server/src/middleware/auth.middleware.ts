@@ -160,12 +160,19 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 export const authorize = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const userRole = (req as any).user?.role;
-    const normalized = normalizeRole(userRole);
-    const normalizedAllowed = allowedRoles.map((r) => normalizeRole(r));
+    const userRank = getRoleRank(userRole);
+    
+    // DEV bypass
+    if (normalizeRole(userRole) === 'DEV') return next();
 
-    if (normalized === 'DEV' || normalizedAllowed.includes(normalized)) {
+    // Map allowed roles to their required ranks
+    const allowedRanks = allowedRoles.map(r => getRoleRank(r));
+
+    if (allowedRanks.includes(userRank)) {
       return next();
     }
+    
+    console.warn(`[Auth] Access denied for role: ${userRole} (Rank: ${userRank}). Required ranks: ${allowedRanks.join(', ')}`);
     return res.status(403).json({ error: 'Access denied: insufficient permissions' });
   };
 };

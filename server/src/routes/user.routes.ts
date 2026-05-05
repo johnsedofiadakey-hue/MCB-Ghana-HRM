@@ -18,11 +18,11 @@ router.get('/me/team', getMyTeam);
 router.get('/supervisors', getSupervisors);
 router.get('/', requireRole(50), getAllEmployees);
 router.get('/:id', getEmployee);
-router.get('/:id/risk', requireRole(80), getUserRiskProfile);
-router.get('/:id/risk-profile', requireRole(80), getUserRiskProfile); // alias
+router.get('/:id/risk', authorize(['HR_OFFICER', 'HR_MANAGER', 'MD']), getUserRiskProfile);
+router.get('/:id/risk-profile', authorize(['HR_OFFICER', 'HR_MANAGER', 'MD']), getUserRiskProfile); // alias
 
-// Create (HR Manager / IT Manager / DEV only)
-router.post('/', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), validate(CreateUserSchema), createEmployee);
+// Create (HR Manager / IT Manager / MD only)
+router.post('/', authorize(['HR_MANAGER', 'IT_MANAGER', 'MD']), validate(CreateUserSchema), createEmployee);
 
 // Update
 // Allow self-edit; require rank 70+ to edit others
