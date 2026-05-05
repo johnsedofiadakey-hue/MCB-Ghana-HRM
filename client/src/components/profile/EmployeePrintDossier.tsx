@@ -42,7 +42,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
     const year = new Date().getFullYear();
 
     return (
-    return (
+
         <div className="hidden print:block bg-white text-slate-900 p-0 m-0 min-h-screen relative overflow-hidden font-sans">
             <style dangerouslySetInnerHTML={{ __html: `
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:ital,wght@0,900;1,900&display=swap');

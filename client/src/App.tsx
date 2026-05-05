@@ -458,7 +458,7 @@ const AppContent = () => {
             <Route path="/employees/history" element={<RoleGuard minRank={70}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/print/ids" element={<RoleGuard minRank={70}><PrintIDsPage /></RoleGuard>} />
-            <Route path="/assets" element={<AssetManagement /></Route>
+            <Route path="/assets" element={<AssetManagement />} />
             <Route path="/audit" element={<RoleGuard minRank={85}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
             <Route path="/settings" element={<RoleGuard minRank={85}><SettingsHub /></RoleGuard>} />

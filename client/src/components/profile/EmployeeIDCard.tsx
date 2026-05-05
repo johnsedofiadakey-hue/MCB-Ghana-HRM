@@ -9,7 +9,6 @@ const EmployeeIDCard = ({ employee }: { employee: any }) => {
     if (!employee) return null;
 
     return (
-    return (
         <div id="id-card-print-zone" className="hidden print:block bg-white text-slate-900 p-0 m-0 overflow-hidden" style={{ width: '85.6mm', height: '53.98mm', position: 'relative' }}>
              <style dangerouslySetInnerHTML={{ __html: `
                 @media print {
