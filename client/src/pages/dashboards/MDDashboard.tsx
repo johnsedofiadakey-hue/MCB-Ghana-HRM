@@ -234,8 +234,8 @@ const MDDashboard = () => {
           { icon: DollarSign, label: t('md_dashboard.run_payroll'), desc: t('md_dashboard.process_payroll'), href: '/payroll', color: 'var(--success)' },
           { icon: FileText, label: t('md_dashboard.audit_logs'), desc: t('md_dashboard.audit_trail'), href: '/audit', color: 'var(--warning)' },
           { icon: Bell, label: t('md_dashboard.announcements'), desc: t('md_dashboard.broadcast'), href: '/announcements', color: 'var(--accent)' },
-          { icon: Activity, label: t('md_dashboard.performance'), desc: t('md_dashboard.institutional_verdict'), href: '/reviews/final', color: 'var(--info)' },
-          { icon: Shield, label: t('md_dashboard.company_settings'), desc: t('md_dashboard.org_config'), href: '/settings', color: 'var(--primary)' },
+          { icon: BarChart3, label: "Strategic KPI Pulse", desc: "Institutional Performance Analytics", href: '/kpi/executive', color: 'var(--primary)' },
+          { icon: Shield, label: "Governance & Branding", desc: "Corporate Identity Control", href: '/settings', color: 'var(--primary)' },
         ].map((item, i) => (
           <Link key={i} to={item.href} className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all no-underline block">
             <div className="flex items-center justify-between mb-8">

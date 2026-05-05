@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Users, Target, ShieldCheck, AlertCircle, CheckCircle, PlusCircle, History } from 'lucide-react';
 import AssignKpiModal from '../components/AssignKpiModal';
@@ -39,6 +40,7 @@ const getRank = (role?: string): number => {
 };
 
 const TeamReview = () => {
+  const navigate = useNavigate();
   const currentUser = getStoredUser();
   const { t } = useTranslation();
   const canManageTeam = getRank(currentUser?.role) >= 60;
@@ -47,6 +49,7 @@ const TeamReview = () => {
   const [departments, setDepartments] = useState<any[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<string>(currentUser.departmentId?.toString() || '');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -63,15 +66,24 @@ const TeamReview = () => {
       const u = getStoredUser();
       if (!u?.id) { setEmployees([]); return; }
 
-      const [teamRes, mandateRes, deptRes] = await Promise.all([
+      const [teamRes, mandateRes, deptRes] = await Promise.allSettled([
         api.get('/team/list', { params: { supervisorId: u.id } }),
-        api.get('/kpis/mandates', { params: { departmentId: selectedDeptId || u.departmentId } }),
-        api.get('/departments')
+        api.get('/kpis/mandates', { params: { departmentId: selectedDeptId || u.departmentId }, _noRedirect: true } as any),
+        api.get('/departments', { _noRedirect: true } as any)
       ]);
 
-      const list = (Array.isArray(teamRes.data) ? teamRes.data : []) as any[];
-      setMandates(Array.isArray(mandateRes.data) ? mandateRes.data : []);
-      setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
+      const teamData = teamRes.status === 'fulfilled' ? teamRes.value.data : null;
+      const mandateData = mandateRes.status === 'fulfilled' ? mandateRes.value.data : [];
+      const deptData = deptRes.status === 'fulfilled' ? deptRes.value.data : [];
+
+      if (teamRes.status === 'rejected') {
+        setError('Telemetric Sync Failure: Reporting chain unreachable.');
+        return;
+      }
+
+      const list = (Array.isArray(teamData) ? teamData : []) as any[];
+      setMandates(Array.isArray(mandateData) ? mandateData : []);
+      setDepartments(Array.isArray(deptData) ? deptData : []);
 
       const mapped: Employee[] = list.map(emp => {
         const hasSheets = Array.isArray(emp.kpiSheets) && emp.kpiSheets.length;
@@ -206,14 +218,14 @@ const TeamReview = () => {
         {employees.length === 0 ? (
           <div className="col-span-full">
             <EmptyState 
-              title="No Team Members Found"
-              description="You do not have any direct reports assigned. Team targets can only be set for employees under your supervision."
-              icon={Users}
-              variant="slate"
+              title={error ? "Sync Failure" : "No Team Members Found"}
+              description={error ? "The performance node was unable to reach the central registry. Verify your connectivity and retry." : "You do not have any direct reports assigned. Team targets can only be set for employees under your supervision."}
+              icon={error ? AlertCircle : Users}
+              variant={error ? "purple" : "slate"}
               action={{
-                label: "View Labor Force",
-                onClick: () => window.location.href = '/employees',
-                icon: Users
+                label: error ? "Retry Sync" : "View Labor Force",
+                onClick: () => error ? fetchData() : navigate('/employees'),
+                icon: error ? History : Users
               }}
             />
           </div>

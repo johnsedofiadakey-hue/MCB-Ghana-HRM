@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, getDoc, getDocFromCache, getDocFromServer } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { debounce } from '../utils/performance';
 
 /**
  * A hook that syncs local state with a Firestore document for real-time persistence.
- * Useful for long forms (Employee Profile, Onboarding) to prevent data loss on refresh.
+ * Robust offline-first strategy with cache-first loading and graceful failure states.
  */
 export function usePersistentDraft<T>(collectionName: string, id: string, initialValue: T, sync = false) {
   const [data, setData] = useState<T>(initialValue);
@@ -18,71 +18,100 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
       return;
     }
 
-    setLoading(true);
+    let isMounted = true;
     const docRef = doc(db, collectionName, id);
-    
     const isPlaceholder = db.app.options.apiKey === 'PLACEHOLDER' || !db.app.options.apiKey;
-    
-    // 🛡️ Fail-safe Timeout: Unblock UI after 8 seconds if Firebase is hanging/offline
-    const timeout = setTimeout(() => {
-      setLoading(false);
-      if (!isPlaceholder) {
-        console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}.`);
-        console.info(`[Diagnostics] Please verify:
-          1. Network connectivity to Firestore.
-          2. VITE_FIREBASE_PROJECT_ID: "${db.app.options.projectId}"
-          3. Firestore Rules for collection "${collectionName}".
-          4. Environment variables are correctly injected if running in production.`);
-      }
-    }, 8000);
 
     if (isPlaceholder) {
-      clearTimeout(timeout);
       setLoading(false);
       return;
     }
 
-    getDoc(docRef)
-      .then((snap) => {
-        if (snap.exists()) {
-          setData(snap.data() as T);
+    // 🛡️ FAIL-SAFE TIMEOUT: Unblock UI quickly if network is hanging
+    let timeoutHandle: any;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutHandle = setTimeout(() => reject(new Error('TIMEOUT')), 2500);
+    });
+    
+    const loadData = async () => {
+      try {
+        // 1. Try CACHE first (Instant Load)
+        try {
+          const cachedSnap = await getDocFromCache(docRef);
+          if (cachedSnap.exists() && isMounted) {
+            setData(cachedSnap.data() as T);
+            setLoading(false);
+          }
+        } catch (cacheErr) {
+          // Cache miss is fine
         }
-      })
-      .catch((err) => {
-        // Only log if it's a real project error, not a placeholder/misconfig issue
-        if (!isPlaceholder) {
-           console.error('[Firebase Load Error]:', err);
-        }
-      })
-      .finally(() => {
-        clearTimeout(timeout);
-        setLoading(false);
-      });
 
-    // Real-time sync is now optional and disabled by default to prevent re-render loops in high-frequency forms
+        // 2. Try SERVER with a race against the safety timeout
+        try {
+          const snap = await Promise.race([
+            getDocFromServer(docRef),
+            timeoutPromise
+          ]) as any;
+
+          if (snap && snap.exists() && isMounted) {
+            setData(snap.data() as T);
+          }
+        } catch (raceErr: any) {
+          if (raceErr.message === 'TIMEOUT') {
+             console.info(`[Sync] Server fetch deferred for ${collectionName}/${id} (Using local/cached state).`);
+          } else {
+             throw raceErr;
+          }
+        }
+      } catch (err: any) {
+        const isOffline = err?.code === 'unavailable' || err?.message?.includes('offline');
+        if (!isOffline) console.error('[Firebase Load Error]:', err);
+      } finally {
+        if (isMounted) {
+          clearTimeout(timeoutHandle);
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    // Real-time sync
     if (sync) {
       const unsub = onSnapshot(docRef, (snap) => {
-        if (snap.exists()) {
+        if (snap.exists() && isMounted) {
           const remoteData = snap.data() as T;
           setData(remoteData);
         }
       }, (err) => {
         console.error('[Firebase Snapshot Error]:', err);
       });
-      return () => unsub();
+      return () => {
+        isMounted = false;
+        unsub();
+      };
     }
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutHandle);
+    };
   }, [collectionName, id, sync]);
 
-  // Debounced sync back to Firestore to prevent UI lag during rapid typing
+  // Debounced sync back to Firestore
   const [debouncedSync] = useState(() => 
     debounce(async (id: string, collectionName: string, newData: any) => {
       try {
         const docRef = doc(db, collectionName, id);
+        // Optimistic Merge
         await setDoc(docRef, { ...newData, updatedAt: new Date().toISOString() }, { merge: true });
-      } catch (err) {
-        console.error('[Firebase Sync Error]:', err);
+      } catch (err: any) {
+        const isOffline = err?.code === 'unavailable' || err?.message?.includes('offline');
+        if (!isOffline) {
+          console.error('[Firebase Sync Error]:', err);
+        }
       }
-    }, 1000) // 1 second debounce for drafts
+    }, 1000)
   );
 
   // Sync changes back to Firestore

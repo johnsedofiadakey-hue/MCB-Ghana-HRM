@@ -218,7 +218,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/dashboard" icon={LayoutDashboard} label={t('common.dashboard_label')} isCollapsed={isCollapsed} />
                 <NavItem to="/inbox" icon={Megaphone} label={t('common.inbox_label')} isCollapsed={isCollapsed} />
                 <NavItem to="/profile" icon={Users} label={t('common.profile_label')} isCollapsed={isCollapsed} />
-                <NavItem to="/attendance" icon={Clock} label={t('common.attendance_label')} isCollapsed={isCollapsed} />
+                {!isMD && <NavItem to="/attendance" icon={Clock} label={t('common.attendance_label')} isCollapsed={isCollapsed} />}
                 <NavItem to="/leave" icon={Calendar} label={t('common.leave_label')} isCollapsed={isCollapsed} />
                 <NavItem to="/finance" icon={Wallet} label={t('common.finance_label')} isCollapsed={isCollapsed} />
               </NavGroup>
@@ -253,8 +253,8 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 {(rank >= 85 || isHR) && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart_label')} isCollapsed={isCollapsed} />}
                 {(rank >= 85 || isHR) && !isMD && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment')} isCollapsed={isCollapsed} />}
                 <NavItem to="/policies" icon={Shield} label={t('common.policies')} isCollapsed={isCollapsed} />
-                {(rank >= 60 || isHR) && <NavItem to="/disciplinary" icon={AlertTriangle} label={t('common.disciplinary')} isCollapsed={isCollapsed} />}
-                {(rank >= 70 || isHR) && <NavItem to="/probation" icon={History} label={t('common.probation')} isCollapsed={isCollapsed} />}
+                {(rank >= 60 || isHR) && !isMD && <NavItem to="/disciplinary" icon={AlertTriangle} label={t('common.disciplinary')} isCollapsed={isCollapsed} />}
+                {(rank >= 70 || isHR) && !isMD && <NavItem to="/probation" icon={History} label={t('common.probation')} isCollapsed={isCollapsed} />}
                 {(rank >= 80 || isHR) && <NavItem to="/promotions" icon={Zap} label="Promotion Pipeline" isCollapsed={isCollapsed} />}
               </NavGroup>
  
@@ -267,10 +267,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />
                 <NavItem to="/holidays" icon={Calendar} label={t('common.holidays_label')} isCollapsed={isCollapsed} />
                 {(rank >= 85 || isHR) && !isMD && (
-                  <>
-                    <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding_label')} isCollapsed={isCollapsed} />
-                    <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding')} isCollapsed={isCollapsed} />
-                  </>
+                   <>
+                     <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding_label')} isCollapsed={isCollapsed} />
+                     <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding')} isCollapsed={isCollapsed} />
+                   </>
                 )}
               </NavGroup>
 
@@ -282,8 +282,8 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               )}
 
               {(isHR || isMD || isIT) && (
-                <NavGroup label={t('common.administration')} isCollapsed={isCollapsed}>
-                  <NavItem to="/settings" icon={Settings} label={t('common.admin_settings')} isCollapsed={isCollapsed} />
+                <NavGroup label={isMD ? "Strategic Governance" : t('common.administration')} isCollapsed={isCollapsed}>
+                  <NavItem to="/settings" icon={Settings} label={isMD ? "Governance & Branding" : t('common.admin_settings')} isCollapsed={isCollapsed} />
                   {isMD && (
                     <NavItem to="/enterprise" icon={Zap} label={t('common.enterprise_suite_label')} isCollapsed={isCollapsed} />
                   )}

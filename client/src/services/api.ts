@@ -131,6 +131,12 @@ api.interceptors.response.use(
     const originalRequest = error.config as (typeof error.config & { _retry?: boolean });
 
     if (error.response?.status === 401 && !originalRequest?._retry && !originalRequest.url?.includes('/auth/refresh')) {
+      // 🛡️ NO-REDIRECT GUARD: Allow components to handle their own 401s for non-critical data
+      if ((originalRequest as any)._noRedirect) {
+        console.warn(`[API Interceptor] 401 detected for ${originalRequest.url}, but redirection is suppressed via _noRedirect.`);
+        return Promise.reject(error);
+      }
+
       const refreshToken = storage.getItem(StorageKey.REFRESH_TOKEN, null);
       
       console.warn(`[API Interceptor] 401 detected for: ${originalRequest.url}. Attempting refresh...`);

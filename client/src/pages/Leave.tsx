@@ -89,19 +89,35 @@ const Leave = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [leavesRes, balanceRes, reliefRes, historyRes, holidaysRes] = await Promise.all([
+      const results = await Promise.allSettled([
         api.get('/leave/my'),
         api.get('/leave/balance'),
         api.get('/leave/my-relief-requests'),
-        api.get('/leave/handover/history'),
-        api.get('/holidays'),
+        api.get('/leave/handover/history', { _noRedirect: true } as any),
+        api.get('/holidays', { _noRedirect: true } as any),
       ]);
 
-      setLeaves(Array.isArray(leavesRes.data?.leaves) ? leavesRes.data.leaves : Array.isArray(leavesRes.data) ? leavesRes.data : []);
+      // Map results to variables, providing fallbacks for failed requests
+      const [leavesRes, balanceRes, reliefRes, historyRes, holidaysRes] = results.map(r => 
+        r.status === 'fulfilled' ? r.value : { data: null }
+      );
+
+      // Extract and set data with robust validation
+      const leavesData = leavesRes.data?.leaves || leavesRes.data || [];
+      setLeaves(Array.isArray(leavesData) ? leavesData : []);
+      
       setBalance(balanceRes.data || { leaveBalance: 0, leaveAllowance: 0 });
       setReliefRequests(Array.isArray(reliefRes.data) ? reliefRes.data : []);
       setHandoverHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
       setHolidays(Array.isArray(holidaysRes.data) ? holidaysRes.data : []);
+
+      // Log errors for failed background requests for diagnostics
+      results.forEach((r, idx) => {
+        if (r.status === 'rejected') {
+          const endpoints = ['/leave/my', '/leave/balance', '/leave/my-relief-requests', '/leave/handover/history', '/holidays'];
+          console.warn(`[Leave API Warning] Partial failure at ${endpoints[idx]}:`, r.reason);
+        }
+      });
 
       // BUG L4 FIX: Ensure rank thresholds are standardized (Rank 60+ for Team Hub)
       if (userRank >= 60) {

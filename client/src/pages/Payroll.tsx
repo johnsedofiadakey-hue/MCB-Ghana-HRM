@@ -415,6 +415,58 @@ const Payroll = () => {
                     >
                       <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 blur-[80px] rounded-full" />
                       
+                      {/* Executive Strategic Summary — Only for MD during Approval */}
+                      {selectedRun.status === 'PENDING_MD' && isMD && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mb-14 p-10 rounded-[2.5rem] bg-emerald-600/5 border-2 border-emerald-500/20 relative overflow-hidden"
+                        >
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full" />
+                          <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-8">
+                               <ShieldCheck size={24} className="text-emerald-500" />
+                               <div>
+                                 <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Executive Fiscal Pulse</h3>
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Pending your final authorization for disbursement</p>
+                               </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                               <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Total Cash Outflow</p>
+                                 <p className="text-2xl font-black text-emerald-600">{fmt(selectedRun.totalNet, selectedRun.items?.[0]?.currency, i18n.language)}</p>
+                               </div>
+                               <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Statutory Tax (PAYE)</p>
+                                 <p className="text-2xl font-black text-rose-500">{fmt(selectedRun.totalTax, selectedRun.items?.[0]?.currency, i18n.language)}</p>
+                               </div>
+                               <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Social Security (SSNIT)</p>
+                                 <p className="text-2xl font-black text-amber-500">{fmt(selectedRun.totalSsnit, selectedRun.items?.[0]?.currency, i18n.language)}</p>
+                               </div>
+                               <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Avg. Cost Per Head</p>
+                                 <p className="text-2xl font-black text-[var(--text-primary)]">{fmt(selectedRun.totalGross / (selectedRun.items?.length || 1), selectedRun.items?.[0]?.currency, i18n.language)}</p>
+                               </div>
+                            </div>
+
+                            <div className="mt-10 pt-8 border-t border-emerald-500/10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                               <p className="text-[11px] font-medium text-emerald-600/80 max-w-lg">
+                                  Review the departmental cost centers and statutory obligations below. Once authorized, the bank batch will be generated and funds released to the associate accounts.
+                               </p>
+                               <button 
+                                onClick={() => handleApprove(selectedRun.id)}
+                                className="px-12 py-5 rounded-2xl bg-emerald-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-emerald-600/30 hover:scale-[1.05] active:scale-95 transition-all flex items-center gap-3"
+                               >
+                                 <ShieldCheck size={20} />
+                                 Authorize Disbursement
+                               </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
                       <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-14 relative z-10">
                         <div>
                            <div className="flex items-center gap-3 mb-2">
@@ -458,10 +510,10 @@ const Payroll = () => {
                                )}
                                {selectedRun.status === 'PENDING_MD' && isMD && (
                                  <button 
-                                  onClick={() => handleApprove(selectedRun.id)}
-                                  className="px-8 h-[52px] rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-600/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                  disabled
+                                  className="px-8 h-[52px] rounded-2xl bg-emerald-600/20 text-emerald-600 font-black text-[10px] uppercase tracking-[0.2em] cursor-default opacity-60"
                                  >
-                                   Final MD Authorization
+                                   Scroll to Authorize
                                  </button>
                                )}
 

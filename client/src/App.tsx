@@ -90,7 +90,16 @@ const PageLoader = () => (
 
 const ProtectedRoute = () => {
   const token = storage.getItem(StorageKey.AUTH_TOKEN, null);
-  if (!token) return <Navigate to="/" replace />;
+  // 🛡️ STRUCTURAL GUARD: Ensure token exists and follows JWT pattern (3 segments)
+  const isValidFormat = typeof token === 'string' && token.split('.').length === 3;
+  
+  if (!token || !isValidFormat) {
+    if (token) {
+      console.warn('[Security Gateway] Invalid token format detected. Purging session.');
+      storage.clearSession();
+    }
+    return <Navigate to="/" replace />;
+  }
   return <Layout />;
 };
 

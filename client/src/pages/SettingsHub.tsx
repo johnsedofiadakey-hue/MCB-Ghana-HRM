@@ -324,13 +324,16 @@ const SettingsHub = () => {
     { id: 'branding', label: t('settings.branding'), icon: Palette, description: t('settings.branding_description', 'Visual identity, logos, and theme presets.') },
     { id: 'id_cards', label: 'Personnel ID Cards', icon: ShieldCheck, description: 'Manage the design, orientation, and security features of physical employee tags.' },
     { id: 'localization', label: t('settings.localization'), icon: Globe, description: t('settings.localization_description', 'Language, currency, and regional formats.') },
-    { id: 'security', label: t('settings.security'), icon: Shield, description: t('settings.security_description', 'Authentication, roles, and access control.') },
-    { id: 'notifications', label: t('settings.notifications'), icon: Bell, description: t('settings.notifications_description', 'Email and system alert preferences.') },
-    { id: 'billing', label: t('settings.billing'), icon: CreditCard, description: t('settings.billing_description', 'Subscription plans and payment history.') },
-    { id: 'data', label: t('settings.data_management'), icon: Download, description: t('settings.data_description', 'Export history, backups, and data privacy.') },
-    { id: 'integrations', label: t('settings.integrations', 'API & Integrations'), icon: Sparkles, description: t('settings.integrations_desc', 'API Keys, Webhooks, and connected platforms.') },
     { id: 'payroll', label: t('payroll.settings', 'Payroll Settings'), icon: CreditCard, description: t('payroll.settings_desc', 'Configure SSNIT rates, PAYE tax bands, and global payroll rules.') },
-    { id: 'infrastructure', label: t('settings.infrastructure', 'Hardware & Nodes'), icon: Server, description: t('settings.infrastructure_desc', 'Connect QR/NFC devices and manage institutional hardware nodes.') },
+    // 🛡️ ADMINISTRATIVE DELEGATION: Hide technical operational tabs from MD
+    ...((getRoleRankValue(currentUser?.role) >= 95) ? [] : [
+      { id: 'security', label: t('settings.security'), icon: Shield, description: t('settings.security_description', 'Authentication, roles, and access control.') },
+      { id: 'notifications', label: t('settings.notifications'), icon: Bell, description: t('settings.notifications_description', 'Email and system alert preferences.') },
+      { id: 'billing', label: t('settings.billing'), icon: CreditCard, description: t('settings.billing_description', 'Subscription plans and payment history.') },
+      { id: 'data', label: t('settings.data_management'), icon: Download, description: t('settings.data_description', 'Export history, backups, and data privacy.') },
+      { id: 'integrations', label: t('settings.integrations', 'API & Integrations'), icon: Sparkles, description: t('settings.integrations_desc', 'API Keys, Webhooks, and connected platforms.') },
+      { id: 'infrastructure', label: t('settings.infrastructure', 'Hardware & Nodes'), icon: Server, description: t('settings.infrastructure_desc', 'Connect QR/NFC devices and manage institutional hardware nodes.') },
+    ] as any[])
   ];
 
   return (
