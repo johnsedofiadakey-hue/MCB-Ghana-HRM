@@ -5,9 +5,9 @@ export enum RoleRank {
     DIRECTOR = 88,
     FINANCE_MANAGER = 87,
     IT_MANAGER = 85,
-    HR_OFFICER = 75,
-    MANAGER = 70,
-    SUPERVISOR = 60,
+    HR_OFFICER = 80,
+    MANAGER = 75,
+    SUPERVISOR = 65,
     STAFF = 50,
     CASUAL = 40
 }
@@ -29,5 +29,14 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     HR_ADMIN: RoleRank.HR_MANAGER,
     IT_ADMIN: RoleRank.IT_MANAGER,
     EMPLOYEE: RoleRank.STAFF,
-    SUPER_ADMIN: RoleRank.MD
+    SUPER_ADMIN: RoleRank.MD,
+    
+    // Alias Support for DB display roles
+    'MANAGING DIRECTOR': RoleRank.MD,
+    'SYSTEM DEVELOPER': RoleRank.DEV,
+    'HR OFFICER': RoleRank.HR_OFFICER,
+    'HR MANAGER': RoleRank.HR_MANAGER,
+    'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,
+    'IT MANAGER': RoleRank.IT_MANAGER,
+    'IT ADMIN': RoleRank.IT_MANAGER,
 };
