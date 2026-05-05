@@ -43,9 +43,9 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1];
-  } 
-  
-  // ── S1 SECURITY FIX: Removed query string token acceptance (token must be in header) ──
+  } else if (req.query.token) {
+    token = req.query.token as string;
+  }
 
   if (!token) {
     console.warn(`[Auth Middleware] No token provided for: ${req.method} ${req.path}`);

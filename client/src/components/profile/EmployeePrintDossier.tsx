@@ -58,69 +58,77 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             <div className="print-dossier">
             {/* Header / Brand Matrix */}
             <div className="flex justify-between items-start border-b-4 border-slate-900 pb-12 mb-12 relative z-10">
-                <div className="flex gap-10 items-start">
-                    {/* Branding */}
-                    <div className="space-y-6">
-                        {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) && (
-                            <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="h-16 w-auto object-contain" />
-                        )}
-                        <div className="w-40 h-52 rounded-2xl overflow-hidden bg-slate-50 border-4 border-slate-100 shadow-xl">
+                <div className="space-y-6">
+                    {/* Company Details (Left) */}
+                    <div className="space-y-1">
+                        <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">{settings?.companyName || 'MCB-HRM GHANA'}</h2>
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{settings?.address || 'Corporate Headquarters'}</p>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{settings?.city || ''}, {settings?.country || ''}</p>
+                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest mt-2">
+                                Phone: {settings?.phone || 'N/A'} <span className="mx-2 opacity-20">|</span> Email: {settings?.email || 'N/A'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-10 items-start pt-8">
+                        <div className="w-36 h-48 rounded-2xl overflow-hidden bg-slate-50 border-4 border-slate-100 shadow-xl shrink-0">
                             <img 
                                 src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
                                 alt={employee.fullName} 
                                 className="w-full h-full object-cover" 
                             />
                         </div>
-                    </div>
-
-                    <div className="space-y-8 pt-4">
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black tracking-[0.5em] text-slate-400 uppercase leading-none">Official Personnel Dossier</p>
-                            <h1 className="text-6xl font-black text-slate-900 tracking-tighter uppercase leading-none print-serif italic">{employee.fullName}</h1>
-                        </div>
-                        
-                        <div className="flex flex-wrap items-center gap-6">
-                            <div className="flex items-center gap-3">
-                                <Briefcase className="text-slate-400" size={18} />
-                                <span className="text-xl font-bold text-slate-700">{employee.jobTitle}</span>
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black tracking-[0.5em] text-slate-400 uppercase leading-none">Official Personnel Dossier</p>
+                                <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none print-serif italic">{employee.fullName}</h1>
                             </div>
-                            <span className="w-2 h-2 rounded-full bg-slate-200" />
-                            <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white px-4 py-2 bg-slate-900 rounded-xl">
-                                {employee.employeeCode || `MEM-${employee.id.slice(0, 8).toUpperCase()}`}
-                            </span>
-                        </div>
+                            
+                            <div className="flex flex-wrap items-center gap-6">
+                                <div className="flex items-center gap-3">
+                                    <Briefcase className="text-slate-400" size={18} />
+                                    <span className="text-xl font-bold text-slate-700">{employee.jobTitle}</span>
+                                </div>
+                                <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white px-4 py-2 bg-slate-900 rounded-xl">
+                                    {employee.employeeCode || `MEM-${employee.id.slice(0, 8).toUpperCase()}`}
+                                </span>
+                            </div>
 
-                        {/* Professional Summary - NEW */}
-                        <div className="max-w-xl">
-                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                <BookOpen size={12} className="text-[var(--primary)]" />
-                                Professional Profile Summary
-                            </p>
-                            <p className="text-sm leading-relaxed text-slate-600 font-medium italic">
-                                {employee.fullName} is a verified member of the {employee.department || employee.departmentObj?.name || 'Operations'} unit, 
-                                currently serving as {employee.jobTitle}. Since joining on {new Date(employee.joinDate).toLocaleDateString(undefined, { dateStyle: 'long' })}, 
-                                they have maintained a status of {employee.status}. This dossier contains the comprehensive professional, financial, 
-                                and performance records as of {new Date().toLocaleDateString(undefined, { dateStyle: 'full' })}.
-                            </p>
+                            <div className="max-w-md">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                    <BookOpen size={10} className="text-slate-900" />
+                                    Profile Summary
+                                </p>
+                                <p className="text-[13px] leading-relaxed text-slate-600 font-medium italic">
+                                    Verified member of the {employee.department || employee.departmentObj?.name || 'Operations'} unit. 
+                                    Joined on {new Date(employee.joinDate).toLocaleDateString(undefined, { dateStyle: 'long' })}.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="text-right space-y-6">
-                    <div className="inline-flex flex-col items-end">
+                {/* Logo & Record Verification (Right) */}
+                <div className="text-right flex flex-col items-end gap-10">
+                    {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) && (
+                        <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="h-20 w-auto object-contain" />
+                    )}
+                    
+                    <div className="space-y-4">
                         <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-emerald-50 border-2 border-emerald-500/20 text-emerald-700">
                             <ShieldCheck size={20} />
                             <div className="text-left">
                                 <p className="text-[10px] font-black uppercase tracking-widest leading-none">Authenticated</p>
-                                <p className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">System Verified Record</p>
+                                <p className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">System Verified</p>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div className="pt-4">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Generated On</p>
-                        <p className="text-[13px] font-black text-slate-900">{new Date().toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
-                        <p className="text-[9px] font-bold text-slate-400 opacity-60 uppercase tracking-widest mt-1">Ref: {employee.id.slice(0, 14).toUpperCase()}</p>
+                        
+                        <div className="pt-2">
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Generated On</p>
+                            <p className="text-[13px] font-black text-slate-900">{new Date().toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
+                            <p className="text-[9px] font-bold text-slate-400 opacity-60 uppercase tracking-widest mt-1">Ref: {employee.id.slice(0, 14).toUpperCase()}</p>
+                        </div>
                     </div>
                 </div>
             </div>
