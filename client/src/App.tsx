@@ -511,7 +511,7 @@ const AppContent = () => {
 };
 
 export default function App() {
-  // BUILD_ID: 2026-04-10_18:18Z - FORCE_IDENTITY_SYNC
+  // BUILD_ID: 2026-05-05_14:40Z - UI_STABILITY_FINAL
   return (
     <PageErrorBoundary>
       <ThemeProvider>
