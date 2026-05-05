@@ -171,14 +171,14 @@ export const createEmployee = async (req: Request, res: Response) => {
     const actorId = userReq.id;
 
     // Only HR/MD (>= 85) can set salary/currency on create
-    // STRICT GUARD: Only MD (Rank 95) can create Administrative roles (Rank 90+)
+    // GLOBAL CONTROLLER ACCESS: HR/IT Managers (Rank 85+) can create all roles.
     const targetRank = getRoleRank(req.body.role);
     if (actorRank < 85) {
       delete req.body.salary;
       delete req.body.currency;
     }
-    if (actorRank < 95 && targetRank >= 90) {
-        return res.status(403).json({ error: 'Access denied: Only the MD can create administrative roles (HR/MD).' });
+    if (actorRank < 85 && targetRank >= 85 && actorRole !== 'DEV') {
+        return res.status(403).json({ error: 'Access denied: Only managers can create administrative accounts.' });
     }
 
     const tempPassword = req.body.password || 'SecureInit!';
@@ -422,15 +422,24 @@ export const updateEmployee = async (req: Request, res: Response) => {
       delete req.body.salary;
       delete req.body.currency;
     }
-    // Only MD/DEV (>= 95) can assign roles higher than 90 (MD/HR)
+    // 🛡️ GLOBAL CONTROLLER ACCESS (IT/HR Managers >= 85)
+    // They are fully responsible for the app and can manage all roles including HR_MANAGER.
+    // However, the MD account (Rank 95) is protected from non-DEV status/role changes.
     const targetRank = req.body.role ? getRoleRank(req.body.role) : undefined;
     const currentTargetRank = getRoleRank(targetUser.role);
     
-    if (actorRank < 95 && actorRole !== 'DEV') {
-      // Protect HR Manager (90) and MD (95)
-      if ((targetRank && targetRank >= 90) || currentTargetRank >= 90) {
-          return res.status(403).json({ message: 'Access denied: Only the MD can manage administrative roles (HR/MD).' });
+    if (actorRank < 85 && actorRole !== 'DEV') {
+      // Protect Administrative Roles from lower ranks (staff, supervisors, etc)
+      if ((targetRank && targetRank >= 85) || currentTargetRank >= 85) {
+          return res.status(403).json({ message: 'Access denied: Only managers can manage administrative roles.' });
       }
+    }
+
+    // 🛡️ MD PROTECTION: Only the MD or DEV can change the role/status of the MD account
+    if (currentTargetRank >= 95 && actorId !== targetId && actorRole !== 'DEV') {
+       if (req.body.role || req.body.status) {
+         return res.status(403).json({ message: 'Access denied: The Managing Director account can only be modified by the MD or a System Architect.' });
+       }
     }
 
     // 🛡️ Validate SubUnit/Department pairing

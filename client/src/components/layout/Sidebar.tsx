@@ -261,7 +261,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               {!isMD && (
                 <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
                   {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
-                  {(isIT || isHR) && (
+                  {(isIT || isMD) && (
                     <NavItem to="/it-admin" icon={Database} label={t('common.it_registries')} isCollapsed={isCollapsed} />
                   )}
                   <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
