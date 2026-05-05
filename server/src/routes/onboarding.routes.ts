@@ -8,9 +8,9 @@ router.use(authenticate);
 router.get('/my', getMyOnboarding);
 router.post('/task/complete', completeTask);
 
-router.get('/templates', requireRole(85), getTemplates);
-router.post('/templates', requireRole(85), createTemplate);
-router.post('/start', requireRole(85), startOnboarding);
-router.get('/all', requireRole(85), getAllOnboardingSessions);
+router.get('/templates', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), getTemplates);
+router.post('/templates', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), createTemplate);
+router.post('/start', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), startOnboarding);
+router.get('/all', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), getAllOnboardingSessions);
 
 export default router;
