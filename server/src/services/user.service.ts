@@ -179,7 +179,10 @@ export const getUserById = async (organizationId: string, id: string) => {
             },
             historyLogs: {
                 orderBy: { createdAt: 'desc' },
-                include: { createdBy: { select: { fullName: true } } }
+                include: { 
+                    createdBy: { select: { fullName: true } },
+                    loggedBy: { select: { fullName: true } }
+                }
             },
             appraisalPackets: {
                 include: { 
@@ -244,8 +247,15 @@ export const getAllUsers = async (organizationId: string | null, filter?: { depa
 export const updateUser = async (
     organizationId: string,
     id: string,
-    data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number | null, password?: string }
+    data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number | null, password?: string },
+    actorId?: string
 ) => {
+    // 🛡️ Fetch current state for milestone tracking
+    const oldUser = await prisma.user.findUnique({ 
+        where: { id },
+        include: { departmentObj: { select: { name: true } } }
+    });
+
     // Exclude password from direct update here usually
     const { password, passwordHash, department, departmentId, email, ...safeData } = data as any;
 
@@ -384,6 +394,57 @@ export const updateUser = async (
                 data: { effectiveTo: new Date() }
             });
         }
+    }
+
+    // 🛡️ LOG PROFESSIONAL MILESTONES (If actorId provided)
+    if (actorId && oldUser) {
+        const logs: any[] = [];
+        const logData = { organizationId, employeeId: id, loggedById: actorId, severity: 'INFO' };
+
+        // 1. Role Change (Promotion/Demotion)
+        if (safeData.role && safeData.role !== oldUser.role) {
+            const oldRank = getRankFromRole(oldUser.role);
+            const newRank = getRankFromRole(safeData.role);
+            const type = newRank > oldRank ? 'PROMOTION' : newRank < oldRank ? 'DEMOTION' : 'REASSIGNMENT';
+            logs.push(prisma.employeeHistory.create({
+                data: {
+                    ...logData,
+                    title: `Role Change: ${type}`,
+                    description: `Employment role updated from ${oldUser.role} to ${safeData.role}.`,
+                    change: `${oldUser.role} -> ${safeData.role}`,
+                    type
+                }
+            }));
+        }
+
+        // 2. Job Title Change
+        if (safeData.jobTitle && safeData.jobTitle !== oldUser.jobTitle) {
+            logs.push(prisma.employeeHistory.create({
+                data: {
+                    ...logData,
+                    title: 'Job Title Update',
+                    description: `Official job title changed from "${oldUser.jobTitle}" to "${safeData.jobTitle}".`,
+                    change: `${oldUser.jobTitle} -> ${safeData.jobTitle}`,
+                    type: 'REASSIGNMENT'
+                }
+            }));
+        }
+
+        // 3. Department Change
+        if (safeData.departmentId !== undefined && safeData.departmentId !== oldUser.departmentId) {
+            const newDept = safeData.departmentId ? await prisma.department.findUnique({ where: { id: safeData.departmentId }, select: { name: true } }) : null;
+            logs.push(prisma.employeeHistory.create({
+                data: {
+                    ...logData,
+                    title: 'Departmental Reassignment',
+                    description: `Transferred from ${oldUser.departmentObj?.name || 'Headquarters'} to ${newDept?.name || 'Headquarters'}.`,
+                    change: `${oldUser.departmentObj?.name || 'Headquarters'} -> ${newDept?.name || 'Headquarters'}`,
+                    type: 'REASSIGNMENT'
+                }
+            }));
+        }
+
+        if (logs.length > 0) await Promise.all(logs);
     }
 
     return updatedUser;

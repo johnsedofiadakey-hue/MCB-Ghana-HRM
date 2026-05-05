@@ -36,7 +36,7 @@ const HistoryLog: React.FC<HistoryLogProps> = ({ logs, loading }) => {
                                     </div>
                                     <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{log.description}</p>
                                     <div className="pt-2 flex flex-wrap items-center gap-2 text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
-                                        <span className="bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded">By: {log.createdBy?.fullName || 'System'}</span>
+                                        <span className="bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded">By: {log.createdBy?.fullName || log.loggedBy?.fullName || 'System'}</span>
                                         <span className="hidden sm:inline">•</span>
                                         <span className="bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded">Type: {log.type || 'General'}</span>
                                     </div>

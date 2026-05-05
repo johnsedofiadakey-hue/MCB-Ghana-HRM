@@ -52,14 +52,22 @@ const EMPTY_FORM = {
   biometricId: ''
 };
 
-const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => (
-  user?.avatarUrl
-    ? <img src={user.avatarUrl} alt={user.fullName} className={cn(`w-${size} h-${size} rounded-2xl object-cover ring-4 ring-[var(--border-subtle)]/30 shadow-xl`)} />
-    : <div className={cn(`w-${size} h-${size} rounded-2xl flex items-center justify-center text-[var(--text-inverse)] font-black flex-shrink-0 shadow-2xl transition-transform group-hover:scale-105`)}
+const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => {
+  const sizeClasses: Record<number, string> = {
+    10: 'w-10 h-10',
+    12: 'w-12 h-12',
+    16: 'w-16 h-16',
+    32: 'w-32 h-32'
+  };
+  const sizeClass = sizeClasses[size] || 'w-12 h-12';
+
+  return user?.avatarUrl
+    ? <img src={user.avatarUrl} alt={user.fullName} className={cn(sizeClass, "rounded-2xl object-cover ring-4 ring-[var(--border-subtle)]/30 shadow-xl")} />
+    : <div className={cn(sizeClass, "rounded-2xl flex items-center justify-center text-[var(--text-inverse)] font-black flex-shrink-0 shadow-2xl transition-transform group-hover:scale-105")}
       style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', fontSize: size * 1.8 }}>
       {(user?.fullName || '?')[0]}
-    </div>
-);
+    </div>;
+};
 
 const FormField = ({ label, type = 'text', required = false, value, onChange, children, placeholder, description }: any) => (
   <div className="space-y-3">
@@ -79,7 +87,9 @@ export default function EmployeeManagement() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -145,8 +155,21 @@ export default function EmployeeManagement() {
   }, [form, modal]);
 
 
+  const fetchMetadata = useCallback(async () => {
+    try {
+      const [supRes, depRes] = await Promise.all([
+        api.get('/employees/supervisors'),
+        api.get('/departments')
+      ]);
+      setSupervisors(Array.isArray(supRes.data) ? supRes.data : []);
+      setDepartments(Array.isArray(depRes.data) ? depRes.data : []);
+    } catch (e) {
+      console.error('[Metadata Sync Failed]', e);
+    }
+  }, []);
+
   const fetchAll = useCallback(async (isAppend = false) => {
-    setLoading(true);
+    if (!isAppend) setLoading(true);
     try {
       const take = 50;
       const skip = isAppend ? employees.length : 0;
@@ -159,24 +182,23 @@ export default function EmployeeManagement() {
       params.append('skip', String(skip));
 
       const url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params.toString()}`;
-      
-      const [empRes, supRes, depRes] = await Promise.all([
-        api.get(url),
-        api.get('/employees/supervisors'),
-        api.get('/departments')
-      ]);
+      const empRes = await api.get(url);
       
       const newEmployees = Array.isArray(empRes.data) ? empRes.data : [];
       setEmployees(prev => isAppend ? [...prev, ...newEmployees] : newEmployees);
       setHasMore(newEmployees.length === take);
-      
-      setSupervisors(Array.isArray(supRes.data) ? supRes.data : []);
-      setDepartments(Array.isArray(depRes.data) ? depRes.data : []);
     } catch (e) { 
         console.error(e);
         toast.error(t('common.error_sync'));
-    } finally { setLoading(false); }
+    } finally { 
+        setLoading(false); 
+        setIsInitialLoading(false);
+    }
   }, [activeTab, search, filterRole, filterStatus, employees.length, t]);
+
+  useEffect(() => {
+    fetchMetadata();
+  }, [fetchMetadata]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -186,7 +208,8 @@ export default function EmployeeManagement() {
   }, [search, filterRole, filterStatus, activeTab]);
 
   const openEdit = async (emp: any) => {
-    setLoading(true);
+    setModal('edit');
+    setModalLoading(true);
     try {
       const res = await api.get(`/employees/${emp.id}`);
       const fullEmp = res.data;
@@ -216,11 +239,11 @@ export default function EmployeeManagement() {
         biometricId: fullEmp.biometricId || ''
       });
       setModalTab('identity');
-      setModal('edit');
     } catch (err) {
       toast.error(t('employees.alerts.fetch_error'));
+      setModal(null);
     } finally {
-      setLoading(false);
+      setModalLoading(false);
     }
   };
 
@@ -487,7 +510,19 @@ export default function EmployeeManagement() {
         )}
       </AnimatePresence>
 
-      {loading ? (
+      {/* Background Sync Indicator */}
+      {loading && !isInitialLoading && (
+        <div className="fixed top-24 left-0 right-0 h-1 bg-[var(--primary)]/10 z-[60]">
+          <motion.div 
+            initial={{ width: '0%' }}
+            animate={{ width: '100%' }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="h-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]" 
+          />
+        </div>
+      )}
+
+      {isInitialLoading ? (
         <div className="py-40 flex flex-col items-center justify-center gap-6">
           <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">Synchronizing Personnel Ledger</p>
@@ -608,12 +643,12 @@ export default function EmployeeManagement() {
                                     className="w-5 h-5 rounded-lg border-2 border-[var(--border-subtle)] bg-[var(--bg-card)] checked:bg-[var(--primary)] checked:border-[var(--primary)] transition-all cursor-pointer appearance-none flex items-center justify-center after:content-['✓'] after:text-white after:text-[10px] after:hidden checked:after:block"
                                 />
                              </th>
-                             <th className="px-4">{t('employees.personnel')}</th>
-                            <th>{t('employees.rank_dept')}</th>
-                            <th>{t('employees.operational_status')}</th>
-                            <th className="text-right px-8">{t('common.actions')}</th>
-                         </tr>
-                      </thead>
+                             <th className="px-4 text-left min-w-[250px]">{t('employees.personnel')}</th>
+                             <th className="text-left min-w-[200px]">{t('employees.rank_dept')}</th>
+                             <th className="text-left min-w-[150px]">{t('employees.operational_status')}</th>
+                             <th className="text-right px-8 w-32">{t('common.actions')}</th>
+                          </tr>
+                       </thead>
                       <tbody className="divide-y divide-[var(--border-subtle)]/50">
                           {filtered.map((emp) => (
                              <tr key={emp.id} className={cn(
@@ -733,12 +768,13 @@ export default function EmployeeManagement() {
                  </div>
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); handleSave(form); }} id="emp-form" className="p-10 overflow-y-auto custom-scrollbar flex-1 space-y-12">
-                 {(modal === 'create' && draftLoading) && (
-                    <div className="absolute inset-0 bg-[var(--bg-card)]/50 backdrop-blur-sm z-[110] flex items-center justify-center">
-                        <Loader2 className="animate-spin text-[var(--primary)]" size={40} />
+              <form onSubmit={(e) => { e.preventDefault(); handleSave(form); }} id="emp-form" className="p-10 overflow-y-auto custom-scrollbar flex-1 space-y-12 relative">
+                 {(modal === 'create' && draftLoading) || modalLoading ? (
+                    <div className="absolute inset-0 bg-[var(--bg-card)]/50 backdrop-blur-sm z-[110] flex flex-col items-center justify-center gap-4">
+                        <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">Fetching Personnel Dossier</p>
                     </div>
-                 )}
+                 ) : null}
 
                  {error && <div className="px-5 py-4 rounded-2xl bg-[var(--error)]/10 border border-[var(--error)]/20 text-[var(--error)] text-[11px] font-black uppercase tracking-widest">{error}</div>}
 

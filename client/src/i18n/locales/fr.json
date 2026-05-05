@@ -36,8 +36,8 @@
     "administration": "Admin",
     "my_department": "Mon Département",
     "announcements": "Annonces",
-    "dept_kpis": "Objectifs Dept",
-    "strategic_goals": "Objectifs Principaux",
+    "dept_kpis": "KPI de Département",
+    "strategic_goals": "Objectifs Stratégiques",
     "admin_settings": "Paramètres Admin",
     "company_settings": "Paramètres Entreprise",
     "audit_logs": "Journaux Système",
@@ -107,11 +107,11 @@
       "dec": "Décembre"
     },
     "all_departments": "Tous les Départements",
-    "departments_label": "Unités & Équipes",
-    "employees_label": "Registre du Personnel",
+    "departments_label": "Départements",
+    "employees_label": "Employés",
     "leave_label": "Congés",
     "performance_label": "Performance",
-    "onboarding_label": "Nouveaux Arrivants",
+    "onboarding_label": "Intégration",
     "holidays_label": "Jours Fériés",
     "payroll_label": "Paie",
     "dashboard_label": "Tableau de Bord",
@@ -150,9 +150,9 @@
   },
   "department_details": {
     "no_manager": "Pas de Chef",
-    "members": "Personnel",
+    "members": "Employés",
     "sub_units": "Unités",
-    "team": "Équipe",
+    "team": "Département",
     "no_found": "Aucun trouvé",
     "start_creating": "Commencez par ajouter un département.",
     "manage_team": "Gestion de l'Équipe",
@@ -167,7 +167,7 @@
     "assign_prompt": "En attente d'assignation du chef"
   },
   "DEPARTMENTS": {
-    "MEMBERS": "Membres du Personnel",
+    "MEMBERS": "Membres du Département",
     "CREATE_UNIT": "Ajouter une Unité",
     "UNIT_NAME": "Nom de l'Unité",
     "UNIT_MANAGER": "Chef d'Unité"
@@ -190,8 +190,8 @@
     "delete_confirm": "Voulez-vous vraiment supprimer ce département ?"
   },
   "employees": {
-    "title": "Liste du Personnel",
-    "subtitle": "Gérer tous les employés",
+    "title": "Employés",
+    "subtitle": "Gestion du Personnel d'Entreprise",
     "search_placeholder": "Chercher un employé...",
     "deploy_button": "Ajouter",
     "view_dossier": "Voir Profil",
@@ -246,8 +246,8 @@
     "abort": "Annuler",
     "execute_deploy": "ENREGISTRER",
     "commit_dossier": "SAUVEGARDER",
-    "active_personnel": "Personnel Actif",
-    "archived_personnel": "Anciens Employés",
+    "active_personnel": "Employés Actifs",
+    "archived_personnel": "Employés Archivés",
     "all_ranks": "Tous les Rôles",
     "all_statuses": "Tous les Statuts",
     "roles": {
@@ -572,7 +572,7 @@
   },
   "payroll": {
     "title": "Paie",
-    "subtitle": "Gérer les salaires et les bulletins",
+    "subtitle": "Gérer la rémunération de l'entreprise",
     "run_payroll": "Lancer la Paie",
     "fiscal_cycles": "Périodes de Paie",
     "personal_ledger": "Mes Bulletins",
@@ -593,7 +593,7 @@
     "cycle_status": "STATUT : {{status}}",
     "authorize": "Approuver",
     "void": "Annuler",
-    "personnel_ledger_count": "Bulletins Staff",
+    "personnel_ledger_count": "Employés Payés",
     "gross_liability": "Total Brut",
     "net_disbursal_summary": "Total Net",
     "registry_title": "Fiches de Paie",

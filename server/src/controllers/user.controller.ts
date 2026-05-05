@@ -453,7 +453,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
       }
     }
 
-    const user = await userService.updateUser(organizationId, targetId, req.body);
+    const user = await userService.updateUser(organizationId, targetId, req.body, userReq.id);
     const { passwordHash, ...safe } = user;
     await logAction(actorId, 'EMPLOYEE_UPDATED', 'User', targetId, { fields: Object.keys(req.body) }, req.ip);
     res.json(withDepartment(getSafeUser(safe, actorRole)));
@@ -681,7 +681,7 @@ export const uploadImage = async (req: Request, res: Response) => {
 
     if (!publicUrl) return res.status(400).json({ message: 'No image provided.' });
 
-    await userService.updateUser(organizationId, targetId, { avatarUrl: publicUrl } as any);
+    await userService.updateUser(organizationId, targetId, { avatarUrl: publicUrl } as any, userReq.id);
     await logAction(actorId, 'AVATAR_UPDATED', 'User', targetId, {}, req.ip);
     res.json({ url: publicUrl, message: 'Avatar updated successfully' });
   } catch (err: any) {
@@ -713,7 +713,7 @@ export const uploadSignature = async (req: Request, res: Response) => {
 
     // 🗑️ DELETION LOGIC: If 'none', clear the signature
     if (req.body.image === 'none') {
-      await userService.updateUser(organizationId, targetId, { signatureUrl: null } as any);
+      await userService.updateUser(organizationId, targetId, { signatureUrl: null } as any, userReq.id);
       await logAction(actorId, 'SIGNATURE_DELETED', 'User', targetId, {}, req.ip);
       return res.json({ message: 'Signature deleted successfully', url: null });
     }
@@ -738,7 +738,7 @@ export const uploadSignature = async (req: Request, res: Response) => {
       publicUrl = `data:image/webp;base64,${webpBuffer.toString('base64')}`;
     }
 
-    await userService.updateUser(organizationId, targetId, { signatureUrl: publicUrl } as any);
+    await userService.updateUser(organizationId, targetId, { signatureUrl: publicUrl } as any, userReq.id);
     await logAction(actorId, 'SIGNATURE_UPDATED', 'User', targetId, {}, req.ip);
     res.json({ url: publicUrl, message: 'Digital signature updated successfully' });
   } catch (err: any) {

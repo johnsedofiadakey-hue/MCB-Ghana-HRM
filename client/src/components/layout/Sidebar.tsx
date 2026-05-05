@@ -258,7 +258,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/policies" icon={Shield} label={t('common.policies')} isCollapsed={isCollapsed} />
                 {(isHR || isMD) && <NavItem to="/disciplinary" icon={AlertTriangle} label={t('common.disciplinary')} isCollapsed={isCollapsed} />}
                 {(isHR || isMD) && <NavItem to="/probation" icon={History} label={t('common.probation')} isCollapsed={isCollapsed} />}
-                {(isHR || isMD) && <NavItem to="/promotions" icon={Zap} label="Promotion Pipeline" isCollapsed={isCollapsed} />}
+                {(isHR || isMD) && <NavItem to="/promotions" icon={Zap} label={t('common.promotions_label', 'Promotions')} isCollapsed={isCollapsed} />}
               </NavGroup>
  
               {!isMD && (
