@@ -54,6 +54,10 @@ async function main() {
     { name: 'Quality Control' },
     { name: 'Sales & Marketing' },
     { name: 'HR & Administration' },
+    { name: 'Finance & Accounts' },
+    { name: 'IT & Infrastructure' },
+    { name: 'Research & Development' },
+    { name: 'Procurement & Sourcing' }
   ];
 
   const deptMap: Record<string, any> = {};
@@ -73,9 +77,12 @@ async function main() {
   const mdPasswordHashFixed = await hash('unlockme');
   await prisma.user.upsert({
     where: { email: 'md@mcbauchemie.com' },
-    update: {},
+    update: {
+      fullName: 'Eddie Murphey',
+      rank: 95
+    },
     create: {
-      fullName: 'Regional Director',
+      fullName: 'Eddie Murphey',
       email: 'md@mcbauchemie.com',
       passwordHash: mdPasswordHashFixed,
       jobTitle: 'Managing Director',
@@ -90,26 +97,36 @@ async function main() {
   // 5. SAMPLE EMPLOYEES
   console.log('👥 Synchronizing Sample Personnel...');
   const employees = [
-    { name: 'Kwame Mensah', email: 'kwame.mensah@mc-bauchemie.com.gh', role: 'STAFF', title: 'Production Supervisor', dept: 'Production & Manufacturing' },
-    { name: 'Ama Serwaa', email: 'ama.serwaa@mc-bauchemie.com.gh', role: 'MANAGER', title: 'Logistics Manager', dept: 'Logistics & Supply Chain' },
-    { name: 'Kofi Arhin', email: 'kofi.arhin@mc-bauchemie.com.gh', role: 'STAFF', title: 'QC Analyst', dept: 'Quality Control' },
+    { name: 'John Dakey', email: 'john.dakey@mcb-ghana.com', role: 'IT_MANAGER', title: 'IT Manager', dept: 'IT & Infrastructure', rank: 85 },
+    { name: 'Grace Osei', email: 'grace.osei@mcb-ghana.com', role: 'HR_MANAGER', title: 'HR Manager', dept: 'HR & Administration', rank: 88 },
+    { name: 'Ray Daniels', email: 'ray.daniels@mcb-ghana.com', role: 'FINANCE_MANAGER', title: 'Finance Manager', dept: 'Finance & Accounts', rank: 87 },
+    { name: 'Kwame Mensah', email: 'kwame.mensah@mcb-ghana.com', role: 'MANAGER', title: 'Production Supervisor', dept: 'Production & Manufacturing', rank: 75 },
+    { name: 'Ama Serwaa', email: 'ama.serwaa@mcb-ghana.com', role: 'MANAGER', title: 'Logistics Lead', dept: 'Logistics & Supply Chain', rank: 75 },
+    { name: 'Kofi Arhin', email: 'kofi.arhin@mcb-ghana.com', role: 'STAFF', title: 'QC Analyst', dept: 'Quality Control', rank: 50 },
+    { name: 'Selasi Doe', email: 'selasi.doe@mcb-ghana.com', role: 'STAFF', title: 'Accountant', dept: 'Finance & Accounts', rank: 50 },
+    { name: 'Abena Mansa', email: 'abena.mansa@mcb-ghana.com', role: 'STAFF', title: 'Sales Executive', dept: 'Sales & Marketing', rank: 50 },
+    { name: 'Frank Appiah', email: 'frank.appiah@mcb-ghana.com', role: 'IT_ADMIN', title: 'Systems Administrator', dept: 'IT & Infrastructure', rank: 80 },
+    { name: 'Doreen Tetteh', email: 'doreen.tetteh@mcb-ghana.com', role: 'STAFF', title: 'HR Officer', dept: 'HR & Administration', rank: 50 },
   ];
 
   for (const emp of employees) {
     await prisma.user.upsert({
       where: { email: emp.email },
-      update: {},
+      update: {
+        rank: emp.rank,
+        role: emp.role as any
+      },
       create: {
         fullName: emp.name,
         email: emp.email,
-        passwordHash: devPasswordHash, // Use dev password for all sample users
+        passwordHash: mdPasswordHashFixed, // Everyone gets 'unlockme'
         jobTitle: emp.title,
         role: emp.role as any,
         status: 'ACTIVE',
-        employeeCode: `MCB-${emp.dept}-${Math.floor(Math.random() * 900) + 100}`,
+        employeeCode: `MCB-${emp.dept.slice(0, 3).toUpperCase()}-${Math.floor(Math.random() * 900) + 100}`,
         organizationId: org.id,
         departmentId: deptMap[emp.dept].id,
-        rank: emp.role === 'MANAGER' ? 70 : 40
+        rank: emp.rank
       },
     });
   }
