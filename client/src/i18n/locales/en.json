@@ -107,8 +107,8 @@
       "dec": "December"
     },
     "all_departments": "All Departments",
-    "departments_label": "Departments",
-    "employees_label": "Staff Registry",
+    "departments_label": "Units & Teams",
+    "employees_label": "Personnel Registry",
     "leave_label": "Leave",
     "performance_label": "Performance",
     "onboarding_label": "New Starters",
@@ -190,7 +190,7 @@
     "delete_confirm": "Are you sure? This will permanently delete the department and all its associations."
   },
   "employees": {
-    "title": "Personnel Directory",
+    "title": "Organization Staff",
     "subtitle": "Manage everyone in the company",
     "search_placeholder": "Find staff...",
     "deploy_button": "Add Person",

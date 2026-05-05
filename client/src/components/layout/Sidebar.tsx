@@ -30,7 +30,7 @@ interface NavItemProps {
 const NavGroup = ({ label, children, isCollapsed }: { label: string; children: React.ReactNode; isCollapsed?: boolean }) => (
   <div className="mb-8 px-4">
     {!isCollapsed && (
-      <p className="px-5 mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-50">
+      <p className="px-5 mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)] opacity-80">
         {label}
       </p>
     )}
@@ -253,12 +253,12 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/departments" icon={Briefcase} label={rank < 70 ? t('common.my_department') : t('common.departments_label')} isCollapsed={isCollapsed} />
                 {(rank >= 70 || isHR) && !isMD && <NavItem to="/employees" icon={Users} label={t('common.employees_label')} isCollapsed={isCollapsed} />}
                 <NavItem to="/announcements" icon={Megaphone} label={t('common.announcements')} isCollapsed={isCollapsed} />
-                {(rank >= 85 || isHR) && !isMD && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart_label')} isCollapsed={isCollapsed} />}
-                {(rank >= 85 || isHR) && !isMD && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment')} isCollapsed={isCollapsed} />}
+                {(isHR || isIT || isMD) && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart_label')} isCollapsed={isCollapsed} />}
+                {(isHR || isMD) && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment')} isCollapsed={isCollapsed} />}
                 <NavItem to="/policies" icon={Shield} label={t('common.policies')} isCollapsed={isCollapsed} />
-                {(rank >= 60 || isHR) && !isMD && <NavItem to="/disciplinary" icon={AlertTriangle} label={t('common.disciplinary')} isCollapsed={isCollapsed} />}
-                {(rank >= 70 || isHR) && !isMD && <NavItem to="/probation" icon={History} label={t('common.probation')} isCollapsed={isCollapsed} />}
-                {(rank >= 80 || isHR) && <NavItem to="/promotions" icon={Zap} label="Promotion Pipeline" isCollapsed={isCollapsed} />}
+                {(isHR || isMD) && <NavItem to="/disciplinary" icon={AlertTriangle} label={t('common.disciplinary')} isCollapsed={isCollapsed} />}
+                {(isHR || isMD) && <NavItem to="/probation" icon={History} label={t('common.probation')} isCollapsed={isCollapsed} />}
+                {(isHR || isMD) && <NavItem to="/promotions" icon={Zap} label="Promotion Pipeline" isCollapsed={isCollapsed} />}
               </NavGroup>
  
               {!isMD && (

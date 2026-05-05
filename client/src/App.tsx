@@ -108,7 +108,9 @@ const ROLE_RANK_MAP: Record<string, number> = {
     DEV: 100, MD: 95, DIRECTOR: 90, HR_MANAGER: 88, FINANCE_MANAGER: 87,
     IT_MANAGER: 85, IT_ADMIN: 85, HR_OFFICER: 80, MANAGER: 75,
     SUPERVISOR: 65, STAFF: 50, CASUAL: 40,
-    'MANAGING DIRECTOR': 95, 'SYSTEM DEVELOPER': 100
+    'MANAGING DIRECTOR': 95, 'SYSTEM DEVELOPER': 100,
+    'IT MANAGER': 85, 'HR MANAGER': 88, 'FINANCE MANAGER': 87,
+    'IT ADMINISTRATOR': 85, 'HR OFFICER': 80, 'STAFF MEMBER': 50
 };
 
 const getRoleRankValueLocal = (role?: string): number => {
@@ -254,7 +256,7 @@ const Layout = () => {
               whileHover={{ scale: 1.1, rotate: 10 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsHelpOpen(true)}
-              className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] shadow-lg flex items-center justify-center border border-white/10 transition-all"
+              className="fixed bottom-28 right-8 z-50 w-14 h-14 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] shadow-lg flex items-center justify-center border border-white/10 transition-all"
             >
               <HelpCircle size={24} />
             </motion.button>
@@ -468,7 +470,7 @@ const AppContent = () => {
             <Route path="/employees" element={<RoleGuard minRank={70}><EmployeeManagement /></RoleGuard>} />
             <Route path="/employees/history" element={<RoleGuard minRank={70}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
-            <Route path="/print/ids" element={<RoleGuard minRank={70}><PrintIDsPage /></RoleGuard>} />
+            <Route path="/print/ids" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
             <Route path="/assets" element={<AssetManagement />} />
             <Route path="/audit" element={<RoleGuard minRank={85}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
@@ -479,7 +481,7 @@ const AppContent = () => {
             <Route path="/payroll" element={<RoleGuard minRank={85}><Payroll /></RoleGuard>} />
             <Route path="/finance" element={<FinanceHub />} />
             <Route path="/attendance" element={<AttendanceDashboard />} />
-            <Route path="/org-chart" element={<RoleGuard minRank={85}><OrgChart /></RoleGuard>} />
+            <Route path="/org-chart" element={<RoleGuard allowedRoles={['HR_MANAGER', 'IT_MANAGER', 'MD', 'DEV']}><OrgChart /></RoleGuard>} />
             <Route path="/enterprise" element={<RoleGuard minRank={95}><EnterpriseSuite /></RoleGuard>} />
             <Route path="/it-admin" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'DEV']}><ITAdmin /></RoleGuard>} />
             <Route path="/training" element={<Training />} />
@@ -487,17 +489,17 @@ const AppContent = () => {
             <Route path="/announcements" element={<AnnouncementsPage />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/onboarding" element={<RoleGuard minRank={85}><Onboarding /></RoleGuard>} />
-            <Route path="/offboarding" element={<RoleGuard minRank={85}><Offboarding /></RoleGuard>} />
-            <Route path="/recruitment" element={<RoleGuard minRank={85}><Recruitment /></RoleGuard>} />
+            <Route path="/onboarding" element={<RoleGuard allowedRoles={['HR_MANAGER', 'IT_MANAGER', 'MD', 'DEV']}><Onboarding /></RoleGuard>} />
+            <Route path="/offboarding" element={<RoleGuard allowedRoles={['HR_MANAGER', 'IT_MANAGER', 'MD', 'DEV']}><Offboarding /></RoleGuard>} />
+            <Route path="/recruitment" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><Recruitment /></RoleGuard>} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/support" element={<Support />} />
             {/* New HR Modules */}
-            <Route path="/disciplinary" element={<RoleGuard minRank={50}><Disciplinary /></RoleGuard>} />
+            <Route path="/disciplinary" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><Disciplinary /></RoleGuard>} />
             <Route path="/policies" element={<PolicyLibrary />} />
-            <Route path="/probation" element={<RoleGuard minRank={70}><ProbationTracker /></RoleGuard>} />
+            <Route path="/probation" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><ProbationTracker /></RoleGuard>} />
             <Route path="/kiosk" element={<AttendanceKiosk />} />
-            <Route path="/promotions" element={<RoleGuard minRank={80}><PromotionRequests /></RoleGuard>} />
+            <Route path="/promotions" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><PromotionRequests /></RoleGuard>} />
           </Route>
 
 

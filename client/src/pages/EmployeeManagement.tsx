@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
-  X, Loader2, Clock, Umbrella,
+  X, Loader2, Clock, Umbrella, Activity,
   Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight, Globe, AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
@@ -368,75 +368,85 @@ export default function EmployeeManagement() {
   return (
     <div className="space-y-12 pb-32">
       {/* Header Architecture */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-1">
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight leading-none">{t('employees.title')}</h1>
-          <p className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] flex items-center gap-2 mt-2">
-            <Users size={14} className="text-[var(--primary)]" />
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-10 mb-12">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
+          <h1 className="text-5xl font-black text-[var(--text-primary)] tracking-tight leading-none">{t('employees.title')}</h1>
+          <p className="text-[12px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
             {t('employees.subtitle')}
           </p>
         </motion.div>
         
-        <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
-             <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-xl border border-[var(--border-subtle)] flex-1 sm:flex-none">
-                <button onClick={() => setActiveTab('active')} className={cn("px-4 sm:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex-1 sm:flex-none", activeTab === 'active' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+        <div className="flex flex-wrap items-center gap-4">
+             <div className="flex bg-[var(--bg-elevated)]/40 p-1.5 rounded-2xl border border-[var(--border-subtle)]/50 backdrop-blur-sm shadow-sm">
+                <button onClick={() => setActiveTab('active')} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'active' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
                     {t('employees.active_personnel')}
                 </button>
-                <button onClick={() => setActiveTab('archived')} className={cn("px-4 sm:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex-1 sm:flex-none", activeTab === 'archived' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                <button onClick={() => setActiveTab('archived')} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'archived' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
                     {t('employees.archived_personnel')}
                 </button>
              </div>
              
-             <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-xl border border-[var(--border-subtle)] ml-2">
+             <div className="flex bg-[var(--bg-elevated)]/40 p-1.5 rounded-2xl border border-[var(--border-subtle)]/50 backdrop-blur-sm shadow-sm">
                 {(['grid', 'table'] as const).map(m => (
                     <button key={m} onClick={() => setViewMode(m)}
-                        className={cn("px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                        viewMode === m ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                        className={cn("px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        viewMode === m ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
                         {m}
                     </button>
                 ))}
              </div>
 
              {rank >= 80 && (
-                <div className="flex items-center gap-2 ml-2">
-                    <button onClick={() => handleExport('csv')} className="p-3 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--success)] hover:border-[var(--success)]/30 transition-all shadow-sm" title={t('common.export_csv', 'Export CSV Ledger')}>
-                        <div className="text-[9px] font-black uppercase">CSV</div>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => handleExport('csv')} className="w-[56px] h-[56px] rounded-2xl bg-[var(--bg-elevated)]/40 border border-[var(--border-subtle)]/50 text-[var(--text-muted)] hover:text-[var(--success)] hover:border-[var(--success)]/30 transition-all shadow-sm backdrop-blur-sm flex items-center justify-center group" title={t('common.export_csv', 'Export CSV Ledger')}>
+                        <div className="text-[10px] font-black group-hover:scale-110 transition-transform">CSV</div>
                     </button>
-                    <button onClick={() => handleExport('pdf')} className="p-3 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--error)] hover:border-[var(--error)]/30 transition-all shadow-sm" title={t('common.export_pdf', 'Export PDF Ledger')}>
-                        <Printer size={14} />
+                    <button onClick={() => handleExport('pdf')} className="w-[56px] h-[56px] rounded-2xl bg-[var(--bg-elevated)]/40 border border-[var(--border-subtle)]/50 text-[var(--text-muted)] hover:text-[var(--error)] hover:border-[var(--error)]/30 transition-all shadow-sm backdrop-blur-sm flex items-center justify-center group" title={t('common.export_pdf', 'Export PDF Ledger')}>
+                        <Printer size={18} className="group-hover:scale-110 transition-transform" />
                     </button>
                 </div>
              )}
 
              {canAddPersonnel && activeTab !== 'archived' && (
                 <motion.button
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3 w-full sm:w-auto justify-center"
+                    whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
+                    className="px-10 h-[56px] rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-4"
                     onClick={openCreate}
                 >
-                    <Plus size={18} /> {t('employees.deploy_button')}
+                    <Plus size={20} /> {t('employees.deploy_button')}
                 </motion.button>
              )}
         </div>
       </div>
 
       {/* Global Filter Matrix */}
-      <div className="nx-card p-2 flex flex-wrap items-center gap-2 bg-[var(--bg-elevated)]/30 border-[var(--border-subtle)]">
+      <div className="flex flex-wrap items-center gap-3 bg-[var(--bg-elevated)]/20 p-1.5 rounded-2xl border border-[var(--border-subtle)]/50 backdrop-blur-md">
         <div className="relative flex-1 min-w-[280px] group">
           <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
-          <input type="text" className="w-full bg-transparent border-none outline-none pl-14 pr-6 py-4 text-[13px] font-medium text-[var(--text-primary)]" placeholder={t('employees.search_placeholder')}
+          <input type="text" className="w-full bg-transparent border-none outline-none pl-14 pr-6 py-3.5 text-[13px] font-medium text-[var(--text-primary)]" placeholder={t('employees.search_placeholder')}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
-        <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
-          <option value="">{t('employees.all_ranks')}</option>
-          {ROLES.filter(r => r !== 'DEV' || user?.role === 'DEV').map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
-        </select>
-        <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
-        <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option value="">{t('employees.all_statuses')}</option>
-          {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{t(`employees.statuses.${s}`)}</option>)}
-        </select>
+        
+        <div className="h-8 w-[1px] bg-[var(--border-subtle)] opacity-30 hidden md:block" />
+        
+        <div className="flex items-center gap-2 px-4">
+           <Users size={14} className="text-[var(--text-muted)]" />
+           <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest py-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
+             <option value="">{t('employees.all_ranks')}</option>
+             {ROLES.filter(r => r !== 'DEV' || user?.role === 'DEV').map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
+           </select>
+        </div>
+
+        <div className="h-8 w-[1px] bg-[var(--border-subtle)] opacity-30 hidden md:block" />
+        
+        <div className="flex items-center gap-2 px-4">
+           <Activity size={14} className="text-[var(--text-muted)]" />
+           <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest py-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+             <option value="">{t('employees.all_statuses')}</option>
+             {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{t(`employees.statuses.${s}`)}</option>)}
+           </select>
+        </div>
       </div>
 
       {/* Bulk Actions Bar */}
