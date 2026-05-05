@@ -127,16 +127,6 @@
     "enterprise_suite_label": "Business Tools",
     "final_verdict_label": "Final Decision"
   },
-  "departments": {
-    "title": "Departments",
-    "active_count": "Active Departments",
-    "add_new": "Add Department",
-    "edit_dept": "Edit Department",
-    "create_dept": "Create Department",
-    "dept_name": "Department Name",
-    "assign_manager": "Assign Manager",
-    "no_manager": "No Manager Assigned"
-  },
   "auth": {
     "sign_in": "Sign In",
     "welcome_back": "Welcome Back",
@@ -173,7 +163,31 @@
     "create_unit": "Add Unit",
     "edit_unit": "Edit Unit",
     "unit_name": "Unit Name",
-    "unit_manager": "Unit Manager"
+    "unit_manager": "Unit Manager",
+    "assign_prompt": "Leader Assignment Pending"
+  },
+  "DEPARTMENTS": {
+    "MEMBERS": "Staff Members",
+    "CREATE_UNIT": "Add New Unit",
+    "UNIT_NAME": "Unit Name",
+    "UNIT_MANAGER": "Unit Manager"
+  },
+  "departments": {
+    "sub_units": "Sub-Units",
+    "org_units": "Organizational Units",
+    "title": "Departments",
+    "active_count": "Active Departments",
+    "add_new": "Add Department",
+    "edit_dept": "Edit Department",
+    "create_dept": "Create Department",
+    "dept_name": "Department Name",
+    "assign_manager": "Assign Manager",
+    "no_manager": "No Manager Assigned",
+    "create_dept_tip": "Define department name and leadership",
+    "delete_subunit_title": "Delete Sub-Unit",
+    "delete_title": "Delete Department",
+    "delete_subunit_confirm": "Are you sure? This will remove the sub-unit from the organization.",
+    "delete_confirm": "Are you sure? This will permanently delete the department and all its associations."
   },
   "employees": {
     "title": "Our Staff",

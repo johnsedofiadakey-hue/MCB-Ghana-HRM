@@ -136,8 +136,8 @@ export class PdfExportService {
             let absoluteLogoUrl = org.logoUrl;
             if (!absoluteLogoUrl.startsWith('http')) {
                // Fallback to internal development or production asset path
-               const apiOrigin = process.env.VITE_API_URL || 'https://mcb-ghana-hrm-api.onrender.com';
-               absoluteLogoUrl = `${apiOrigin}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
+               const apiOrigin = process.env.API_BASE_URL || process.env.RENDER_EXTERNAL_URL || 'https://mcb-ghana-hrm-api.onrender.com';
+               absoluteLogoUrl = `${apiOrigin.replace(/\/$/, '')}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
             }
 
             const response = await axios.get(absoluteLogoUrl, { 

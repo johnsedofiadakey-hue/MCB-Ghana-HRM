@@ -72,7 +72,7 @@ const DirectorDashboard = () => {
              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 rounded-full bg-[var(--success)] shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
              <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{greeting}</span>
           </div>
-          <h1 className="font-black text-fluid-h1 text-[var(--text-primary)] tracking-ultra leading-[0.9]">
+          <h1 className="font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[var(--text-primary)] tracking-ultra leading-[0.9]">
             {user.fullName?.split(' ')[0] || 'Director'} <span className="text-[var(--text-muted)] font-extralight block lg:inline lg:ml-2">/ {t('dashboard.overview')}</span>
           </h1>
           <p className="text-lg font-medium mt-6 text-[var(--text-secondary)] max-w-2xl leading-relaxed opacity-80">
@@ -105,8 +105,8 @@ const DirectorDashboard = () => {
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-all group-hover:scale-110 mb-6 shadow-inner">
                   <s.icon size={20} style={{ color: s.color }} />
                 </div>
-                <div className="text-3xl font-black text-[var(--text-primary)] tracking-ultra mb-1">{s.value}</div>
-                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] opacity-60 group-hover:opacity-100 transition-opacity">{s.label}</div>
+                <div className="text-3xl font-black text-[var(--text-primary)] tracking-ultra mb-1 truncate">{s.value}</div>
+                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] opacity-60 group-hover:opacity-100 transition-opacity truncate">{s.label}</div>
               </motion.div>
             ))}
           </div>

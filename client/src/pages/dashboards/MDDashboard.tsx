@@ -66,8 +66,8 @@ const MDDashboard = () => {
              <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{greeting}</span>
           </div>
-          <h1 className="font-black text-5xl text-[var(--text-primary)] tracking-tight leading-none">
-            {user.name?.split(' ')[0] || 'Executive'} <span className="text-[var(--text-muted)] font-thin">/ {t('md_dashboard.title')}</span>
+          <h1 className="font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[var(--text-primary)] tracking-tight leading-none">
+            {user.name?.split(' ')[0] || 'Executive'} <span className="text-[var(--text-muted)] font-thin block xs:inline lg:ml-2">/ {t('md_dashboard.title')}</span>
           </h1>
           <p className="text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
             {user.jobTitle || t('employees.roles.MD')} &nbsp;·&nbsp; {t('md_dashboard.subtitle')}
@@ -173,10 +173,10 @@ const MDDashboard = () => {
                 </div>
               )}
             </div>
-            <div className="text-4xl font-black text-[var(--text-primary)] tracking-tight mb-2">
+            <div className="text-3xl sm:text-4xl font-black text-[var(--text-primary)] tracking-tight mb-2 truncate">
               {loading ? <span className="text-[var(--text-muted)] animate-pulse">···</span> : s.value}
             </div>
-            <div className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{s.label}</div>
+            <div className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] truncate">{s.label}</div>
           </motion.div>
         ))}
       </div>

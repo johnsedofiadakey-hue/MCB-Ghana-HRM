@@ -92,10 +92,10 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
         )}
       </div>
       
-      <div className="font-bold text-3xl text-[var(--text-primary)] tracking-tight mb-1">
+      <div className="font-bold text-3xl text-[var(--text-primary)] tracking-tight mb-1 truncate">
         {value ?? '--'}
       </div>
-      <div className="text-[12px] font-medium text-[var(--text-muted)]">{title}</div>
+      <div className="text-[12px] font-medium text-[var(--text-muted)] truncate">{title}</div>
       {sub && <div className="text-[12px] mt-2 font-medium text-[var(--text-secondary)] opacity-70">{sub}</div>}
     </motion.div>
   );

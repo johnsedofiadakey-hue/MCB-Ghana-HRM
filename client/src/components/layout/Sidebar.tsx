@@ -177,8 +177,11 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                   </span>
                 )}
               </div>
-              <div className="truncate">
-                <h1 className="text-[14px] font-bold tracking-tight text-[var(--text-primary)] leading-none">
+              <div className="flex-1 min-w-0">
+                <h1 className={cn(
+                  "font-bold tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2 transition-all",
+                  (settings?.companyName?.length || 0) > 20 ? "text-[11px]" : (settings?.companyName?.length || 0) > 12 ? "text-[12px]" : "text-[14px]"
+                )}>
                   {settings?.companyName || 'MCB HRM GHANA'}
                 </h1>
                 <p className="text-[10px] font-medium text-[var(--text-sidebar)] mt-1.5 opacity-60 tracking-wide uppercase italic">

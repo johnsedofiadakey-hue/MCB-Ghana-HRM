@@ -546,10 +546,10 @@ export const assignRole = async (req: Request, res: Response) => {
 
     const validRoles = ['DEV', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
     
-    // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/IT Manager)
+    // 🛡️ Hierarchy Guard: Only MD/DEV (90+) or Admin Managers (85+) can assign roles >= 85 (HR/IT Manager)
     const targetRoleRank = getRoleRank(role);
-    if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {
-        return res.status(403).json({ error: 'Access denied: Only the MD can assign administrative roles (HR/IT Manager).' });
+    if (actorRank < 85 && actorRole !== 'DEV' && targetRoleRank >= 85) {
+        return res.status(403).json({ error: 'Access denied: Only the MD or Administrative Managers can assign administrative roles.' });
     }
 
     // 🛡️ Cannot promote someone to a rank higher than yourself

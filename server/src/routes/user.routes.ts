@@ -39,8 +39,8 @@ router.delete('/:id', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), deleteEmpl
 router.delete('/:id/hard', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), hardDeleteEmployee);
 router.post('/:id/restore', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), restoreEmployee);
 
-// Role assignment (MD only)
-router.post('/assign-role', requireRole(90), assignRole);
+// Role assignment (MD or Admin Managers 85+)
+router.post('/assign-role', requireRole(85), assignRole);
 
 router.post('/:id/upload-image', upload.single('avatar'), uploadImage);
 router.post('/:id/avatar', uploadImage); // base64 path

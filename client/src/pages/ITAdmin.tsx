@@ -138,7 +138,7 @@ const ITAdmin = () => {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-tight">
             {currentUser?.rank >= 85 ? 'Strategic Systems Hub' : 'IT Infrastructure Admin'}
           </h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
@@ -147,10 +147,10 @@ const ITAdmin = () => {
           </p>
         </motion.div>
 
-        <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
+        <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-2xl border border-[var(--border-subtle)] overflow-x-auto no-scrollbar max-w-full">
            {(['overview', 'accounts', 'assets', 'integrations'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                 className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 className={cn("px-4 sm:px-6 py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                  activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
                 {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'ID Registry' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
               </button>

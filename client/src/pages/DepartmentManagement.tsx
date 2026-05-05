@@ -105,7 +105,7 @@ const DepartmentManagement = () => {
           </h1>
           <p className="text-[14px] font-medium text-[var(--text-secondary)] mt-2 flex items-center gap-2">
             <Building2 size={14} className="text-[var(--primary)]" />
-            {departments.length} {t('departments.active_count')}
+            {departments.length} {t('department_details.active_count', 'Active Departments')}
           </p>
         </div>
         {canManageDept && (
@@ -193,30 +193,30 @@ const DepartmentManagement = () => {
                         <ShieldCheck size={20} className="opacity-50" />
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase tracking-[0.15em] opacity-80 mb-0.5">{t('departments.no_manager')}</p>
-                        <p className="text-[11px] font-bold">{t('departments.assign_prompt', 'Leader Assignment Pending')}</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.15em] opacity-80 mb-0.5">{t('department_details.no_manager')}</p>
+                        <p className="text-[11px] font-bold">{t('department_details.assign_prompt', 'Leader Assignment Pending')}</p>
                       </div>
                     </div>
                   )}
 
-                     <div className="flex items-center justify-between gap-4 bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all">
-                    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                      <Users size={14} className="text-[var(--primary)]" />
-                      <span>{dept.memberCount || 0} {t('departments.members')}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all">
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] min-w-0">
+                      <Users size={14} className="text-[var(--primary)] shrink-0" />
+                      <span className="truncate">{dept.memberCount || 0} {t('department_details.members', t('DEPARTMENTS.MEMBERS', 'Staff'))}</span>
                     </div>
                     {rank >= 70 && (
-                      <div className="flex gap-4">
+                      <div className="flex gap-4 shrink-0">
                         <button
                           onClick={() => setManagingSubUnits(dept)}
-                          className="text-[10px] font-bold text-[var(--primary)] hover:underline"
+                          className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline whitespace-nowrap"
                         >
-                          {t('departments.sub_units')}
+                          {t('department_details.sub_units', t('departments.sub_units', 'Sub-Units'))}
                         </button>
                         <button
                           onClick={() => setManagingMembers(dept)}
-                          className="text-[10px] font-bold text-[var(--primary)] hover:underline"
+                          className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline whitespace-nowrap"
                         >
-                          {t('departments.team')}
+                          {t('department_details.team', 'Team')}
                         </button>
                       </div>
                     )}
@@ -229,8 +229,8 @@ const DepartmentManagement = () => {
           {departments.length === 0 && (
             <div className="col-span-full text-center py-20 nx-card border-dashed">
               <Building2 size={40} className="mx-auto mb-4 text-[var(--text-muted)] opacity-20" />
-              <p className="text-lg font-bold text-[var(--text-primary)]">{t('departments.no_found')}</p>
-              <p className="text-[13px] text-[var(--text-secondary)]">{t('departments.start_creating')}</p>
+              <p className="text-lg font-bold text-[var(--text-primary)]">{t('department_details.no_found')}</p>
+              <p className="text-[13px] text-[var(--text-secondary)]">{t('department_details.start_creating')}</p>
             </div>
           )}
         </div>
@@ -311,8 +311,8 @@ const DepartmentManagement = () => {
                     <Users size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight">{t('departments.manage_team')}: {managingMembers.name}</h2>
-                    <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{managingMembers.memberCount || 0} {t('departments.members')}</p>
+                    <h2 className="text-2xl font-bold tracking-tight truncate">{t('department_details.manage_team')}: {managingMembers.name}</h2>
+                    <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{managingMembers.memberCount || 0} {t('department_details.members')}</p>
                   </div>
                 </div>
                 <button onClick={() => setManagingMembers(null)} className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
@@ -321,11 +321,11 @@ const DepartmentManagement = () => {
               <div className="flex flex-1 overflow-hidden">
                 <div className="w-1/2 p-8 border-r border-[var(--border-subtle)] flex flex-col gap-6">
                   <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-4 ml-1">{t('departments.add_members')}</h4>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-4 ml-1">{t('department_details.add_members')}</h4>
                     <input 
                       type="text" 
                       className="nx-input" 
-                      placeholder={t('departments.search_employees')}
+                      placeholder={t('department_details.search_employees')}
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
                     />
@@ -356,7 +356,7 @@ const DepartmentManagement = () => {
                 </div>
 
                 <div className="w-1/2 p-8 flex flex-col gap-6 bg-[var(--bg-elevated)]/20">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">{t('departments.current_team')}</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">{t('department_details.current_team')}</h4>
                   <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                     {employees
                       .filter(e => e.departmentId === managingMembers.id)
@@ -477,9 +477,9 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, set
             </div>
             <div>
               <h2 className="text-2xl font-bold tracking-tight">
-                {department.name} <span className="text-[var(--primary)]">{t('departments.sub_units')}</span>
+                {department.name} <span className="text-[var(--primary)]">{t('department_details.sub_units', t('departments.sub_units', 'Sub-Units'))}</span>
               </h2>
-              <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{localSubUnits.length} {t('departments.org_units')}</p>
+              <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{localSubUnits.length} {t('department_details.org_units', t('departments.org_units', 'Units'))}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
@@ -498,7 +498,7 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, set
                 </div>
                 <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   <div className="px-2 py-0.5 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10">
-                    {su.memberCount} {t('departments.members').toUpperCase()}
+                    {su.memberCount} {t('department_details.members').toUpperCase()}
                   </div>
                   {su.manager && <span className="opacity-60">• {t('common.manager')}: {su.manager.fullName}</span>}
                 </div>
@@ -514,16 +514,16 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, set
 
           <div className="w-1/2 p-8 bg-[var(--bg-elevated)]/20">
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-6 ml-1">
-              {editingSU ? t('departments.edit_unit') : t('departments.create_unit')}
+              {editingSU ? t('department_details.edit_unit', 'Edit Unit') : t('department_details.create_unit', t('DEPARTMENTS.CREATE_UNIT', 'Add New Unit'))}
             </h3>
             {error && <div className="mb-6 p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[12px] font-bold">{error}</div>}
             <form onSubmit={editingSU ? handleUpdate : handleCreate} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('departments.unit_name')}</label>
+                <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('department_details.unit_name', t('DEPARTMENTS.UNIT_NAME', 'Unit Name'))}</label>
                 <input type="text" className="nx-input" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Frontend Team" />
               </div>
               <div className="space-y-2">
-                <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('departments.unit_manager')}</label>
+                <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('department_details.unit_manager', t('DEPARTMENTS.UNIT_MANAGER', 'Unit Manager'))}</label>
                 <div className="relative">
                   <select className="nx-input appearance-none pr-10" value={form.managerId} onChange={e => setForm({...form, managerId: e.target.value})}>
                     <option value="">-- {t('departments.no_manager')} --</option>

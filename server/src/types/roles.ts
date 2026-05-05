@@ -1,8 +1,8 @@
 export enum RoleRank {
     DEV = 100,
     MD = 95,
-    HR_MANAGER = 90,
-    DIRECTOR = 88,
+    DIRECTOR = 90,
+    HR_MANAGER = 88,
     FINANCE_MANAGER = 87,
     IT_MANAGER = 85,
     HR_OFFICER = 80,
