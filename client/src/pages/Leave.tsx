@@ -89,7 +89,7 @@ const Leave = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [leavesRes, balanceRes, reliefRes, historyRes] = await Promise.all([
+      const [leavesRes, balanceRes, reliefRes, historyRes, holidaysRes] = await Promise.all([
         api.get('/leave/my'),
         api.get('/leave/balance'),
         api.get('/leave/my-relief-requests'),
