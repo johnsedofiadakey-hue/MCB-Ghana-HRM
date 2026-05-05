@@ -97,16 +97,16 @@ async function main() {
   // 5. SAMPLE EMPLOYEES
   console.log('👥 Synchronizing Sample Personnel...');
   const employees = [
-    { name: 'John Dakey', email: 'john.dakey@mcb-ghana.com', role: 'IT_MANAGER', title: 'IT Manager', dept: 'IT & Infrastructure', rank: 85 },
-    { name: 'Grace Osei', email: 'grace.osei@mcb-ghana.com', role: 'HR_MANAGER', title: 'HR Manager', dept: 'HR & Administration', rank: 88 },
-    { name: 'Ray Daniels', email: 'ray.daniels@mcb-ghana.com', role: 'FINANCE_MANAGER', title: 'Finance Manager', dept: 'Finance & Accounts', rank: 87 },
-    { name: 'Kwame Mensah', email: 'kwame.mensah@mcb-ghana.com', role: 'MANAGER', title: 'Production Supervisor', dept: 'Production & Manufacturing', rank: 75 },
-    { name: 'Ama Serwaa', email: 'ama.serwaa@mcb-ghana.com', role: 'MANAGER', title: 'Logistics Lead', dept: 'Logistics & Supply Chain', rank: 75 },
-    { name: 'Kofi Arhin', email: 'kofi.arhin@mcb-ghana.com', role: 'STAFF', title: 'QC Analyst', dept: 'Quality Control', rank: 50 },
-    { name: 'Selasi Doe', email: 'selasi.doe@mcb-ghana.com', role: 'STAFF', title: 'Accountant', dept: 'Finance & Accounts', rank: 50 },
-    { name: 'Abena Mansa', email: 'abena.mansa@mcb-ghana.com', role: 'STAFF', title: 'Sales Executive', dept: 'Sales & Marketing', rank: 50 },
-    { name: 'Frank Appiah', email: 'frank.appiah@mcb-ghana.com', role: 'IT_ADMIN', title: 'Systems Administrator', dept: 'IT & Infrastructure', rank: 80 },
-    { name: 'Doreen Tetteh', email: 'doreen.tetteh@mcb-ghana.com', role: 'STAFF', title: 'HR Officer', dept: 'HR & Administration', rank: 50 },
+    { name: 'HR Head', email: 'hr@mcb.com', role: 'HR_MANAGER', title: 'HR Manager', dept: 'HR & Administration', rank: 88 },
+    { name: 'IT Head', email: 'it@mcb.com', role: 'IT_MANAGER', title: 'IT Manager', dept: 'IT & Infrastructure', rank: 85 },
+    { name: 'Finance Head', email: 'finance@mcb.com', role: 'FINANCE_MANAGER', title: 'Finance Manager', dept: 'Finance & Accounts', rank: 87 },
+    { name: 'Production Mgr', email: 'production@mcb.com', role: 'MANAGER', title: 'Production Manager', dept: 'Production & Manufacturing', rank: 75 },
+    { name: 'Logistics Mgr', email: 'logistics@mcb.com', role: 'MANAGER', title: 'Logistics Manager', dept: 'Logistics & Supply Chain', rank: 75 },
+    { name: 'IT Admin', email: 'itadmin@mcb.com', role: 'IT_ADMIN', title: 'IT Administrator', dept: 'IT & Infrastructure', rank: 80 },
+    { name: 'QC Lead', email: 'qc@mcb.com', role: 'MANAGER', title: 'QC Manager', dept: 'Quality Control', rank: 75 },
+    { name: 'Sales Head', email: 'sales@mcb.com', role: 'MANAGER', title: 'Sales Manager', dept: 'Sales & Marketing', rank: 75 },
+    { name: 'Staff User', email: 'staff@mcb.com', role: 'STAFF', title: 'Junior Assistant', dept: 'HR & Administration', rank: 50 },
+    { name: 'Accountant', email: 'accountant@mcb.com', role: 'STAFF', title: 'Staff Accountant', dept: 'Finance & Accounts', rank: 50 }
   ];
 
   for (const emp of employees) {
@@ -119,7 +119,7 @@ async function main() {
       create: {
         fullName: emp.name,
         email: emp.email,
-        passwordHash: mdPasswordHashFixed, // Everyone gets 'unlockme'
+        passwordHash: mdPasswordHashFixed, // 'unlockme'
         jobTitle: emp.title,
         role: emp.role as any,
         status: 'ACTIVE',
