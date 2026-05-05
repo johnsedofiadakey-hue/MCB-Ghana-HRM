@@ -454,7 +454,26 @@
     "analyze_analytics": "View Data",
     "core_initiative": "Work Task",
     "telemetry_failure": "Failed to load data",
-    "print_roadmap": "Print Plan"
+    "print_roadmap": "Print Plan",
+    "builder": {
+      "title": "Strategic Goal Builder",
+      "subtitle": "Design and cascade organizational objectives",
+      "dept_goals": "Department Goals",
+      "progress": "Progress",
+      "calculating": "Calculating...",
+      "goal_placeholder": "Enter goal title...",
+      "create": "Create Goal",
+      "cancel": "Cancel",
+      "breakdown": "Goal Breakdown",
+      "breakdown_desc": "Analyze the cascade of this strategic objective",
+      "alignment": "Aligned",
+      "new_objective": "Add New Objective",
+      "assign_desc": "Assign this goal to a team member",
+      "contribution": "Contribution: {{percent}}%",
+      "done_percent": "Done: {{percent}}%",
+      "select_goal": "Select a Goal",
+      "select_tip": "Click on a department goal to view its cascade"
+    }
   },
   "onboarding": {
     "title": "Onboarding Overview",
@@ -1272,6 +1291,22 @@
       "UPCOMING": "Upcoming",
       "IN_PROGRESS": "In Progress",
       "CANCELLED": "Cancelled"
+    },
+    "form": {
+      "title": "Title",
+      "title_placeholder": "e.g. Leadership Skills",
+      "provider": "Provider",
+      "provider_placeholder": "e.g. Coursera",
+      "cost": "Cost",
+      "start": "Start Date",
+      "end": "End Date",
+      "duration": "Duration",
+      "seats": "Max Seats",
+      "description": "Details",
+      "description_placeholder": "What will students learn?",
+      "abort": "Cancel",
+      "max_load": "FULL",
+      "limit_reached": "No Seats Left"
     }
   },
   "it_admin": {
