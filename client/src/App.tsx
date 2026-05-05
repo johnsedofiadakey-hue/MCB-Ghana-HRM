@@ -233,7 +233,7 @@ const Layout = () => {
             <div className="max-w-[1600px] mx-auto pb-24 lg:pb-0">
               <ChunkErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
-                  <AnimatePresence mode="popLayout" initial={false}>
+                  <AnimatePresence initial={false}>
                     <motion.div
                       key={location.pathname}
                       initial={{ opacity: 0, y: 12 }}

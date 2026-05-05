@@ -46,7 +46,7 @@
     "policies": "Policies",
     "disciplinary": "Disciplinary",
     "probation": "Probation",
-    "it_registries": "IT & Registries",
+    "it_registries": "IT & Systems",
     "financial_operations": "Financial Operations",
     "notifications": "Notifications",
     "system_alerts": "System Alerts & Updates",
@@ -108,7 +108,7 @@
     },
     "all_departments": "All Departments",
     "departments_label": "Departments",
-    "employees_label": "Employees",
+    "employees_label": "Staff Registry",
     "leave_label": "Leave",
     "performance_label": "Performance",
     "onboarding_label": "New Starters",
@@ -190,7 +190,7 @@
     "delete_confirm": "Are you sure? This will permanently delete the department and all its associations."
   },
   "employees": {
-    "title": "Our Staff",
+    "title": "Personnel Directory",
     "subtitle": "Manage everyone in the company",
     "search_placeholder": "Find staff...",
     "deploy_button": "Add Person",

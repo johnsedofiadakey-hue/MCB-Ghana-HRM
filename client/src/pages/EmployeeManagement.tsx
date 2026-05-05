@@ -368,11 +368,11 @@ export default function EmployeeManagement() {
   return (
     <div className="space-y-12 pb-32">
       {/* Header Architecture */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-12">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('employees.title')}</h1>
-          <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
-            <Users size={18} className="text-[var(--primary)] opacity-60" />
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-1">
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight leading-none">{t('employees.title')}</h1>
+          <p className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] flex items-center gap-2 mt-2">
+            <Users size={14} className="text-[var(--primary)]" />
             {t('employees.subtitle')}
           </p>
         </motion.div>

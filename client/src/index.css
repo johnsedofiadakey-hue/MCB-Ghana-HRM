@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 html {
-  overflow-y: scroll; /* Force vertical scrollbar to prevent layout shifts */
+  scrollbar-gutter: stable;
   scroll-behavior: auto !important;
 }
 
@@ -46,6 +46,9 @@ body {
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: auto !important;
+  
+  /* Prevent horizontal pull-to-refresh jitter */
+  overscroll-behavior-x: none;
 }
 
 @media print {
@@ -604,6 +607,19 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* Modern Text Handling Utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
 }
 
 /* Mobile App Layout Utilities */

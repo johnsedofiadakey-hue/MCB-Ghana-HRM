@@ -75,15 +75,15 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05, ease: [0.23, 1, 0.32, 1] }}
-      className="nx-card p-6 group cursor-default"
+      className="nx-card p-6 group cursor-default min-w-0"
     >
       <div className="flex items-start justify-between mb-6">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-colors group-hover:border-[var(--primary)]/30">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-colors group-hover:border-[var(--primary)]/30 shrink-0">
           <Icon size={20} style={{ color }} className="opacity-70" />
         </div>
         {change && (
           <div className={cn(
-            "flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full",
+            "flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0",
             isPositive ? "text-[var(--success)] bg-[var(--success)]/5" : "text-[var(--error)] bg-[var(--error)]/5"
           )}>
             {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
@@ -92,11 +92,11 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
         )}
       </div>
       
-      <div className="font-bold text-3xl text-[var(--text-primary)] tracking-tight mb-1 truncate">
+      <div className="font-bold text-2xl sm:text-3xl text-[var(--text-primary)] tracking-tight mb-1 truncate overflow-hidden">
         {value ?? '--'}
       </div>
-      <div className="text-[12px] font-medium text-[var(--text-muted)] truncate">{title}</div>
-      {sub && <div className="text-[12px] mt-2 font-medium text-[var(--text-secondary)] opacity-70">{sub}</div>}
+      <div className="text-[12px] font-medium text-[var(--text-muted)] truncate uppercase tracking-wider">{title}</div>
+      {sub && <div className="text-[11px] mt-2 font-medium text-[var(--text-secondary)] opacity-70 line-clamp-1">{sub}</div>}
     </motion.div>
   );
 };

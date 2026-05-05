@@ -101,22 +101,22 @@ const ActionInbox = () => {
                   <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110", cfg.bg, cfg.color)}>
                     <Icon size={20} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border", 
-                        action.priority === 'HIGH' ? "text-rose-400 border-rose-500/20 bg-rose-500/5" : "text-[var(--text-muted)] border-[var(--border-subtle)] bg-[var(--bg-elevated)]"
-                      )}>
-                        {action.priority === 'HIGH' ? t('inbox.high_priority') : action.priority === 'MEDIUM' ? t('inbox.medium_priority') : t('inbox.low_priority')}
-                      </span>
-                      <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase">
-                        {formatDistanceToNow(new Date(action.createdAt))} {t('inbox.ago')}
-                      </span>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <div className="flex items-center justify-between mb-0.5 gap-2">
+                        <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0", 
+                          action.priority === 'HIGH' ? "text-rose-400 border-rose-500/20 bg-rose-500/5" : "text-[var(--text-muted)] border-[var(--border-subtle)] bg-[var(--bg-elevated)]"
+                        )}>
+                          {action.priority === 'HIGH' ? t('inbox.high_priority') : action.priority === 'MEDIUM' ? t('inbox.medium_priority') : t('inbox.low_priority')}
+                        </span>
+                        <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase shrink-0">
+                          {formatDistanceToNow(new Date(action.createdAt))}
+                        </span>
+                      </div>
+                      <h4 className="text-[11px] font-black text-[var(--text-primary)] truncate uppercase tracking-tighter">{action.title}</h4>
+                      <p className="text-[10px] font-medium text-[var(--text-secondary)] line-clamp-1 group-hover:text-[var(--text-primary)] transition-colors uppercase tracking-widest mt-0.5">
+                        {action.subtitle}
+                      </p>
                     </div>
-                    <h4 className="text-xs font-black text-[var(--text-primary)] truncate uppercase tracking-tighter">{action.title}</h4>
-                    <p className="text-[10px] font-medium text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)] transition-colors uppercase tracking-widest mt-0.5">
-                      {action.subtitle}
-                    </p>
-                  </div>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity pl-2">
                     <ArrowRight size={14} className="text-[var(--primary)]" />
                   </div>
