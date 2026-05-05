@@ -171,14 +171,14 @@ export const createEmployee = async (req: Request, res: Response) => {
     const actorId = userReq.id;
 
     // Only HR/MD (>= 85) can set salary/currency on create
-    // STRICT GUARD: Only MD (90+) can create high-level roles (Rank 85+)
+    // STRICT GUARD: Only MD (Rank 95) can create Administrative roles (Rank 90+)
     const targetRank = getRoleRank(req.body.role);
     if (actorRank < 85) {
       delete req.body.salary;
       delete req.body.currency;
     }
-    if (actorRank < 90 && targetRank >= 85) {
-        return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts (HR/IT Manager).' });
+    if (actorRank < 95 && targetRank >= 90) {
+        return res.status(403).json({ error: 'Access denied: Only the MD can create administrative roles (HR/MD).' });
     }
 
     const tempPassword = req.body.password || 'SecureInit!';
@@ -422,10 +422,13 @@ export const updateEmployee = async (req: Request, res: Response) => {
       delete req.body.salary;
       delete req.body.currency;
     }
-    // Only MD/DEV (>= 90) can assign roles higher than 80 (Director+)
+    // Only MD/DEV (>= 95) can assign roles higher than 90 (MD/HR)
     const targetRank = req.body.role ? getRoleRank(req.body.role) : undefined;
-    if (actorRank < 90 && actorRole !== 'DEV') {
-      if (targetRank && (targetRank >= 85 || getRoleRank(targetUser.role) >= 85)) {
+    const currentTargetRank = getRoleRank(targetUser.role);
+    
+    if (actorRank < 95 && actorRole !== 'DEV') {
+      // Protect HR Manager (90) and MD (95)
+      if ((targetRank && targetRank >= 90) || currentTargetRank >= 90) {
           return res.status(403).json({ message: 'Access denied: Only the MD can manage administrative roles (HR/MD).' });
       }
     }
