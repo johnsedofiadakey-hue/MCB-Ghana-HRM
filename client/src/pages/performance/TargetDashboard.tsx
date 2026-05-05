@@ -365,6 +365,7 @@ const CreateTargetModal: React.FC<{
 // ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 const TargetDashboard: React.FC = () => {
   const { t } = useTranslation();
+  const { isEnabled: aiEnabled } = useAI();
   const user = getStoredUser();
   const rank = getRoleRankValue(user.role);
   const [myTargets, setMyTargets] = useState<any[]>([]);
@@ -379,10 +380,10 @@ const TargetDashboard: React.FC = () => {
   const [riskPulse, setRiskPulse] = useState<any>(null);
 
   useEffect(() => {
-     if (rank >= 85) {
+     if (rank >= 85 && aiEnabled) {
         api.get('/targets/pulse/risk').then(res => setRiskPulse(res.data)).catch(() => {});
      }
-  }, [rank]);
+  }, [rank, aiEnabled]);
 
   const fetchTargets = useCallback(async () => {
     try {
@@ -533,7 +534,7 @@ const TargetDashboard: React.FC = () => {
       </div>
 
       {/* RISK PULSE WIDGET */}
-      {rank >= 85 && riskPulse && riskPulse.endangeredCount > 0 && (
+      {rank >= 85 && aiEnabled && riskPulse && riskPulse.endangeredCount > 0 && (
          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
             className="nx-card p-10 bg-gradient-to-br from-rose-500/10 to-transparent border-rose-500/20 relative overflow-hidden shadow-2xl">
             <div className="absolute top-0 right-0 p-3 bg-rose-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg flex items-center gap-2">
