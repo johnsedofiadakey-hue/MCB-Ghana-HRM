@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireRole, authorize } from '../middleware/auth.middleware';
 import { upload } from '../middleware/upload.middleware';
 import { validate, CreateUserSchema, UpdateUserSchema } from '../middleware/validate.middleware';
 import {
