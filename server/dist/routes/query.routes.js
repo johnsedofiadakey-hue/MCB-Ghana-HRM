@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const query_controller_1 = require("../controllers/query.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticate);
+router.get('/employee/:id', query_controller_1.getEmployeeQueries);
+router.post('/employee/:id', query_controller_1.createQuery);
+router.patch('/:id/status', query_controller_1.updateQueryStatus);
+exports.default = router;

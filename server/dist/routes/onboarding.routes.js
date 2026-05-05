@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const onboarding_controller_1 = require("../controllers/onboarding.controller");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticate);
+router.get('/my', onboarding_controller_1.getMyOnboarding);
+router.post('/task/complete', onboarding_controller_1.completeTask);
+router.get('/templates', (0, auth_middleware_1.requireRole)(85), onboarding_controller_1.getTemplates);
+router.post('/templates', (0, auth_middleware_1.requireRole)(85), onboarding_controller_1.createTemplate);
+router.post('/start', (0, auth_middleware_1.requireRole)(85), onboarding_controller_1.startOnboarding);
+router.get('/all', (0, auth_middleware_1.requireRole)(85), onboarding_controller_1.getAllOnboardingSessions);
+exports.default = router;
