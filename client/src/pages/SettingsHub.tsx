@@ -1222,6 +1222,29 @@ const SettingsHub = () => {
                           <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.mcb_ai_engine', 'MCB AI Engine')}</p>
                         </div>
                       </div>
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/5 flex items-center justify-center text-[var(--primary)]">
+                               <Zap size={18} />
+                            </div>
+                            <div>
+                                <p className="text-[14px] font-black uppercase tracking-tight text-[var(--text-primary)]">Cortex AI Intelligence</p>
+                                <p className="text-[10px] text-[var(--text-muted)] font-medium mt-0.5">Enable neural analytical insights across the system.</p>
+                            </div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={formData.isAiEnabled}
+                              onChange={(e) => setFormData({ ...formData, isAiEnabled: e.target.checked })}
+                              className="sr-only peer" 
+                            />
+                            <div className="w-11 h-6 bg-[var(--bg-elevated)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]"></div>
+                          </label>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-muted)] font-medium px-2 leading-relaxed opacity-60">Disabling this will immediately suspend the Cortex assistant and hide all AI-driven predictive insights from dashboards and reports.</p>
+                      </div>
                     </section>
 
                     <section className="p-10 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50 shadow-sm relative overflow-hidden group">

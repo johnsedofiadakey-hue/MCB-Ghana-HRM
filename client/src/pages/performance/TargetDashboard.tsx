@@ -15,6 +15,7 @@ import TargetCascadeModal from '../../components/performance/TargetCascadeModal'
 import { cn } from '../../utils/cn';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
+import { useAI } from '../../context/AIContext';
 
 const getMetricTypes = (t: any) => [
   { value: 'NUMERICAL', label: t('targets.numerical'), icon: Hash, desc: t('targets.numerical_desc') },
@@ -52,6 +53,7 @@ const CreateTargetModal: React.FC<{
   initialData?: any;
 }> = ({ onClose, onSuccess, initialData }) => {
   const { t } = useTranslation();
+  const { isEnabled: aiEnabled } = useAI();
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -200,15 +202,17 @@ const CreateTargetModal: React.FC<{
                 <textarea className="nx-input" value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
                   placeholder={t('targets.description_placeholder')} />
-                <button 
-                  type="button" 
-                  onClick={handleAiDraft}
-                  disabled={isAiGenerating}
-                  className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--primary)]/70 mt-2 transition-all"
-                >
-                  {isAiGenerating ? <div className="w-3 h-3 border-2 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin" /> : <Sparkles size={12} />}
-                  Enhance with Cortex AI
-                </button>
+                {aiEnabled && (
+                  <button 
+                    type="button" 
+                    onClick={handleAiDraft}
+                    disabled={isAiGenerating}
+                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--primary)]/70 mt-2 transition-all"
+                  >
+                    {isAiGenerating ? <div className="w-3 h-3 border-2 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin" /> : <Sparkles size={12} />}
+                    Enhance with Cortex AI
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
