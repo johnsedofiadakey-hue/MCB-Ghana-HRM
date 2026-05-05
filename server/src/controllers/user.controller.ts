@@ -874,17 +874,18 @@ export const resetEmployeePassword = async (req: Request, res: Response) => {
     if (!newPassword) return res.status(400).json({ error: 'newPassword is required' });
     if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-    // Hierarchy Guard: Only MD or IT_MANAGER (>= 85)
-    if (userReq.rank < 85 && userReq.role !== 'DEV') {
-      return res.status(403).json({ error: 'Access denied: Only the IT Manager or MD can reset passwords.' });
-    }
-
     const targetUser = await prisma.user.findUnique({ where: { id: targetId, organizationId } });
     if (!targetUser) return res.status(404).json({ error: 'User not found' });
 
-    // Cannot reset someone with higher rank
-    if (userReq.rank < getRoleRank(targetUser.role) && userReq.role !== 'DEV') {
-      return res.status(403).json({ error: 'Access denied: You cannot reset the password for a user with a higher rank.' });
+    // Hierarchy Guard: IT/HR Managers (Rank 85+) can reset all accounts.
+    // However, the MD account (Rank 95) can only be reset by the MD or DEV.
+    const targetRank = getRoleRank(targetUser.role);
+    if (userReq.rank < 85 && userReq.role !== 'DEV') {
+      return res.status(403).json({ error: 'Access denied: Only managers can reset passwords.' });
+    }
+
+    if (targetRank >= 95 && actorId !== targetId && userReq.role !== 'DEV') {
+      return res.status(403).json({ error: 'Access denied: The Managing Director password can only be reset by the MD or a System Architect.' });
     }
 
     await userService.adminResetPassword(organizationId, targetId, newPassword);

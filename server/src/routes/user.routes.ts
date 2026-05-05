@@ -18,8 +18,8 @@ router.get('/me/team', getMyTeam);
 router.get('/supervisors', getSupervisors);
 router.get('/', requireRole(50), getAllEmployees);
 router.get('/:id', getEmployee);
-router.get('/:id/risk', authorize(['HR_OFFICER', 'HR_MANAGER', 'MD']), getUserRiskProfile);
-router.get('/:id/risk-profile', authorize(['HR_OFFICER', 'HR_MANAGER', 'MD']), getUserRiskProfile); // alias
+router.get('/:id/risk', authorize(['HR_OFFICER', 'HR_MANAGER', 'IT_MANAGER', 'MD']), getUserRiskProfile);
+router.get('/:id/risk-profile', authorize(['HR_OFFICER', 'HR_MANAGER', 'IT_MANAGER', 'MD']), getUserRiskProfile); // alias
 
 // Create (HR Manager / IT Manager / MD only)
 router.post('/', authorize(['HR_MANAGER', 'IT_MANAGER', 'MD']), validate(CreateUserSchema), createEmployee);
