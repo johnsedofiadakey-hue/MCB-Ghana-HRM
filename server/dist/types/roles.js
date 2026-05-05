@@ -5,13 +5,13 @@ var RoleRank;
 (function (RoleRank) {
     RoleRank[RoleRank["DEV"] = 100] = "DEV";
     RoleRank[RoleRank["MD"] = 95] = "MD";
-    RoleRank[RoleRank["HR_MANAGER"] = 90] = "HR_MANAGER";
-    RoleRank[RoleRank["DIRECTOR"] = 88] = "DIRECTOR";
+    RoleRank[RoleRank["DIRECTOR"] = 90] = "DIRECTOR";
+    RoleRank[RoleRank["HR_MANAGER"] = 88] = "HR_MANAGER";
     RoleRank[RoleRank["FINANCE_MANAGER"] = 87] = "FINANCE_MANAGER";
     RoleRank[RoleRank["IT_MANAGER"] = 85] = "IT_MANAGER";
-    RoleRank[RoleRank["HR_OFFICER"] = 75] = "HR_OFFICER";
-    RoleRank[RoleRank["MANAGER"] = 70] = "MANAGER";
-    RoleRank[RoleRank["SUPERVISOR"] = 60] = "SUPERVISOR";
+    RoleRank[RoleRank["HR_OFFICER"] = 80] = "HR_OFFICER";
+    RoleRank[RoleRank["MANAGER"] = 75] = "MANAGER";
+    RoleRank[RoleRank["SUPERVISOR"] = 65] = "SUPERVISOR";
     RoleRank[RoleRank["STAFF"] = 50] = "STAFF";
     RoleRank[RoleRank["CASUAL"] = 40] = "CASUAL";
 })(RoleRank || (exports.RoleRank = RoleRank = {}));
@@ -31,5 +31,13 @@ exports.ROLE_RANK_MAP = {
     HR_ADMIN: RoleRank.HR_MANAGER,
     IT_ADMIN: RoleRank.IT_MANAGER,
     EMPLOYEE: RoleRank.STAFF,
-    SUPER_ADMIN: RoleRank.MD
+    SUPER_ADMIN: RoleRank.MD,
+    // Alias Support for DB display roles
+    'MANAGING DIRECTOR': RoleRank.MD,
+    'SYSTEM DEVELOPER': RoleRank.DEV,
+    'HR OFFICER': RoleRank.HR_OFFICER,
+    'HR MANAGER': RoleRank.HR_MANAGER,
+    'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,
+    'IT MANAGER': RoleRank.IT_MANAGER,
+    'IT ADMIN': RoleRank.IT_MANAGER,
 };

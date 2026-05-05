@@ -195,14 +195,14 @@ const createEmployee = async (req, res) => {
         const actorRole = userReq.role;
         const actorId = userReq.id;
         // Only HR/MD (>= 85) can set salary/currency on create
-        // STRICT GUARD: Only MD (90+) can create high-level roles (Rank 85+)
+        // GLOBAL CONTROLLER ACCESS: HR/IT Managers (Rank 85+) can create all roles.
         const targetRank = (0, auth_middleware_1.getRoleRank)(req.body.role);
         if (actorRank < 85) {
             delete req.body.salary;
             delete req.body.currency;
         }
-        if (actorRank < 90 && targetRank >= 85) {
-            return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts (HR/IT Manager).' });
+        if (actorRank < 85 && targetRank >= 85 && actorRole !== 'DEV') {
+            return res.status(403).json({ error: 'Access denied: Only managers can create administrative accounts.' });
         }
         const tempPassword = req.body.password || 'SecureInit!';
         // 🛡️ Validate SubUnit/Department pairing
@@ -429,11 +429,21 @@ const updateEmployee = async (req, res) => {
             delete req.body.salary;
             delete req.body.currency;
         }
-        // Only MD/DEV (>= 90) can assign roles higher than 80 (Director+)
+        // 🛡️ GLOBAL CONTROLLER ACCESS (IT/HR Managers >= 85)
+        // They are fully responsible for the app and can manage all roles including HR_MANAGER.
+        // However, the MD account (Rank 95) is protected from non-DEV status/role changes.
         const targetRank = req.body.role ? (0, auth_middleware_1.getRoleRank)(req.body.role) : undefined;
-        if (actorRank < 90 && actorRole !== 'DEV') {
-            if (targetRank && (targetRank >= 85 || (0, auth_middleware_1.getRoleRank)(targetUser.role) >= 85)) {
-                return res.status(403).json({ message: 'Access denied: Only the MD can manage administrative roles (HR/MD).' });
+        const currentTargetRank = (0, auth_middleware_1.getRoleRank)(targetUser.role);
+        if (actorRank < 85 && actorRole !== 'DEV') {
+            // Protect Administrative Roles from lower ranks (staff, supervisors, etc)
+            if ((targetRank && targetRank >= 85) || currentTargetRank >= 85) {
+                return res.status(403).json({ message: 'Access denied: Only managers can manage administrative roles.' });
+            }
+        }
+        // 🛡️ MD PROTECTION: Only the MD or DEV can change the role/status of the MD account
+        if (currentTargetRank >= 95 && actorId !== targetId && actorRole !== 'DEV') {
+            if (req.body.role || req.body.status) {
+                return res.status(403).json({ message: 'Access denied: The Managing Director account can only be modified by the MD or a System Architect.' });
             }
         }
         // 🛡️ Validate SubUnit/Department pairing
@@ -445,7 +455,7 @@ const updateEmployee = async (req, res) => {
                 return res.status(400).json({ error: 'The selected sub-unit does not belong to the selected department.' });
             }
         }
-        const user = await userService.updateUser(organizationId, targetId, req.body);
+        const user = await userService.updateUser(organizationId, targetId, req.body, userReq.id);
         const { passwordHash, ...safe } = user;
         await (0, audit_service_1.logAction)(actorId, 'EMPLOYEE_UPDATED', 'User', targetId, { fields: Object.keys(req.body) }, req.ip);
         res.json(withDepartment(getSafeUser(safe, actorRole)));
@@ -535,10 +545,10 @@ const assignRole = async (req, res) => {
             return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can manage personnel role assignments.' });
         }
         const validRoles = ['DEV', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
-        // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/IT Manager)
+        // 🛡️ Hierarchy Guard: Only MD/DEV (90+) or Admin Managers (85+) can assign roles >= 85 (HR/IT Manager)
         const targetRoleRank = (0, auth_middleware_1.getRoleRank)(role);
-        if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {
-            return res.status(403).json({ error: 'Access denied: Only the MD can assign administrative roles (HR/IT Manager).' });
+        if (actorRank < 85 && actorRole !== 'DEV' && targetRoleRank >= 85) {
+            return res.status(403).json({ error: 'Access denied: Only the MD or Administrative Managers can assign administrative roles.' });
         }
         // 🛡️ Cannot promote someone to a rank higher than yourself
         if (actorRank < targetRoleRank && actorRole !== 'DEV') {
@@ -666,7 +676,7 @@ const uploadImage = async (req, res) => {
         }
         if (!publicUrl)
             return res.status(400).json({ message: 'No image provided.' });
-        await userService.updateUser(organizationId, targetId, { avatarUrl: publicUrl });
+        await userService.updateUser(organizationId, targetId, { avatarUrl: publicUrl }, userReq.id);
         await (0, audit_service_1.logAction)(actorId, 'AVATAR_UPDATED', 'User', targetId, {}, req.ip);
         res.json({ url: publicUrl, message: 'Avatar updated successfully' });
     }
@@ -697,7 +707,7 @@ const uploadSignature = async (req, res) => {
             return res.status(400).json({ message: 'No signature image provided.' });
         // 🗑️ DELETION LOGIC: If 'none', clear the signature
         if (req.body.image === 'none') {
-            await userService.updateUser(organizationId, targetId, { signatureUrl: null });
+            await userService.updateUser(organizationId, targetId, { signatureUrl: null }, userReq.id);
             await (0, audit_service_1.logAction)(actorId, 'SIGNATURE_DELETED', 'User', targetId, {}, req.ip);
             return res.json({ message: 'Signature deleted successfully', url: null });
         }
@@ -718,7 +728,7 @@ const uploadSignature = async (req, res) => {
             // Fallback to base64 persistence
             publicUrl = `data:image/webp;base64,${webpBuffer.toString('base64')}`;
         }
-        await userService.updateUser(organizationId, targetId, { signatureUrl: publicUrl });
+        await userService.updateUser(organizationId, targetId, { signatureUrl: publicUrl }, userReq.id);
         await (0, audit_service_1.logAction)(actorId, 'SIGNATURE_UPDATED', 'User', targetId, {}, req.ip);
         res.json({ url: publicUrl, message: 'Digital signature updated successfully' });
     }
@@ -858,16 +868,17 @@ const resetEmployeePassword = async (req, res) => {
             return res.status(400).json({ error: 'newPassword is required' });
         if (newPassword.length < 8)
             return res.status(400).json({ error: 'Password must be at least 8 characters' });
-        // Hierarchy Guard: Only MD or IT_MANAGER (>= 85)
-        if (userReq.rank < 85 && userReq.role !== 'DEV') {
-            return res.status(403).json({ error: 'Access denied: Only the IT Manager or MD can reset passwords.' });
-        }
         const targetUser = await client_1.default.user.findUnique({ where: { id: targetId, organizationId } });
         if (!targetUser)
             return res.status(404).json({ error: 'User not found' });
-        // Cannot reset someone with higher rank
-        if (userReq.rank < (0, auth_middleware_1.getRoleRank)(targetUser.role) && userReq.role !== 'DEV') {
-            return res.status(403).json({ error: 'Access denied: You cannot reset the password for a user with a higher rank.' });
+        // Hierarchy Guard: IT/HR Managers (Rank 85+) can reset all accounts.
+        // However, the MD account (Rank 95) can only be reset by the MD or DEV.
+        const targetRank = (0, auth_middleware_1.getRoleRank)(targetUser.role);
+        if (userReq.rank < 85 && userReq.role !== 'DEV') {
+            return res.status(403).json({ error: 'Access denied: Only managers can reset passwords.' });
+        }
+        if (targetRank >= 95 && actorId !== targetId && userReq.role !== 'DEV') {
+            return res.status(403).json({ error: 'Access denied: The Managing Director password can only be reset by the MD or a System Architect.' });
         }
         await userService.adminResetPassword(organizationId, targetId, newPassword);
         await (0, audit_service_1.logAction)(actorId, 'PWD_ADMIN_RESET', 'User', targetId, { adminId: actorId }, req.ip);

@@ -253,6 +253,7 @@
     "roles": {
       "DEV": "Ingénieur",
       "MD": "Dir. Général",
+      "HR_DIRECTOR": "Dir. RH",
       "DIRECTOR": "Directeur",
       "HR_MANAGER": "Manager RH",
       "FINANCE_MANAGER": "Gérant Finance",

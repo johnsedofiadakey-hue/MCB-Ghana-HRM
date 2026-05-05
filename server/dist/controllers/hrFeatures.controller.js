@@ -458,10 +458,11 @@ const updatePromotionStatus = async (req, res) => {
                 data: {
                     organizationId: orgId,
                     employeeId: request.employeeId,
+                    loggedById: req.user.id,
                     title: 'Promotion Approved',
-                    description: `Promoted to ${request.targetJobTitle || request.targetRole}.`,
+                    description: `Professional promotion approved to ${request.targetJobTitle || request.targetRole}.`,
                     type: 'PROMOTION',
-                    severity: 'INFO'
+                    severity: 'SUCCESS'
                 }
             });
         }

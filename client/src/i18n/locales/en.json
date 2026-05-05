@@ -254,6 +254,7 @@
     "roles": {
       "DEV": "Management",
       "MD": "Managing Director",
+      "HR_DIRECTOR": "HR Director",
       "DIRECTOR": "Director",
       "HR_MANAGER": "HR Manager",
       "FINANCE_MANAGER": "Finance Manager",

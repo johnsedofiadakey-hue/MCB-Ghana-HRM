@@ -30,7 +30,9 @@ const authenticate = async (req, res, next) => {
     if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split(' ')[1];
     }
-    // ── S1 SECURITY FIX: Removed query string token acceptance (token must be in header) ──
+    else if (req.query.token) {
+        token = req.query.token;
+    }
     if (!token) {
         console.warn(`[Auth Middleware] No token provided for: ${req.method} ${req.path}`);
         return res.status(401).json({ error: 'No token provided' });
@@ -131,11 +133,16 @@ exports.authenticate = authenticate;
 const authorize = (allowedRoles) => {
     return (req, res, next) => {
         const userRole = req.user?.role;
-        const normalized = normalizeRole(userRole);
-        const normalizedAllowed = allowedRoles.map((r) => normalizeRole(r));
-        if (normalized === 'DEV' || normalizedAllowed.includes(normalized)) {
+        const userRank = (0, exports.getRoleRank)(userRole);
+        // DEV bypass
+        if (normalizeRole(userRole) === 'DEV')
+            return next();
+        // Map allowed roles to their required ranks
+        const allowedRanks = allowedRoles.map(r => (0, exports.getRoleRank)(r));
+        if (allowedRanks.includes(userRank)) {
             return next();
         }
+        console.warn(`[Auth] Access denied for role: ${userRole} (Rank: ${userRank}). Required ranks: ${allowedRanks.join(', ')}`);
         return res.status(403).json({ error: 'Access denied: insufficient permissions' });
     };
 };

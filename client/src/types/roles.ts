@@ -1,6 +1,7 @@
 export const RoleRank = {
     DEV: 100,
     MD: 95,
+    HR_DIRECTOR: 92,
     DIRECTOR: 90,
     HR_MANAGER: 88,
     FINANCE_MANAGER: 87,
@@ -32,6 +33,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
 export const ROLE_LABELS: Record<string, string> = {
   DEV: 'System Developer',
   MD: 'Managing Director',
+  HR_DIRECTOR: 'HR Director',
   DIRECTOR: 'Director',
   HR_MANAGER: 'HR Manager',
   FINANCE_MANAGER: 'Finance Manager',

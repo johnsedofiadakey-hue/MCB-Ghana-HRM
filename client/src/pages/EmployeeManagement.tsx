@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
   X, Loader2, Clock, Umbrella, Activity,
@@ -84,6 +84,7 @@ const FormField = ({ label, type = 'text', required = false, value, onChange, ch
 export default function EmployeeManagement() {
   const { t, i18n: i18n_fe } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [employees, setEmployees] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -248,16 +249,15 @@ export default function EmployeeManagement() {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const editId = params.get('edit');
-    if (editId && employees.length > 0) {
-      const targetEmp = employees.find(e => e.id === editId);
-      if (targetEmp) {
-        window.history.replaceState(null, '', window.location.pathname);
-        openEdit(targetEmp);
-      }
+    if (editId && !selected && modal !== 'edit') {
+      openEdit({ id: editId });
+      navigate(location.pathname, { replace: true });
     }
-  }, [employees]);
+  }, [location.search, modal, selected, navigate, location.pathname]);
+
+
 
   const openCreate = () => { setForm({ ...EMPTY_FORM }); setError(''); setModalTab('identity'); setModal('create'); };
   const openView = (emp: any) => navigate(`/employees/${emp.id}`);

@@ -233,11 +233,15 @@ const downloadBoardReportPDF = async (req, res) => {
         });
         const payrollTotal = Number(latestRun?.totalNet) || 0;
         // Fetch AI Insight (Heuristics or Gemini if wired into a broader analytic service)
-        // Here we embed a brief static summary representing Cortex AI's general findings
-        const insights = [
+        // Respect the organization-wide AI toggle
+        const org = await client_1.default.organization.findUnique({
+            where: { id: organizationId },
+            select: { isAiEnabled: true }
+        });
+        const insights = org?.isAiEnabled ? [
             { label: 'Operational Stability', description: 'System-wide uptime and headcount deployment are optimal.' },
             { label: 'Financial Health', description: 'Payroll growth is stable and aligned with departmental budgets.' }
-        ];
+        ] : [];
         const reportData = {
             totalEmployees,
             pendingLeaves,

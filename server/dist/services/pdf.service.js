@@ -98,54 +98,67 @@ class PdfExportService {
         });
     }
     static async renderHeader(doc, org, primaryColor) {
+        const pageWidth = doc.page.width;
+        const margin = this.SAFE_MARGIN;
+        const logoWidth = 100;
+        const headerTop = 35;
         try {
+            // --- Logo Rendering (Extreme Right) ---
             if (org?.logoUrl) {
+                const xPos = pageWidth - margin - logoWidth;
                 if (org.logoUrl.startsWith('data:image')) {
                     const b64 = org.logoUrl.split(',')[1];
                     if (b64)
-                        doc.image(Buffer.from(b64, 'base64'), 50, 35, { width: 100 });
+                        doc.image(Buffer.from(b64, 'base64'), xPos, headerTop, { width: logoWidth });
                 }
                 else {
                     try {
-                        // Resolve absolute URL for relative paths
                         let absoluteLogoUrl = org.logoUrl;
                         if (!absoluteLogoUrl.startsWith('http')) {
-                            const apiOrigin = process.env.VITE_API_URL || 'https://mcb-hrm-ghana-api.onrender.com';
-                            absoluteLogoUrl = `${apiOrigin}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
+                            // Fallback to internal development or production asset path
+                            const apiOrigin = process.env.API_BASE_URL || process.env.RENDER_EXTERNAL_URL || 'https://mcb-ghana-hrm-api.onrender.com';
+                            absoluteLogoUrl = `${apiOrigin.replace(/\/$/, '')}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
                         }
                         const response = await axios_1.default.get(absoluteLogoUrl, {
                             responseType: 'arraybuffer',
-                            timeout: 10000
+                            timeout: 8000
                         });
-                        doc.image(response.data, 50, 35, { width: 100 });
+                        doc.image(response.data, xPos, headerTop, { width: logoWidth });
                     }
                     catch (e) {
-                        console.warn('[PdfExportService] Logo fetch failed, fallback to name branding:', org.logoUrl);
+                        console.warn('[PdfExportService] Remote logo fetch failed:', absoluteLogoUrl);
                         throw e;
                     }
                 }
             }
         }
         catch (err) {
-            console.warn('[PdfExportService] Header Branding Fallback triggered');
-            doc.fontSize(22).fillColor(primaryColor).font('Helvetica-Bold').text(org?.name?.slice(0, 15).toUpperCase() || 'MCB-HRM', 50, 45);
+            // Fallback Branding on the Right if logo fails
+            doc.fontSize(16).fillColor(primaryColor).font('Helvetica-Bold').text(org?.name?.slice(0, 3).toUpperCase() || 'MCB', pageWidth - margin - 60, headerTop + 10, { width: 60, align: 'right' });
         }
+        // --- Company Details (Left Aligned) ---
         doc
             .fillColor(primaryColor)
             .fontSize(18)
             .font('Helvetica-Bold')
-            .text(org?.name?.toUpperCase() || 'MCB-HRM Ghana', this.SAFE_MARGIN, 43, { align: 'center', width: this.CONTENT_WIDTH })
+            .text(org?.name?.toUpperCase() || 'MCB-HRM GHANA', margin, headerTop + 5, { width: 350 });
+        doc
             .fontSize(9)
             .font('Helvetica')
             .fillColor('#64748b')
-            .text(`${org?.address || ''} | ${org?.city || ''}, ${org?.country || ''}`, this.SAFE_MARGIN, 70, { align: 'center', width: this.CONTENT_WIDTH })
-            .text(`Phone: ${org?.phone || ''} | Email: ${org?.email || ''}`, { align: 'center', width: this.CONTENT_WIDTH });
+            .text(`${org?.address || 'Corporate Headquarters'}`, margin, headerTop + 30, { width: 350 })
+            .text(`${org?.city || ''}, ${org?.country || ''}`, margin, headerTop + 42, { width: 350 })
+            .fillColor(primaryColor)
+            .text(`Phone: ${org?.phone || 'N/A'} | Email: ${org?.email || 'N/A'}`, margin, headerTop + 55, { width: 350 });
+        // Decorative Header Line
         doc
-            .strokeColor('#f1f5f9')
+            .strokeColor(primaryColor)
+            .opacity(0.2)
             .lineWidth(0.5)
-            .moveTo(this.SAFE_MARGIN, 115)
-            .lineTo(595 - this.SAFE_MARGIN, 115)
-            .stroke();
+            .moveTo(margin, 115)
+            .lineTo(pageWidth - margin, 115)
+            .stroke()
+            .opacity(1);
     }
     static renderWatermark(doc) {
         doc.save();
@@ -467,12 +480,60 @@ class PdfExportService {
         doc.fillColor('#fff').fontSize(28).font('Helvetica-Bold').text(`${currency} ${formatAmount(Number(item.netPay))}`, 360, summaryTop + 45);
     }
     static renderBoardReportContent(doc, data, brandColor) {
-        doc.fillColor('#0f172a').fontSize(24).font('Helvetica-Bold').text('BOARD REPORT', this.SAFE_MARGIN, doc.y);
-        doc.moveDown(3);
-        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('1. Human Capital Snapshot', this.SAFE_MARGIN, doc.y);
-        doc.moveTo(this.SAFE_MARGIN, doc.y + 5).lineTo(this.SAFE_MARGIN + this.CONTENT_WIDTH, doc.y + 5).strokeColor(brandColor).lineWidth(2).stroke();
+        const margin = this.SAFE_MARGIN;
+        const width = this.CONTENT_WIDTH;
+        // --- Executive Title ---
+        doc.moveDown(1);
+        doc.fillColor('#0f172a').fontSize(26).font('Helvetica-Bold').text('EXECUTIVE BOARD SUMMARY', margin);
+        doc.fontSize(10).fillColor('#64748b').font('Helvetica').text(`FISCAL PERIOD: Q${Math.ceil((new Date().getMonth() + 1) / 3)} - ${new Date().getFullYear()}`, margin);
         doc.moveDown(2);
-        this.drawMetricCard(doc, 'Total Headcount', String(data.totalEmployees), 50, doc.y, 150, brandColor);
+        // --- 1. Institutional Snapshot (Metric Cards) ---
+        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('INSTITUTIONAL PERFORMANCE SNAPSHOT', margin);
+        doc.moveDown(0.5);
+        doc.rect(margin, doc.y, width, 1.5).fill(brandColor);
+        doc.moveDown(1.5);
+        const cardWidth = (width - 40) / 3;
+        const currentY = doc.y;
+        this.drawMetricCard(doc, 'Total Headcount', String(data.totalEmployees), margin, currentY, cardWidth, brandColor);
+        this.drawMetricCard(doc, 'Active Leaves', String(data.pendingLeaves), margin + cardWidth + 20, currentY, cardWidth, '#f59e0b');
+        this.drawMetricCard(doc, 'Open Appraisals', String(data.pendingAppraisals), margin + (cardWidth + 20) * 2, currentY, cardWidth, '#10b981');
+        doc.y = currentY + 90;
+        // --- 2. Financial Vector ---
+        doc.moveDown(2);
+        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('MACRO-FINANCIAL OUTFLOW', margin);
+        doc.moveDown(0.5);
+        doc.rect(margin, doc.y, width, 1.5).fill(brandColor);
+        doc.moveDown(1.5);
+        doc.fillColor('#f8fafc').rect(margin, doc.y, width, 80).fill();
+        const financialY = doc.y - 70;
+        doc.fillColor('#64748b').fontSize(10).font('Helvetica-Bold').text('LATEST MONTHLY PAYROLL DISBURSEMENT', margin + 20, financialY);
+        doc.fillColor('#1e293b').fontSize(32).font('Helvetica-Bold').text(`GHS ${data.payrollTotal.toLocaleString()}`, margin + 20, financialY + 15);
+        doc.fontSize(9).font('Helvetica').fillColor('#94a3b8').text('Calculated based on the last finalized and authorized payroll run.', margin + 20, financialY + 50);
+        doc.y = financialY + 110;
+        // --- 3. Strategic AI Insights (Cortex) ---
+        doc.moveDown(2);
+        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('CORTEX STRATEGIC INSIGHTS', margin);
+        doc.moveDown(0.5);
+        doc.rect(margin, doc.y, width, 1.5).fill(brandColor);
+        doc.moveDown(1.5);
+        if (data.insights && data.insights.length > 0) {
+            data.insights.forEach((insight, i) => {
+                const top = doc.y;
+                doc.fillColor('#f1f5f9').rect(margin, top, width, 45).fill();
+                doc.fillColor(brandColor).fontSize(11).font('Helvetica-Bold').text(insight.label.toUpperCase(), margin + 15, top + 10);
+                doc.fillColor('#475569').fontSize(10).font('Helvetica').text(insight.description, margin + 15, top + 25, { width: width - 30 });
+                doc.moveDown(2);
+            });
+        }
+        // --- 4. Official Validation ---
+        doc.moveDown(4);
+        if (doc.y > 650)
+            doc.addPage();
+        const sigY = doc.y + 50;
+        doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(margin, sigY).lineTo(margin + 200, sigY).stroke();
+        doc.fontSize(8).fillColor('#64748b').font('Helvetica-Bold').text('MANAGING DIRECTOR / CEO', margin, sigY + 10);
+        doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(margin + 300, sigY).lineTo(margin + 500, sigY).stroke();
+        doc.fontSize(8).fillColor('#64748b').font('Helvetica-Bold').text('BOARD OF DIRECTORS (SANCTION)', margin + 300, sigY + 10);
     }
     static drawMetricCard(doc, title, value, x, y, width, color) {
         doc.roundedRect(x, y, width, 60, 8).fillColor('#f8fafc').fill();
