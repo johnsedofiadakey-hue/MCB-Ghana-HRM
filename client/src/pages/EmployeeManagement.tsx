@@ -278,6 +278,10 @@ export default function EmployeeManagement() {
   const handleSave = async (submittedForm: any) => {
     setSaving(true); setError('');
     try {
+    if (!submittedForm.fullName || !submittedForm.email || !submittedForm.role || (!submittedForm.password && modal === 'create')) {
+      toast.error(t('common.fill_required'));
+      return;
+    }
       // Robust reporting logic for Supervisors
       if (submittedForm.role === 'SUPERVISOR') {
         if (!submittedForm.supervisorId) {

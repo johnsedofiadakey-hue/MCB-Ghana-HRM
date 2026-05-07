@@ -234,20 +234,20 @@ const Layout = () => {
           )}>
             <div className="max-w-[1600px] mx-auto pb-24 lg:pb-0">
               <ChunkErrorBoundary>
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={location.pathname}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                    className="w-full"
-                  >
-                    <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<PageLoader />}>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={location.pathname}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                      className="w-full"
+                    >
                       <Outlet />
-                    </Suspense>
-                  </motion.div>
-                </AnimatePresence>
+                    </motion.div>
+                  </AnimatePresence>
+                </Suspense>
               </ChunkErrorBoundary>
             </div>
 
