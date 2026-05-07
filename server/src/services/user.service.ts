@@ -256,27 +256,28 @@ export const updateUser = async (
         include: { departmentObj: { select: { name: true } } }
     });
 
-    // Exclude password from direct update here usually
-    const { password, passwordHash, department, departmentId, email, ...safeData } = data as any;
-
+    // 🛡️ Data Sanitization & Normalization
+    const { department, departmentId: explicitDeptId, email: newEmail, password, ...safeData } = data as any;
+    
     // 🛡️ Email Uniqueness Check
-    if (email) {
+    if (newEmail) {
+        const emailToUse = String(newEmail).toLowerCase().trim();
         const existingEmail = await prisma.user.findFirst({
             where: { 
-                email, 
+                email: emailToUse, 
                 organizationId,
                 NOT: { id }
             }
         });
         if (existingEmail) throw new Error('Another user with this email already exists.');
-        safeData.email = email;
+        safeData.email = emailToUse;
     }
 
     if (safeData.fullName) {
         safeData.fullName = safeData.fullName.trim().replace(/\./g, ' ');
     }
 
-    const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);
+    const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, explicitDeptId);
     if (resolvedDepartmentId !== undefined) {
         safeData.departmentId = resolvedDepartmentId;
     }
@@ -301,7 +302,17 @@ export const updateUser = async (
     delete safeData.organizationId;
     delete safeData.organization;
     delete safeData.passwordHash;
+    let newPasswordHash: string | undefined = undefined;
+    if (password && typeof password === 'string' && password.trim().length > 0) {
+        newPasswordHash = await bcrypt.hash(password, 10);
+    }
+    
     delete safeData.password;
+    delete safeData.passwordHash; // Prevent manual hash injection
+    
+    if (newPasswordHash) {
+        safeData.passwordHash = newPasswordHash;
+    }
     delete safeData.subUnit;
     delete safeData.departmentObj;
     delete safeData.supervisor;
@@ -324,17 +335,27 @@ export const updateUser = async (
     if (safeData.ssnitNumber !== undefined) safeData.ssnitEnc = maybeEncrypt(String(safeData.ssnitNumber || ''));
     if (safeData.salary !== undefined && safeData.salary !== null) safeData.salaryEnc = maybeEncrypt(String(safeData.salary));
     
-    // Handle certifications array-to-string conversion
-    if (Array.isArray(safeData.certifications)) {
-        safeData.certifications = JSON.stringify(safeData.certifications);
-    }
-
-    // Explicitly nullify other potential empty strings
-    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'nationality', 'countryOfOrigin', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId', 'biometricId']) {
+    // Explicitly nullify other potential empty strings to prevent Prisma 500 errors on Date/Number/Decimal fields
+    const nullifyKeys = [
+        'education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 
+        'address', 'dob', 'joinDate', 'bankAccountNumber', 'bankName', 'bankBranch', 
+        'ssnitNumber', 'nationality', 'countryOfOrigin', 'maritalStatus', 
+        'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 
+        'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 
+        'secondarySupervisorId', 'supervisorId', 'biometricId', 'salary'
+    ];
+    for (const key of nullifyKeys) {
         if (safeData[key] === '') safeData[key] = null;
     }
 
-    if (safeData.certifications !== undefined && Array.isArray(safeData.certifications)) safeData.certifications = JSON.stringify(safeData.certifications);
+    // Handle certifications array-to-string conversion
+    if (safeData.certifications !== undefined && Array.isArray(safeData.certifications)) {
+        safeData.certifications = JSON.stringify(safeData.certifications);
+    }
+
+    // Cast Date strings to Date objects for Prisma strict typing
+    if (safeData.joinDate && typeof safeData.joinDate === 'string') safeData.joinDate = new Date(safeData.joinDate);
+    if (safeData.dob && typeof safeData.dob === 'string') safeData.dob = new Date(safeData.dob);
 
     const extractedSecondarySupervisorId = safeData.secondarySupervisorId;
     delete safeData.secondarySupervisorId;
