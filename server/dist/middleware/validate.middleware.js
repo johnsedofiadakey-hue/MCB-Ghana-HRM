@@ -103,7 +103,7 @@ exports.DevPinSchema = zod_1.z.object({
     pin: zod_1.z.string().min(4).max(20),
 });
 // ── User / Employee ──────────────────────────────────────────────────────
-const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'];
+const ROLES = ['DEV', 'MD', 'HR_DIRECTOR', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'];
 const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
 const USER_STATUSES = ['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED', 'SUSPENDED'];
 const CURRENCIES = ['GHS', 'USD', 'EUR', 'GBP', 'GNF', 'NGN', 'KES', 'XOF'];

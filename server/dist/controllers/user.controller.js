@@ -273,6 +273,15 @@ const getAllEmployees = async (req, res) => {
             filters.role = req.query.role;
         if (req.query.status)
             filters.status = req.query.status;
+        const search = req.query.search;
+        if (search) {
+            filters.OR = [
+                { fullName: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { employeeCode: { contains: search, mode: 'insensitive' } },
+                { jobTitle: { contains: search, mode: 'insensitive' } }
+            ];
+        }
         const userRole = userReq.role;
         const userRank = (0, auth_middleware_1.getRoleRank)(userRole);
         const userId = userReq.id;
@@ -301,12 +310,13 @@ const getAllEmployees = async (req, res) => {
         }
         const take = parseInt(req.query.take) || 100;
         const skip = parseInt(req.query.skip) || 0;
-        const search = req.query.search;
+        const sortBy = req.query.sortBy || 'fullName';
+        const sortOrder = sortBy === 'createdAt' ? 'desc' : 'asc';
         const users = await client_1.default.user.findMany({
             where: filters,
             take,
             skip,
-            orderBy: { fullName: 'asc' },
+            orderBy: { [sortBy]: sortOrder },
             include: {
                 departmentObj: { select: { name: true } },
                 organization: { select: { defaultLeaveAllowance: true } },

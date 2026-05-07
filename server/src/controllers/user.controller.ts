@@ -294,7 +294,6 @@ export const getAllEmployees = async (req: Request, res: Response) => {
 
     const take = parseInt(req.query.take as string) || 100;
     const skip = parseInt(req.query.skip as string) || 0;
-    const search = req.query.search as string;
 
     const sortBy = req.query.sortBy as string || 'fullName';
     const sortOrder = sortBy === 'createdAt' ? 'desc' : 'asc';

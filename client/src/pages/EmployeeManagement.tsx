@@ -694,9 +694,10 @@ export default function EmployeeManagement() {
                                     className="w-5 h-5 rounded-lg border-2 border-[var(--border-subtle)] bg-[var(--bg-card)] checked:bg-[var(--primary)] checked:border-[var(--primary)] transition-all cursor-pointer appearance-none flex items-center justify-center after:content-['✓'] after:text-white after:text-[10px] after:hidden checked:after:block"
                                 />
                              </th>
-                             <th className="px-4 text-left min-w-[250px]">{t('employees.personnel')}</th>
-                             <th className="text-left min-w-[200px]">{t('employees.rank_dept')}</th>
-                             <th className="text-left min-w-[150px]">{t('employees.operational_status')}</th>
+                             <th className="px-4 text-left min-w-[250px]">{t('employees.full_name', 'Personnel')}</th>
+                             <th className="text-left min-w-[200px]">{t('employees.rank_assign', 'Role & Team')}</th>
+                             <th className="text-left min-w-[150px]">{t('common.status', 'Status')}</th>
+                             {rank >= 85 && <th className="text-left min-w-[150px]">{t('employees.base_salary')}</th>}
                              <th className="text-right px-8 w-32">{t('common.actions')}</th>
                           </tr>
                        </thead>
@@ -717,7 +718,7 @@ export default function EmployeeManagement() {
                                         className="w-5 h-5 rounded-lg border-2 border-[var(--border-subtle)] bg-[var(--bg-card)] checked:bg-[var(--primary)] checked:border-[var(--primary)] transition-all cursor-pointer appearance-none flex items-center justify-center after:content-['✓'] after:text-white after:text-[10px] after:hidden checked:after:block"
                                     />
                                 </td>
-                               <td className="px-4 py-5" data-label={t('employees.personnel')}>
+                               <td className="px-4 py-5" data-label={t('employees.full_name', 'Personnel')}>
                                   <div className="flex items-center gap-4">
                                      <Avatar user={emp} size={10} />
                                      <div>
@@ -726,7 +727,7 @@ export default function EmployeeManagement() {
                                      </div>
                                   </div>
                                </td>
-                               <td data-label={t('employees.rank_dept')}>
+                               <td data-label={t('employees.rank_assign', 'Role & Team')}>
                                   <div className="space-y-1.5 md:items-start items-end flex flex-col">
                                      <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
                                         {t(`employees.roles.${emp.role}`)} (L{getRoleRankValue(emp.role)})
@@ -734,7 +735,7 @@ export default function EmployeeManagement() {
                                      <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || t('common.unassigned_dept')}</p>
                                   </div>
                                </td>
-                               <td data-label={t('employees.operational_status')}>
+                               <td data-label={t('common.status', 'Status')}>
                                 <div className="flex items-center gap-2">
                                   <span className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm", STATUS_THEMES[emp.status])}>
                                      {t(`employees.statuses.${emp.status}`)}
@@ -746,6 +747,11 @@ export default function EmployeeManagement() {
                                   )}
                                 </div>
                                </td>
+                               {rank >= 85 && (
+                                 <td data-label={t('employees.base_salary')}>
+                                    <p className="text-[12px] font-black text-emerald-500">{emp.currency} {Number(emp.salary || 0).toLocaleString()}</p>
+                                 </td>
+                               )}
                                <td className="px-8 py-5 text-right" data-label={t('common.actions')}>
                                   <div className="flex justify-end gap-2">
                                      <button onClick={() => openView(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">

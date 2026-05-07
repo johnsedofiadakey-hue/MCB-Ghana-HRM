@@ -163,12 +163,20 @@ const PromotionRequests = () => {
                                         <Briefcase size={14} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Proposed Role</span>
                                     </div>
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[10px] font-bold line-through opacity-40">{req.employee?.jobTitle}</span>
-                                            <ArrowRight size={12} className="text-[var(--text-muted)] opacity-30" />
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50 mb-0.5">Current Role</span>
+                                            <span className="text-[11px] font-bold text-[var(--text-secondary)] line-through decoration-[var(--error)]/30">{req.employee?.jobTitle}</span>
                                         </div>
-                                        <span className="text-[13px] font-black text-[var(--primary)] leading-tight">{req.targetJobTitle || req.targetRole}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-[1px] flex-1 bg-[var(--border-subtle)]" />
+                                            <ArrowRight size={10} className="text-[var(--text-muted)] opacity-40" />
+                                            <div className="h-[1px] flex-1 bg-[var(--border-subtle)]" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] font-black uppercase tracking-widest text-[var(--primary)] mb-0.5">Proposed Advancement</span>
+                                            <span className="text-[14px] font-black text-[var(--text-primary)] leading-tight">{req.targetJobTitle || req.targetRole}</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="space-y-4 text-right">
@@ -253,7 +261,7 @@ const PromotionRequests = () => {
                                     <button 
                                         onClick={() => handleAction(selectedRequest.id, 'REJECTED')}
                                         disabled={!!processingId}
-                                        className="py-5 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                        className="py-5 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-rose-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                     >
                                         {processingId === selectedRequest.id ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
                                         Reject
@@ -261,7 +269,7 @@ const PromotionRequests = () => {
                                     <button 
                                         onClick={() => handleAction(selectedRequest.id, 'APPROVED')}
                                         disabled={!!processingId}
-                                        className="py-5 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                        className="py-5 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                     >
                                         {processingId === selectedRequest.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
                                         Approve

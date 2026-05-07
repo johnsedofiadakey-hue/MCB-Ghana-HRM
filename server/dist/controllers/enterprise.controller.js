@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEnterpriseSummary = exports.listTaxRules = exports.listEmployeeShifts = exports.getCulturePulse = exports.generateJobDraft = exports.listShifts = exports.listBenefitEnrollments = exports.listBenefitPlans = exports.listCandidates = exports.createTaxBracket = exports.createTaxRule = exports.listAnnouncements = exports.createAnnouncement = exports.assignShift = exports.createShift = exports.enrollEmployeeBenefit = exports.createBenefitPlan = exports.recordAssetReturn = exports.completeExitInterview = exports.startOffboarding = exports.updateOnboardingTask = exports.addOnboardingTask = exports.listOnboardingChecklists = exports.updateCandidateStatus = exports.createCandidate = exports.listJobPositions = exports.createJobPosition = exports.listPerformanceReviews = exports.upsertPerformanceReview = exports.createEmployeeTarget = exports.createTeamTarget = exports.listDepartmentKPIsLegacy = exports.deleteDepartmentKPI = exports.updateDepartmentKPI = exports.listDepartmentKPIs = exports.createDepartmentKPI = exports.getRoleDashboard = exports.getOrgId = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const ai_service_1 = require("../services/ai.service");
+const auth_middleware_1 = require("../middleware/auth.middleware");
 const getOrgId = (req) => {
     if (req.user?.role === 'DEV')
         return undefined;
@@ -63,7 +64,7 @@ const getRoleDashboard = async (req, res) => {
                 recruitmentPipelineOpenings: openJobs,
             });
         }
-        if (getRoleRank(role) >= 60 && getRoleRank(role) < 80) {
+        if ((0, auth_middleware_1.getRoleRank)(role) >= 60 && (0, auth_middleware_1.getRoleRank)(role) < 80) {
             return res.json({
                 role: 'MANAGER',
                 teamMembers: headcount,

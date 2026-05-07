@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { AIService } from '../services/ai.service';
 import { logAction } from '../services/audit.service';
+import { getRoleRank } from '../middleware/auth.middleware';
 
 export const getOrgId = (req: Request): string | undefined => {
   if (req.user?.role === 'DEV') return undefined;

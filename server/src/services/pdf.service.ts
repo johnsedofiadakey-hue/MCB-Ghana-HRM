@@ -132,8 +132,8 @@ export class PdfExportService {
           const b64 = org.logoUrl.split(',')[1];
           if (b64) doc.image(Buffer.from(b64, 'base64'), xPos, headerTop, { width: logoWidth });
         } else {
+          let absoluteLogoUrl = org.logoUrl;
           try {
-            let absoluteLogoUrl = org.logoUrl;
             if (!absoluteLogoUrl.startsWith('http')) {
                // Fallback to internal development or production asset path
                const apiOrigin = process.env.API_BASE_URL || process.env.RENDER_EXTERNAL_URL || 'https://mcb-ghana-hrm-api.onrender.com';
