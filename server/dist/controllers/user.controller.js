@@ -392,9 +392,9 @@ const updateEmployee = async (req, res) => {
             'address', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact',
             'emergencyContactName', 'emergencyContactPhone', 'gender', 'maritalStatus', 'bloodGroup'
         ];
-        if (!privilegedRoles.includes(actorRole) && actorRank < 80) {
+        if (!privilegedRoles.includes(actorRole) && actorRank < 70) {
             if (!isSelfUpdate) {
-                return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can update personnel profiles.' });
+                return res.status(403).json({ error: 'Access denied: Only Managers, HR, or IT can update personnel profiles.' });
             }
             // Filter body to only allowed self-service fields
             const filteredBody = {};
