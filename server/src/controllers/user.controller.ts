@@ -253,6 +253,16 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     if (req.query.role) filters.role = req.query.role as any;
     if (req.query.status) filters.status = req.query.status as any;
 
+    const search = req.query.search as string;
+    if (search) {
+      filters.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { employeeCode: { contains: search, mode: 'insensitive' } },
+        { jobTitle: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
     const userRole = userReq.role;
     const userRank = getRoleRank(userRole);
     const userId = userReq.id;
@@ -286,11 +296,14 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     const skip = parseInt(req.query.skip as string) || 0;
     const search = req.query.search as string;
 
+    const sortBy = req.query.sortBy as string || 'fullName';
+    const sortOrder = sortBy === 'createdAt' ? 'desc' : 'asc';
+
     const users = await prisma.user.findMany({
       where: filters,
       take,
       skip,
-      orderBy: { fullName: 'asc' },
+      orderBy: { [sortBy]: sortOrder },
       include: {
         departmentObj: { select: { name: true } },
         organization: { select: { defaultLeaveAllowance: true } },

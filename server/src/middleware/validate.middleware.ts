@@ -116,7 +116,7 @@ export const DevPinSchema = z.object({
 
 // ── User / Employee ──────────────────────────────────────────────────────
 
-const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'] as const;
+const ROLES = ['DEV', 'MD', 'HR_DIRECTOR', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'] as const;
 const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
 const USER_STATUSES = ['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED', 'SUSPENDED'] as const;
 const CURRENCIES = ['GHS', 'USD', 'EUR', 'GBP', 'GNF', 'NGN', 'KES', 'XOF'] as const;

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
-  X, Loader2, Clock, Umbrella, Activity,
+  X, Loader2, Clock, Umbrella, Activity, Filter,
   Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight, Globe, AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
@@ -22,6 +22,7 @@ const ROLES = GET_ORDERED_ROLES();
 const ROLE_THEMES: Record<string, string> = {
   DEV: 'text-[var(--success)] bg-[var(--success)]/5 border-[var(--success)]/10',
   MD: 'text-[var(--error)] bg-[var(--error)]/5 border-[var(--error)]/10',
+  HR_DIRECTOR: 'text-[var(--error)] bg-[var(--error)]/5 border-[var(--error)]/10',
   DIRECTOR: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
   HR_MANAGER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
   FINANCE_MANAGER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
@@ -94,6 +95,8 @@ export default function EmployeeManagement() {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterDept, setFilterDept] = useState('');
+  const [sortBy, setSortBy] = useState<'fullName' | 'createdAt'>('fullName');
   const [hasMore, setHasMore] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -179,6 +182,8 @@ export default function EmployeeManagement() {
       if (search) params.append('search', search);
       if (filterRole) params.append('role', filterRole);
       if (filterStatus) params.append('status', filterStatus);
+      if (filterDept) params.append('department', filterDept);
+      params.append('sortBy', sortBy);
       params.append('take', String(take));
       params.append('skip', String(skip));
 
@@ -206,7 +211,7 @@ export default function EmployeeManagement() {
         fetchAll(false);
     }, 400);
     return () => clearTimeout(timer);
-  }, [search, filterRole, filterStatus, activeTab]);
+  }, [search, filterRole, filterStatus, filterDept, activeTab, sortBy]);
 
   const openEdit = async (emp: any) => {
     setModal('edit');
@@ -443,32 +448,78 @@ export default function EmployeeManagement() {
         </div>
       </div>
 
-      {/* Global Filter Matrix */}
-      <div className="flex flex-wrap items-center gap-3 bg-[var(--bg-elevated)]/20 p-1.5 rounded-2xl border border-[var(--border-subtle)]/50 backdrop-blur-md">
-        <div className="relative flex-1 min-w-[280px] group">
-          <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
-          <input type="text" className="w-full bg-transparent border-none outline-none pl-14 pr-6 py-3.5 text-[13px] font-medium text-[var(--text-primary)]" placeholder={t('employees.search_placeholder')}
-            value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Global Filter Matrix: Premium Glassmorphism Interface */}
+      <div className="flex flex-wrap items-center gap-4 bg-[var(--bg-elevated)]/30 p-2.5 rounded-[2rem] border border-[var(--border-subtle)]/50 backdrop-blur-xl shadow-2xl shadow-black/5">
+        <div className="relative flex-[2] min-w-[320px] group">
+          <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all duration-300" />
+          <input 
+            type="text" 
+            className="w-full bg-[var(--bg-card)]/50 border border-transparent focus:border-[var(--primary)]/30 rounded-2xl pl-16 pr-6 py-4 text-[14px] font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none transition-all" 
+            placeholder={t('employees.search_placeholder', 'Search by Name, Code, or Email...')}
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+          />
         </div>
         
-        <div className="h-8 w-[1px] bg-[var(--border-subtle)] opacity-30 hidden md:block" />
-        
-        <div className="flex items-center gap-2 px-4">
-           <Users size={14} className="text-[var(--text-muted)]" />
-           <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest py-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
-             <option value="">{t('employees.all_ranks')}</option>
-             {ROLES.filter(r => r !== 'DEV' || user?.role === 'DEV').map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
-           </select>
-        </div>
+        <div className="flex flex-wrap items-center gap-3">
+            {/* Rank Filter */}
+            <div className="flex items-center gap-3 px-6 py-3 bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]/50 rounded-2xl hover:border-[var(--primary)]/30 transition-all group">
+               <Users size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
+               <select 
+                 className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" 
+                 value={filterRole} 
+                 onChange={e => setFilterRole(e.target.value)}
+               >
+                 <option value="">{t('employees.all_ranks')}</option>
+                 {ROLES.filter(r => r !== 'DEV' || user?.role === 'DEV').map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
+               </select>
+            </div>
 
-        <div className="h-8 w-[1px] bg-[var(--border-subtle)] opacity-30 hidden md:block" />
-        
-        <div className="flex items-center gap-2 px-4">
-           <Activity size={14} className="text-[var(--text-muted)]" />
-           <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest py-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-             <option value="">{t('employees.all_statuses')}</option>
-             {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{t(`employees.statuses.${s}`)}</option>)}
-           </select>
+            {/* Department Filter */}
+            <div className="flex items-center gap-3 px-6 py-3 bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]/50 rounded-2xl hover:border-[var(--primary)]/30 transition-all group">
+               <Briefcase size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
+               <select 
+                 className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" 
+                 value={filterDept} 
+                 onChange={e => setFilterDept(e.target.value)}
+               >
+                 <option value="">{t('employees.all_departments', 'All Departments')}</option>
+                 {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+               </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex items-center gap-3 px-6 py-3 bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]/50 rounded-2xl hover:border-[var(--primary)]/30 transition-all group">
+               <Activity size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
+               <select 
+                 className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" 
+                 value={filterStatus} 
+                 onChange={e => setFilterStatus(e.target.value)}
+               >
+                 <option value="">{t('employees.all_statuses')}</option>
+                 {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{t(`employees.statuses.${s}`)}</option>)}
+               </select>
+            </div>
+
+            {/* Sort Controls */}
+            <button 
+              onClick={() => setSortBy(prev => prev === 'fullName' ? 'createdAt' : 'fullName')}
+              className="h-[56px] px-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]/50 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)]/30 transition-all flex items-center gap-3"
+            >
+              <Filter size={16} />
+              {sortBy === 'fullName' ? 'Alphabetical' : 'Date Joined'}
+            </button>
+
+            {/* Clear All */}
+            {(search || filterRole || filterStatus || filterDept) && (
+              <button 
+                onClick={() => { setSearch(''); setFilterRole(''); setFilterStatus(''); setFilterDept(''); }}
+                className="h-[56px] w-[56px] rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-lg shadow-rose-500/10"
+                title="Clear All Filters"
+              >
+                <X size={20} />
+              </button>
+            )}
         </div>
       </div>
 
@@ -700,17 +751,16 @@ export default function EmployeeManagement() {
                                      <button onClick={() => openView(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
                                         <Eye size={16} />
                                      </button>
+                                     {canManage && (
+                                        <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
+                                           <Edit2 size={16} />
+                                        </button>
+                                     )}
                                       {activeTab === 'archived' ? (
                                         <button onClick={() => handleRestore(emp)} className="w-9 h-9 rounded-xl bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)] hover:text-white transition-all flex items-center justify-center" title={t('employees.restore_employee')}>
                                           <ArrowRight size={16} />
                                         </button>
-                                      ) : (
-                                        rank >= 85 && (
-                                          <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
-                                            <Edit2 size={16} />
-                                          </button>
-                                        )
-                                      )}
+                                      ) : null}
                                   </div>
                                </td>
                             </tr>

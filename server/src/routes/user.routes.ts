@@ -22,7 +22,7 @@ router.get('/:id/risk', authorize(['HR_OFFICER', 'HR_MANAGER', 'IT_MANAGER', 'MD
 router.get('/:id/risk-profile', authorize(['HR_OFFICER', 'HR_MANAGER', 'IT_MANAGER', 'MD']), getUserRiskProfile); // alias
 
 // Create (HR Manager / IT Manager / MD only)
-router.post('/', authorize(['HR_MANAGER', 'IT_MANAGER', 'MD']), validate(CreateUserSchema), createEmployee);
+router.post('/', authorize(['HR_MANAGER', 'HR_DIRECTOR', 'IT_MANAGER', 'MD']), validate(CreateUserSchema), createEmployee);
 
 // Update
 // Allow self-edit; require rank 70+ to edit others
@@ -35,9 +35,9 @@ router.patch('/:id', (req, res, next) => {
 router.put('/:id', requireRole(70), updateEmployee);
 
 // Delete (Archive) - HR Manager / IT Manager / DEV only
-router.delete('/:id', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), deleteEmployee);
-router.delete('/:id/hard', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), hardDeleteEmployee);
-router.post('/:id/restore', authorize(['HR_MANAGER', 'IT_MANAGER', 'DEV']), restoreEmployee);
+router.delete('/:id', authorize(['HR_MANAGER', 'HR_DIRECTOR', 'IT_MANAGER', 'DEV']), deleteEmployee);
+router.delete('/:id/hard', authorize(['HR_MANAGER', 'HR_DIRECTOR', 'IT_MANAGER', 'DEV']), hardDeleteEmployee);
+router.post('/:id/restore', authorize(['HR_MANAGER', 'HR_DIRECTOR', 'IT_MANAGER', 'DEV']), restoreEmployee);
 
 // Role assignment (MD or Admin Managers 85+)
 router.post('/assign-role', requireRole(85), assignRole);
