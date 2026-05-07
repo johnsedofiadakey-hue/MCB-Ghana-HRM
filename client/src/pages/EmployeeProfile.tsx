@@ -31,7 +31,7 @@ const EmployeeProfile = () => {
     const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', reason: '' });
     const [adjustingLeave, setAdjustingLeave] = useState(false);
     const [riskProfile, setRiskProfile] = useState<any>(null);
-    const [printType, setPrintType] = useState<'dossier' | 'idcard'>('dossier');
+    const [printType, setPrintType] = useState<'dossier' | 'idcard' | null>(null);
     const [showPromotionModal, setShowPromotionModal] = useState(false);
     const [submittingPromotion, setSubmittingPromotion] = useState(false);
     const [promotionForm, setPromotionForm] = useState({
@@ -609,8 +609,10 @@ const EmployeeProfile = () => {
             </div>
 
             {/* Premium Print Dossier Component (Hidden in UI, Visible on Print) */}
-            {printType === 'dossier' && <EmployeePrintDossier employee={employee} />}
-            {printType === 'idcard' && <EmployeeIDCard employee={employee} />}
+            <div className="print:block hidden">
+                {printType === 'dossier' && <EmployeePrintDossier employee={employee} />}
+                {printType === 'idcard' && <EmployeeIDCard employee={employee} />}
+            </div>
 
             {/* Reset Password Modal Overlay */}
             <AnimatePresence>
