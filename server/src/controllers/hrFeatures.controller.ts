@@ -396,7 +396,12 @@ export const listPromotionRequests = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'desc' },
         });
 
-        res.json(requests);
+        const serialized = requests.map(r => ({
+            ...r,
+            proposedSalary: r.proposedSalary ? Number(r.proposedSalary) : null
+        }));
+
+        res.json(serialized);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
@@ -428,7 +433,10 @@ export const createPromotionRequest = async (req: Request, res: Response) => {
             },
         });
 
-        res.status(201).json(request);
+        res.status(201).json({
+            ...request,
+            proposedSalary: request.proposedSalary ? Number(request.proposedSalary) : null
+        });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

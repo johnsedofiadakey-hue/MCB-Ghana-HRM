@@ -115,10 +115,10 @@ export default function EmployeeManagement() {
   const privilegedRoles = ['MD', 'DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
   const isPrivileged = privilegedRoles.includes(user?.role) && rank >= 80;
 
-  const isAdmin = (role === 'HR_MANAGER' || role === 'IT_MANAGER' || role === 'DEV');
-  const canManage = (role === 'HR_MANAGER' || role === 'IT_MANAGER' || role === 'DEV');
-  const canManageBiometric = (role === 'HR_MANAGER' || role === 'IT_MANAGER' || role === 'DEV');
-  const canAddPersonnel = (role === 'HR_MANAGER' || role === 'IT_MANAGER' || role === 'DEV');
+  const isAdmin = (role === 'HR_MANAGER' || role === 'IT_MANAGER' || role === 'DEV' || role === 'MD' || role === 'IT_ADMIN' || role === 'HR_DIRECTOR');
+  const canManage = isAdmin;
+  const canManageBiometric = isAdmin;
+  const canAddPersonnel = isAdmin;
 
   // Real-time Persistence for "Create" / "Edit" flow
   const { data: draftData, updateDraft, loading: draftLoading } = usePersistentDraft(

@@ -163,10 +163,12 @@ const PromotionRequests = () => {
                                         <Briefcase size={14} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Proposed Role</span>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-xs font-bold line-through opacity-40">{req.employee?.jobTitle}</span>
-                                        <ArrowRight size={14} className="text-[var(--primary)]" />
-                                        <span className="text-sm font-black text-[var(--primary)]">{req.targetJobTitle || req.targetRole}</span>
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[10px] font-bold line-through opacity-40">{req.employee?.jobTitle}</span>
+                                            <ArrowRight size={12} className="text-[var(--text-muted)] opacity-30" />
+                                        </div>
+                                        <span className="text-[13px] font-black text-[var(--primary)] leading-tight">{req.targetJobTitle || req.targetRole}</span>
                                     </div>
                                 </div>
                                 <div className="space-y-4 text-right">
@@ -175,7 +177,7 @@ const PromotionRequests = () => {
                                         <span className="text-[9px] font-black uppercase tracking-widest">Proposed Salary</span>
                                     </div>
                                     <p className="text-lg font-black text-emerald-500">
-                                        GHS {Number(req.proposedSalary || 0).toLocaleString()} <span className="text-[10px] opacity-60">/yr</span>
+                                        GHS {req.proposedSalary ? Number(req.proposedSalary).toLocaleString() : '---'} <span className="text-[10px] opacity-60">/yr</span>
                                     </p>
                                 </div>
                             </div>
@@ -238,7 +240,7 @@ const PromotionRequests = () => {
 
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Official Decision Comment</label>
+                                    <label className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Official Decision Comment</label>
                                     <textarea 
                                         value={hrComment}
                                         onChange={(e) => setHrComment(e.target.value)}

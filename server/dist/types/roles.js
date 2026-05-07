@@ -5,6 +5,7 @@ var RoleRank;
 (function (RoleRank) {
     RoleRank[RoleRank["DEV"] = 100] = "DEV";
     RoleRank[RoleRank["MD"] = 95] = "MD";
+    RoleRank[RoleRank["HR_DIRECTOR"] = 92] = "HR_DIRECTOR";
     RoleRank[RoleRank["DIRECTOR"] = 90] = "DIRECTOR";
     RoleRank[RoleRank["HR_MANAGER"] = 88] = "HR_MANAGER";
     RoleRank[RoleRank["FINANCE_MANAGER"] = 87] = "FINANCE_MANAGER";
@@ -18,6 +19,7 @@ var RoleRank;
 exports.ROLE_RANK_MAP = {
     DEV: RoleRank.DEV,
     MD: RoleRank.MD,
+    HR_DIRECTOR: RoleRank.HR_DIRECTOR,
     HR_MANAGER: RoleRank.HR_MANAGER,
     DIRECTOR: RoleRank.DIRECTOR,
     FINANCE_MANAGER: RoleRank.FINANCE_MANAGER,
