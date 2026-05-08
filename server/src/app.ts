@@ -76,14 +76,11 @@ import settingsRoutes from './routes/settings.routes';
 import maintenanceRoutes from './routes/maintenance.routes';
 import aiRoutes from './routes/ai.routes';
 import biometricRoutes from './routes/biometric.routes';
-<<<<<<< HEAD
 import policyRoutes from './routes/policy.routes';
 import continuousPerformanceRoutes from './routes/continuous-performance.routes';
 import managerCockpitRoutes from './routes/manager-cockpit.routes';
 import cardRoutes from './routes/card.routes';
 import analyticsRoutes from './routes/analytics.routes';
-=======
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 
 // Config already loaded at top level
 
@@ -136,13 +133,8 @@ app.use(cors({
       callback(null, true);
     } else {
       console.warn(`[CORS] Blocked origin: ${origin}`);
-<<<<<<< HEAD
       // 🛡️ SECURITY FIX: Actually block the request instead of allowing it
-      callback(new Error(`Origin ${origin} not allowed by CORS policy`)); 
-=======
-      // In production, we still allow but log to avoid blocking legitimate users during migration
-      callback(null, true); 
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
+      callback(new Error(`Origin ${origin} not allowed by CORS policy`));
     }
   },
   credentials: true,
@@ -335,14 +327,10 @@ app.use('/api/integrations', integrationsRoutes);
 app.use('/api/bot', aiLimiter, botRoutes);
 app.use('/api/biometric', biometricRoutes);
 app.use('/api/ai', aiLimiter, aiRoutes);
-<<<<<<< HEAD
 app.use('/api/policy', policyRoutes);
 app.use('/api/continuous-performance', continuousPerformanceRoutes);
 app.use('/api/manager', managerCockpitRoutes);
 app.use('/api', cardRoutes);
-app.use('/api/analytics', analyticsRoutes);
-=======
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {
