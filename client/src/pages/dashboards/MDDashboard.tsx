@@ -249,11 +249,7 @@ const MDDashboard = () => {
           { icon: Target, label: "Corporate Strategy", desc: "Define Long-term Objectives", href: '/performance/strategic', color: 'var(--primary)' },
           { icon: DollarSign, label: "Payroll Authorization", desc: "Final Disbursement Approval", href: '/payroll', color: 'var(--success)' },
           { icon: Award, label: "Institutional Growth", desc: "Talent & Culture Pulse", href: '/enterprise', color: 'var(--accent)' },
-<<<<<<< HEAD
           { icon: FileText, label: "Executive Board Report", desc: "Generate Monthly Summary", href: '#', onClick: handleDownloadBoardReport, color: 'var(--warning)' },
-=======
-          { icon: FileText, label: "Executive Board Report", desc: "Generate Monthly Summary", href: '#', onClick: () => window.open('https://mcb-ghana-hrm-api.onrender.com/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('mcb_auth_token'), '_blank'), color: 'var(--warning)' },
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
         ].map((item, i) => (
           <Link 
             key={i} 
