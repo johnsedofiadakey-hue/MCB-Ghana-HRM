@@ -81,6 +81,11 @@ const PolicyLibrary = lazy(() => import('./pages/PolicyLibrary'));
 const ProbationTracker = lazy(() => import('./pages/ProbationTracker'));
 const AttendanceKiosk = lazy(() => import('./pages/AttendanceKiosk'));
 const PromotionRequests = lazy(() => import('./pages/PromotionRequests'));
+const CheckIns = lazy(() => import('./pages/performance/CheckIns'));
+const Feedback360 = lazy(() => import('./pages/performance/Feedback360'));
+const Cockpit = lazy(() => import('./pages/manager/Cockpit'));
+const CardManagement = lazy(() => import('./pages/cards/CardManagement'));
+const PredictiveAnalytics = lazy(() => import('./pages/analytics/PredictiveAnalytics'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64 bg-[var(--bg-main)]">
@@ -457,6 +462,11 @@ const AppContent = () => {
             <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamReview /></RoleGuard>} />
             <Route path="/kpi/my-targets" element={<RoleGuard minRank={10}><MyTargetsPage /></RoleGuard>} />
             <Route path="/performance/analytics" element={<PerformanceHub />} />
+            <Route path="/performance/check-ins" element={<RoleGuard minRank={10}><CheckIns /></RoleGuard>} />
+            <Route path="/performance/feedback" element={<RoleGuard minRank={10}><Feedback360 /></RoleGuard>} />
+            <Route path="/manager/cockpit" element={<RoleGuard minRank={70}><Cockpit /></RoleGuard>} />
+            <Route path="/cards" element={<RoleGuard minRank={70}><CardManagement /></RoleGuard>} />
+            <Route path="/analytics/predictive" element={<RoleGuard minRank={80}><PredictiveAnalytics /></RoleGuard>} />
             
             {/* Appraisal Module - Strict Routing */}
             <Route path="/reviews/my" element={<RoleGuard minRank={10}><Appraisals /></RoleGuard>} />

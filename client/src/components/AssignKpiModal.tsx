@@ -18,6 +18,7 @@ type KpiItem = {
   description: string;
   weight: number;
   target: number;
+  type?: string;
 };
 
 const getErrorMessage = (error: unknown, fallback: string) => {
@@ -72,7 +73,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
   const totalWeight = items.reduce((sum, item) => sum + Number(item.weight), 0);
 
   const addItem = () => {
-    setItems([...items, { category: 'New Initiative', description: '', weight: 0, target: 0 }]);
+    setItems([...items, { category: 'New Initiative', description: '', weight: 0, target: 0, type: 'LEADING' }]);
   };
 
   const removeItem = (index: number) => {
@@ -271,8 +272,16 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                           placeholder="Category"
                           value={item.category}
                           onChange={(e) => updateItem(index, 'category', e.target.value)}
-                          className="nx-input md:w-40 text-xs font-black uppercase tracking-widest text-[var(--primary)]"
+                          className="nx-input md:w-32 text-xs font-black uppercase tracking-widest text-[var(--primary)]"
                         />
+                        <select 
+                          value={item.type || 'LEADING'}
+                          onChange={(e) => updateItem(index, 'type', e.target.value)}
+                          className="nx-input md:w-28 text-xs font-black uppercase tracking-widest bg-[var(--bg-elevated)]"
+                        >
+                          <option value="LEADING" className="bg-[var(--bg-card)]">Leading</option>
+                          <option value="LAGGING" className="bg-[var(--bg-card)]">Lagging</option>
+                        </select>
                         <input 
                           placeholder="Define the objective..."
                           value={item.description}
