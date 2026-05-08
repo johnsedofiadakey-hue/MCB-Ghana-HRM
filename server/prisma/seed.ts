@@ -195,6 +195,7 @@ async function main() {
     }
   }
 
+<<<<<<< HEAD
   // 7. PERMISSION BUNDLES
   console.log('📦 Synchronizing Permission Bundles...');
   const bundles = [
@@ -305,6 +306,8 @@ async function main() {
     });
   }
 
+=======
+>>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
   console.log('\n✅ SEED COMPLETE! System ready.');
 }
 

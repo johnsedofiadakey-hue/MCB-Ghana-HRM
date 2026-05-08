@@ -33,7 +33,7 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
   const fetchActions = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/inbox');
+      const res = await api.get('/inbox', { _noRedirect: true } as any);
       const data = Array.isArray(res.data) ? res.data : [];
       setActions(data);
       onCountUpdate(data.length);

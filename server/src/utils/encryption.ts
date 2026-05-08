@@ -1,9 +1,13 @@
 import crypto from 'crypto';
 
+<<<<<<< HEAD
 const KEY_SOURCE = process.env.DATA_ENCRYPTION_KEY || process.env.JWT_SECRET;
 if (!KEY_SOURCE) {
   throw new Error('[Encryption] CRITICAL: DATA_ENCRYPTION_KEY or JWT_SECRET must be set for encryption services.');
 }
+=======
+const KEY_SOURCE = process.env.DATA_ENCRYPTION_KEY || process.env.JWT_SECRET || 'nexus-hr-platform-default-key';
+>>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 const KEY = crypto.createHash('sha256').update(KEY_SOURCE).digest(); // 32 bytes
 
 export const encryptValue = (plain: string): string => {

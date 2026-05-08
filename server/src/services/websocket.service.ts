@@ -144,7 +144,13 @@ export const notifyAdmins = async (title: string, message: string, type: 'INFO' 
       where: { role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'IT_MANAGER', 'HR_OFFICER'] }, status: 'ACTIVE' },
       select: { id: true }
     });
+<<<<<<< HEAD
     // 🛡️ PERFORMANCE FIX: Send notifications in parallel
     await Promise.all(admins.map(admin => notify(admin.id, title, message, type)));
+=======
+    for (const admin of admins) {
+      await notify(admin.id, title, message, type);
+    }
+>>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
   } catch (e) {}
 };

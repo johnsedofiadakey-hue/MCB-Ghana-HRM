@@ -36,7 +36,7 @@ const ActionInbox = () => {
   const lastCountRef = useRef(0);
   const fetchInbox = async (shouldSound = false) => {
     try {
-      const res = await api.get('/inbox');
+      const res = await api.get('/inbox', { _noRedirect: true } as any);
       const data = res.data || [];
       
       // If new actions arrived and we are polling, play the ring
