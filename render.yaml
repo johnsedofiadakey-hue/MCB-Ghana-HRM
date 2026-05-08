@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# MCB-HRM Ghana — Render Deployment Configuration
+# Last Sync: Identity & Branding Finalized (Nationality Shift)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── Backend API ─────────────────────────────────────────────────────────────
+  - type: web
+    name: mcb-hrm-ghana-api
+    env: node
+    plan: free             # Free tier for testing phase
+    region: oregon         # Changed to match database region
+    buildCommand: >
+      cd server &&
+      npm install --no-audit --no-fund &&
+      npx prisma generate &&
+      npx tsc
+    startCommand: cd server && npx prisma db push && node dist/scripts/force_sync.js && node dist/scripts/create_tenants.js && node --max-old-space-size=448 dist/app.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: 10000         # Render injects PORT=10000
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false          # Set to your deployed frontend URL
+      - key: DEV_MASTER_KEY
+        generateValue: true
+
+  # ── Frontend (Static Site) ──────────────────────────────────────────────────
+  - type: web
+    name: mcb-hrm-ghana-client
+    env: static
+    buildCommand: cd client && npm install --no-audit --no-fund && npm run build
+    staticPublishPath: client/dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html   # SPA fallback for React Router
+    envVars:
+      - key: VITE_API_URL
+        sync: false               # Set to your API service URL, e.g. https://mcb-hrm-ghana-api.onrender.com/api

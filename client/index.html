@@ -1,0 +1,162 @@
+<!doctype html>
+<!-- ID: STABILITY-SYNC-v2.0.0 (Agent-Verified Fixes) -->
+<html lang="en">
+  <head>
+    <script>
+      /* --- EMERGENCY RESCUE SCRIPT (v1.8) --- */
+      window.onerror = function(msg) {
+        if (msg && (msg.toString().includes('getRankFromRole') || msg.toString().includes('ReferenceError'))) {
+          console.warn('[RESCUE] Stale code or ReferenceError detected. Forcing hard reload...');
+          // Prevent infinite reload loops
+          const lastReload = localStorage.getItem('mcb_last_rescue_reload');
+          const now = Date.now();
+          if (!lastReload || (now - parseInt(lastReload) > 30000)) {
+            localStorage.setItem('mcb_last_rescue_reload', now.toString());
+            window.location.reload(true);
+          }
+        }
+      };
+    </script>
+    <script>
+      /* --- HYPER-SPECIFIC ATOMIC THEME ENGINE (v1.7) --- */
+      (function() {
+        const TOKEN_KEY = 'mcb_auth_token';
+        const BASE_PREF_KEY = 'mcb_theme_preference';
+        const BASE_COLOR_KEY = 'mcb_theme_custom_colors';
+        
+        let orgId = 'mcb-ghana-tenant';
+        try {
+          const token = localStorage.getItem(TOKEN_KEY);
+          if (token) {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+              const pad = base64.length % 4;
+              const padded = pad ? base64 + '===='.slice(pad) : base64;
+              const decoded = JSON.parse(atob(padded));
+              orgId = decoded.organizationId || decoded.orgId || 'mcb-ghana-tenant';
+            }
+          }
+        } catch (e) {}
+
+        const SCOPED_PREF_KEY = BASE_PREF_KEY + '_' + orgId;
+        const savedTheme = localStorage.getItem(SCOPED_PREF_KEY) || localStorage.getItem(BASE_PREF_KEY) || 'premium-monolith';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        // Atomic Defaults
+        const defaults = {
+          'premium-monolith': { bg: '#09090b', text: '#ffffff' },
+          'premium-canvas': { bg: '#f8fafc', text: '#0f172a' },
+          'premium-aero': { bg: '#f8fafc', text: '#0f172a' }
+        };
+        const themeDef = defaults[savedTheme] || defaults['premium-monolith'];
+        
+        // 1. HYPER-LOCK: Initial Paint Sync (Reactive with Variables)
+        const styleBlock = document.createElement('style');
+        styleBlock.id = 'pinnacle-core-lock';
+        styleBlock.innerHTML = `
+          :root, html {
+            --bg-main: ${themeDef.bg};
+            --text-primary: ${themeDef.text};
+          }
+          html[data-theme], :root {
+             --bg-main: ${themeDef.bg};
+             --text-primary: ${themeDef.text};
+          }
+          html.boot-lock, html.boot-lock body, html.boot-lock #root {
+            background-color: ${themeDef.bg} !important;
+            color: ${themeDef.text} !important;
+            transition: none !important;
+            animation: none !important;
+          }
+          body, #root {
+            margin: 0; padding: 0; min-height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+          }
+        `;
+        document.head.appendChild(styleBlock);
+        
+        // 2. IDENTITY OVERRIDE: Precise branding injection
+        const SCOPED_COLOR_KEY = BASE_COLOR_KEY + '_' + orgId;
+        const cachedColors = localStorage.getItem(SCOPED_COLOR_KEY) || localStorage.getItem(BASE_COLOR_KEY);
+        
+        if (cachedColors) {
+          try {
+            const colors = JSON.parse(cachedColors);
+            let css = 'html[data-theme], :root {';
+            for (const [key, value] of Object.entries(colors)) {
+              if (value) css += '--' + key + ': ' + value + ';';
+            }
+            css += '}';
+            
+            const style = document.createElement('style');
+            style.id = 'pinnacle-identity-lock';
+            style.innerHTML = css;
+            document.head.appendChild(style);
+          } catch (e) {}
+        }
+
+        // 4. IDENTITY SYNC: Apply branded logo to favicon & apple icons early
+        try {
+          const cachedSettings = localStorage.getItem(`mcb_branding_cache_${orgId}`);
+          if (cachedSettings) {
+             const settings = JSON.parse(cachedSettings);
+             const logo = settings.logoUrl || settings.companyLogoUrl;
+             if (logo) {
+                const favicon = document.getElementById('dynamic-favicon');
+                if (favicon) favicon.href = logo;
+                
+                let appleIcon = document.getElementById('dynamic-apple-icon');
+                if (!appleIcon) {
+                   appleIcon = document.createElement('link');
+                   appleIcon.rel = 'apple-touch-icon';
+                   appleIcon.id = 'dynamic-apple-icon';
+                   document.head.appendChild(appleIcon);
+                }
+                appleIcon.href = logo;
+             }
+          }
+        } catch(e) {}
+
+        // 5. CLEANUP: Release the boot-lock after stabilization
+        window.addEventListener('DOMContentLoaded', () => {
+          setTimeout(() => {
+            document.documentElement.classList.remove('boot-lock');
+          }, 2000);
+        });
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <link rel="icon" id="dynamic-favicon" type="image/svg+xml" href="/vite.svg?v=5.1" />
+    <link rel="apple-touch-icon" id="dynamic-apple-icon" href="/vite.svg?v=5.1" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="description" content="MCB HRM Ghana — Advanced Workforce Management System" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>MCB HRM Ghana (v2.0.0)</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+    <!-- 
+    <script>
+      // Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.worker.register('/sw.js').then((reg) => {
+            console.log('[PWA] Service worker registered:', reg.scope);
+            // Check for updates every 30 minutes
+            setInterval(() => reg.update(), 30 * 60 * 1000);
+          }).catch((err) => {
+            console.warn('[PWA] Service worker registration failed:', err);
+          });
+        });
+      }
+    </script>
+    -->
+  </body>
+</html>

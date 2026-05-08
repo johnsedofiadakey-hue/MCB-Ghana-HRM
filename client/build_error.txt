@@ -1,0 +1,24 @@
+x Build failed in 40.47s
+error during build:
+[vite:esbuild] Transform failed with 1 error:
+/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/src/components/profile/EmployeeIDCard.tsx:12:4: ERROR: Unexpected "return"
+file: /Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/src/components/profile/EmployeeIDCard.tsx:12:4
+
+Unexpected "return"
+10 |  
+11 |      return (
+12 |      return (
+   |      ^
+13 |          <div id="id-card-print-zone" className="hidden print:block bg-white text-slate-900 p-0 m-0 overflow-hidden" style={{ width: '85.6mm', height: '53.98mm', position: 'relative' }}>
+14 |               <style dangerouslySetInnerHTML={{ __html: `
+
+    at failureErrorWithLog (/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:1472:15)
+    at /Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/Users/truth/.gemini/antigravity/scratch/MCB-Ghana-HRM/client/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)

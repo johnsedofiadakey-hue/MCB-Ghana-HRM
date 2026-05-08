@@ -1,0 +1,866 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scrollbar-gutter: stable;
+  scroll-behavior: auto !important;
+}
+
+html.boot-lock, 
+html.boot-lock *,
+html.boot-lock *::before,
+html.boot-lock *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Modal Lock — Prevents background scroll when overlay is active */
+html.modal-lock {
+  overflow: hidden !important;
+  height: 100% !important;
+}
+
+html.modal-lock body {
+  overflow: hidden !important;
+  pointer-events: none; /* Disable interaction with background */
+}
+
+html.modal-lock .nx-modal-content {
+  pointer-events: auto; /* Re-enable for modal content */
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  /* Support for mobile safe areas */
+  padding-bottom: env(safe-area-inset-bottom);
+  
+  /* Nuclear Scroll Stability */
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto !important;
+  
+  /* Prevent horizontal pull-to-refresh jitter */
+  overscroll-behavior-x: none;
+}
+
+@media print {
+  body { background: white !important; color: black !important; font-size: 10pt; }
+  .no-print, nav, aside, .sidebar, .nx-sidebar, button, .btn-primary, .btn-secondary, .mcb-guide, .command-palette { display: none !important; }
+  .nx-card { 
+    border: 1px solid var(--primary) !important; 
+    background: white !important; 
+    box-shadow: none !important; 
+    break-inside: avoid; 
+  }
+  .page-transition { padding: 0 !important; margin: 0 !important; }
+  
+  /* Force Brand Colors on Print */
+  * { 
+    -webkit-print-color-adjust: exact !important; 
+    print-color-adjust: exact !important; 
+  }
+  
+  .bg-primary, .btn-primary { background-color: var(--primary) !important; color: white !important; }
+  .text-primary { color: var(--primary) !important; }
+  .border-primary { border-color: var(--primary) !important; }
+
+  @page { margin: 1.5cm; }
+}
+
+/* Mobile-native touch refinements */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Scale down massive titles for mobile */
+  h1, .text-5xl, .text-4xl {
+    font-size: 1.875rem !important; /* 30px fallback for 5xl/4xl */
+    line-height: 1.2 !important;
+  }
+  
+  h2, .text-3xl {
+    font-size: 1.5rem !important; /* 24px */
+  }
+
+  .nx-card {
+    padding: 1.5rem !important; /* Reduce 10 padding to 6 equivalent */
+    border-radius: var(--radius-lg) !important;
+  }
+
+  .btn-primary, .btn-secondary, .nx-input, .nx-card {
+    cursor: default;
+  }
+
+  /* Larger touch targets for mobile */
+  .btn-primary, .btn-secondary, .nx-btn {
+    min-height: 48px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* 📱 MOBILE TABLE TO CARD TRANSFORMATION 
+     Usage: Add .mcb-responsive-table to <table />
+     Requirement: Each <td /> must have a data-label="Header Name" attribute.
+  */
+  .mcb-responsive-table, 
+  .mcb-responsive-table thead, 
+  .mcb-responsive-table tbody, 
+  .mcb-responsive-table th, 
+  .mcb-responsive-table td, 
+  .mcb-responsive-table tr { 
+    display: block; 
+  }
+
+  .mcb-responsive-table thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .mcb-responsive-table tr { 
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    padding: 0.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .mcb-responsive-table td { 
+    border: none;
+    border-bottom: 1px solid var(--bg-elevated); 
+    position: relative;
+    padding-left: 50% !important; 
+    text-align: right;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .mcb-responsive-table td:last-child {
+    border-bottom: none;
+  }
+
+  .mcb-responsive-table td:before { 
+    content: attr(data-label);
+    position: absolute;
+    left: 1rem;
+    width: 45%; 
+    padding-right: 10px; 
+    white-space: nowrap;
+    text-align: left;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   NEXUS UNIVERSAL MODAL ARCHITECTURE (v3 — Bulletproof)
+   Guarantees 100% scrollability and button visibility on all frame sizes.
+   Uses DVH (Dynamic Viewport Height) to account for mobile browser bars.
+   ───────────────────────────────────────────────────────────────────────────── */
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.7);
+  overflow-y: auto; 
+  display: flex !important;
+  flex-direction: column;
+  /* Use justify-content: flex-start to ensure content is always reachable from the top */
+  justify-content: flex-start;
+  align-items: center;
+  /* Use DVH for absolute viewport compliance */
+  min-height: 100dvh; 
+  padding: 2rem 1.5rem; 
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-content-container {
+  width: 100%;
+  max-width: 46rem;
+  /* Shift from absolute centering to top-down with auto-margins for safety */
+  margin-top: auto;
+  margin-bottom: auto;
+  position: relative;
+  z-index: 20;
+}
+
+/* Force significant bottom space to push buttons above browser navigation bars */
+.modal-footer-clearance {
+  padding-bottom: 15dvh !important;
+}
+
+/* Safe scrollable body for long forms */
+.modal-body-scroll {
+  max-height: calc(100dvh - 20rem); /* Accounting for header/footer clearance */
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.modal-body-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.modal-body-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 10px;
+}
+
+
+
+@media (min-width: 768px) {
+  .btn-primary, .btn-secondary, .nx-btn {
+    width: auto;
+  }
+}
+
+:root {
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+  
+  --transition-fast: 0.15s ease;
+  --transition-main: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Theme: Premium Monolith (Deep Dark) */
+[data-theme='premium-monolith'] {
+  --primary: #8b5cf6;
+  --primary-hover: #7c3aed;
+  --primary-light: #a78bfa;
+  --primary-rgb: 139, 92, 246;
+  --accent: #06b6d4;
+  --accent-rgb: 6, 182, 212;
+  --growth: #8b5cf6;
+  --growth-light: #a78bfa;
+  
+  --bg-main: #09090b;
+  --bg-card: #121215; 
+  --bg-card-rgb: 18, 18, 21;
+  --bg-elevated: #18181b;
+  --bg-input: #09090b;
+  
+  --bg-sidebar: #09090b;
+  --bg-sidebar-active: rgba(255, 255, 255, 0.04);
+  
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-inverse: #000000;
+  --text-sidebar: #71717a;
+  --text-sidebar-active: #fafafa;
+  
+  --border-subtle: #27272a;
+  --border-strong: #3f3f46;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #06b6d4;
+  
+  --ring-color: rgba(139, 92, 246, 0.5);
+  
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg: 0 12px 24px rgba(0,0,0,0.6);
+}
+
+/* Theme: Premium Canvas (Light) */
+[data-theme='premium-canvas'] {
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: #6366f1;
+  --primary-rgb: 79, 70, 229;
+  --accent: #0ea5e9;
+  --accent-rgb: 14, 165, 233;
+  --growth: #7c3aed;
+  --growth-light: #8b5cf6;
+  
+  --bg-main: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-card-rgb: 255, 255, 255;
+  --bg-elevated: #f3f4f6;
+  --bg-input: #ffffff;
+  
+  --bg-sidebar: #ffffff;
+  --bg-sidebar-active: #f1f5f9;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  --text-sidebar: #64748b;
+  --text-sidebar-active: #0f172a;
+  
+  --border-subtle: #cbd5e1;
+  --border-strong: #94a3b8;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #0ea5e9;
+  
+  --ring-color: rgba(79, 70, 229, 0.1);
+  
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
+}
+
+/* Theme: Premium Aero (Modern Utility) */
+[data-theme='premium-aero'] {
+  --primary: #10b981;
+  --primary-hover: #059669;
+  --primary-light: #34d399;
+  --primary-rgb: 16, 185, 129;
+  --accent: #34d399;
+  --growth: #8b5cf6;
+  --growth-light: #a78bfa;
+  
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --bg-input: #ffffff;
+  
+  --bg-sidebar: #f1f5f9;
+  --bg-sidebar-active: rgba(0, 158, 227, 0.08);
+  
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  --text-sidebar: #64748b;
+  --text-sidebar-active: #009EE3;
+  
+  --border-subtle: #f1f5f9;
+  --border-strong: #e2e8f0;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #34d399;
+  
+  --ring-color: rgba(16, 185, 129, 0.1);
+  
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05);
+}
+
+/* COMPONENTS */
+
+/* Card Architecture */
+.nx-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-main);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.nx-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+/* Button System */
+.btn-primary {
+  background: var(--primary);
+  color: var(--text-inverse);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 13px;
+  transition: all var(--transition-fast);
+  border: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--ring-color);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 13px;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* Input & Form Architecture */
+.nx-input {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 400;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.nx-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--ring-color);
+}
+
+.nx-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+/* Icon-Led Input Utilities (Fixes Overlap) */
+.nx-input-l {
+  padding-left: 3.5rem !important;
+}
+
+.nx-input-r {
+  padding-right: 3.5rem !important;
+}
+
+.nx-input-lr {
+  padding-left: 3.5rem !important;
+  padding-right: 3.5rem !important;
+}
+
+/* Range Input Refinement */
+input[type="range"].nx-range {
+  -webkit-appearance: none;
+  background: var(--bg-elevated);
+  height: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  outline: none;
+}
+
+input[type="range"].nx-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+input[type="range"].nx-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Table Infrastructure */
+.nx-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Kinetic scrolling for iOS */
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  /* Custom scrollbar for desktop indicator */
+  scrollbar-width: thin;
+}
+
+.nx-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.nx-table th {
+  padding: 14px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.nx-table td {
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nx-table tr:last-child td {
+  border-bottom: none;
+}
+
+.nx-table tr:hover td {
+  background: var(--bg-elevated);
+}
+
+/* UTILITIES */
+
+/* Re-map glass components to standard cards to ensure no breakage */
+.glass, .nx-glass-card, .glass-panel-light, .glass-panel-dark {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Re-map glass inputs to standard nx-input */
+.glass-input {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-primary) !important;
+  font-weight: 400;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.glass-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--ring-color);
+}
+
+.glass-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Override any hardcoded dark bg on glass modals — use card bg instead */
+[class*="bg-[#0]"] .glass,
+[class*="bg-[#0]"] {
+  color: var(--text-primary);
+}
+
+
+
+/* Animations & Transitions */
+.page-enter {
+  animation: page-fade 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes page-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Scrollbar - Refined */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Modern Text Handling Utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
+/* Mobile App Layout Utilities */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-h-adjust {
+  height: calc(100vh - env(safe-area-inset-bottom) - env(safe-area-inset-top));
+}
+
+/* Bottom Navigation Styling for Mobile */
+.mobile-nav-active {
+  color: var(--primary) !important;
+}
+
+.mobile-nav-active .nav-icon-bg {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px var(--ring-color);
+}
+
+/* Native-like list items */
+.mobile-list-item {
+  @apply px-4 py-4 border-b border-[var(--border-subtle)] active:bg-[var(--bg-elevated)] transition-colors;
+}
+
+/* Guinea Market - Simple Label overrides if needed */
+.label-simple {
+  @apply text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1 opacity-70;
+}
+
+/* Toggle Checkbox Styling */
+.toggle-checkbox {
+  appearance: none;
+  width: 44px;
+  height: 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-checkbox:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.toggle-checkbox::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.toggle-checkbox:checked::before {
+  transform: translateX(20px);
+}
+
+.toggle-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring-color);
+}
+/* ─────────────────────────────────────────────────────────────────────────────
+   WHITE-LABEL PRINT ARCHITECTURE
+   Enables professional document generation for all app views.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* Reset layout for paper */
+  body {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hide core UI elements that don't belong in documents */
+  nav, 
+  aside, 
+  header:not(.print-header), 
+  .no-print,
+  button:not(.print-visible),
+  .fixed,
+  .sticky,
+  .announcement-banner {
+    display: none !important;
+  }
+
+  /* Reset main container margins for paper */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    position: static !important;
+  }
+
+  .lg\:ml-20, .lg\:ml-\[280px\] {
+    margin-left: 0 !important;
+  }
+
+  /* Ensure the print header is the FIRST thing on every page */
+  .print-header {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Force background colors/images to print (modern browsers) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Standard Card Reset for Print */
+  .nx-card, .bg-\[var\(--bg-card\)\] {
+    background: transparent !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Typography Refinements */
+  h1, h2, h3 {
+    color: black !important;
+  }
+
+  /* Standard Table Reset */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  th {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+  }
+
+  td {
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   NEXUS AI INSIGHT UTILITIES
+   Special branding for the Intelligence Layer.
+   ───────────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   NEXUS PREMIUM+ DESIGN SYSTEM (Next-Gen Visual Layer)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.premium-glass {
+  background: rgba(var(--bg-card-rgb, 18, 18, 21), 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.bg-glow-radial {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, transparent 70%);
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.border-glow-premium {
+  position: relative;
+}
+
+.border-glow-premium::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.5), transparent, rgba(var(--primary-rgb), 0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Typography Enhancements */
+.tracking-ultra {
+  letter-spacing: -0.05em;
+}
+
+.text-fluid-h1 {
+  font-size: clamp(2rem, 7vw, 4.5rem);
+  line-height: 1.1;
+}
+
+.nx-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nx-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.nx-truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Micro-animations */
+.hover-float {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hover-float:hover {
+  transform: translateY(-6px) scale(1.02);
+}
+
+.pulse-primary {
+  box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4);
+  animation: pulse-primary 2s infinite;
+}
+
+@keyframes pulse-primary {
+  0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(var(--primary-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
+}
+
