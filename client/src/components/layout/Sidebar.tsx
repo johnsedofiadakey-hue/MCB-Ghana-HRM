@@ -8,7 +8,8 @@ import {
   Clock, Wallet, GraduationCap,
   ClipboardList, PanelLeftClose, PanelLeftOpen,
   X, Briefcase, Network, Megaphone, BookOpen, AlertOctagon,
-  Shield, AlertTriangle, History, Database
+  Shield, AlertTriangle, History, Database,
+  CreditCard, MessageSquare
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -232,7 +233,15 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                   <NavItem to="/kpi/department" icon={Building2} label={t('common.departmental_goals')} isCollapsed={isCollapsed} />
                 )}
                 {rank >= 70 && (
-                  <NavItem to="/kpi/team" icon={Users} label={t('common.team_targets')} isCollapsed={isCollapsed} />
+                  <>
+                    <NavItem to="/kpi/team" icon={Users} label={t('common.team_targets')} isCollapsed={isCollapsed} />
+                    <NavItem to="/manager/cockpit" icon={Shield} label="Operations Cockpit" isCollapsed={isCollapsed} />
+                    <NavItem to="/performance/check-ins" icon={Clock} label="Continuous Check-Ins" isCollapsed={isCollapsed} />
+                    <NavItem to="/performance/feedback" icon={MessageSquare} label="360° Feedback" isCollapsed={isCollapsed} />
+                  </>
+                )}
+                {(isHR || isMD) && (
+                  <NavItem to="/analytics/predictive" icon={BarChart3} label="Predictive Analytics" isCollapsed={isCollapsed} />
                 )}
                 <NavItem to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} isCollapsed={isCollapsed} />
                 {rank >= 70 && (
@@ -265,7 +274,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
                   {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
                   {(isIT || isMD) && (
-                    <NavItem to="/it-admin" icon={Database} label={t('common.it_registries')} isCollapsed={isCollapsed} />
+                    <>
+                      <NavItem to="/it-admin" icon={Database} label={t('common.it_registries')} isCollapsed={isCollapsed} />
+                      <NavItem to="/cards" icon={CreditCard} label="Card Lifecycle" isCollapsed={isCollapsed} />
+                    </>
                   )}
                   <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
                   <NavItem to="/training" icon={GraduationCap} label={t('common.training_label')} isCollapsed={isCollapsed} />
