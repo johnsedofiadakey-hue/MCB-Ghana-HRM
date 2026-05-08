@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-<<<<<<< HEAD
 import { AnalyticsService } from '../services/analytics.service';
 import { getOrgId } from './enterprise.controller';
+import prisma from '../prisma/client';
+import { PdfExportService } from '../services/pdf.service';
 
 export class AnalyticsController {
   static async getDashboardMetrics(req: Request, res: Response) {
@@ -38,11 +39,8 @@ export class AnalyticsController {
       return res.status(500).json({ error: error.message });
     }
   }
-}
-=======
-import prisma from '../prisma/client';
 
-export const getExecutiveStats = async (req: Request, res: Response) => {
+  static async getExecutiveStats(req: Request, res: Response) {
     try {
         const user = (req as any).user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
@@ -184,9 +182,9 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
-};
+  }
 
-export const getDepartmentGrowth = async (req: Request, res: Response) => {
+  static async getDepartmentGrowth(req: Request, res: Response) {
     try {
         const user = (req as any).user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
@@ -206,9 +204,9 @@ export const getDepartmentGrowth = async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
-};
+  }
 
-export const getPersonalStats = async (req: Request, res: Response) => {
+  static async getPersonalStats(req: Request, res: Response) {
     try {
         const user = (req as any).user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
@@ -274,11 +272,9 @@ export const getPersonalStats = async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
-};
+  }
 
-import { PdfExportService } from '../services/pdf.service';
-
-export const downloadBoardReportPDF = async (req: Request, res: Response) => {
+  static async downloadBoardReportPDF(req: Request, res: Response) {
     try {
         const user = (req as any).user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
@@ -336,5 +332,5 @@ export const downloadBoardReportPDF = async (req: Request, res: Response) => {
         console.error('[PDF] Board Report Error:', error);
         if (!res.headersSent) res.status(500).json({ message: 'Failed to generate Board Report PDF.' });
     }
-};
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
+  }
+}
