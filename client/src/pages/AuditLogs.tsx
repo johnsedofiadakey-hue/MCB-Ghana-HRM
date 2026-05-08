@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react';
-<<<<<<< HEAD
 import { Shield, Search, ChevronLeft, ChevronRight, Loader2, Activity, Terminal, Download } from 'lucide-react';
-=======
-import { Shield, Search, ChevronLeft, ChevronRight, Loader2, Activity, Terminal } from 'lucide-react';
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -49,7 +45,6 @@ const AuditLogs = () => {
 
   useEffect(() => { fetchLogs(); }, [page]);
 
-<<<<<<< HEAD
   const handleExport = async () => {
     try {
       const response = await api.get('/audit/export', { responseType: 'blob' });
@@ -64,9 +59,6 @@ const AuditLogs = () => {
       console.error('Export failed:', e);
     }
   };
-
-=======
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
   const logs = data.logs?.filter((l: any) => {
     const q = search?.toLowerCase() || '';
     return `${l.action} ${l.entity} ${l.user?.fullName || ''} ${l.ipAddress || ''}`.toLowerCase().includes(q);
@@ -85,11 +77,7 @@ const AuditLogs = () => {
         </div>
         <div className="flex items-center gap-4">
           <button 
-<<<<<<< HEAD
              onClick={handleExport}
-=======
-             onClick={() => window.open(`${api.defaults.baseURL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/audit/export?token=${localStorage.getItem('mcb_token')}`, '_blank')}
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
              className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg shadow-[var(--primary)]/20 hover:scale-105 transition-all"
           >
              <Download size={16} /> {t('audit.export_csv', 'Export CSV')}

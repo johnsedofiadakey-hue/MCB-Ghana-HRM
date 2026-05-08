@@ -47,7 +47,6 @@ const MDDashboard = () => {
       .finally(() => setLoading(false));
   }, []);
 
-<<<<<<< HEAD
   const handleDownloadBoardReport = async () => {
     try {
       const response = await api.get('/analytics/executive/board-report/pdf', { responseType: 'blob' });
@@ -62,9 +61,6 @@ const MDDashboard = () => {
       console.error('Download failed:', e);
     }
   };
-
-=======
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
   const statCards = [
     { label: t('md_dashboard.total_employees'), value: stats?.totalEmployees ?? '—', icon: Users, color: 'var(--primary)', change: '' },
     { label: t('md_dashboard.on_leave'), value: stats?.activeLeaves ?? '—', icon: Calendar, color: 'var(--warning)', change: '' },
@@ -95,11 +91,7 @@ const MDDashboard = () => {
         {/* Executive Actions */}
         <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} className="flex pb-1">
            <button
-<<<<<<< HEAD
              onClick={handleDownloadBoardReport}
-=======
-             onClick={() => window.open('https://mcb-ghana-hrm-api.onrender.com/api/analytics/executive/board-report/pdf?token=' + localStorage.getItem('mcb_auth_token'), '_blank')}
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
              className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white text-sm font-black uppercase tracking-widest flex items-center gap-3 hover:bg-[var(--accent)] hover:shadow-[0_0_20px_var(--primary)] hover:shadow-[var(--primary)]/30 transition-all active:scale-95"
            >
              <FileText size={18} /> Download Board Report
