@@ -29,7 +29,8 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
-  const isMD = node.role === 'MD';
+  const normalizedRole = (node.role || '').toUpperCase().replace(/ /g, '_');
+  const isMD = normalizedRole === 'MD';
 
   // Professional logic for Side-Stacking (Fishbone Transition)
   // Roots (Executive/MD) always horizontal.
@@ -37,7 +38,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
   // Managers stay horizontal if they have reports.
   // Staff level (no reports) always side-stacks under their manager to save space.
   const shouldSideStack = hasChildren && (
-    (node.role !== 'MD' && node.rank < 80) || 
+    (!isMD && node.rank < 80) || 
     node.children.every(c => !c.children || c.children.length === 0)
   );
 
@@ -239,85 +240,89 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
     setExpandedNodes(next);
   };
 
-  const renderItem = (node: OrgNode, depth = 0) => (
-    <div key={node.id} className="space-y-1">
-      <div 
-        className={cn(
-          "flex items-center gap-4 p-4 rounded-2xl border transition-all group",
-          node.role === 'MD' ? "bg-[var(--primary)]/10 border-[var(--primary)]/20 shadow-xl shadow-[var(--primary)]/5" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
-        )}
-        style={{ marginLeft: `${depth * 24}px` }}
-      >
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] overflow-hidden relative shadow-inner">
-            {node.avatar ? (
-              <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
-                <UserIcon size={16} />
+  const renderItem = (node: OrgNode, depth = 0) => {
+    const normalizedRole = (node.role || '').toUpperCase().replace(/ /g, '_');
+    const isMD = normalizedRole === 'MD';
+    return (
+      <div key={node.id} className="space-y-1">
+        <div 
+          className={cn(
+            "flex items-center gap-4 p-4 rounded-2xl border transition-all group",
+            isMD ? "bg-[var(--primary)]/10 border-[var(--primary)]/20 shadow-xl shadow-[var(--primary)]/5" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
+          )}
+          style={{ marginLeft: `${depth * 24}px` }}
+        >
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] overflow-hidden relative shadow-inner">
+              {node.avatar ? (
+                <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
+                  <UserIcon size={16} />
+                </div>
+              )}
+              {isMD && <div className="absolute top-0 right-0 p-1 bg-[var(--primary)]" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{node.name}</h4>
+                <span className={cn(
+                  "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest",
+                  isMD ? "bg-[var(--primary)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
+                )}>
+                  {t(`employees.roles.${node.role}`)}
+                </span>
+              </div>
+              <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase tracking-tight flex items-center gap-2">
+                {node.title} 
+                {node.department && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-[var(--border-subtle)]" />
+                    <span className="text-[var(--primary)] font-bold opacity-80">{node.department}</span>
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            {node.children.length > 0 && (
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">{t('org_chart.team_size')}</span>
+                <span className="text-sm font-bold text-[var(--text-primary)]">{node.children.length}</span>
               </div>
             )}
-            {node.role === 'MD' && <div className="absolute top-0 right-0 p-1 bg-[var(--primary)]" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{node.name}</h4>
-              <span className={cn(
-                "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest",
-                node.role === 'MD' ? "bg-[var(--primary)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
-              )}>
-                {t(`employees.roles.${node.role}`)}
-              </span>
-            </div>
-            <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase tracking-tight flex items-center gap-2">
-              {node.title} 
-              {node.department && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-[var(--border-subtle)]" />
-                  <span className="text-[var(--primary)] font-bold opacity-80">{node.department}</span>
-                </>
-              )}
-            </p>
+            
+            {node.children.length > 0 && (
+              <button 
+                onClick={() => toggleNode(node.id)}
+                className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center hover:bg-[var(--primary)]/20 hover:text-[var(--primary)] transition-all"
+              >
+                <div className={cn("transition-transform duration-300", expandedNodes.has(node.id) ? "rotate-90" : "")}>
+                  <ChevronRight size={18} />
+                </div>
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          {node.children.length > 0 && (
-            <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">{t('org_chart.team_size')}</span>
-              <span className="text-sm font-bold text-[var(--text-primary)]">{node.children.length}</span>
-            </div>
-          )}
-          
-          {node.children.length > 0 && (
-            <button 
-              onClick={() => toggleNode(node.id)}
-              className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center hover:bg-[var(--primary)]/20 hover:text-[var(--primary)] transition-all"
+        <AnimatePresence>
+          {expandedNodes.has(node.id) && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
             >
-              <div className={cn("transition-transform duration-300", expandedNodes.has(node.id) ? "rotate-90" : "")}>
-                <ChevronRight size={18} />
+              <div className="py-2 space-y-1">
+                {node.children.map(child => renderItem(child, depth + 1))}
               </div>
-            </button>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
-
-      <AnimatePresence>
-        {expandedNodes.has(node.id) && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="py-2 space-y-1">
-              {node.children.map(child => renderItem(child, depth + 1))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto w-full px-4">
