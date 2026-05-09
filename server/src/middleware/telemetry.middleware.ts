@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
 
-<<<<<<< HEAD
 const logBuffer: any[] = [];
 const BATCH_SIZE = 50;
 const FLUSH_INTERVAL = 30000; // 30 seconds
@@ -26,8 +25,6 @@ const flushLogs = async () => {
 // Periodic flush
 setInterval(flushLogs, FLUSH_INTERVAL);
 
-=======
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 export const apiUsageMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
 
@@ -35,7 +32,6 @@ export const apiUsageMiddleware = async (req: Request, res: Response, next: Next
     const duration = Date.now() - start;
     const user = (req as any).user;
     
-<<<<<<< HEAD
     logBuffer.push({
       organizationId: user?.organizationId || 'PUBLIC',
       method: req.method,
@@ -49,23 +45,6 @@ export const apiUsageMiddleware = async (req: Request, res: Response, next: Next
     if (logBuffer.length >= BATCH_SIZE) {
       flushLogs();
     }
-=======
-    // Fire-and-forget: we don't await the DB write here to ensure zero impact on event loop responsiveness 
-    (prisma as any).apiUsage.create({
-      data: {
-        organizationId: user?.organizationId || 'PUBLIC',
-        method: req.method,
-        path: req.baseUrl + req.path,
-        statusCode: res.statusCode,
-        duration: duration,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-      },
-    }).catch((error: any) => {
-      // Fail silently to not disrupt the main request flow
-      console.error('[Telemetry Error]:', error);
-    });
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
   });
 
   next();
