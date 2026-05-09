@@ -107,9 +107,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   const rank = getRoleRankValue(user.role);
   const role = (user.role || '').toUpperCase();
   
-  const isHR = role.includes('HR') || (rank >= 88 && rank < 95);
-  const isFinance = role.includes('FINANCE') || (rank >= 87 && rank < 95);
-  const isIT = role.includes('IT') || (rank >= 85 && rank < 95);
+  const isHR = role.includes('HR');
+  const isFinance = role.includes('FINANCE');
+  const isIT = role.includes('IT');
   const isMD = rank >= 95;
   
   const [pendingAppraisals, setPendingAppraisals] = useState(0);

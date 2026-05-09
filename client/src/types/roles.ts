@@ -21,6 +21,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     ...RoleRank,
     'MANAGING DIRECTOR': RoleRank.MD,
     'SYSTEM DEVELOPER': RoleRank.DEV,
+    'HR DIRECTOR': RoleRank.HR_DIRECTOR,
     'IT MANAGER': RoleRank.IT_MANAGER,
     'HR MANAGER': RoleRank.HR_MANAGER,
     'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,

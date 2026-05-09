@@ -36,6 +36,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     // Alias Support for DB display roles
     'MANAGING DIRECTOR': RoleRank.MD,
     'SYSTEM DEVELOPER': RoleRank.DEV,
+    'HR DIRECTOR': RoleRank.HR_DIRECTOR,
     'HR OFFICER': RoleRank.HR_OFFICER,
     'HR MANAGER': RoleRank.HR_MANAGER,
     'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,
