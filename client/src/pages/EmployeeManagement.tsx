@@ -862,7 +862,7 @@ export default function EmployeeManagement() {
                          <div className="flex flex-col md:flex-row items-center gap-8 bg-[var(--bg-elevated)]/30 p-8 rounded-[2.5rem] border border-[var(--border-subtle)]/50">
                              <div className="relative group/modal-avatar">
                                  <Avatar user={modal === 'edit' ? selected : { fullName: form.fullName }} size={32} />
-                                 {modal === 'edit' && canManage && (
+                                 {modal === 'edit' && selected && canManage && (
                                     <button 
                                        type="button"
                                        onClick={() => modalAvatarRef.current?.click()}
@@ -877,7 +877,7 @@ export default function EmployeeManagement() {
                                    accept="image/*" 
                                    className="hidden" 
                                    ref={modalAvatarRef} 
-                                   onChange={e => e.target.files?.[0] && handleAvatarUpload(selected.id, e.target.files[0])} 
+                                   onChange={e => e.target.files?.[0] && selected && handleAvatarUpload(selected.id, e.target.files[0])} 
                                  />
                              </div>
                              <div className="flex-1 text-center md:text-left space-y-2">

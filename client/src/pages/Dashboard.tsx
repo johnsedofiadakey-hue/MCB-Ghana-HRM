@@ -1,5 +1,6 @@
 import api from '../services/api';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
 import {
@@ -42,8 +43,8 @@ const useDashboardData = (departmentId?: string) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
-      setLoading(true);
+    const fetch = async (showLoading = true) => {
+      if (showLoading) setLoading(true);
       try {
         const [s, p, d, a] = await Promise.all([
           api.get('/dashboard/stats', { params: { departmentId } }),
@@ -59,15 +60,20 @@ const useDashboardData = (departmentId?: string) => {
       } catch (e) {
         console.error(e);
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     };
-    fetch();
+    
+    fetch(true);
+    
+    const interval = setInterval(() => fetch(false), 300000); // Poll every 5 minutes
+    return () => clearInterval(interval);
   }, [departmentId]);
   return { stats, performance, departments, activity, loading };
 };
 
-const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) => {
+const StatCard = ({ title, value, change, icon: Icon, color, sub, index, link }: any) => {
+  const navigate = useNavigate();
   const isPositive = change?.startsWith('+') || (!change?.startsWith('-') && change !== '0%');
 
   return (
@@ -75,7 +81,11 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05, ease: [0.23, 1, 0.32, 1] }}
-      className="nx-card p-6 group cursor-default min-w-0"
+      onClick={() => link && navigate(link)}
+      className={cn(
+        "nx-card p-6 group min-w-0 transition-all",
+        link ? "cursor-pointer hover:border-[var(--primary)]/50 hover:shadow-lg hover:shadow-[var(--primary)]/5" : "cursor-default"
+      )}
     >
       <div className="flex items-start justify-between mb-6">
         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-colors group-hover:border-[var(--primary)]/30 shrink-0">
@@ -209,32 +219,36 @@ const Dashboard = () => {
               title={t('dashboard.company_performance')} value={stats?.avgPerformance ? `${stats.avgPerformance}%` : '--'}
               change={stats?.performanceChange} icon={TrendingUp} color="var(--primary)"
               sub={t('dashboard.overall_efficiency')}
+              link="/performance/analytics"
             />
             <StatCard
               index={1}
               title={t('dashboard.team_morale')} value={stats?.teamMorale != null ? Number(stats.teamMorale).toFixed(1) : '--'}
               change={stats?.moraleChange} icon={Users} color="var(--accent)"
               sub={t('dashboard.current_score')}
+              link="/analytics/predictive"
             />
             <StatCard
               index={2}
               title={t('dashboard.open_positions')} value={stats?.openJobs ?? '--'}
               icon={Briefcase} color="var(--primary)"
               sub={t('dashboard.hiring_pipeline')}
+              link="/recruitment"
             />
             <StatCard
               index={3}
               title={t('dashboard.pending_expenses')} value={formatCurrency(stats?.pendingExpenses || 0)}
               icon={Wallet} color="var(--accent)"
                sub={t('dashboard.awaiting_approval')}
+              link="/expenses"
             />
           </>
         ) : (
           <>
-            <StatCard index={0} title={t('common.performance')} value={stats?.avgPerformance ? `${stats.avgPerformance}%` : '--'} icon={Target} color="var(--primary)" sub={t('dashboard.ytd')} />
-            <StatCard index={1} title={t('common.attendance')} value={stats?.attendanceRate ? `${stats.attendanceRate}%` : '--'} icon={Clock} color="var(--accent)" sub={t('dashboard.last_30_days')} />
-            <StatCard index={2} title={t('dashboard.my_tickets')} value={stats?.activeTickets ?? '--'} icon={LifeBuoy} color="var(--primary)" sub={t('dashboard.open_support')} />
-            <StatCard index={3} title={t('dashboard.my_claims')} value={formatCurrency(stats?.myClaims || 0)} icon={Wallet} color="var(--accent)" sub={t('dashboard.this_month')} />
+            <StatCard index={0} title={t('common.performance')} value={stats?.avgPerformance ? `${stats.avgPerformance}%` : '--'} icon={Target} color="var(--primary)" sub={t('dashboard.ytd')} link="/kpi/my-targets" />
+            <StatCard index={1} title={t('common.attendance')} value={stats?.attendanceRate ? `${stats.attendanceRate}%` : '--'} icon={Clock} color="var(--accent)" sub={t('dashboard.last_30_days')} link="/attendance" />
+            <StatCard index={2} title={t('dashboard.my_tickets')} value={stats?.activeTickets ?? '--'} icon={LifeBuoy} color="var(--primary)" sub={t('dashboard.open_support')} link="/support" />
+            <StatCard index={3} title={t('dashboard.my_claims')} value={formatCurrency(stats?.myClaims || 0)} icon={Wallet} color="var(--accent)" sub={t('dashboard.this_month')} link="/expenses" />
           </>
         )}
       </div>

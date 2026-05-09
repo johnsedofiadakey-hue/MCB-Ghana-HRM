@@ -516,6 +516,10 @@ export const hardDeleteUser = async (organizationId: string, id: string) => {
             data: { assignedToId: null }
         });
 
+        await tx.cardLifecycleEvent.deleteMany({
+            where: { performedById: id }
+        });
+
         // 1. Purge Target Dependencies (Restrictive)
         await tx.targetUpdate.deleteMany({
             where: { 
