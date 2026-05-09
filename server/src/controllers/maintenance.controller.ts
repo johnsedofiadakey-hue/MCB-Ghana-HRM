@@ -35,14 +35,9 @@ export const downloadBackup = async (req: Request, res: Response) => {
         const fs = await import('fs');
         const path = await import('path');
         const BACKUP_DIR = path.join(process.cwd(), 'storage', 'backups');
-<<<<<<< HEAD
-        
         // 🛡️ SECURITY FIX: Sanitize filename to prevent path traversal
         const safeFilename = path.basename(filename);
         const filepath = path.join(BACKUP_DIR, safeFilename);
-=======
-        const filepath = path.join(BACKUP_DIR, filename);
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 
         if (!fs.existsSync(filepath)) {
             return res.status(404).json({ message: "Backup file not found" });
