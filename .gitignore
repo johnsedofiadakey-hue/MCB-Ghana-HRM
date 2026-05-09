@@ -47,6 +47,7 @@ storage/
 public/backups/
 google-drive-key.json
 server/google-drive-key.json
+server/sa_fixed.json
 
 # Prisma
 # DO NOT remove these from gitignore; they are generated during build
