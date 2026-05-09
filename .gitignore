@@ -37,6 +37,7 @@ coverage/
 # Misc
 .vercel
 .turbo
+.firebase/
 
 # Database
 *.db
