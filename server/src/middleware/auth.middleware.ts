@@ -193,6 +193,25 @@ export const requireRole = (rank: number) => {
   };
 };
 
+export const requireSpecificRole = (allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const userRole = (req as any).user?.role;
+    const normalizedUserRole = userRole ? String(userRole).toUpperCase() : '';
+    
+    // DEV bypass
+    if (normalizedUserRole === 'DEV') return next();
+
+    // Normalize allowed roles
+    const normalizedAllowedRoles = allowedRoles.map(r => String(r).toUpperCase());
+
+    if (normalizedAllowedRoles.includes(normalizedUserRole)) {
+      return next();
+    }
+    
+    return res.status(403).json({ error: 'Access denied: insufficient permissions' });
+  };
+};
+
 export const authorizeMinimumRole = (minimumRole: string) => {
   const requiredRank = getRoleRank(minimumRole);
   return requireRole(requiredRank || 999);

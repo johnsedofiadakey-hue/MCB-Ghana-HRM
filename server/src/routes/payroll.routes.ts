@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireRole, requireSpecificRole } from '../middleware/auth.middleware';
 import {
   createRun, approveRun, voidRun, deleteRun, updateItem,
   getRuns, getRunDetail, getMyPayslips,
@@ -33,19 +33,22 @@ router.get('/my-tax-summary/:year', async (req, res) => {
 });
 
 // Admin — payroll management
-router.get('/summary', requireRole(85), getYearlySummary);
-router.get('/', requireRole(85), getRuns);
-router.post('/run', requireRole(85), validate(PayrollRunSchema), createRun);
-router.get('/:id', requireRole(85), getRunDetail);
-router.post('/:id/approve', requireRole(90), approveRun);
-router.post('/:id/void', requireRole(90), voidRun);
-router.delete('/:id', requireRole(90), deleteRun);
-router.patch('/items/:itemId', requireRole(85), validate(PayrollItemUpdateSchema), updateItem);
-router.get('/:id/export/csv', requireRole(85), exportPayrollCSV);
-router.get('/:id/bank-export/csv', requireRole(85), exportBankCSV);
+const financeRoles = ['FINANCE_MANAGER', 'MD'];
+const financeAdminRoles = ['MD'];
+
+router.get('/summary', requireSpecificRole(financeRoles), getYearlySummary);
+router.get('/', requireSpecificRole(financeRoles), getRuns);
+router.post('/run', requireSpecificRole(financeRoles), validate(PayrollRunSchema), createRun);
+router.get('/:id', requireSpecificRole(financeRoles), getRunDetail);
+router.post('/:id/approve', requireSpecificRole(financeAdminRoles), approveRun);
+router.post('/:id/void', requireSpecificRole(financeAdminRoles), voidRun);
+router.delete('/:id', requireSpecificRole(financeAdminRoles), deleteRun);
+router.patch('/items/:itemId', requireSpecificRole(financeRoles), validate(PayrollItemUpdateSchema), updateItem);
+router.get('/:id/export/csv', requireSpecificRole(financeRoles), exportPayrollCSV);
+router.get('/:id/bank-export/csv', requireSpecificRole(financeRoles), exportBankCSV);
 
 // Admin year-end summary for all employees
-router.get('/tax-summary/org/:year', requireRole(85), async (req, res) => {
+router.get('/tax-summary/org/:year', requireSpecificRole(financeRoles), async (req, res) => {
   try {
     const orgId = getOrgId(req) || 'mcb-ghana-tenant';
     const year = parseInt(req.params.year);

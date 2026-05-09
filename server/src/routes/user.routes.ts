@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requireRole, authorize } from '../middleware/auth.middleware';
+import { authenticate, requireRole, authorize, requireSpecificRole } from '../middleware/auth.middleware';
 import { upload } from '../middleware/upload.middleware';
 import { validate, CreateUserSchema, UpdateUserSchema } from '../middleware/validate.middleware';
 import {
@@ -28,19 +28,22 @@ router.post('/', authorize(['HR_MANAGER', 'HR_DIRECTOR', 'IT_MANAGER', 'MD']), v
 // Allow self-edit; require rank 70+ to edit others
 router.patch('/:id', (req, res, next) => {
   if ((req as any).user?.id === req.params.id) return next();
-  return requireRole(70)(req, res, next);
+  return requireSpecificRole(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV'])(req, res, next);
 }, updateEmployee);
 
 // PUT alias for EmployeeProfile compatibility
-router.put('/:id', requireRole(70), updateEmployee);
+router.put('/:id', (req, res, next) => {
+  if ((req as any).user?.id === req.params.id) return next();
+  return requireSpecificRole(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV'])(req, res, next);
+}, updateEmployee);
 
-// Delete (Archive) - Rank 85+ (HR Manager / HR Director / IT Manager / MD / DEV)
-router.delete('/:id', requireRole(85), deleteEmployee);
-router.delete('/:id/hard', requireRole(85), hardDeleteEmployee);
-router.post('/:id/restore', requireRole(85), restoreEmployee);
+// Delete (Archive) - Only HR and MD
+router.delete('/:id', requireSpecificRole(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']), deleteEmployee);
+router.delete('/:id/hard', requireSpecificRole(['HR_MANAGER', 'MD', 'DEV']), hardDeleteEmployee);
+router.post('/:id/restore', requireSpecificRole(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']), restoreEmployee);
 
-// Role assignment (MD or Admin Managers 85+)
-router.post('/assign-role', requireRole(85), assignRole);
+// Role assignment (Only HR and MD)
+router.post('/assign-role', requireSpecificRole(['HR_MANAGER', 'MD', 'DEV']), assignRole);
 
 router.post('/:id/upload-image', upload.single('avatar'), uploadImage);
 router.post('/:id/avatar', uploadImage); // base64 path
