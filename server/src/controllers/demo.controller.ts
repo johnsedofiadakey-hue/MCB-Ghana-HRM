@@ -4,14 +4,10 @@ import crypto from 'crypto';
 import prisma from '../prisma/client';
 import { ROLE_RANK_MAP } from '../types/roles';
 
-<<<<<<< HEAD
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.error('[DemoController] JWT_SECRET not configured');
 }
-=======
-const JWT_SECRET = process.env.JWT_SECRET || 'nexus-secret-key';
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 const ACCESS_TOKEN_TTL = '2h'; // Demo sessions are short-lived
 
 const getRoleRank = (role?: string): number => {
