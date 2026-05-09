@@ -29,7 +29,7 @@ const Feedback360: React.FC = () => {
   const fetchFeedback = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/performance/feedback');
+      const res = await api.get('/continuous-performance/feedback');
       setFeedbackList(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to fetch feedback');
@@ -45,7 +45,7 @@ const Feedback360: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/performance/feedback', {
+      await api.post('/continuous-performance/feedback', {
         receiverId,
         content,
         rating: Number(rating)

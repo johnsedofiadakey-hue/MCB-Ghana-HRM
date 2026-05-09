@@ -21,8 +21,21 @@ const PredictiveAnalytics: React.FC = () => {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/analytics');
-      setData(res.data);
+      const [metricsRes, signalsRes] = await Promise.all([
+        api.get('/analytics/metrics'),
+        api.get('/analytics/signals')
+      ]);
+      
+      const metrics = metricsRes.data;
+      const signals = signalsRes.data;
+
+      setData({
+        headcount: metrics.headcount || 0,
+        avgPerformance: metrics.avgPerformance || 0,
+        leaveUtilization: metrics.leaveUtilization || 0,
+        attritionRiskNodes: signals.attritionRisk?.length || 0,
+        leaveAbuseSignals: signals.potentialLeaveAbuse?.length || 0
+      });
     } catch (err) {
       console.error('Failed to fetch analytics');
       // Fallback mock data

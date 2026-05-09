@@ -51,6 +51,7 @@ const ReviewKpiModal = ({ isOpen, onClose, sheetId, employeeName, onSuccess }: R
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
+                        onClick={(e) => e.stopPropagation()}
                         className="glass w-full max-w-lg bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl shadow-[var(--primary)]/10"
                     >
                         {/* Header */}

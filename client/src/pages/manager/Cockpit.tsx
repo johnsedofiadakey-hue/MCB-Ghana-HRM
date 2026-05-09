@@ -21,8 +21,25 @@ const Cockpit: React.FC = () => {
   const fetchHealth = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/manager/cockpit/health');
-      setStats(res.data);
+      const res = await api.get('/manager/cockpit');
+      const data = res.data;
+      
+      // Parse percentages from strings like "94%"
+      const attendance = data.healthSignals?.attendance ? parseInt(data.healthSignals.attendance) : 0;
+      const kpi = data.healthSignals?.kpiProgress ? parseInt(data.healthSignals.kpiProgress) : 0;
+
+      setStats({
+        teamSize: data.spanOfControl || 0,
+        attendanceRate: attendance,
+        kpiCompletion: kpi,
+        activeLeaves: 0, 
+        alerts: (data.alerts || []).map((msg: string, idx: number) => ({
+          id: String(idx),
+          type: 'ALERT',
+          message: msg,
+          severity: 'MEDIUM'
+        }))
+      });
     } catch (err) {
       console.error('Failed to fetch cockpit health');
       // Fallback mock data if API fails or is not fully seeded

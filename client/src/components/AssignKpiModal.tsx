@@ -132,6 +132,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
             className="glass w-full max-w-6xl bg-[var(--bg-card)]/90 border-[var(--border-subtle)] overflow-hidden flex flex-col max-h-[90vh] shadow-2xl shadow-[var(--primary)]/10 rounded-[2.5rem]"
           >
             {/* Header */}
