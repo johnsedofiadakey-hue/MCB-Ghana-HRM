@@ -132,7 +132,15 @@ const CardManagement: React.FC = () => {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      await api.put(`/cards/${id}`, { status });
+      if (status === 'ACTIVE') {
+        await api.patch(`/cards/${id}/activate`);
+      } else if (status === 'SUSPENDED') {
+        await api.patch(`/cards/${id}/suspend`);
+      } else if (status === 'REVOKED') {
+        await api.patch(`/cards/${id}/revoke`);
+      } else {
+        await api.put(`/cards/${id}`, { status });
+      }
       fetchCards();
       toast.success(`Card status updated to ${status}`);
     } catch (err) {
