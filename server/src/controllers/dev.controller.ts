@@ -55,10 +55,7 @@ export const getSystemStats = async (req: Request, res: Response) => {
         annualPrice: masterSettings?.annualPrice || 360000000,
         currency: masterSettings?.currency || 'GHS',
         paystackPublicKey: masterSettings?.paystackPublicKey || '',
-<<<<<<< HEAD
-=======
-        paystackSecretKey: masterSettings?.paystackSecretKey || '',
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
+
         paystackPayLink: masterSettings?.paystackPayLink || '',
         isMaintenanceMode: masterSettings?.isMaintenanceMode || false,
         securityLockdown: masterSettings?.securityLockdown || false,
