@@ -116,9 +116,10 @@ export default function EmployeeManagement() {
   const role = user?.role || 'STAFF';
   const rank = getRoleRankValue(role);
   const privilegedRoles = ['MD', 'DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
-  const isPrivileged = privilegedRoles.includes(user?.role) && rank >= 80;
+  const normalizedRole = role.toUpperCase().replace(/ /g, '_');
+  const isPrivileged = privilegedRoles.includes(normalizedRole) && rank >= 80;
 
-  const isAdmin = (role === 'HR_MANAGER' || role === 'IT_MANAGER' || role === 'DEV' || role === 'MD' || role === 'IT_ADMIN' || role === 'HR_DIRECTOR');
+  const isAdmin = (normalizedRole === 'HR_MANAGER' || normalizedRole === 'IT_MANAGER' || normalizedRole === 'DEV' || normalizedRole === 'MD' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'HR_DIRECTOR');
   const canManage = isAdmin;
   const canManageBiometric = isAdmin;
   const canAddPersonnel = isAdmin;

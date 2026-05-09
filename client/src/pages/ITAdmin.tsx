@@ -49,6 +49,7 @@ const ITAdmin = () => {
   const [securityPulse, setSecurityPulse] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const currentUser = getStoredUser();
+  const normalizedRole = (currentUser?.role || '').toUpperCase().replace(/ /g, '_');
   const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets' | 'integrations'>(
     (currentUser?.rank || 0) >= 85 ? 'accounts' : 'overview'
   );
@@ -350,7 +351,7 @@ const ITAdmin = () => {
                                   <td className="text-[11px] font-bold uppercase text-[var(--text-secondary)]">{u.departmentObj?.name || 'CENTRAL_HUB'}</td>
                                   <td className="px-10 py-6 text-right">
                                      <div className="flex justify-end gap-3">
-                                        {(currentUser?.role === 'IT_MANAGER' || currentUser?.role === 'IT_ADMIN' || currentUser?.role === 'DEV') && (
+                                        {(normalizedRole === 'IT_MANAGER' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'DEV') && (
                                            <button onClick={() => handlePrintId(u)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><Key size={14} /></button>
                                         )}
                                         <button onClick={() => handlePasswordReset(u.id, u.fullName)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><RotateCcw size={14} /></button>

@@ -37,7 +37,8 @@ const Profile = () => {
     
     // canEditIdentity refers to the core fields (Name, Email). 
     // Phone and Bank details are now self-service.
-    const canEditIdentity = privilegedRoles.includes(user?.role || '') && rank >= 80;
+    const normalizedRole = (user?.role || '').toUpperCase().replace(/ /g, '_');
+    const canEditIdentity = privilegedRoles.includes(normalizedRole) && rank >= 80;
     
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [requestMsg, setRequestMsg] = useState('');

@@ -44,6 +44,7 @@ const EmployeeProfile = () => {
     const { setContextData } = useAI();
 
     const currentUser = getStoredUser();
+    const normalizedRole = (currentUser?.role || '').toUpperCase().replace(/ /g, '_');
 
     const fetchEmployee = useCallback(async () => {
         setLoading(true);
@@ -183,7 +184,7 @@ const EmployeeProfile = () => {
                     >
                         <Download size={14} /> Export PDF
                     </motion.button>
-                    {(currentUser?.role === 'IT_MANAGER' || currentUser?.role === 'IT_ADMIN' || currentUser?.role === 'DEV') && (
+                    {(normalizedRole === 'IT_MANAGER' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'DEV') && (
                         <motion.button 
                             onClick={() => { setPrintType('idcard'); setTimeout(() => window.print(), 500); }} 
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
