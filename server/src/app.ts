@@ -125,7 +125,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     const isAllowed = allowedOrigins.some(allowedOrigin => {
-      return origin === allowedOrigin || origin.startsWith(allowedOrigin);
+      return origin === allowedOrigin;
     });
 
     if (isAllowed) {

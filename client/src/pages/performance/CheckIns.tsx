@@ -30,7 +30,7 @@ const CheckIns: React.FC = () => {
   const fetchCheckIns = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/performance/check-ins');
+      const res = await api.get('/continuous-performance/check-ins');
       setCheckIns(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to fetch check-ins');
@@ -46,7 +46,7 @@ const CheckIns: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/performance/check-ins', {
+      await api.post('/continuous-performance/check-ins', {
         employeeId,
         scheduledAt,
         notes

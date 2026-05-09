@@ -40,9 +40,10 @@ class StorageService {
       try {
         return JSON.parse(raw) as T;
       } catch (parseError) {
-        // If it was just a plain string after all, return it
-        if (typeof raw === 'string') return raw as unknown as T;
-        throw parseError;
+        // If the expected type is string, return the raw string
+        if (typeof defaultValue === 'string') return raw as unknown as T;
+        // Otherwise return the default value as fallback
+        return defaultValue;
       }
     } catch (error) {
       console.warn(`[StorageService] Failed to parse key "${key}". Returning default.`, error);
