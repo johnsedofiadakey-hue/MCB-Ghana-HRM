@@ -119,7 +119,7 @@ export default function EmployeeManagement() {
   const normalizedRole = role.toUpperCase().replace(/ /g, '_');
   const isPrivileged = privilegedRoles.includes(normalizedRole) && rank >= 80;
 
-  const isAdmin = (normalizedRole === 'HR_MANAGER' || normalizedRole === 'IT_MANAGER' || normalizedRole === 'DEV' || normalizedRole === 'MD' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'HR_DIRECTOR');
+  const isAdmin = (normalizedRole === 'HR_MANAGER' || normalizedRole === 'IT_MANAGER' || normalizedRole === 'DEV' || normalizedRole === 'MD' || normalizedRole === 'MANAGING_DIRECTOR' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'HR_DIRECTOR');
   const canManage = isAdmin;
   const canManageBiometric = isAdmin;
   const canAddPersonnel = isAdmin;

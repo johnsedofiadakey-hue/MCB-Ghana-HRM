@@ -30,7 +30,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
   const normalizedRole = (node.role || '').toUpperCase().replace(/ /g, '_');
-  const isMD = normalizedRole === 'MD';
+  const isMD = normalizedRole === 'MD' || normalizedRole === 'MANAGING_DIRECTOR';
 
   // Professional logic for Side-Stacking (Fishbone Transition)
   // Roots (Executive/MD) always horizontal.
@@ -242,7 +242,7 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
 
   const renderItem = (node: OrgNode, depth = 0) => {
     const normalizedRole = (node.role || '').toUpperCase().replace(/ /g, '_');
-    const isMD = normalizedRole === 'MD';
+    const isMD = normalizedRole === 'MD' || normalizedRole === 'MANAGING_DIRECTOR';
     return (
       <div key={node.id} className="space-y-1">
         <div 

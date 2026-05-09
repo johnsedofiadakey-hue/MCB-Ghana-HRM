@@ -38,7 +38,8 @@ const Announcements = () => {
   
   const user = getStoredUser();
   const rank = getRoleRankValue(user.role);
-  const canPost = rank >= 85 || user.role === 'MD';
+  const normalizedRole = (user?.role || '').toUpperCase().replace(/ /g, '_');
+  const canPost = rank >= 85 || normalizedRole === 'MD' || normalizedRole === 'MANAGING_DIRECTOR';
 
   const [formData, setFormData] = useState({
     title: '',
