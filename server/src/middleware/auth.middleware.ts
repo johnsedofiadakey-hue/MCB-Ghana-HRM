@@ -16,10 +16,7 @@ declare global {
 }
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma/client';
-<<<<<<< HEAD
 import { PolicyService } from '../services/policy.service';
-=======
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 
 if (!process.env.JWT_SECRET) {
   throw new Error('FATAL: JWT_SECRET environment variable is not set. Server cannot start safely.');
@@ -47,11 +44,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1];
-<<<<<<< HEAD
-=======
   } else if (req.query.token) {
     token = req.query.token as string;
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
   }
 
   if (!token) {
@@ -204,7 +198,6 @@ export const authorizeMinimumRole = (minimumRole: string) => {
   return requireRole(requiredRank || 999);
 };
 
-<<<<<<< HEAD
 export const requirePermission = (permission: string, getContext?: (req: Request) => any) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
@@ -227,9 +220,6 @@ export const requirePermission = (permission: string, getContext?: (req: Request
     next();
   };
 };
-
-=======
->>>>>>> 430a1da1a47c271c0801ba6d3e2fad6da5b864e7
 export const checkBilling = async (req: Request, res: Response, next: NextFunction) => {
   const user = (req as any).user;
   if (!user || user.role === 'DEV') return next();
