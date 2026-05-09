@@ -10,7 +10,11 @@ const auth_middleware_1 = require("./auth.middleware");
  */
 const shadowAuth = async (req, res, next) => {
     const masterKey = req.headers['x-dev-master-key'];
-    const envKey = process.env.DEV_MASTER_KEY || 'NEXUS-DEV-MASTER-2025-SECURE';
+    const envKey = process.env.DEV_MASTER_KEY;
+    if (!envKey) {
+        console.error('[ShadowAuth] FATAL: DEV_MASTER_KEY not set in environment.');
+        return res.status(500).json({ error: 'System configuration error' });
+    }
     // 1. Check Master Key (Shadow Access)
     // We normalize the env key to handle possible quotes or whitespace from config
     const cleanEnvKey = envKey?.replace(/['"]/g, '').trim();

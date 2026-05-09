@@ -89,6 +89,7 @@ const createKpiSheet = async (req, res) => {
                         name: i.name || i.description || 'KPI Goal',
                         category: i.category || 'General',
                         description: i.description || '',
+                        type: i.type || 'LAGGING',
                         weight: parseFloat(i.weight),
                         targetValue: parseFloat(i.target || i.targetValue || 0),
                         actualValue: 0, score: 0
@@ -583,6 +584,7 @@ const assignFromTemplate = async (req, res) => {
                         name: i.name,
                         category: i.category,
                         description: i.description,
+                        type: i.type,
                         metricType: i.metricType,
                         weight: i.weight,
                         targetValue: i.targetValue,

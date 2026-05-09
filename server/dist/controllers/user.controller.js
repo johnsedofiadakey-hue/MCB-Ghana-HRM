@@ -379,9 +379,13 @@ const updateEmployee = async (req, res) => {
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const rank = (0, auth_middleware_1.getRoleRank)(userReq.role);
-        const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+        const privilegedRoles = [
+            'MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR DIRECTOR',
+            'HR_MANAGER', 'HR MANAGER', 'IT_MANAGER', 'IT MANAGER',
+            'IT_ADMIN', 'IT ADMIN', 'HR_OFFICER', 'HR OFFICER'
+        ];
         const actorId = userReq.id;
-        const actorRole = userReq.role;
+        const actorRole = (userReq.role || '').toUpperCase().replace(/_/g, ' ').trim();
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const targetId = req.params.id;
         // 🛡️ REQUISITE: Only MD, HR, or IT can update employee details
@@ -394,7 +398,7 @@ const updateEmployee = async (req, res) => {
         ];
         if (!privilegedRoles.includes(actorRole) && actorRank < 70) {
             if (!isSelfUpdate) {
-                return res.status(403).json({ error: 'Access denied: Only Managers, HR, or IT can update personnel profiles.' });
+                return res.status(403).json({ message: 'Access denied: Only Managers, HR, or IT can update personnel profiles.' });
             }
             // Filter body to only allowed self-service fields
             const filteredBody = {};
@@ -435,9 +439,17 @@ const updateEmployee = async (req, res) => {
             }
         }
         // Only HR/MD (>= 85) can change salary/currency
-        if (actorRank < 85) {
+        // 🛡️ SENSITIVE DATA PROTECTION: Rank < 85 (Managers/Officers) cannot modify payroll/SSNIT data
+        if (actorRank < 85 && actorRole !== 'DEV') {
             delete req.body.salary;
             delete req.body.currency;
+            delete req.body.bankName;
+            delete req.body.bankAccountNumber;
+            delete req.body.bankBranch;
+            delete req.body.ssnitNumber;
+            delete req.body.nationalId;
+            delete req.body.ghanaCardNumber;
+            delete req.body.tin;
         }
         // 🛡️ GLOBAL CONTROLLER ACCESS (IT/HR Managers >= 85)
         // They are fully responsible for the app and can manage all roles including HR_MANAGER.
@@ -459,10 +471,19 @@ const updateEmployee = async (req, res) => {
         // 🛡️ Validate SubUnit/Department pairing
         const newDeptId = req.body.departmentId ? Number(req.body.departmentId) : targetUser.departmentId;
         const newSubUnitId = req.body.subUnitId !== undefined ? req.body.subUnitId : targetUser.subUnitId;
+        // 🛡️ SUB-UNIT INTEGRITY CHECK: 
+        // If the department was changed but subUnitId was not provided, or if both are provided,
+        // ensure the subUnit belongs to the department. If not, we clear the subUnit instead of failing.
         if (newSubUnitId && newDeptId) {
             const subUnit = await client_1.default.subUnit.findUnique({ where: { id: newSubUnitId } });
             if (subUnit && subUnit.departmentId !== newDeptId) {
-                return res.status(400).json({ error: 'The selected sub-unit does not belong to the selected department.' });
+                // Only clear if the department was explicitly changed in this request
+                if (req.body.departmentId) {
+                    req.body.subUnitId = null;
+                }
+                else {
+                    return res.status(400).json({ message: 'The selected sub-unit does not belong to this department.' });
+                }
             }
         }
         const user = await userService.updateUser(organizationId, targetId, req.body, userReq.id);
@@ -547,12 +568,16 @@ const assignRole = async (req, res) => {
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
-        const actorRole = userReq.role;
+        const actorRole = (userReq.role || '').toUpperCase().replace(/_/g, ' ').trim();
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const { userId, role, supervisorId } = req.body;
-        const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+        const privilegedRoles = [
+            'MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR DIRECTOR',
+            'HR_MANAGER', 'HR MANAGER', 'IT_MANAGER', 'IT MANAGER',
+            'IT_ADMIN', 'IT ADMIN', 'HR_OFFICER', 'HR OFFICER'
+        ];
         if (actorRank < 80 || !privilegedRoles.includes(actorRole)) {
-            return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can manage personnel role assignments.' });
+            return res.status(403).json({ message: 'Access denied: Only MD, HR, or IT can manage personnel role assignments.' });
         }
         const validRoles = ['DEV', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
         // 🛡️ Hierarchy Guard: Only MD/DEV (90+) or Admin Managers (85+) can assign roles >= 85 (HR/IT Manager)
@@ -593,10 +618,15 @@ const uploadImage = async (req, res) => {
     try {
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
-        const { role: actorRole, id: actorId } = userReq;
+        const { role: rawRole, id: actorId } = userReq;
+        const actorRole = (rawRole || '').toUpperCase().replace(/_/g, ' ').trim();
         const targetId = req.params.id;
         const rank = (0, auth_middleware_1.getRoleRank)(actorRole);
-        const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+        const privilegedRoles = [
+            'MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR DIRECTOR',
+            'HR_MANAGER', 'HR MANAGER', 'IT_MANAGER', 'IT MANAGER',
+            'IT_ADMIN', 'IT ADMIN', 'HR_OFFICER', 'HR OFFICER'
+        ];
         // 🛡️ REQUISITE: Only MD, HR, or IT can upload images (unless it's the user's own profile, but even then, policies might differ)
         // User requested "IT, HR, MD" specifically.
         if (rank < 80 || !privilegedRoles.includes(actorRole)) {

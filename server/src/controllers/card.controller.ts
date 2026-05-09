@@ -95,7 +95,7 @@ export class CardController {
       
       const cardRecord = await prisma.card.findUnique({ where: { id }, select: { userId: true } });
       if (cardRecord?.userId) {
-        await notify(cardRecord.userId, '🚫 Card Revoked', `Your access card has been revoked.`, 'DANGER', '/profile');
+        await notify(cardRecord.userId, '🚫 Card Revoked', `Your access card has been revoked.`, 'ERROR', '/profile');
       }
 
       return res.json(card);

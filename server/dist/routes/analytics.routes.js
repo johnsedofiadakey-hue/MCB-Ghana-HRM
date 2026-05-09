@@ -1,45 +1,16 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const analyticsController = __importStar(require("../controllers/analytics.controller"));
+const analytics_controller_1 = require("../controllers/analytics.controller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
-router.get('/executive', (0, auth_middleware_1.requireRole)(70), analyticsController.getExecutiveStats); // Manager+
-router.get('/executive/board-report/pdf', (0, auth_middleware_1.requireRole)(80), analyticsController.downloadBoardReportPDF); // Director+
-router.get('/dept-growth', (0, auth_middleware_1.requireRole)(80), analyticsController.getDepartmentGrowth); // Director+
-router.get('/personal', analyticsController.getPersonalStats); // Any authenticated user (Staff)
+// New Analytics Engine Routes
+router.get('/metrics', analytics_controller_1.AnalyticsController.getDashboardMetrics);
+router.get('/signals', analytics_controller_1.AnalyticsController.getSignals);
+// Executive & Other Analytics Routes
+router.get('/executive', (0, auth_middleware_1.requireRole)(70), analytics_controller_1.AnalyticsController.getExecutiveStats); // Manager+
+router.get('/executive/board-report/pdf', (0, auth_middleware_1.requireRole)(80), analytics_controller_1.AnalyticsController.downloadBoardReportPDF); // Director+
+router.get('/dept-growth', (0, auth_middleware_1.requireRole)(80), analytics_controller_1.AnalyticsController.getDepartmentGrowth); // Director+
+router.get('/personal', analytics_controller_1.AnalyticsController.getPersonalStats); // Any authenticated user (Staff)
 exports.default = router;

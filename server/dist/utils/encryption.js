@@ -5,7 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.maybeEncrypt = exports.decryptValue = exports.encryptValue = void 0;
 const crypto_1 = __importDefault(require("crypto"));
-const KEY_SOURCE = process.env.DATA_ENCRYPTION_KEY || process.env.JWT_SECRET || 'nexus-hr-platform-default-key';
+const KEY_SOURCE = process.env.DATA_ENCRYPTION_KEY || process.env.JWT_SECRET;
+if (!KEY_SOURCE) {
+    throw new Error('[Encryption] CRITICAL: DATA_ENCRYPTION_KEY or JWT_SECRET must be set for encryption services.');
+}
 const KEY = crypto_1.default.createHash('sha256').update(KEY_SOURCE).digest(); // 32 bytes
 const encryptValue = (plain) => {
     const iv = crypto_1.default.randomBytes(12);

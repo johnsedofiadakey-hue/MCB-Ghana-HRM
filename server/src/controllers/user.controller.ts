@@ -446,7 +446,6 @@ export const updateEmployee = async (req: Request, res: Response) => {
       delete req.body.ghanaCardNumber;
       delete req.body.tin;
     }
-    }
     // 🛡️ GLOBAL CONTROLLER ACCESS (IT/HR Managers >= 85)
     // They are fully responsible for the app and can manage all roles including HR_MANAGER.
     // However, the MD account (Rank 95) is protected from non-DEV status/role changes.
@@ -483,8 +482,6 @@ export const updateEmployee = async (req: Request, res: Response) => {
         } else {
            return res.status(400).json({ message: 'The selected sub-unit does not belong to this department.' });
         }
-      }
-    }
       }
     }
 
@@ -581,7 +578,6 @@ export const assignRole = async (req: Request, res: Response) => {
     ];
     if (actorRank < 80 || !privilegedRoles.includes(actorRole)) {
        return res.status(403).json({ message: 'Access denied: Only MD, HR, or IT can manage personnel role assignments.' });
-    }
     }
 
     const validRoles = ['DEV', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];

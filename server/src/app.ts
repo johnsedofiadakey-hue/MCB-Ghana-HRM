@@ -80,7 +80,6 @@ import policyRoutes from './routes/policy.routes';
 import continuousPerformanceRoutes from './routes/continuous-performance.routes';
 import managerCockpitRoutes from './routes/manager-cockpit.routes';
 import cardRoutes from './routes/card.routes';
-import analyticsRoutes from './routes/analytics.routes';
 
 // Config already loaded at top level
 

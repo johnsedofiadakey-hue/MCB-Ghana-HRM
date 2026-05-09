@@ -38,10 +38,10 @@ export class AnalyticsService {
         startDate: { gte: startOfYear, lte: endOfYear },
         ...(departmentId ? { employee: { departmentId } } : {}),
       },
-      select: { numberOfDays: true },
+      select: { leaveDays: true },
     });
 
-    const totalDays = leaves.reduce((sum, l) => sum + Number(l.numberOfDays || 0), 0);
+    const totalDays = leaves.reduce((sum, l) => sum + Number(l.leaveDays || 0), 0);
     return totalDays;
   }
 
@@ -64,7 +64,7 @@ export class AnalyticsService {
       where: {
         organizationId,
         status: 'APPROVED',
-        numberOfDays: { lt: 3 },
+        leaveDays: { lt: 3 },
         startDate: { gte: threeMonthsAgo },
       },
       select: { employeeId: true },

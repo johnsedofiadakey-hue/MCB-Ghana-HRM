@@ -72,7 +72,9 @@ const downloadBackup = async (req, res) => {
         const fs = await Promise.resolve().then(() => __importStar(require('fs')));
         const path = await Promise.resolve().then(() => __importStar(require('path')));
         const BACKUP_DIR = path.join(process.cwd(), 'storage', 'backups');
-        const filepath = path.join(BACKUP_DIR, filename);
+        // 🛡️ SECURITY FIX: Sanitize filename to prevent path traversal
+        const safeFilename = path.basename(filename);
+        const filepath = path.join(BACKUP_DIR, safeFilename);
         if (!fs.existsSync(filepath)) {
             return res.status(404).json({ message: "Backup file not found" });
         }

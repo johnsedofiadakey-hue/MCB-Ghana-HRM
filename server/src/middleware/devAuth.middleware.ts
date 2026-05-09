@@ -6,10 +6,10 @@ import { admin, initializeFirebase } from '../services/firebase-admin';
 initializeFirebase();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const DEV_PIN = process.env.DEV_CONSOLE_PIN || process.env.DEV_MASTER_KEY;
-if (!DEV_PIN) {
-  console.warn('[DevAuth] WARNING: No DEV_CONSOLE_PIN set. Dev routes will be inaccessible.');
+if (!process.env.DEV_CONSOLE_PIN && !process.env.DEV_MASTER_KEY) {
+  throw new Error('FATAL: DEV_CONSOLE_PIN or DEV_MASTER_KEY must be set.');
 }
+const DEV_PIN = process.env.DEV_CONSOLE_PIN || process.env.DEV_MASTER_KEY!;
 
 // Track failed attempts per IP for rate limiting
 const failedAttempts = new Map<string, { count: number; lastAttempt: number }>();

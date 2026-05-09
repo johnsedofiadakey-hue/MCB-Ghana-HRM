@@ -3,9 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkBilling = exports.authorizeMinimumRole = exports.requireRole = exports.authorize = exports.authenticate = exports.getRoleRank = void 0;
+exports.checkBilling = exports.requirePermission = exports.authorizeMinimumRole = exports.requireRole = exports.authorize = exports.authenticate = exports.getRoleRank = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = __importDefault(require("../prisma/client"));
+const policy_service_1 = require("../services/policy.service");
 if (!process.env.JWT_SECRET) {
     throw new Error('FATAL: JWT_SECRET environment variable is not set. Server cannot start safely.');
 }
@@ -167,6 +168,26 @@ const authorizeMinimumRole = (minimumRole) => {
     return (0, exports.requireRole)(requiredRank || 999);
 };
 exports.authorizeMinimumRole = authorizeMinimumRole;
+const requirePermission = (permission, getContext) => {
+    return async (req, res, next) => {
+        const user = req.user;
+        if (!user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        const context = getContext ? getContext(req) : {};
+        // Add default context if missing
+        if (!context.targetUserId && req.params.userId)
+            context.targetUserId = req.params.userId;
+        if (!context.departmentId && req.params.departmentId)
+            context.departmentId = parseInt(req.params.departmentId);
+        const result = await policy_service_1.PolicyService.evaluatePolicy(user.id, permission, context);
+        if (!result.allowed) {
+            return res.status(403).json({ error: `Forbidden: ${result.reason}` });
+        }
+        next();
+    };
+};
+exports.requirePermission = requirePermission;
 const checkBilling = async (req, res, next) => {
     const user = req.user;
     if (!user || user.role === 'DEV')

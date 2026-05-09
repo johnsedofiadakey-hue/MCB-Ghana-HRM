@@ -111,6 +111,10 @@ const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
 const maintenance_routes_1 = __importDefault(require("./routes/maintenance.routes"));
 const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
 const biometric_routes_1 = __importDefault(require("./routes/biometric.routes"));
+const policy_routes_1 = __importDefault(require("./routes/policy.routes"));
+const continuous_performance_routes_1 = __importDefault(require("./routes/continuous-performance.routes"));
+const manager_cockpit_routes_1 = __importDefault(require("./routes/manager-cockpit.routes"));
+const card_routes_1 = __importDefault(require("./routes/card.routes"));
 // Config already loaded at top level
 const validateConfig = () => {
     const required = ['JWT_SECRET', 'DATABASE_URL'];
@@ -154,8 +158,8 @@ app.use((0, cors_1.default)({
         }
         else {
             console.warn(`[CORS] Blocked origin: ${origin}`);
-            // In production, we still allow but log to avoid blocking legitimate users during migration
-            callback(null, true);
+            // 🛡️ SECURITY FIX: Actually block the request instead of allowing it
+            callback(new Error(`Origin ${origin} not allowed by CORS policy`));
         }
     },
     credentials: true,
@@ -349,6 +353,10 @@ app.use('/api/integrations', integrations_routes_1.default);
 app.use('/api/bot', rate_limit_middleware_1.aiLimiter, bot_routes_1.default);
 app.use('/api/biometric', biometric_routes_1.default);
 app.use('/api/ai', rate_limit_middleware_1.aiLimiter, ai_routes_1.default);
+app.use('/api/policy', policy_routes_1.default);
+app.use('/api/continuous-performance', continuous_performance_routes_1.default);
+app.use('/api/manager', manager_cockpit_routes_1.default);
+app.use('/api', card_routes_1.default);
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-routes', (req, res) => {

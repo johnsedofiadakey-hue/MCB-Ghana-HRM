@@ -8,7 +8,10 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
 const client_1 = __importDefault(require("../prisma/client"));
 const roles_1 = require("../types/roles");
-const JWT_SECRET = process.env.JWT_SECRET || 'nexus-secret-key';
+if (!process.env.JWT_SECRET) {
+    throw new Error('FATAL: JWT_SECRET environment variable is not set.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = '2h'; // Demo sessions are short-lived
 const getRoleRank = (role) => {
     if (!role)
