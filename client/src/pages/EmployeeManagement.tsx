@@ -257,7 +257,7 @@ export default function EmployeeManagement() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const editId = params.get('edit');
-    if (editId && !selected && modal !== 'edit') {
+    if (editId && modal !== 'edit') {
       openEdit({ id: editId });
       navigate(location.pathname, { replace: true });
     }

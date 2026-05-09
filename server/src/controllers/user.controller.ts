@@ -363,6 +363,7 @@ export const getEmployee = async (req: Request, res: Response) => {
 // ─── UPDATE EMPLOYEE (Hardened) ──────────────────────────────────────────
 export const updateEmployee = async (req: Request, res: Response) => {
   try {
+    console.log('[Update Employee Payload]', req.params.id, req.body);
     const userReq = (req as any).user;
     const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const rank = getRoleRank(userReq.role);
@@ -490,6 +491,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
     await logAction(actorId, 'EMPLOYEE_UPDATED', 'User', targetId, { fields: Object.keys(req.body) }, req.ip);
     res.json(withDepartment(getSafeUser(safe, actorRole)));
   } catch (err: any) {
+    console.error('[Update Employee Error]', err);
     res.status(500).json({ message: err.message });
   }
 };
