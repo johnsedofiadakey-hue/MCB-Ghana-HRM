@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { useTranslation } from 'react-i18next';
+import { toast } from '../../utils/toast';
 
 interface AnalyticsData {
   headcount: number;
@@ -38,14 +39,7 @@ const PredictiveAnalytics: React.FC = () => {
       });
     } catch (err) {
       console.error('Failed to fetch analytics');
-      // Fallback mock data
-      setData({
-        headcount: 145,
-        avgPerformance: 82.4,
-        leaveUtilization: 64,
-        attritionRiskNodes: 3,
-        leaveAbuseSignals: 1
-      });
+      toast.error('Failed to fetch analytics data. Please try again later.');
     } finally {
       setLoading(false);
     }

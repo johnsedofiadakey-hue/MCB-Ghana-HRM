@@ -478,13 +478,13 @@ const AppContent = () => {
             <Route path="/leave" element={<Leave />} />
             <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
             <Route path="/employees" element={<RoleGuard allowedRoles={['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
-            <Route path="/employees/history" element={<RoleGuard minRank={70}><EmployeeHistory /></RoleGuard>} />
+            <Route path="/employees/history" element={<RoleGuard allowedRoles={['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/print/ids" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
             <Route path="/assets" element={<AssetManagement />} />
-            <Route path="/audit" element={<RoleGuard minRank={85}><AuditLogs /></RoleGuard>} />
+            <Route path="/audit" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
-            <Route path="/settings" element={<RoleGuard minRank={85}><SettingsHub /></RoleGuard>} />
+            <Route path="/settings" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']}><SettingsHub /></RoleGuard>} />
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
