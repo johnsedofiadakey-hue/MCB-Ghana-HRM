@@ -104,6 +104,8 @@ const themeConfigs: Record<string, {
         logoColor: "#EF4444",
         isDark: true
     }
+};
+
 const getThemeConfigs = (themeName: string, primaryColor: string, accentColor: string) => {
     const base = themeConfigs[themeName] || themeConfigs.MCB_LIGHT_GOLD;
     const styles: any = {
