@@ -6,6 +6,7 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -59,6 +60,7 @@ import financeRoutes from './routes/finance.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import compensationRoutes from './routes/compensation.routes';
 import enterpriseRoutes from './routes/enterprise.routes';
+import performanceRoutes from './routes/performance.routes';
 import performanceV2Routes from './routes/performance-v2.routes';
 import targetRoutes from './routes/target.routes';
 import inboxRoutes from './routes/inbox.routes';
@@ -80,6 +82,7 @@ import policyRoutes from './routes/policy.routes';
 import continuousPerformanceRoutes from './routes/continuous-performance.routes';
 import managerCockpitRoutes from './routes/manager-cockpit.routes';
 import cardRoutes from './routes/card.routes';
+import competencyRoutes from './routes/competency.routes';
 
 // Config already loaded at top level
 
@@ -106,12 +109,18 @@ const rawPort = process.env.PORT || '5000';
 const PORT = parseInt(rawPort, 10);
 const server = http.createServer(app);
 
-// ─── NUCLEAR CORS BRIDGE (Dedicated Package) ───────────────────────────────
-const allowedOrigins = [
+const configuredOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
+  ...(process.env.CORS_ORIGINS || '').split(',')
+].map(origin => origin?.trim()).filter(Boolean) as string[];
+
+const allowedOrigins = Array.from(new Set([
   'https://mcb-hrm-ghana.web.app',
   'https://mcb-hrm-ghana.firebaseapp.com',
-  'https://mcb-ghana-hrm-api.onrender.com'
-];
+  'https://mcb-ghana-hrm-api.onrender.com',
+  ...configuredOrigins
+]));
 
 if (process.env.NODE_ENV !== 'production') {
   allowedOrigins.push('http://localhost:3000');
@@ -163,6 +172,7 @@ app.use(helmet({
   crossOriginOpenerPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
+app.use(compression({ threshold: 1024 }));
 app.use(xssSanitizer);
 app.use(generalLimiter);
 app.use(express.json({ limit: '1mb' }));
@@ -239,7 +249,9 @@ app.use(apiUsageMiddleware);
 app.use(resolveTenant);
 
 // ─── DEV ROUTES (bypass maintenance, high rate limit) ────────────────────────
-app.use('/api/dev', devLimiter, devRoutes);
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEV_ROUTES === 'true') {
+  app.use('/api/dev', devLimiter, devRoutes);
+}
 
 // ─── MAINTENANCE GUARD ──────────────────────────────────────────────────────
 import { maintenanceMiddleware } from './middleware/maintenance.middleware';
@@ -311,6 +323,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/compensation', compensationRoutes);
 app.use('/api/enterprise', enterpriseRoutes);
+app.use('/api/performance', performanceRoutes);
 app.use('/api/performance-v2', performanceV2Routes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/inbox', inboxRoutes);
@@ -330,6 +343,7 @@ app.use('/api/policy', policyRoutes);
 app.use('/api/continuous-performance', continuousPerformanceRoutes);
 app.use('/api/manager', managerCockpitRoutes);
 app.use('/api', cardRoutes);
+app.use('/api/competencies', competencyRoutes);
 
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {

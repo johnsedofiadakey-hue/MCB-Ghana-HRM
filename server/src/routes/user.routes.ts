@@ -47,6 +47,7 @@ router.post('/assign-role', requireSpecificRole(['HR_MANAGER', 'MD', 'DEV']), as
 
 router.post('/:id/upload-image', upload.single('avatar'), uploadImage);
 router.post('/:id/avatar', uploadImage); // base64 path
+router.post('/signature', uploadSignature);
 router.post('/:id/signature', uploadSignature);
 
 // Administrative reset (IT_MANAGER or MD >= 85)

@@ -6,16 +6,16 @@
 services:
   # ── Backend API ─────────────────────────────────────────────────────────────
   - type: web
-    name: mcb-hrm-ghana-api
+    name: mcb-ghana-hrm-api
     env: node
-    plan: free             # Free tier for testing phase
+    plan: starter          # Production baseline; avoid free-tier cold starts
     region: oregon         # Changed to match database region
     buildCommand: >
       cd server &&
       npm install --no-audit --no-fund &&
       npx prisma generate &&
       npx tsc
-    startCommand: cd server && npx prisma db push && node dist/scripts/force_sync.js && node dist/scripts/create_tenants.js && node --max-old-space-size=448 dist/app.js
+    startCommand: cd server && npx prisma migrate deploy && node --max-old-space-size=1024 dist/app.js
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
@@ -30,8 +30,18 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false          # Set to your deployed frontend URL
+      - key: CORS_ORIGINS
+        sync: false          # Optional comma-separated frontend/admin origins
       - key: DEV_MASTER_KEY
         generateValue: true
+      - key: DEV_WHITELIST_EMAILS
+        sync: false
+      - key: BIOMETRIC_SYNC_KEY
+        sync: false
+      - key: ENABLE_DEV_ROUTES
+        value: "false"
+      - key: ALLOW_PUBLIC_SIGNUP
+        value: "false"
 
   # ── Frontend (Static Site) ──────────────────────────────────────────────────
   - type: web
@@ -49,4 +59,4 @@ services:
         destination: /index.html   # SPA fallback for React Router
     envVars:
       - key: VITE_API_URL
-        sync: false               # Set to your API service URL, e.g. https://mcb-hrm-ghana-api.onrender.com/api
+        value: https://mcb-ghana-hrm-api.onrender.com/api

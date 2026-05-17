@@ -31,6 +31,7 @@ router.delete('/:id/cancel', cancelLeave);
 
 // MD-Only Administrative Controls
 router.post('/balance/adjust', requireRole(80), adjustLeaveBalance);
+router.post('/adjust-balance', requireRole(80), adjustLeaveBalance);
 router.delete('/request/:id', deleteLeave);
 router.delete('/handover/:id', deleteHandover);
 

@@ -743,7 +743,7 @@ export const uploadSignature = async (req: Request, res: Response) => {
     const userReq = (req as any).user;
     const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const { id: actorId } = userReq;
-    const targetId = req.params.id;
+    const targetId = req.params.id || actorId;
 
     // 🛡️ REQUISITE: Only self-upload or MD/HR/IT
     const actorRole = userReq.role;

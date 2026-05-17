@@ -26,6 +26,7 @@ router.get('/final-sign-off-list', requireRole(80), appraisalController.getFinal
 
 // Provide final executive sign-off
 router.post('/final-sign-off', requireRole(80), appraisalController.finalSignOff);
+router.post('/final-verdict', requireRole(80), appraisalController.finalSignOff);
 
 // Permanent Delete a packet (Director+)
 router.delete('/:packetId', requireRole(80), appraisalController.deleteAppraisalPacket);
@@ -52,5 +53,4 @@ router.post('/ultimate-reset', requireRole(90), appraisalController.resetApprais
 router.get('/trend/:employeeId', appraisalController.getPerformanceTrend);
 
 export default router;
-
 

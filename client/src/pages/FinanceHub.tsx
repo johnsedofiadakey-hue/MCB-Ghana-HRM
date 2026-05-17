@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from '../utils/toast';
 import { Wallet, DollarSign, Receipt, Plus, Loader2, CheckCircle, XCircle, ChevronDown, ShieldCheck, History as FinanceHistory, X, FileText, Calendar } from 'lucide-react';
 import api from '../services/api';
+import { openApiUrl } from '../utils/apiUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
@@ -81,7 +82,7 @@ const FinanceHub = () => {
         }
     };
 
-    const downloadPayslip = (runId: string, empId: string) => window.open(`/api/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`, '_blank');
+    const downloadPayslip = (runId: string, empId: string) => openApiUrl(`/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`);
 
     return (
         <div className="space-y-10 page-enter min-h-screen pb-20">

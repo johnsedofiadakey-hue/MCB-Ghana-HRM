@@ -9,7 +9,12 @@ const router = Router();
 
 router.post('/login', loginLimiter, validate(LoginSchema), authController.login);
 router.post('/sso', loginLimiter, authController.ssoLogin);
-router.post('/signup', validate(TenantSignupSchema), authController.signup);
+router.post('/signup', validate(TenantSignupSchema), (req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PUBLIC_SIGNUP !== 'true') {
+    return res.status(403).json({ error: 'Public signup is disabled for this deployment.' });
+  }
+  return authController.signup(req, res);
+});
 router.post('/refresh', authController.refreshAccessToken);
 router.post('/logout', authenticate, authController.revokeRefreshToken);
 router.post('/forgot-password', passwordResetLimiter, validate(ForgotPasswordSchema), authController.forgotPassword);

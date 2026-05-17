@@ -70,7 +70,7 @@ export const exportPayrollCSV = async (req: Request, res: Response) => {
         const items = await prisma.payrollItem.findMany({
             where: {
                 organizationId: orgId,
-                ...(runId ? { id: runId as string } : {}) // Note: would need to filter by run.id normally, assuming quick query here
+                ...(runId ? { runId: runId as string } : {})
             },
             include: { employee: { include: { departmentObj: true } }, run: true },
             orderBy: { createdAt: 'desc' }

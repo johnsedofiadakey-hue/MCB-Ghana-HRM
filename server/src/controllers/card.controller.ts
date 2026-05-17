@@ -127,6 +127,22 @@ export class CardController {
     }
   }
 
+  static async updateCard(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { status, reason } = req.body;
+      const user = (req as any).user;
+      const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+
+      if (!status) return res.status(400).json({ error: 'status is required' });
+
+      const card = await CardService.transitionState(id, status, reason || `Status changed to ${status}`, user.id, organizationId);
+      return res.json(card);
+    } catch (error: any) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
   static async getCardHistory(req: Request, res: Response) {
     try {
       const { id } = req.params;

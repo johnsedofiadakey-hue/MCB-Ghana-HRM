@@ -7,6 +7,7 @@ import {
   TrendingDown, PieChart, Activity, Calendar, Users, AlertCircle, Trash2
 } from 'lucide-react';
 import api from '../services/api';
+import { openApiUrl } from '../utils/apiUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRoleRankValue } from '../utils/session';
@@ -147,13 +148,13 @@ const Payroll = () => {
     finally { setSavingItem(false); }
   };
 
-  const downloadCSV = (runId: string) => window.open(`/api/payroll/${runId}/export/csv?lang=${i18n.language}`, '_blank');
-  const downloadBankCSV = (runId: string) => window.open(`/api/payroll/${runId}/bank-export/csv?lang=${i18n.language}`, '_blank');
-  const downloadPayslip = (runId: string, empId: string) => window.open(`/api/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`, '_blank');
+  const downloadCSV = (runId: string) => openApiUrl(`/payroll/${runId}/export/csv?lang=${i18n.language}`);
+  const downloadBankCSV = (runId: string) => openApiUrl(`/payroll/${runId}/bank-export/csv?lang=${i18n.language}`);
+  const downloadPayslip = (runId: string, empId: string) => openApiUrl(`/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`);
 
   const handleExportFullCSV = async () => {
     try {
-        const res = await api.get('/payroll/csv', { responseType: 'blob' });
+        const res = await api.get('/export/payroll/csv', { responseType: 'blob' });
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const link = document.createElement('a');
         link.href = url;

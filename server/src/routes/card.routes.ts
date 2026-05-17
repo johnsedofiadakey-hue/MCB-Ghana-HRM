@@ -13,6 +13,7 @@ router.post('/cards', requireSpecificRole(itRoles), CardController.requestCard);
 router.patch('/cards/:id/activate', requireSpecificRole(itRoles), CardController.activateCard);
 router.patch('/cards/:id/suspend', requireSpecificRole(itRoles), CardController.suspendCard);
 router.patch('/cards/:id/revoke', requireSpecificRole(itRoles), CardController.revokeCard);
+router.put('/cards/:id', requireSpecificRole(itRoles), CardController.updateCard);
 router.get('/cards', requireSpecificRole(itRoles), CardController.getCards);
 router.get('/cards/:id/history', requireSpecificRole(itRoles), CardController.getCardHistory);
 

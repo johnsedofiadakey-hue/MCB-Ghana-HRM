@@ -6,8 +6,8 @@ import { toast } from '../../utils/toast';
 
 const SandboxHUD = () => {
     const isSandbox = localStorage.getItem('mcb_is_sandbox') === 'true';
-    if (!isSandbox) return null;
-
+    const sandboxPassword = import.meta.env.VITE_SANDBOX_PASSWORD;
+    const sandboxSwitcherEnabled = import.meta.env.VITE_ENABLE_SANDBOX_SWITCHER === 'true';
     const user = React.useMemo(() => {
         try {
             return JSON.parse(localStorage.getItem('mcb_user') || '{}');
@@ -15,6 +15,8 @@ const SandboxHUD = () => {
             return {};
         }
     }, []);
+
+    if (!isSandbox || !sandboxSwitcherEnabled || !sandboxPassword) return null;
 
     const tiers = [
         { name: 'Staff View', role: 'STAFF', email: 'charlie@demo-sand.com', icon: User },
@@ -24,7 +26,7 @@ const SandboxHUD = () => {
 
     const handleSwitch = async (email: string) => {
         try {
-            const res = await api.post('/auth/login', { email, password: 'MCBDemo@2025' });
+            const res = await api.post('/auth/login', { email, password: sandboxPassword });
             const { token, refreshToken, user: newUser } = res.data;
             
             localStorage.setItem('mcb_auth_token', token);

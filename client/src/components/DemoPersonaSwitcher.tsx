@@ -15,16 +15,18 @@ const DemoPersonaSwitcher = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [switching, setSwitching] = useState<string | null>(null);
   const user = storage.getItem(StorageKey.USER, {});
+  const demoPassword = import.meta.env.VITE_DEMO_PASSWORD;
+  const demoSwitcherEnabled = import.meta.env.VITE_ENABLE_DEMO_SWITCHER === 'true';
   
   // Only show for demo accounts
-  if (!user?.email?.includes('mcb-demo.com') && !user?.email?.includes('guest')) return null;
+  if (!demoSwitcherEnabled || !demoPassword || (!user?.email?.includes('mcb-demo.com') && !user?.email?.includes('guest'))) return null;
 
   const handleSwitch = async (persona: typeof PERSONAS[0]) => {
     setSwitching(persona.id);
     try {
       const res = await api.post('/auth/login', { 
         email: persona.email, 
-        password: 'nexusdemo' 
+        password: demoPassword 
       });
       
       const { token, refreshToken, user: newUser } = res.data;
@@ -38,7 +40,7 @@ const DemoPersonaSwitcher = () => {
       toast.error('Failed to warp identity. Trying default demo...');
       try {
           // Fallback to guest
-          const res = await api.post('/auth/login', { email: 'guest@mcb-demo.com', password: 'nexusdemo' });
+          const res = await api.post('/auth/login', { email: 'guest@mcb-demo.com', password: demoPassword });
           storage.setItem(StorageKey.AUTH_TOKEN, res.data.token);
           window.location.reload();
       } catch {

@@ -7,6 +7,7 @@ import {
   Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight, Globe, AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
+import { openApiUrl } from '../utils/apiUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRoleRankValue } from '../utils/session';
@@ -817,7 +818,7 @@ export default function EmployeeManagement() {
                  <div className="flex items-center gap-3">
                     {modal === 'edit' && selected && (
                       <button 
-                        onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/export/employee/${selected.id}/pdf`, '_blank')}
+                        onClick={() => openApiUrl(`/export/employee/${selected.id}/pdf`)}
                         className="h-12 px-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:border-[var(--primary)] transition-all shadow-lg group"
                         title={t('employees.export_dossier', 'Export Dossier')}
                       >
