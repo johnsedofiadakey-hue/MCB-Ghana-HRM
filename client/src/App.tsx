@@ -86,6 +86,7 @@ const Feedback360 = lazy(() => import('./pages/performance/Feedback360'));
 const Cockpit = lazy(() => import('./pages/manager/Cockpit'));
 const CardManagement = lazy(() => import('./pages/cards/CardManagement'));
 const PredictiveAnalytics = lazy(() => import('./pages/analytics/PredictiveAnalytics'));
+const SharedCallCard = lazy(() => import('./pages/public/SharedCallCard'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64 bg-[var(--bg-main)]">
@@ -459,6 +460,7 @@ const AppContent = () => {
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/force-logout" element={<ForceLogout />} />
+          <Route path="/shared-card/:id" element={<SharedCallCard />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardRouter />} />

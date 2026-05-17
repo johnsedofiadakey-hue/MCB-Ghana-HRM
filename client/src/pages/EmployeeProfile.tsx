@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Mail, Phone, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
-  Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe, Clock, Umbrella
+  Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe, Clock, Umbrella,
+  UserCheck, Award
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,8 +23,15 @@ const EmployeeProfile = () => {
     const navigate = useNavigate();
     const [employee, setEmployee] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'documents' | 'history' | 'onboarding'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'documents' | 'history' | 'onboarding' | 'call-card'>('overview');
     const [kpiSummary, setKpiSummary] = useState<any>(null);
+
+    // Call card connections state fields
+    const [connectionData, setConnectionData] = useState<{ views: number; connections: any[] }>({ views: 0, connections: [] });
+    const [userCard, setUserCard] = useState<any>(null);
+    const [loadingConnections, setLoadingConnections] = useState(false);
+    const [nfcWriting, setNfcWriting] = useState(false);
+    const [nfcSuccess, setNfcSuccess] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [resetting, setResetting] = useState(false);
@@ -72,6 +80,93 @@ const EmployeeProfile = () => {
     useEffect(() => {
         fetchEmployee();
     }, [fetchEmployee]);
+
+    const fetchConnections = useCallback(async () => {
+        if (!id) return;
+        try {
+            setLoadingConnections(true);
+            const [connRes, cardRes] = await Promise.all([
+                api.get('/call-cards/connections'),
+                api.get(`/call-cards/employee/${id}`).catch(() => null)
+            ]);
+            if (connRes?.data) setConnectionData(connRes.data);
+            if (cardRes?.data) setUserCard(cardRes.data);
+        } catch (e) {
+            console.error('[EmployeeProfile] Failed to fetch call card connection logs:', e);
+        } finally {
+            setLoadingConnections(false);
+        }
+    }, [id]);
+
+    useEffect(() => {
+        if (employee && currentUser?.id === employee.id) {
+            fetchConnections();
+        }
+    }, [employee, currentUser, fetchConnections]);
+
+    const handleWriteNFC = async () => {
+        if (!userCard?.id) {
+            toast.error("Please configure your Digital Call Card before writing to NFC.");
+            return;
+        }
+        
+        const publicUrl = `${window.location.origin}/shared-card/${userCard.id}`;
+        
+        if (!('NDEFReader' in window)) {
+            toast.error("Web NFC is not supported by your current browser or device. Please use Chrome on Android or a supported client.");
+            return;
+        }
+
+        try {
+            setNfcWriting(true);
+            const ndef = new (window as any).NDEFReader();
+            await ndef.write({
+                records: [
+                    {
+                        recordType: "url",
+                        data: publicUrl
+                    }
+                ]
+            });
+            setNfcSuccess(true);
+            toast.success("Successfully programmed Call Card URL to physical NFC tag!");
+            setTimeout(() => setNfcSuccess(false), 5000);
+        } catch (err: any) {
+            console.error("[WebNFC] Programming failed:", err);
+            toast.error(`NFC Programming failed: ${err.message || 'Verification timed out or tag removed too quickly.'}`);
+        } finally {
+            setNfcWriting(false);
+        }
+    };
+
+    const handleExportCSV = () => {
+        if (!connectionData.connections.length) {
+            toast.error("No connections to export.");
+            return;
+        }
+
+        const headers = ["Full Name", "Email Address", "Phone Number", "Company", "Notes", "Exchanged Date"];
+        const rows = connectionData.connections.map(c => [
+            c.fullName,
+            c.email,
+            c.phone || "",
+            c.company || "",
+            c.notes || "",
+            new Date(c.createdAt).toLocaleString()
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + [headers.join(","), ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(","))].join("\n");
+            
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `MCB_Ghana_Connections_${employee.fullName.replace(/\s+/g, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Connection log exported successfully as CSV!");
+    };
 
     useEffect(() => {
         if (employee) {
@@ -295,11 +390,18 @@ const EmployeeProfile = () => {
 
             {/* Matrix Tabs */}
             <div className="flex border-b border-[var(--border-subtle)]/30 gap-10 print:hidden overflow-x-auto custom-scrollbar">
-                {(['overview', 'performance', 'documents', 'history', 'onboarding'] as const).map(t => (
-                    <button key={t} onClick={() => setActiveTab(t)}
-                        className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative",
+                {([
+                    'overview', 
+                    'performance', 
+                    'documents', 
+                    'history', 
+                    'onboarding',
+                    ...(currentUser?.id === employee.id ? ['call-card'] : [])
+                ] as const).map(t => (
+                    <button key={t} onClick={() => setActiveTab(t as any)}
+                        className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative whitespace-nowrap",
                         activeTab === t ? "text-[var(--primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
-                        {t}
+                        {t === 'call-card' ? 'Call Card & Leads' : t}
                         {activeTab === t && <motion.div layoutId="profile-tab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]" />}
                     </button>
                 ))}
@@ -604,6 +706,196 @@ const EmployeeProfile = () => {
                         <FileText size={48} className="mb-6" />
                         <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Document Vault</h4>
                         <p className="text-xs mt-2 text-[var(--text-muted)] font-medium">Loading document records...</p>
+                    </motion.div>
+                )}
+
+                {activeTab === 'call-card' && (
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                        className="grid grid-cols-1 lg:grid-cols-3 gap-10"
+                    >
+                        {/* LEFT COLUMN: Visual Preview Card */}
+                        <div className="space-y-10">
+                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">
+                                        Card Visual Identity
+                                    </h3>
+                                    {userCard ? (
+                                        <span className={cn(
+                                            "px-3 py-1 rounded-full text-[8px] font-black tracking-widest uppercase border",
+                                            userCard.isActive 
+                                                ? (employee.isOnLeave ? "bg-amber-500/10 border-amber-500/20 text-amber-500 animate-pulse" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600")
+                                                : "bg-rose-500/10 border-rose-500/20 text-rose-600"
+                                        )}>
+                                            {userCard.isActive 
+                                                ? (employee.isOnLeave ? "Out of Office (On Leave)" : "Active")
+                                                : "Suspended"}
+                                        </span>
+                                    ) : (
+                                        <span className="px-3 py-1 rounded-full bg-gray-500/10 border border-gray-500/20 text-gray-500 text-[8px] font-black tracking-widest uppercase">
+                                            Not Created
+                                        </span>
+                                    )}
+                                </div>
+
+                                {userCard ? (
+                                    <div className="space-y-6">
+                                        {/* Mock visual card container simulating client-side themes */}
+                                        <div className={cn(
+                                            "p-6 rounded-[24px] border shadow-xl relative overflow-hidden transition-all duration-300",
+                                            userCard.theme === 'MCB_GOLD' ? "bg-gradient-to-br from-[#0c1c15] via-[#050b07] to-[#040605] border-[#dfb76c]/30 text-[#e2e8f0]" :
+                                            userCard.theme === 'GHANA_SUNSHINE' ? "bg-gradient-to-br from-[#1c0808] via-[#0c0505] to-[#050202] border-red-500/30 text-[#fed7aa]" :
+                                            "bg-gradient-to-br from-[#0d0f12] via-[#08090a] to-[#040405] border-white/10 text-gray-300"
+                                        )}>
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <span className={cn(
+                                                        "px-2 py-0.5 rounded-full border text-[6px] font-black uppercase tracking-wider",
+                                                        userCard.theme === 'MCB_GOLD' ? "bg-[#dfb76c]/10 border-[#dfb76c]/20 text-[#dfb76c]" :
+                                                        userCard.theme === 'GHANA_SUNSHINE' ? "bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]" :
+                                                        "bg-blue-400/10 border-blue-400/20 text-blue-400"
+                                                    )}>
+                                                        MCB Professional
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">MCB</h4>
+                                                    <p className="text-[5px] font-bold uppercase tracking-widest text-gray-500">Ghana</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-4 mt-6">
+                                                <img 
+                                                    src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
+                                                    alt={employee.fullName} 
+                                                    className={cn(
+                                                        "w-12 h-12 rounded-xl object-cover border-2 p-0.5",
+                                                        userCard.theme === 'MCB_GOLD' ? "border-[#dfb76c]" :
+                                                        userCard.theme === 'GHANA_SUNSHINE' ? "border-orange-500" :
+                                                        "border-blue-400"
+                                                    )}
+                                                />
+                                                <div>
+                                                    <h3 className="text-sm font-black uppercase tracking-tight text-white">{userCard.fullName}</h3>
+                                                    <p className="text-[9px] font-bold opacity-80 uppercase tracking-wide">{userCard.jobTitle}</p>
+                                                    {userCard.department && <p className="text-[7px] font-semibold opacity-60 uppercase">{userCard.department}</p>}
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-6 border-t border-white/5 pt-4 text-[8px] font-bold space-y-1.5 opacity-80">
+                                                <p>✉ {userCard.email}</p>
+                                                {userCard.phone && <p>☎ {userCard.phone}</p>}
+                                            </div>
+                                        </div>
+
+                                        {/* Physical card programming utility via Web NFC */}
+                                        <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-4">
+                                            <h4 className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                Physical NFC Programming
+                                            </h4>
+                                            <p className="text-[10px] leading-relaxed text-[var(--text-secondary)] font-medium">
+                                                Have a blank physical NFC business card or tag? You can directly program it using your phone or web browser!
+                                            </p>
+                                            <button 
+                                                onClick={handleWriteNFC}
+                                                disabled={nfcWriting}
+                                                className={cn(
+                                                    "w-full py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border transition-all duration-300",
+                                                    nfcSuccess ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-[var(--primary)] text-white hover:scale-102"
+                                                )}
+                                            >
+                                                <Globe size={12} className={nfcWriting ? "animate-spin" : ""} />
+                                                {nfcWriting ? 'Align tag to writer...' : (nfcSuccess ? 'Tag Programmed!' : 'Program Physical NFC')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-10 border border-dashed border-[var(--border-subtle)] rounded-3xl text-center space-y-4">
+                                        <p className="text-xs text-[var(--text-muted)] font-medium italic">
+                                            An IT administrator has not generated your digital call card yet. Please reach out to your IT department to activate your networking card.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: Impression Analytics & Connection leads log */}
+                        <div className="lg:col-span-2 space-y-10">
+                            {/* Scoreboard Cards */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="nx-card p-6 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-2 opacity-5 text-[var(--primary)]"><Globe size={32} /></div>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Card Impressions (Views)</p>
+                                    <p className="text-3xl font-black text-[var(--text-primary)]">{connectionData.views} <span className="text-[10px] text-[var(--text-muted)] tracking-normal uppercase">Scans</span></p>
+                                </div>
+                                <div className="nx-card p-6 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-2 opacity-5 text-emerald-500"><UserCheck size={32} /></div>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Connections Captured</p>
+                                    <p className="text-3xl font-black text-emerald-500">{connectionData.connections.length} <span className="text-[10px] text-emerald-500/60 tracking-normal uppercase">Leads</span></p>
+                                </div>
+                            </div>
+
+                            {/* Connection Leads table log */}
+                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">
+                                        Connection Exchange Log
+                                    </h3>
+                                    {connectionData.connections.length > 0 && (
+                                        <button 
+                                            onClick={handleExportCSV}
+                                            className="px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2"
+                                        >
+                                            <Download size={12} /> Export CSV
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    {connectionData.connections.length > 0 ? (
+                                        connectionData.connections.map((c: any) => (
+                                            <div key={c.id} className="p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/20 transition-all space-y-4">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                    <div className="space-y-1">
+                                                        <h4 className="text-sm font-black text-[var(--text-primary)] leading-none uppercase">{c.fullName}</h4>
+                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[var(--text-muted)] font-semibold">
+                                                            {c.company && <span>🏢 {c.company}</span>}
+                                                            {c.company && <span>•</span>}
+                                                            <span>📅 {new Date(c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <a 
+                                                            href={`mailto:${c.email}`}
+                                                            className="px-3.5 py-2 rounded-xl border border-[var(--border-subtle)] text-[8px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5"
+                                                        >
+                                                            <Mail size={12} /> Email
+                                                        </a>
+                                                        {c.phone && (
+                                                            <a 
+                                                                href={`tel:${c.phone}`}
+                                                                className="px-3.5 py-2 rounded-xl border border-[var(--border-subtle)] text-[8px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5"
+                                                            >
+                                                                <Phone size={12} /> Call
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {c.notes && (
+                                                    <p className="text-[10px] leading-relaxed text-[var(--text-secondary)] italic bg-[var(--bg-elevated)]/30 p-3.5 rounded-xl border border-[var(--border-subtle)]/50">
+                                                        "{c.notes}"
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="p-10 border border-dashed border-[var(--border-subtle)] rounded-3xl text-center opacity-60 italic text-sm">
+                                            No connections captured yet. Share your digital business QR code or NFC tag to receive professional leads!
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>

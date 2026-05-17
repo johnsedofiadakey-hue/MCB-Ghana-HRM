@@ -5,8 +5,10 @@ import {
   Users, Package, Plus, RotateCcw, Shield, 
   Search, Loader2, AlertTriangle, 
   ShieldCheck, Zap, Activity, Fingerprint,
-  Database, Key, Lock, Server, Cpu, ArrowRight, ArrowLeft, UserX
+  Database, Key, Lock, Server, Cpu, ArrowRight, ArrowLeft, UserX,
+  Mail, Phone, Linkedin, Github, Globe, QrCode, Save, Download, ExternalLink, Eye, Sparkles
 } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -50,13 +52,68 @@ const ITAdmin = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const currentUser = getStoredUser();
   const normalizedRole = (currentUser?.role || '').toUpperCase().replace(/ /g, '_');
-  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets' | 'integrations'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'call-cards' | 'assets' | 'integrations'>(
     (currentUser?.rank || 0) >= 85 ? 'accounts' : 'overview'
   );
 
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showIdModal, setShowIdModal] = useState(false);
   const [orgSettings, setOrgSettings] = useState<any>(null);
+
+  // 📇 Call Card Tab States
+  const [selectedCardEmployee, setSelectedCardEmployee] = useState<any>(null);
+  const [cardData, setCardData] = useState<any>({
+    employeeId: '',
+    fullName: '',
+    jobTitle: '',
+    department: '',
+    bio: '',
+    phone: '',
+    email: '',
+    whatsapp: '',
+    linkedin: '',
+    github: '',
+    website: '',
+    theme: 'MCB_GOLD',
+    isActive: true
+  });
+  const [loadingCard, setLoadingCard] = useState(false);
+  const [savingCard, setSavingCard] = useState(false);
+
+  useEffect(() => {
+    const fetchCardDetails = async () => {
+      if (!selectedCardEmployee) return;
+      try {
+        setLoadingCard(true);
+        const res = await api.get(`/call-cards/employee/${selectedCardEmployee.id}`);
+        setCardData(res.data);
+      } catch (err: any) {
+        toast.error('Failed to load employee call card settings.');
+      } finally {
+        setLoadingCard(false);
+      }
+    };
+    fetchCardDetails();
+  }, [selectedCardEmployee]);
+
+  const handleSaveCard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCardEmployee) return;
+    try {
+      setSavingCard(true);
+      const payload = {
+        ...cardData,
+        employeeId: selectedCardEmployee.id
+      };
+      const res = await api.post('/call-cards/upsert', payload);
+      setCardData(res.data);
+      toast.success(`Successfully configured digital business card for ${cardData.fullName}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to save call card settings.');
+    } finally {
+      setSavingCard(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -149,11 +206,11 @@ const ITAdmin = () => {
         </motion.div>
 
         <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-2xl border border-[var(--border-subtle)] overflow-x-auto no-scrollbar max-w-full">
-           {(['overview', 'accounts', 'assets', 'integrations'] as const).map(tab => (
+           {(['overview', 'accounts', 'call-cards', 'assets', 'integrations'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                  className={cn("px-4 sm:px-6 py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                  activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'ID Registry' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
+                {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'ID Registry' : tab === 'call-cards' ? 'Digital Call Cards' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
               </button>
            ))}
         </div>
@@ -366,6 +423,366 @@ const ITAdmin = () => {
                             ))}
                          </tbody>
                       </table>
+                   </div>
+                </div>
+            )}
+
+            {activeTab === 'call-cards' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
+                   {/* Left Pane: Registry List */}
+                   <div className="lg:col-span-4 nx-card border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col h-[650px] overflow-hidden">
+                      <div className="p-6 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20">
+                         <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                            <Users size={14} className="text-[var(--primary)]" /> Select Personnel
+                         </h4>
+                         <div className="relative w-full group">
+                            <Search size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
+                            <input 
+                               type="text" 
+                               className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl pl-10 pr-4 py-2 text-[10px] font-bold focus:border-[var(--primary)] outline-none" 
+                               placeholder="Filter employee list..." 
+                               value={search} 
+                               onChange={e => setSearch(e.target.value)} 
+                            />
+                         </div>
+                      </div>
+                      
+                      <div className="flex-grow overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                         {filtered.map((u: any) => {
+                            const isSelected = selectedCardEmployee?.id === u.id;
+                            const initials = u.fullName.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase();
+                            return (
+                               <button 
+                                  key={u.id}
+                                  type="button"
+                                  onClick={() => setSelectedCardEmployee(u)}
+                                  className={cn(
+                                     "w-full p-4 rounded-xl border flex items-center gap-4 text-left transition-all duration-200",
+                                     isSelected 
+                                        ? "bg-[var(--primary)]/10 border-[var(--primary)]/30 text-[var(--primary)]" 
+                                        : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]/20"
+                                  )}
+                               >
+                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-[10px] uppercase">
+                                     {initials}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                     <p className="text-[11px] font-black uppercase truncate text-[var(--text-primary)]">{u.fullName}</p>
+                                     <p className="text-[9px] font-bold text-[var(--text-muted)] truncate">{u.jobTitle || 'No Title Set'}</p>
+                                  </div>
+                               </button>
+                            );
+                         })}
+                      </div>
+                   </div>
+
+                   {/* Right Pane: Customizer / Preview split */}
+                   <div className="lg:col-span-8 space-y-8">
+                      {!selectedCardEmployee ? (
+                          <div className="nx-card p-24 border-[var(--border-subtle)] bg-[var(--bg-card)] text-center flex flex-col items-center justify-center h-[650px] relative overflow-hidden group">
+                             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-[var(--primary)]/5 to-transparent pointer-events-none opacity-40" />
+                             <div className="w-20 h-20 rounded-[2rem] bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)] mb-8 shadow-xl group-hover:scale-105 transition-transform duration-300">
+                                <QrCode size={36} className="animate-pulse" />
+                             </div>
+                             <h3 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4">Digital Business Cards</h3>
+                             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)] max-w-sm leading-relaxed mb-6 opacity-60">
+                                Select an employee from the registry list to configure their premium NFC/QR Corporate Call Card with modern visual themes.
+                             </p>
+                          </div>
+                      ) : (
+                          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                             {/* Form Customizer */}
+                             <form onSubmit={handleSaveCard} className="xl:col-span-7 nx-card p-10 border-[var(--border-subtle)] bg-[var(--bg-card)] space-y-8">
+                                <div className="flex justify-between items-center border-b border-[var(--border-subtle)]/50 pb-6">
+                                   <div>
+                                      <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tight">Design & Socials</h3>
+                                      <p className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)] mt-1">Configure hosted contact payload</p>
+                                   </div>
+                                   <div className="flex items-center gap-3">
+                                      <span className="text-[10px] font-black uppercase text-[var(--text-muted)]">CARD STATUS</span>
+                                      <button 
+                                         type="button"
+                                         onClick={() => setCardData((prev: any) => ({ ...prev, isActive: !prev.isActive }))}
+                                         className={cn(
+                                            "w-12 h-6 rounded-full p-1 transition-all duration-300 relative border",
+                                            cardData.isActive ? "bg-emerald-500/20 border-emerald-500" : "bg-rose-500/20 border-rose-500"
+                                         )}
+                                      >
+                                         <div className={cn(
+                                            "w-4 h-4 rounded-full transition-all duration-300",
+                                            cardData.isActive ? "bg-emerald-500 translate-x-6" : "bg-rose-500 translate-x-0"
+                                         )} />
+                                      </button>
+                                   </div>
+                                </div>
+
+                                {loadingCard ? (
+                                    <div className="py-20 flex items-center justify-center">
+                                       <Loader2 className="animate-spin text-[var(--primary)]" size={24} />
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                       {/* Core fields */}
+                                       <div className="grid grid-cols-2 gap-6">
+                                          <div className="space-y-2">
+                                             <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Full Card Name</label>
+                                             <input 
+                                                type="text" 
+                                                required
+                                                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                value={cardData.fullName || ''}
+                                                onChange={e => setCardData((prev: any) => ({ ...prev, fullName: e.target.value }))}
+                                             />
+                                          </div>
+                                          <div className="space-y-2">
+                                             <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Job Title</label>
+                                             <input 
+                                                type="text" 
+                                                required
+                                                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                value={cardData.jobTitle || ''}
+                                                onChange={e => setCardData((prev: any) => ({ ...prev, jobTitle: e.target.value }))}
+                                             />
+                                          </div>
+                                       </div>
+
+                                       <div className="grid grid-cols-2 gap-6">
+                                          <div className="space-y-2">
+                                             <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Strategic Department</label>
+                                             <input 
+                                                type="text" 
+                                                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                value={cardData.department || ''}
+                                                onChange={e => setCardData((prev: any) => ({ ...prev, department: e.target.value }))}
+                                             />
+                                          </div>
+                                          <div className="space-y-2">
+                                             <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Corporate Theme</label>
+                                             <select 
+                                                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none"
+                                                value={cardData.theme || 'MCB_GOLD'}
+                                                onChange={e => setCardData((prev: any) => ({ ...prev, theme: e.target.value }))}
+                                             >
+                                                <option value="MCB_GOLD">MCB Corporate Gold</option>
+                                                <option value="MIDNIGHT_LUXURY">Midnight Luxury</option>
+                                                <option value="GHANA_SUNSHINE">Ghana Sunshine</option>
+                                             </select>
+                                          </div>
+                                       </div>
+
+                                       <div className="space-y-2">
+                                          <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Personal Bio Statement</label>
+                                          <textarea 
+                                             rows={2}
+                                             className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none resize-none" 
+                                             placeholder="Brief professional profile statement..."
+                                             value={cardData.bio || ''}
+                                             onChange={e => setCardData((prev: any) => ({ ...prev, bio: e.target.value }))}
+                                          />
+                                       </div>
+
+                                       <div className="border-t border-[var(--border-subtle)]/50 pt-6 space-y-4">
+                                          <h4 className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Contact Channels & Social Handles</h4>
+                                          <div className="grid grid-cols-2 gap-6">
+                                             <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Email Address</label>
+                                                <input 
+                                                   type="email" 
+                                                   required
+                                                   className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                   value={cardData.email || ''}
+                                                   onChange={e => setCardData((prev: any) => ({ ...prev, email: e.target.value }))}
+                                                />
+                                             </div>
+                                             <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Phone Number</label>
+                                                <input 
+                                                   type="text" 
+                                                   className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                   value={cardData.phone || ''}
+                                                   onChange={e => setCardData((prev: any) => ({ ...prev, phone: e.target.value }))}
+                                                />
+                                             </div>
+                                          </div>
+
+                                          <div className="grid grid-cols-2 gap-6">
+                                             <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">WhatsApp Number</label>
+                                                <input 
+                                                   type="text" 
+                                                   placeholder="e.g. +23354XXXXXXX"
+                                                   className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                   value={cardData.whatsapp || ''}
+                                                   onChange={e => setCardData((prev: any) => ({ ...prev, whatsapp: e.target.value }))}
+                                                />
+                                             </div>
+                                             <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">LinkedIn Profile URL</label>
+                                                <input 
+                                                   type="text" 
+                                                   placeholder="https://linkedin.com/in/..."
+                                                   className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                   value={cardData.linkedin || ''}
+                                                   onChange={e => setCardData((prev: any) => ({ ...prev, linkedin: e.target.value }))}
+                                                />
+                                             </div>
+                                          </div>
+
+                                          <div className="grid grid-cols-2 gap-6">
+                                             <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">GitHub Profile URL</label>
+                                                <input 
+                                                   type="text" 
+                                                   placeholder="https://github.com/..."
+                                                   className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                   value={cardData.github || ''}
+                                                   onChange={e => setCardData((prev: any) => ({ ...prev, github: e.target.value }))}
+                                                />
+                                             </div>
+                                             <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Portfolio Website URL</label>
+                                                <input 
+                                                   type="text" 
+                                                   placeholder="https://..."
+                                                   className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none" 
+                                                   value={cardData.website || ''}
+                                                   onChange={e => setCardData((prev: any) => ({ ...prev, website: e.target.value }))}
+                                                />
+                                             </div>
+                                          </div>
+                                       </div>
+
+                                       <button 
+                                          type="submit"
+                                          disabled={savingCard}
+                                          className="w-full h-14 bg-[var(--primary)] text-white hover:scale-[1.01] transition-transform font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 disabled:opacity-50"
+                                       >
+                                          {savingCard ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                          Commit Card Configurations
+                                       </button>
+                                    </div>
+                                )}
+                             </form>
+
+                             {/* Live Theme Preview & QR Hub */}
+                             <div className="xl:col-span-5 space-y-8">
+                                {/* Visual Card Mini Preview */}
+                                <div className={cn(
+                                   "p-6 rounded-[2.5rem] border relative overflow-hidden space-y-6 shadow-xl transition-all duration-500",
+                                   cardData.theme === 'MCB_GOLD' ? "bg-gradient-to-br from-[#0c1c15] to-[#040605] border-[#dfb76c]/30 text-white" :
+                                   cardData.theme === 'GHANA_SUNSHINE' ? "bg-gradient-to-br from-[#1c0808] to-[#050202] border-red-500/30 text-white" :
+                                   "bg-[#171a21] border-white/10 text-white"
+                                )}>
+                                   <div className="flex justify-between items-start">
+                                      <span className={cn(
+                                         "px-2 py-0.5 rounded-full border text-[6px] font-black uppercase tracking-widest",
+                                         cardData.theme === 'MCB_GOLD' ? "bg-[#dfb76c]/10 border-[#dfb76c]/20 text-[#dfb76c]" :
+                                         cardData.theme === 'GHANA_SUNSHINE' ? "bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]" :
+                                         "bg-blue-400/10 border-blue-400/20 text-blue-400"
+                                      )}>
+                                         Preview Frame
+                                      </span>
+                                      <div className="text-right">
+                                         <h4 className="text-[10px] font-black tracking-widest uppercase">MCB</h4>
+                                         <p className="text-[5px] font-black uppercase text-gray-500">Ghana</p>
+                                      </div>
+                                   </div>
+
+                                   <div className="flex items-center gap-4">
+                                      <div className={cn(
+                                         "w-12 h-12 rounded-xl flex items-center justify-center font-black text-xs border p-0.5",
+                                         cardData.theme === 'MCB_GOLD' ? "border-[#dfb76c] bg-[#dfb76c]/5 text-[#dfb76c]" :
+                                         cardData.theme === 'GHANA_SUNSHINE' ? "border-orange-500 bg-[#f97316]/5 text-[#f97316]" :
+                                         "border-blue-400 bg-white/5 text-white"
+                                      )}>
+                                         {cardData.fullName?.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC'}
+                                      </div>
+                                      <div className="min-w-0">
+                                         <h4 className="font-black text-[14px] uppercase truncate">{cardData.fullName || 'Name Placeholder'}</h4>
+                                         <p className={cn(
+                                            "text-[9px] font-bold uppercase",
+                                            cardData.theme === 'MCB_GOLD' ? "text-[#dfb76c]" :
+                                            cardData.theme === 'GHANA_SUNSHINE' ? "text-[#f97316]" :
+                                            "text-blue-400"
+                                         )}>{cardData.jobTitle || 'Role Title'}</p>
+                                      </div>
+                                   </div>
+
+                                   {cardData.bio && (
+                                       <p className="text-[9px] leading-relaxed italic opacity-80 border-l border-white/20 pl-3">
+                                          "{cardData.bio}"
+                                       </p>
+                                   )}
+
+                                   <div className="grid grid-cols-2 gap-2 text-[8px] font-bold text-gray-400">
+                                      {cardData.email && <div className="truncate flex items-center gap-1.5"><Mail size={10} /> {cardData.email}</div>}
+                                      {cardData.phone && <div className="truncate flex items-center gap-1.5"><Phone size={10} /> {cardData.phone}</div>}
+                                   </div>
+                                </div>
+
+                                {/* QR Code & Export Card */}
+                                <div className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col items-center text-center space-y-6">
+                                   <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">QR/NFC Asset Portal</h4>
+                                   
+                                   {cardData.id ? (
+                                       <div className="space-y-6 flex flex-col items-center w-full">
+                                          <div className="p-4 bg-white rounded-2xl shadow-inner border border-gray-100 relative group">
+                                             <QRCodeCanvas 
+                                                id="card-qr-canvas"
+                                                value={`${window.location.origin}/shared-card/${cardData.id}`}
+                                                size={160}
+                                                level="H"
+                                                includeMargin={true}
+                                             />
+                                          </div>
+                                          
+                                          <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[200px]">
+                                             Scan this QR to open the mobile-optimized business card in real-time.
+                                          </p>
+
+                                          <div className="flex gap-3 w-full">
+                                             <button 
+                                                type="button"
+                                                onClick={() => {
+                                                   const canvas = document.getElementById('card-qr-canvas') as HTMLCanvasElement;
+                                                   if (!canvas) return;
+                                                   const url = canvas.toDataURL('image/png');
+                                                   const link = document.createElement('a');
+                                                   link.href = url;
+                                                   link.download = `QR_${cardData.fullName.replace(/\s+/g, '_')}.png`;
+                                                   document.body.appendChild(link);
+                                                   link.click();
+                                                   document.body.removeChild(link);
+                                                }}
+                                                className="flex-1 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center justify-center gap-2 hover:bg-[var(--bg-sidebar-active)] transition-all"
+                                             >
+                                                <Download size={12} /> Export PNG
+                                             </button>
+                                             
+                                             <Link 
+                                                to={`/shared-card/${cardData.id}`}
+                                                target="_blank"
+                                                className="flex-1 h-12 rounded-xl bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-transform"
+                                             >
+                                                <Eye size={12} /> View Card
+                                             </Link>
+                                          </div>
+                                       </div>
+                                   ) : (
+                                       <div className="py-8 flex flex-col items-center gap-4">
+                                          <QrCode className="text-[var(--text-muted)] opacity-30" size={48} />
+                                          <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-[8px] font-black uppercase tracking-wider">
+                                             Pending Generation
+                                          </span>
+                                          <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[200px]">
+                                             Please commit the card configuration first to generate the hosted QR / NFC target link.
+                                          </p>
+                                       </div>
+                                   )}
+                                </div>
+                             </div>
+                          </div>
+                      )}
                    </div>
                 </div>
             )}

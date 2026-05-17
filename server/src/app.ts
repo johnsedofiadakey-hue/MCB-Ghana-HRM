@@ -82,6 +82,7 @@ import continuousPerformanceRoutes from './routes/continuous-performance.routes'
 import managerCockpitRoutes from './routes/manager-cockpit.routes';
 import cardRoutes from './routes/card.routes';
 import competencyRoutes from './routes/competency.routes';
+import callCardRoutes from './routes/callCard.routes';
 
 // Config already loaded at top level
 
@@ -341,6 +342,7 @@ app.use('/api/policy', policyRoutes);
 app.use('/api/continuous-performance', continuousPerformanceRoutes);
 app.use('/api/manager', managerCockpitRoutes);
 app.use('/api', cardRoutes);
+app.use('/api', callCardRoutes);
 app.use('/api/competencies', competencyRoutes);
 
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
