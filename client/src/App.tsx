@@ -467,7 +467,8 @@ const AppContent = () => {
             <Route path="/kpi/executive" element={<RoleGuard minRank={80}><MDKpiView /></RoleGuard>} />
             <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamReview /></RoleGuard>} />
             <Route path="/kpi/my-targets" element={<RoleGuard minRank={10}><MyTargetsPage /></RoleGuard>} />
-            <Route path="/performance/analytics" element={<PerformanceHub />} />
+            {/* Legacy redirect: /performance/analytics superseded by TargetDashboard */}
+            <Route path="/performance/analytics" element={<Navigate to="/kpi/my-targets" replace />} />
             <Route path="/performance/check-ins" element={<RoleGuard minRank={10}><CheckIns /></RoleGuard>} />
             <Route path="/performance/feedback" element={<RoleGuard minRank={10}><Feedback360 /></RoleGuard>} />
             <Route path="/manager/cockpit" element={<RoleGuard minRank={70}><Cockpit /></RoleGuard>} />

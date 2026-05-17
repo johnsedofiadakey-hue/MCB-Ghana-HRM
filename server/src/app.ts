@@ -291,7 +291,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/sub-units', subUnitRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/kpi', kpiRoutes);
-app.use('/api/kpis', kpiRoutes);
+// Note: /api/kpis alias removed — use /api/kpi (consolidated 2026-05-17)
 app.use('/api/targets', targetRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/cycles', cycleRoutes);
