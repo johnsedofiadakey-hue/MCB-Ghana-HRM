@@ -113,6 +113,9 @@ const ROLE_RANK_MAP: Record<string, number> = {
     DEV: 100, MD: 95, HR_DIRECTOR: 92, DIRECTOR: 90, HR_MANAGER: 88, FINANCE_MANAGER: 87,
     IT_MANAGER: 85, IT_ADMIN: 85, HR_OFFICER: 80, MANAGER: 75,
     SUPERVISOR: 65, STAFF: 50, CASUAL: 40,
+    ADMIN: 85, SUPER_ADMIN: 100, EMPLOYEE: 50, EMPLOYEE_MEMBER: 50,
+    TEAM_LEAD: 65, 'TEAM LEAD': 65, HR: 80, FINANCE: 87,
+    'EMPLOYEE MEMBER': 50, MANAGING_DIRECTOR: 95, SYSTEM_DEVELOPER: 100,
     'MANAGING DIRECTOR': 95, 'SYSTEM DEVELOPER': 100, 'HR DIRECTOR': 92,
     'IT MANAGER': 85, 'HR MANAGER': 88, 'FINANCE MANAGER': 87,
     'IT ADMINISTRATOR': 85, 'HR OFFICER': 80, 'STAFF MEMBER': 50
@@ -120,7 +123,10 @@ const ROLE_RANK_MAP: Record<string, number> = {
 
 const getRoleRankValueLocal = (role?: string): number => {
   if (!role) return 0;
-  return ROLE_RANK_MAP[role.toUpperCase()] ?? 0;
+  const normalized = role.toUpperCase().trim();
+  const underscored = normalized.replace(/\s+/g, '_');
+  const spaced = normalized.replace(/_/g, ' ');
+  return ROLE_RANK_MAP[normalized] ?? ROLE_RANK_MAP[underscored] ?? ROLE_RANK_MAP[spaced] ?? 0;
 };
 
 const AdminGuard = () => {
@@ -283,7 +289,7 @@ const Layout = () => {
 
 const RoleGuard = ({ children, minRank, allowedRoles }: { children: React.ReactNode; minRank?: number; allowedRoles?: string[] }) => {
   const user = getStoredUser();
-  const rank = getRoleRankValueLocal(user?.role);
+  const rank = getRoleRankValueLocal(user?.role) || user?.rank || 0;
   const role = (user?.role || '').toUpperCase();
   
   const hasRank = minRank !== undefined && rank >= minRank;
@@ -534,4 +540,3 @@ export default function App() {
     </PageErrorBoundary>
   );
 }
-

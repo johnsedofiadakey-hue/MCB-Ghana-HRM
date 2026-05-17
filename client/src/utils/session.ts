@@ -18,15 +18,18 @@ export { ROLE_LABELS, ROLE_RANK_MAP as ROLE_RANKS };
 
 export const getRoleRankValue = (role?: string): number => {
   if (!role) return 0;
-  const normalized = role.toUpperCase();
-  return ROLE_RANK_MAP[normalized] ?? 0;
+  const normalized = role.toUpperCase().trim();
+  const underscored = normalized.replace(/\s+/g, '_');
+  const spaced = normalized.replace(/_/g, ' ');
+  return ROLE_RANK_MAP[normalized] ?? ROLE_RANK_MAP[underscored] ?? ROLE_RANK_MAP[spaced] ?? 0;
 };
 
 export const getStoredUser = (): SessionUser => {
   const parsed = storage.getItem(StorageKey.USER, {} as any);
   if (!parsed || typeof parsed !== 'object') return {};
-  // Always compute rank from role so it's never stale
-  const rank = getRoleRankValue(parsed.role);
+  const computedRank = getRoleRankValue(parsed.role);
+  const storedRank = Number(parsed.rank);
+  const rank = computedRank || (Number.isFinite(storedRank) ? storedRank : 0);
   return { ...parsed, rank } as SessionUser;
 };
 

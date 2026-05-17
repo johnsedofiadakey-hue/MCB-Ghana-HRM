@@ -21,8 +21,8 @@ const Spinner = () => (
 
 const DashboardRouter: React.FC = () => {
   const user = getStoredUser();
-  // Always derive rank from role — never trust a stale stored rank
-  const rank = getRoleRankValue(user.role);
+  const rank = getRoleRankValue(user.role) || user.rank || 0;
+  const normalizedRole = (user.role || '').toUpperCase().trim();
 
   const renderDashboard = () => {
     if (rank >= 90) return <MDDashboard />;
@@ -30,6 +30,7 @@ const DashboardRouter: React.FC = () => {
     if (rank >= 70) return <ManagerDashboard />;
     if (rank >= 60) return <MidManagerDashboard />;
     if (rank >= 50) return <EmployeeDashboard />;
+    if (user.id && normalizedRole !== 'CASUAL' && normalizedRole !== 'CASUAL WORKER') return <EmployeeDashboard />;
     return <CasualDashboard />;
   };
 

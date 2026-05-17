@@ -19,14 +19,25 @@ export type RoleRankType = typeof RoleRank[RoleName];
 
 export const ROLE_RANK_MAP: Record<string, number> = {
     ...RoleRank,
+    ADMIN: RoleRank.IT_ADMIN,
+    SUPER_ADMIN: RoleRank.DEV,
     'MANAGING DIRECTOR': RoleRank.MD,
+    MANAGING_DIRECTOR: RoleRank.MD,
     'SYSTEM DEVELOPER': RoleRank.DEV,
+    SYSTEM_DEVELOPER: RoleRank.DEV,
     'HR DIRECTOR': RoleRank.HR_DIRECTOR,
+    HR: RoleRank.HR_OFFICER,
     'IT MANAGER': RoleRank.IT_MANAGER,
     'HR MANAGER': RoleRank.HR_MANAGER,
     'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,
+    FINANCE: RoleRank.FINANCE_MANAGER,
     'IT ADMINISTRATOR': RoleRank.IT_ADMIN,
     'HR OFFICER': RoleRank.HR_OFFICER,
+    TEAM_LEAD: RoleRank.SUPERVISOR,
+    'TEAM LEAD': RoleRank.SUPERVISOR,
+    EMPLOYEE: RoleRank.STAFF,
+    EMPLOYEE_MEMBER: RoleRank.STAFF,
+    'EMPLOYEE MEMBER': RoleRank.STAFF,
     'STAFF MEMBER': RoleRank.STAFF,
     'CASUAL WORKER': RoleRank.CASUAL
 };
