@@ -249,7 +249,7 @@ app.use(apiUsageMiddleware);
 app.use(resolveTenant);
 
 // ─── DEV ROUTES (bypass maintenance, high rate limit) ────────────────────────
-if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEV_ROUTES === 'true') {
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_PRODUCTION_DEV_ROUTES === 'true') {
   app.use('/api/dev', devLimiter, devRoutes);
 }
 
