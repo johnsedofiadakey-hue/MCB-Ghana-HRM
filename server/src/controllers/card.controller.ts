@@ -7,20 +7,43 @@ import { notify } from '../services/websocket.service';
 export class CardController {
   static async requestCard(req: Request, res: Response) {
     try {
-      const { cardNumber } = req.body;
+      const { employeeId, cardNumber } = req.body;
       const orgId = getOrgId(req);
       const organizationId = orgId || 'mcb-ghana-tenant';
       const user = (req as any).user;
 
-      if (!cardNumber) {
-        return res.status(400).json({ error: 'cardNumber is required' });
+      if (!employeeId) {
+        return res.status(400).json({ error: 'employeeId is required' });
+      }
+
+      // Find the employee by id (UUID), employeeCode, or email
+      const targetUser = await prisma.user.findFirst({
+        where: {
+          organizationId,
+          OR: [
+            { id: employeeId },
+            { employeeCode: employeeId },
+            { email: employeeId }
+          ]
+        }
+      });
+
+      if (!targetUser) {
+        return res.status(404).json({ error: `Employee not found with ID/Code/Email: ${employeeId}` });
+      }
+
+      // Auto-generate card number if empty
+      let finalCardNumber = cardNumber;
+      if (!finalCardNumber || finalCardNumber.trim() === '') {
+        const rand = Math.floor(100000 + Math.random() * 900000);
+        finalCardNumber = `MCB-GH-${rand}`;
       }
 
       const card = await prisma.card.create({
         data: {
           organizationId,
-          userId: user.id,
-          cardNumber,
+          userId: targetUser.id,
+          cardNumber: finalCardNumber,
           status: 'REQUESTED',
         },
       });
@@ -121,7 +144,20 @@ export class CardController {
         orderBy: { createdAt: 'desc' },
       });
 
-      return res.json(cards);
+      // Format for frontend mapping compatibility
+      const formattedCards = cards.map(c => ({
+        id: c.id,
+        employeeId: c.user?.employeeCode || c.userId,
+        cardNumber: c.cardNumber,
+        status: c.status,
+        issuedAt: c.status !== 'REQUESTED' ? c.updatedAt : null,
+        employee: c.user ? { fullName: c.user.fullName } : undefined,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        organizationId: c.organizationId
+      }));
+
+      return res.json(formattedCards);
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
     }

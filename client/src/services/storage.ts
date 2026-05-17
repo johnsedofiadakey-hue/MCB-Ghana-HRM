@@ -30,19 +30,24 @@ class StorageService {
       const raw = localStorage.getItem(key);
       if (raw === null || raw === 'undefined') return defaultValue;
       
-      // If the expected type is string and it doesn't look like JSON, return as is
-      // We also check for 'undefined' to prevent JSON.parse from blowing up
-      if (typeof defaultValue === 'string' && !raw.startsWith('{') && !raw.startsWith('[')) {
+      // If the expected type is string (or null/undefined fallback) and it doesn't look like JSON, return as is
+      const isExpectedString = typeof defaultValue === 'string' || defaultValue === null || defaultValue === undefined;
+      const isNotJSONPattern = !raw.startsWith('{') && !raw.startsWith('[') && !raw.startsWith('"');
+      
+      if (isExpectedString && isNotJSONPattern) {
         return raw as unknown as T;
       }
 
-      // Safety check: if raw is not valid JSON and we are not expecting a string, log it and return default
       try {
         return JSON.parse(raw) as T;
       } catch (parseError) {
         // If the expected type is string, return the raw string
-        if (typeof defaultValue === 'string') return raw as unknown as T;
-        // Otherwise return the default value as fallback
+        if (typeof defaultValue === 'string') {
+          return raw as unknown as T;
+        }
+        
+        // Otherwise, this is a real JSON parse error for an expected object. Log a warning and return default.
+        console.warn(`[StorageService] Failed to parse key "${key}". Returning default.`, parseError);
         return defaultValue;
       }
     } catch (error) {

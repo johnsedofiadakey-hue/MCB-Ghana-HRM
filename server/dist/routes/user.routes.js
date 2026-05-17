@@ -21,18 +21,23 @@ router.post('/', (0, auth_middleware_1.authorize)(['HR_MANAGER', 'HR_DIRECTOR', 
 router.patch('/:id', (req, res, next) => {
     if (req.user?.id === req.params.id)
         return next();
-    return (0, auth_middleware_1.requireRole)(70)(req, res, next);
+    return (0, auth_middleware_1.requireSpecificRole)(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV'])(req, res, next);
 }, user_controller_1.updateEmployee);
 // PUT alias for EmployeeProfile compatibility
-router.put('/:id', (0, auth_middleware_1.requireRole)(70), user_controller_1.updateEmployee);
-// Delete (Archive) - Rank 85+ (HR Manager / HR Director / IT Manager / MD / DEV)
-router.delete('/:id', (0, auth_middleware_1.requireRole)(85), user_controller_1.deleteEmployee);
-router.delete('/:id/hard', (0, auth_middleware_1.requireRole)(85), user_controller_1.hardDeleteEmployee);
-router.post('/:id/restore', (0, auth_middleware_1.requireRole)(85), user_controller_1.restoreEmployee);
-// Role assignment (MD or Admin Managers 85+)
-router.post('/assign-role', (0, auth_middleware_1.requireRole)(85), user_controller_1.assignRole);
+router.put('/:id', (req, res, next) => {
+    if (req.user?.id === req.params.id)
+        return next();
+    return (0, auth_middleware_1.requireSpecificRole)(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV'])(req, res, next);
+}, user_controller_1.updateEmployee);
+// Delete (Archive) - Only HR and MD
+router.delete('/:id', (0, auth_middleware_1.requireSpecificRole)(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']), user_controller_1.deleteEmployee);
+router.delete('/:id/hard', (0, auth_middleware_1.requireSpecificRole)(['HR_MANAGER', 'MD', 'DEV']), user_controller_1.hardDeleteEmployee);
+router.post('/:id/restore', (0, auth_middleware_1.requireSpecificRole)(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']), user_controller_1.restoreEmployee);
+// Role assignment (Only HR and MD)
+router.post('/assign-role', (0, auth_middleware_1.requireSpecificRole)(['HR_MANAGER', 'MD', 'DEV']), user_controller_1.assignRole);
 router.post('/:id/upload-image', upload_middleware_1.upload.single('avatar'), user_controller_1.uploadImage);
 router.post('/:id/avatar', user_controller_1.uploadImage); // base64 path
+router.post('/signature', user_controller_1.uploadSignature);
 router.post('/:id/signature', user_controller_1.uploadSignature);
 // Administrative reset (IT_MANAGER or MD >= 85)
 router.post('/:id/reset-password', (0, auth_middleware_1.requireRole)(85), user_controller_1.resetEmployeePassword);

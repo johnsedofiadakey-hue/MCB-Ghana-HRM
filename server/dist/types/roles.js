@@ -37,6 +37,7 @@ exports.ROLE_RANK_MAP = {
     // Alias Support for DB display roles
     'MANAGING DIRECTOR': RoleRank.MD,
     'SYSTEM DEVELOPER': RoleRank.DEV,
+    'HR DIRECTOR': RoleRank.HR_DIRECTOR,
     'HR OFFICER': RoleRank.HR_OFFICER,
     'HR MANAGER': RoleRank.HR_MANAGER,
     'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,

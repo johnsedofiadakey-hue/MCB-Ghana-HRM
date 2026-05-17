@@ -28,18 +28,20 @@ router.get('/my-tax-summary/:year', async (req, res) => {
     }
 });
 // Admin — payroll management
-router.get('/summary', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.getYearlySummary);
-router.get('/', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.getRuns);
-router.post('/run', (0, auth_middleware_1.requireRole)(85), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollRunSchema), payroll_controller_1.createRun);
-router.get('/:id', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.getRunDetail);
-router.post('/:id/approve', (0, auth_middleware_1.requireRole)(90), payroll_controller_1.approveRun);
-router.post('/:id/void', (0, auth_middleware_1.requireRole)(90), payroll_controller_1.voidRun);
-router.delete('/:id', (0, auth_middleware_1.requireRole)(90), payroll_controller_1.deleteRun);
-router.patch('/items/:itemId', (0, auth_middleware_1.requireRole)(85), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollItemUpdateSchema), payroll_controller_1.updateItem);
-router.get('/:id/export/csv', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.exportPayrollCSV);
-router.get('/:id/bank-export/csv', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.exportBankCSV);
+const financeRoles = ['FINANCE_MANAGER', 'MD'];
+const financeAdminRoles = ['MD'];
+router.get('/summary', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.getYearlySummary);
+router.get('/', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.getRuns);
+router.post('/run', (0, auth_middleware_1.requireSpecificRole)(financeRoles), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollRunSchema), payroll_controller_1.createRun);
+router.get('/:id', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.getRunDetail);
+router.post('/:id/approve', (0, auth_middleware_1.requireSpecificRole)(financeAdminRoles), payroll_controller_1.approveRun);
+router.post('/:id/void', (0, auth_middleware_1.requireSpecificRole)(financeAdminRoles), payroll_controller_1.voidRun);
+router.delete('/:id', (0, auth_middleware_1.requireSpecificRole)(financeAdminRoles), payroll_controller_1.deleteRun);
+router.patch('/items/:itemId', (0, auth_middleware_1.requireSpecificRole)(financeRoles), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollItemUpdateSchema), payroll_controller_1.updateItem);
+router.get('/:id/export/csv', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.exportPayrollCSV);
+router.get('/:id/bank-export/csv', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.exportBankCSV);
 // Admin year-end summary for all employees
-router.get('/tax-summary/org/:year', (0, auth_middleware_1.requireRole)(85), async (req, res) => {
+router.get('/tax-summary/org/:year', (0, auth_middleware_1.requireSpecificRole)(financeRoles), async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
         const year = parseInt(req.params.year);

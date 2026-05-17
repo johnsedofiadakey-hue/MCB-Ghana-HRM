@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkBilling = exports.requirePermission = exports.authorizeMinimumRole = exports.requireRole = exports.authorize = exports.authenticate = exports.getRoleRank = void 0;
+exports.checkBilling = exports.requirePermission = exports.authorizeMinimumRole = exports.requireSpecificRole = exports.requireRole = exports.authorize = exports.authenticate = exports.getRoleRank = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = __importDefault(require("../prisma/client"));
 const policy_service_1 = require("../services/policy.service");
@@ -30,9 +30,6 @@ const authenticate = async (req, res, next) => {
     let token = '';
     if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split(' ')[1];
-    }
-    else if (req.query.token) {
-        token = req.query.token;
     }
     if (!token) {
         console.warn(`[Auth Middleware] No token provided for: ${req.method} ${req.path}`);
@@ -163,6 +160,22 @@ const requireRole = (rank) => {
     };
 };
 exports.requireRole = requireRole;
+const requireSpecificRole = (allowedRoles) => {
+    return (req, res, next) => {
+        const userRole = req.user?.role;
+        const normalizedUserRole = userRole ? String(userRole).toUpperCase() : '';
+        // DEV bypass
+        if (normalizedUserRole === 'DEV')
+            return next();
+        // Normalize allowed roles
+        const normalizedAllowedRoles = allowedRoles.map(r => String(r).toUpperCase());
+        if (normalizedAllowedRoles.includes(normalizedUserRole)) {
+            return next();
+        }
+        return res.status(403).json({ error: 'Access denied: insufficient permissions' });
+    };
+};
+exports.requireSpecificRole = requireSpecificRole;
 const authorizeMinimumRole = (minimumRole) => {
     const requiredRank = (0, exports.getRoleRank)(minimumRole);
     return (0, exports.requireRole)(requiredRank || 999);

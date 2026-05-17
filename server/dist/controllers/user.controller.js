@@ -376,6 +376,7 @@ exports.getEmployee = getEmployee;
 // ─── UPDATE EMPLOYEE (Hardened) ──────────────────────────────────────────
 const updateEmployee = async (req, res) => {
     try {
+        console.log('[Update Employee Payload]', req.params.id, req.body);
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const rank = (0, auth_middleware_1.getRoleRank)(userReq.role);
@@ -492,6 +493,7 @@ const updateEmployee = async (req, res) => {
         res.json(withDepartment(getSafeUser(safe, actorRole)));
     }
     catch (err) {
+        console.error('[Update Employee Error]', err);
         res.status(500).json({ message: err.message });
     }
 };
@@ -736,7 +738,7 @@ const uploadSignature = async (req, res) => {
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { id: actorId } = userReq;
-        const targetId = req.params.id;
+        const targetId = req.params.id || actorId;
         // 🛡️ REQUISITE: Only self-upload or MD/HR/IT
         const actorRole = userReq.role;
         const rank = (0, auth_middleware_1.getRoleRank)(actorRole);

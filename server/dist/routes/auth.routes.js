@@ -42,7 +42,12 @@ const demoController = __importStar(require("../controllers/demo.controller"));
 const router = (0, express_1.Router)();
 router.post('/login', rate_limit_middleware_1.loginLimiter, (0, validate_middleware_1.validate)(validate_middleware_1.LoginSchema), authController.login);
 router.post('/sso', rate_limit_middleware_1.loginLimiter, authController.ssoLogin);
-router.post('/signup', (0, validate_middleware_1.validate)(validate_middleware_1.TenantSignupSchema), authController.signup);
+router.post('/signup', (0, validate_middleware_1.validate)(validate_middleware_1.TenantSignupSchema), (req, res, next) => {
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PUBLIC_SIGNUP !== 'true') {
+        return res.status(403).json({ error: 'Public signup is disabled for this deployment.' });
+    }
+    return authController.signup(req, res);
+});
 router.post('/refresh', authController.refreshAccessToken);
 router.post('/logout', auth_middleware_1.authenticate, authController.revokeRefreshToken);
 router.post('/forgot-password', rate_limit_middleware_1.passwordResetLimiter, (0, validate_middleware_1.validate)(validate_middleware_1.ForgotPasswordSchema), authController.forgotPassword);

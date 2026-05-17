@@ -125,7 +125,8 @@
     "it_admin_label": "Admin IT",
     "profile_label": "Mon Profil",
     "enterprise_suite_label": "Outils Business",
-    "final_verdict_label": "Décision Finale"
+    "final_verdict_label": "Décision Finale",
+    "promotions_label": "Promotions"
   },
   "auth": {
     "sign_in": "Se Connecter",

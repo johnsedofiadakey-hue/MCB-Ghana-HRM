@@ -67,7 +67,7 @@ const exportPayrollCSV = async (req, res) => {
         const items = await client_1.default.payrollItem.findMany({
             where: {
                 organizationId: orgId,
-                ...(runId ? { id: runId } : {}) // Note: would need to filter by run.id normally, assuming quick query here
+                ...(runId ? { runId: runId } : {})
             },
             include: { employee: { include: { departmentObj: true } }, run: true },
             orderBy: { createdAt: 'desc' }
