@@ -33,6 +33,7 @@ interface DashboardStats {
   attendanceRate?: number;
   headcount?: number;
   myClaims?: number;
+  isOnLeave?: boolean;
 }
 
 const useDashboardData = (departmentId?: string) => {
@@ -158,6 +159,31 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-10 pb-20 max-w-[1600px] mx-auto bg-[var(--bg-main)] !bg-[var(--bg-main)]">
+      {/* Out of Office / Leave Status Banner */}
+      {stats?.isOnLeave && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/20 backdrop-blur-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6"
+        >
+          <div className="absolute top-0 right-0 w-48 h-48 bg-radial-gradient from-amber-500/15 to-transparent pointer-events-none opacity-40 animate-pulse" />
+          <div className="flex items-center gap-6">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+              <Calendar size={28} className="animate-pulse" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight">OUT OF OFFICE (ON LEAVE)</h2>
+              <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mt-1">Automatic Out-of-Office coverage active</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[9px] font-black uppercase tracking-[0.2em] text-amber-400">
+              System Muted & Coverage Enabled
+            </span>
+          </div>
+        </motion.div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-2">
         <div className="flex-1">

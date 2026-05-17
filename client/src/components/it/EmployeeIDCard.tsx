@@ -29,9 +29,10 @@ interface EmployeeIDCardProps {
     idCardBackMessage?: string;
     idCardSecurityText?: string;
   };
+  status?: string;
 }
 
-const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization }) => {
+const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization, status = 'ACTIVE' }) => {
   const primaryColor = organization.idCardPrimaryColor || organization.primaryColor || '#4F46E5';
   const accentColor = organization.idCardAccentColor || '#F59E0B';
   const showLogo = organization.idCardShowLogo ?? true;
@@ -48,6 +49,22 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
   const txtMuted = isPristine ? 'text-slate-400' : (isDark ? 'text-white/30' : 'text-slate-400');
   const glassBg = isPristine ? 'bg-slate-100/50' : (isDark ? 'bg-white/5' : 'bg-slate-900/5');
   const glassBorder = isPristine ? 'border-slate-200' : (isDark ? 'border-white/10' : 'border-slate-900/10');
+
+  // Dynamic Status Badge Mapping
+  const cardStatus = status.toUpperCase();
+  let statusColor = 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+  let statusDot = 'bg-emerald-400';
+
+  if (cardStatus === 'SUSPENDED') {
+    statusColor = 'bg-rose-500/10 border-rose-500/20 text-rose-400';
+    statusDot = 'bg-rose-400';
+  } else if (cardStatus === 'REQUESTED') {
+    statusColor = 'bg-sky-500/10 border-sky-500/20 text-sky-400';
+    statusDot = 'bg-sky-400';
+  } else if (cardStatus === 'REVOKED') {
+    statusColor = 'bg-slate-500/10 border-slate-500/20 text-slate-400';
+    statusDot = 'bg-slate-500';
+  }
 
   return (
     <div className="flex flex-col gap-12 items-center py-8 px-4 font-display selection:bg-white/20">
@@ -81,13 +98,13 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                  <div className="absolute top-1/4 -right-16 w-64 h-64 border-8 border-[var(--primary)]/5 rounded-full" />
                </>
             ) : (
-              <div 
-                className="absolute -top-[20%] -left-[10%] w-[120%] h-[120%] opacity-40 blur-[80px] animate-pulse"
-                style={{ 
-                  background: `radial-gradient(circle at 20% 30%, ${primaryColor} 0%, transparent 50%), 
-                               radial-gradient(circle at 80% 70%, ${accentColor} 0%, transparent 50%)` 
-                }}
-              />
+               <div 
+                 className="absolute -top-[20%] -left-[10%] w-[120%] h-[120%] opacity-40 blur-[80px] animate-pulse"
+                 style={{ 
+                   background: `radial-gradient(circle at 20% 30%, ${primaryColor} 0%, transparent 50%), 
+                                radial-gradient(circle at 80% 70%, ${accentColor} 0%, transparent 50%)` 
+                 }}
+               />
             )}
             {/* Subtle Geometric Overlay */}
             <div className="absolute inset-0 opacity-[0.03] grayscale" style={{ backgroundImage: 'radial-gradient(var(--text-primary) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
@@ -127,14 +144,12 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization 
                   )}
                </div>
              </div>
-             {!isVertical && (
-                <div className="flex items-center gap-2">
-                   <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5">
-                       <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                       <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Active Status</span>
-                   </div>
+             <div className={cn("flex items-center gap-2", isVertical ? "mt-3" : "")}>
+                <div className={cn("px-3 py-1 rounded-full border flex items-center gap-1.5 backdrop-blur-md shadow-lg font-mono font-black", statusColor)}>
+                    <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", statusDot)} />
+                    <span className="text-[8px] uppercase tracking-widest">{cardStatus}</span>
                 </div>
-             )}
+             </div>
           </div>
 
           {/* Portrait Architecture */}

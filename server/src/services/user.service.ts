@@ -166,7 +166,7 @@ export const createUser = async (organizationId: string, data: {
 };
 
 export const getUserById = async (organizationId: string, id: string) => {
-    return prisma.user.findFirst({
+    const user = await prisma.user.findFirst({
         where: { id, organizationId },
         include: {
             organization: { select: { defaultLeaveAllowance: true } },
@@ -199,6 +199,23 @@ export const getUserById = async (organizationId: string, id: string) => {
             }
         }
     });
+
+    if (!user) return null;
+
+    const today = new Date();
+    const activeLeave = await prisma.leaveRequest.findFirst({
+        where: {
+            employeeId: id,
+            status: 'APPROVED',
+            startDate: { lte: today },
+            endDate: { gte: today },
+        },
+    });
+
+    return {
+        ...user,
+        isOnLeave: !!activeLeave
+    };
 };
 
 export const getAllUsers = async (organizationId: string | null, filter?: { department?: string, role?: string, status?: string, take?: number, skip?: number, search?: string } & any) => {
@@ -217,7 +234,7 @@ export const getAllUsers = async (organizationId: string | null, filter?: { depa
     }
 
     // If organizationId is null (e.g. for autonomous DEV), it returns all users across all organizations
-    return prisma.user.findMany({
+    const users = await prisma.user.findMany({
         where,
         orderBy: { fullName: 'asc' },
         take: parseInt(take as any) || 100,
@@ -242,6 +259,27 @@ export const getAllUsers = async (organizationId: string | null, filter?: { depa
             }
         }
     });
+
+    if (users.length === 0) return [];
+
+    // Bulk-fetch active approved leaves spanning today for these users
+    const today = new Date();
+    const activeLeaves = await prisma.leaveRequest.findMany({
+        where: {
+            employeeId: { in: users.map(u => u.id) },
+            status: 'APPROVED',
+            startDate: { lte: today },
+            endDate: { gte: today },
+        },
+        select: { employeeId: true }
+    });
+
+    const leaveUserIds = new Set(activeLeaves.map(l => l.employeeId));
+
+    return users.map(user => ({
+        ...user,
+        isOnLeave: leaveUserIds.has(user.id)
+    }));
 };
 
 export const updateUser = async (

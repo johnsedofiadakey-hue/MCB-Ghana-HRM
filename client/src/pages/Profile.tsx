@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2, Trash2, Fingerprint } from 'lucide-react';
+import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2, Trash2, Fingerprint, CreditCard, Printer, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStoredUser, getRoleRankValue } from '../utils/session';
 import api from '../services/api';
@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { optimizeImage } from '../utils/image';
 import SignaturePad from '../components/common/SignaturePad';
+import EmployeeIDCard from '../components/it/EmployeeIDCard';
 
 
 const Profile = () => {
@@ -28,8 +29,15 @@ const Profile = () => {
         confirmPassword: ''
     });
     const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history'>('info');
+    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history' | 'id-card'>('info');
     const [history, setHistory] = useState<any[]>([]);
+    
+    // Employee Card states
+    const [profile, setProfile] = useState<any | null>(null);
+    const [card, setCard] = useState<any | null>(null);
+    const [loadingCard, setLoadingCard] = useState(false);
+    const [cardOrientation, setCardOrientation] = useState<'VERTICAL' | 'HORIZONTAL'>('VERTICAL');
+    const [cardTheme, setCardTheme] = useState<'DARK' | 'LIGHT' | 'PRISTINE'>('DARK');
     
     // 🛡️ AUTHORIZATION LOCKDOWN: MD, HR, or IT Only for Identity (Name/Email)
     const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
@@ -87,11 +95,51 @@ const Profile = () => {
     }, [draftData?.fullName, draftData?.email, draftData?.phone, draftData?.bankName, draftData?.bankAccountNumber, draftData?.bankBranch]);
 
 
+    const fetchCard = async () => {
+        setLoadingCard(true);
+        try {
+            const res = await api.get('/cards');
+            if (res.data && res.data.length > 0) {
+                setCard(res.data[0]);
+            } else {
+                setCard(null);
+            }
+        } catch (err) {
+            console.error('Failed to fetch card details', err);
+        } finally {
+            setLoadingCard(false);
+        }
+    };
+
+    const handleRequestCard = async () => {
+        setIsSubmitting(true);
+        setError('');
+        setSuccess('');
+        try {
+            await api.post('/cards/request', {
+                employeeId: profile?.id || user.id
+            });
+            setSuccess('NFC Access Card requested successfully.');
+            await fetchCard();
+        } catch (err: any) {
+            setError(err?.response?.data?.error || 'Failed to request NFC card.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'id-card') {
+            fetchCard();
+        }
+    }, [activeTab]);
+
     useEffect(() => {
         const fetchProfile = async () => {
             if (!user.id) return;
             try {
                 const res = await api.get(`/users/${user.id}`);
+                setProfile(res.data);
                 setFormData(d => ({
                     ...d,
                     fullName: res.data.fullName,
@@ -201,11 +249,11 @@ const Profile = () => {
 
             {/* Matrix Tabs */}
             <div className="flex border-b border-[var(--border-subtle)]/30 gap-6 sm:gap-10 overflow-x-auto no-scrollbar">
-                {(['info', 'security', 'history'] as const).map(tab => (
+                {(['info', 'security', 'id-card', 'history'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveTab(tab)}
                         className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative whitespace-nowrap",
                         activeTab === tab ? "text-[var(--primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
-                        {t(`common.${tab}`)}
+                        {tab === 'id-card' ? 'Company ID Card' : t(`common.${tab}`)}
                         {activeTab === tab && <motion.div layoutId="profile-tab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]" />}
                     </button>
                 ))}
@@ -617,6 +665,162 @@ const Profile = () => {
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'id-card' && (
+                            <motion.div key="id-card" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+                                <div className="nx-card p-8 md:p-10 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-radial-gradient from-[var(--primary)]/15 to-transparent pointer-events-none opacity-40" />
+                                    
+                                    <div className="flex flex-col lg:flex-row gap-10 items-stretch">
+                                        {/* Left Side: Customization and Controls */}
+                                        <div className="flex-1 space-y-8 flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex items-center gap-4 mb-6">
+                                                    <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
+                                                        <CreditCard size={24} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">NFC Access & ID Card</h3>
+                                                        <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Verify and preview your official corporate credentials</p>
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-6">
+                                                    Your digital company card is integrated with real-time NFC building access. Changes to status are governed by IT Administration and Security Policies.
+                                                </p>
+
+                                                {/* Card Customization Control Panel */}
+                                                <div className="space-y-6 bg-[var(--bg-elevated)]/50 p-6 rounded-2xl border border-[var(--border-subtle)]/30 backdrop-blur-md">
+                                                    <div>
+                                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)] mb-3">Card Viewer Theme</h4>
+                                                        <div className="grid grid-cols-3 gap-3">
+                                                            {(['DARK', 'LIGHT', 'PRISTINE'] as const).map(themeOpt => (
+                                                                <button
+                                                                    key={themeOpt}
+                                                                    type="button"
+                                                                    onClick={() => setCardTheme(themeOpt)}
+                                                                    className={cn(
+                                                                        "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border",
+                                                                        cardTheme === themeOpt
+                                                                            ? "bg-[var(--primary)] border-[var(--primary)] text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                                                                            : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]/40 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                                                                    )}
+                                                                >
+                                                                    {themeOpt === 'DARK' ? 'Holo Dark' : themeOpt === 'LIGHT' ? 'Prism Light' : 'Pristine'}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)] mb-3">Card Layout Orientation</h4>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            {(['VERTICAL', 'HORIZONTAL'] as const).map(orientOpt => (
+                                                                <button
+                                                                    key={orientOpt}
+                                                                    type="button"
+                                                                    onClick={() => setCardOrientation(orientOpt)}
+                                                                    className={cn(
+                                                                        "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border",
+                                                                        cardOrientation === orientOpt
+                                                                            ? "bg-[var(--primary)] border-[var(--primary)] text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                                                                            : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]/40 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                                                                    )}
+                                                                >
+                                                                    {orientOpt}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* NFC Status and Action Buttons */}
+                                            <div className="pt-6 border-t border-[var(--border-subtle)]/30 space-y-4">
+                                                {loadingCard ? (
+                                                    <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] font-black uppercase tracking-widest">
+                                                        <Loader2 size={16} className="animate-spin" />
+                                                        <span>Synchronizing with NFC Card Registry...</span>
+                                                    </div>
+                                                ) : card ? (
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">NFC Card ID:</span>
+                                                            <span className="text-xs font-mono font-bold text-[var(--text-primary)]">{card.cardNumber}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Security Registry:</span>
+                                                            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">ACTIVE & SECURED</span>
+                                                        </div>
+                                                        <div className="flex gap-4 pt-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => window.print()}
+                                                                className="flex-1 py-4.5 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[10px] font-black uppercase tracking-widest border border-[var(--border-subtle)]/50 flex items-center justify-center gap-2.5 text-[var(--text-primary)] transition-all"
+                                                            >
+                                                                <Printer size={14} />
+                                                                <span>Print Credentials</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={fetchCard}
+                                                                className="p-4.5 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)]/50 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                                                            >
+                                                                <RefreshCw size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium leading-relaxed">
+                                                            No active corporate ID card was found in your registry. If you have not been issued a physical NFC access card, please request one.
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleRequestCard}
+                                                            disabled={isSubmitting}
+                                                            className="w-full btn-primary bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-slate-950 shadow-md font-black uppercase tracking-widest text-[10px] py-4.5 flex items-center justify-center gap-2"
+                                                        >
+                                                            {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                                                            <span>Request Corporate NFC Card</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Right Side: High Fidelity Visual Render */}
+                                        <div className="flex-1 flex items-center justify-center p-4 bg-slate-950/40 rounded-3xl border border-[var(--border-subtle)]/20 relative min-h-[480px]">
+                                            <div className="absolute inset-0 bg-radial-gradient from-[var(--primary)]/5 to-transparent pointer-events-none" />
+                                            
+                                            <div className="scale-90 md:scale-95 lg:scale-100 transition-transform duration-500">
+                                                <EmployeeIDCard
+                                                    employee={{
+                                                        fullName: profile?.fullName || user?.name || '',
+                                                        jobTitle: profile?.jobTitle || 'Executive Officer',
+                                                        departmentObj: profile?.departmentObj || { name: 'Operations' },
+                                                        employeeCode: profile?.employeeCode || 'MCB-000000',
+                                                        avatarUrl: profile?.avatarUrl || user?.avatar || '',
+                                                        email: profile?.email || user?.email || '',
+                                                        contactNumber: profile?.contactNumber || '',
+                                                    }}
+                                                    organization={{
+                                                        name: 'MCB Ghana',
+                                                        primaryColor: '#0F172A',
+                                                        accentColor: '#F59E0B',
+                                                        idCardPrimaryColor: '#0F172A',
+                                                        idCardAccentColor: '#F59E0B',
+                                                        idCardOrientation: cardOrientation,
+                                                        idCardTheme: cardTheme,
+                                                    }}
+                                                    status={card?.status || 'REQUESTED'}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
