@@ -5,7 +5,7 @@ import {
   Users, Package, Plus, RotateCcw, Shield, 
   Search, Loader2, AlertTriangle, 
   ShieldCheck, Zap, Activity, Fingerprint,
-  Database, Key, Lock, Server, Cpu, ArrowRight, ArrowLeft
+  Database, Key, Lock, Server, Cpu, ArrowRight, ArrowLeft, UserX
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -352,9 +352,14 @@ const ITAdmin = () => {
                                   <td className="px-10 py-6 text-right">
                                      <div className="flex justify-end gap-3">
                                         {(normalizedRole === 'IT_MANAGER' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'DEV') && (
-                                           <button onClick={() => handlePrintId(u)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><Key size={14} /></button>
+                                           <button onClick={() => handlePrintId(u)} title="Print ID Card" className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><Key size={14} /></button>
                                         )}
-                                        <button onClick={() => handlePasswordReset(u.id, u.fullName)} className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><RotateCcw size={14} /></button>
+                                        <button onClick={() => handlePasswordReset(u.id, u.fullName)} disabled={resettingId === u.id} title="Force Password Reset" className="p-2.5 rounded-xl bg-amber-500/5 text-amber-500 border border-amber-500/10 hover:bg-amber-500 hover:text-white transition-all disabled:opacity-50">
+                                           {resettingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                                        </button>
+                                        {currentUser?.id !== u.id && (
+                                            <button onClick={() => handleDeactivate(u.id, u.fullName)} title="Deactivate Account" className="p-2.5 rounded-xl bg-rose-500/5 text-rose-500 border border-rose-500/10 hover:bg-rose-500 hover:text-white transition-all"><UserX size={14} /></button>
+                                        )}
                                      </div>
                                   </td>
                                 </tr>
