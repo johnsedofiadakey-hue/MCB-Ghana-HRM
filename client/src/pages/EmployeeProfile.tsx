@@ -104,6 +104,24 @@ const themeConfigs: Record<string, {
         logoColor: "#EF4444",
         isDark: true
     }
+const getThemeConfigs = (themeName: string, primaryColor: string, accentColor: string) => {
+    const base = themeConfigs[themeName] || themeConfigs.MCB_LIGHT_GOLD;
+    const styles: any = {
+        textPrimary: {},
+        tagBg: {},
+        avatarBorder: {}
+    };
+
+    if (themeName === 'MCB_LIGHT_NAVY') {
+        styles.textPrimary = { color: primaryColor };
+        styles.tagBg = { backgroundColor: `${primaryColor}15`, borderColor: `${primaryColor}30`, color: primaryColor };
+        styles.avatarBorder = { borderColor: primaryColor };
+    }
+
+    return {
+        ...base,
+        styles
+    };
 };
 
 const EmployeeProfile = () => {
@@ -827,144 +845,165 @@ const EmployeeProfile = () => {
                                     )}
                                 </div>
 
-                                {userCard ? (
-                                    <div className="space-y-6">
-                                        {/* Perspective Container for 3D flip */}
-                                        <div className="relative w-full h-[230px] [perspective:1000px] cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
-                                            <div className={cn(
-                                                "w-full h-full relative transition-transform duration-700 [transform-style:preserve-3d]",
-                                                isFlipped ? "[transform:rotateY(180deg)]" : ""
-                                            )}>
-                                                {/* FRONT SIDE */}
+                                {userCard ? (() => {
+                                     const primaryCol = settings?.primaryColor || '#009EE3';
+                                     const accentCol = settings?.accentColor || '#EE7100';
+                                     const logoSrc = settings?.logoUrl || settings?.companyLogoUrl || '';
+                                     const themeStyles = getThemeConfigs(userCard.theme || 'MCB_LIGHT_GOLD', primaryCol, accentCol);
+
+                                     return (
+                                        <div className="space-y-6">
+                                            {/* Perspective Container for 3D flip */}
+                                            <div className="relative w-full h-[230px] [perspective:1000px] cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
                                                 <div className={cn(
-                                                    "absolute inset-0 w-full h-full rounded-[24px] border p-6 shadow-xl [backface-visibility:hidden] flex flex-col justify-between transition-all duration-300",
-                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).cardBg,
-                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).border,
-                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).textPrimary
+                                                    "w-full h-full relative transition-transform duration-700 [transform-style:preserve-3d]",
+                                                    isFlipped ? "[transform:rotateY(180deg)]" : ""
                                                 )}>
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <span className={cn(
-                                                                "px-2.5 py-1 rounded-full border text-[7px] font-black uppercase tracking-wider",
-                                                                (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).tagBg,
-                                                                (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).tagBorder,
-                                                                (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).tagText
-                                                            )}>
-                                                                MCB Professional
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-right flex items-center gap-1.5">
-                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="inline-block">
-                                                                <path d="M12 2L2 22h20L12 2z" fill={(themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).logoColor} />
-                                                            </svg>
+                                                    {/* FRONT SIDE */}
+                                                    <div className={cn(
+                                                        "absolute inset-0 w-full h-full rounded-[24px] border p-6 shadow-xl [backface-visibility:hidden] flex flex-col justify-between transition-all duration-300",
+                                                        themeStyles.cardBg,
+                                                        themeStyles.border,
+                                                        themeStyles.textPrimary
+                                                    )} style={themeStyles.styles?.textPrimary}>
+                                                        <div className="flex justify-between items-start">
                                                             <div>
-                                                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">MCB</h4>
-                                                                <p className="text-[5px] font-black uppercase tracking-widest opacity-60 mt-0.5">Ghana</p>
+                                                                <span className={cn(
+                                                                    "px-2.5 py-1 rounded-full border text-[7px] font-black uppercase tracking-wider",
+                                                                    themeStyles.tagBg,
+                                                                    themeStyles.tagBorder,
+                                                                    themeStyles.tagText
+                                                                )} style={themeStyles.styles?.tagBg}>
+                                                                    MCB Professional
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-right flex items-center gap-1.5">
+                                                                {logoSrc ? (
+                                                                    <img src={logoSrc} alt="Company Logo" className="h-6 max-w-[70px] object-contain" />
+                                                                ) : (
+                                                                    <>
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="inline-block">
+                                                                            <path d="M12 2L2 22h20L12 2z" fill={themeStyles.logoColor} />
+                                                                        </svg>
+                                                                        <div>
+                                                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">MCB</h4>
+                                                                            <p className="text-[5px] font-black uppercase tracking-widest opacity-60 mt-0.5">Ghana</p>
+                                                                        </div>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
-                                                    </div>
 
-                                                    <div className="flex items-center gap-4 my-2">
-                                                        <img 
-                                                            src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
-                                                            alt={employee.fullName} 
-                                                            className={cn(
-                                                                "w-12 h-12 rounded-xl object-cover border-2 p-0.5 shadow-md",
-                                                                (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).avatarBorder
-                                                            )}
-                                                        />
-                                                        <div className="min-w-0">
-                                                            <h3 className="text-sm font-black uppercase tracking-tight truncate">{userCard.fullName}</h3>
-                                                            <p className="text-[9px] font-bold opacity-80 uppercase tracking-wide truncate">{userCard.jobTitle}</p>
-                                                            {userCard.department && <p className="text-[7px] font-semibold opacity-60 uppercase tracking-widest truncate">{userCard.department}</p>}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="border-t border-current/10 pt-3 text-[8px] font-bold space-y-1 opacity-80">
-                                                        <p className="truncate">✉ {userCard.email}</p>
-                                                        {userCard.phone && <p className="truncate">☎ {userCard.phone}</p>}
-                                                    </div>
-                                                </div>
-
-                                                {/* BACK SIDE */}
-                                                <div className={cn(
-                                                    "absolute inset-0 w-full h-full rounded-[24px] border p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between transition-all duration-300",
-                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).cardBg,
-                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).border,
-                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).textPrimary
-                                                )}>
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Scan to Connect</span>
-                                                        <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Back Side</span>
-                                                    </div>
-                                                    <div className="flex-1 flex items-center justify-center py-2">
-                                                        <div className="p-2 bg-white rounded-xl shadow-md border border-gray-150 inline-block">
-                                                            <QRCodeCanvas 
-                                                                id={`qr-canvas-profile-${userCard.id}`}
-                                                                value={`${window.location.origin}/shared-card/${userCard.id}`}
-                                                                size={90}
-                                                                level="H"
-                                                                includeMargin={false}
+                                                        <div className="flex items-center gap-4 my-2">
+                                                            <img 
+                                                                src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
+                                                                alt={employee.fullName} 
+                                                                className="w-12 h-12 rounded-xl object-cover border-2 p-0.5 shadow-md"
+                                                                style={themeStyles.styles?.avatarBorder}
                                                             />
+                                                            <div className="min-w-0">
+                                                                <h3 className="text-sm font-black uppercase tracking-tight truncate">{userCard.fullName}</h3>
+                                                                <p className="text-[9px] font-bold opacity-80 uppercase tracking-wide truncate">{userCard.jobTitle}</p>
+                                                                {userCard.department && <p className="text-[7px] font-semibold opacity-60 uppercase tracking-widest truncate">{userCard.department}</p>}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="border-t border-current/10 pt-3 text-[8px] font-bold space-y-1 opacity-80">
+                                                            <p className="truncate">✉ {userCard.email}</p>
+                                                            {userCard.phone && <p className="truncate">☎ {userCard.phone}</p>}
                                                         </div>
                                                     </div>
-                                                    <div className="text-center text-[7px] font-black uppercase tracking-widest opacity-60">
-                                                        MCB Ghana Corporate Network
+
+                                                    {/* BACK SIDE */}
+                                                    <div className={cn(
+                                                        "absolute inset-0 w-full h-full rounded-[24px] border p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between transition-all duration-300",
+                                                        themeStyles.cardBg,
+                                                        themeStyles.border,
+                                                        themeStyles.textPrimary
+                                                    )} style={themeStyles.styles?.textPrimary}>
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Scan to Connect</span>
+                                                            {logoSrc ? (
+                                                                <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[60px] object-contain" />
+                                                            ) : (
+                                                                <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Back Side</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 flex items-center justify-center py-2">
+                                                            <div className="p-2 bg-white rounded-xl shadow-md border border-gray-150 inline-block">
+                                                                <QRCodeCanvas 
+                                                                    id={`qr-canvas-profile-${userCard.id}`}
+                                                                    value={`${window.location.origin}/shared-card/${userCard.id}`}
+                                                                    size={90}
+                                                                    level="H"
+                                                                    includeMargin={false}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-center text-[7px] font-black uppercase tracking-widest opacity-60">
+                                                            MCB Ghana Corporate Network
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {/* Action controls below card */}
-                                        <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">
-                                            <button 
-                                                onClick={() => setIsFlipped(!isFlipped)}
-                                                className="hover:text-[var(--primary)] transition-all flex items-center gap-1.5"
-                                            >
-                                                🔄 Tap to Flip Card
-                                            </button>
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const canvas = document.getElementById(`qr-canvas-profile-${userCard.id}`) as HTMLCanvasElement;
-                                                    if (canvas) {
-                                                        const link = document.createElement('a');
-                                                        link.download = `MCB-Card-QR-${userCard.fullName.replace(/\s+/g, '-')}.png`;
-                                                        link.href = canvas.toDataURL();
-                                                        link.click();
-                                                        toast.success("QR Code downloaded successfully!");
-                                                    } else {
-                                                        toast.error("Could not generate download file.");
-                                                    }
-                                                }}
-                                                className="hover:text-[var(--primary)] transition-all flex items-center gap-1.5"
-                                            >
-                                                📥 Save QR Code
-                                            </button>
-                                        </div>
+                                            {/* Action controls below card */}
+                                            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">
+                                                <button 
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIsFlipped(!isFlipped);
+                                                    }}
+                                                    className="hover:text-[var(--primary)] transition-all flex items-center gap-1.5"
+                                                >
+                                                    🔄 Tap to Flip Card
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const canvas = document.getElementById(`qr-canvas-profile-${userCard.id}`) as HTMLCanvasElement;
+                                                        if (canvas) {
+                                                            const link = document.createElement('a');
+                                                            link.download = `MCB-Card-QR-${userCard.fullName.replace(/\s+/g, '-')}.png`;
+                                                            link.href = canvas.toDataURL();
+                                                            link.click();
+                                                            toast.success("QR Code downloaded successfully!");
+                                                        } else {
+                                                            toast.error("Could not generate download file.");
+                                                        }
+                                                    }}
+                                                    className="hover:text-[var(--primary)] transition-all flex items-center gap-1.5"
+                                                >
+                                                    📥 Save QR Code
+                                                </button>
+                                            </div>
 
-                                        {/* Physical card programming utility via Web NFC */}
-                                        <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-4">
-                                            <h4 className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                                                Physical NFC Programming
-                                            </h4>
-                                            <p className="text-[10px] leading-relaxed text-[var(--text-secondary)] font-medium">
-                                                Have a blank physical NFC business card or tag? You can directly program it using your phone or web browser!
-                                            </p>
-                                            <button 
-                                                onClick={handleWriteNFC}
-                                                disabled={nfcWriting}
-                                                className={cn(
-                                                    "w-full py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border transition-all duration-300",
-                                                    nfcSuccess ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-[var(--primary)] text-white hover:scale-102"
-                                                )}
-                                            >
-                                                <Globe size={12} className={nfcWriting ? "animate-spin" : ""} />
-                                                {nfcWriting ? 'Align tag to writer...' : (nfcSuccess ? 'Tag Programmed!' : 'Program Physical NFC')}
-                                            </button>
+                                            {/* Physical card programming utility via Web NFC */}
+                                            <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-4">
+                                                <h4 className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                    Physical NFC Programming
+                                                </h4>
+                                                <p className="text-[10px] leading-relaxed text-[var(--text-secondary)] font-medium">
+                                                    Have a blank physical NFC business card or tag? You can directly program it using your phone or web browser!
+                                                </p>
+                                                <button 
+                                                    type="button"
+                                                    onClick={handleWriteNFC}
+                                                    disabled={nfcWriting}
+                                                    className={cn(
+                                                        "w-full py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border transition-all duration-300",
+                                                        nfcSuccess ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-[var(--primary)] text-white hover:scale-102"
+                                                    )}
+                                                >
+                                                    <Globe size={12} className={nfcWriting ? "animate-spin" : ""} />
+                                                    {nfcWriting ? 'Align tag to writer...' : (nfcSuccess ? 'Tag Programmed!' : 'Program Physical NFC')}
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : (
+                                     );
+                                 })() : (
                                     <div className="p-10 border border-dashed border-[var(--border-subtle)] rounded-3xl text-center space-y-4">
                                         <p className="text-xs text-[var(--text-muted)] font-medium italic">
                                             An IT administrator has not generated your digital call card yet. Please reach out to your IT department to activate your networking card.

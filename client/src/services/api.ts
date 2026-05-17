@@ -2,8 +2,10 @@ import axios from 'axios';
 import { storage, StorageKey } from './storage';
 import type { User } from '../types/models';
 
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://mcb-ghana-hrm-api.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || (isLocalhost ? '/api' : 'https://mcb-ghana-hrm-api.onrender.com/api'),
 });
 
 let isRefreshing = false;

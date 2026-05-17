@@ -38,9 +38,10 @@ const statusBadge: Record<string, string> = {
   TERMINATED: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10'
 };
 
-const themeConfig: Record<string, {
+export interface ThemeStyles {
   bg: string;
   cardBg: string;
+  cardBorder: string;
   accentText: string;
   badgeBg: string;
   primaryBtn: string;
@@ -48,86 +49,160 @@ const themeConfig: Record<string, {
   textColor: string;
   titleColor: string;
   chipColor: string;
-  cardBorder: string;
-}> = {
-  MCB_LIGHT_GOLD: {
-    bg: "bg-gradient-to-br from-[#FAF9F6] via-[#F5F2EB] to-[#EAE6DF]",
-    cardBg: "bg-white/85 backdrop-blur-md",
-    cardBorder: "border-[#d4af37]/40 shadow-[0_8px_30px_rgb(212,175,55,0.06)]",
-    accentText: "text-[#b69248]",
-    badgeBg: "bg-[#d4af37]/10 border-[#d4af37]/20 text-[#b69248]",
-    primaryBtn: "bg-gradient-to-r from-[#d4af37] to-[#b69248] text-white",
-    iconBg: "bg-[#d4af37]/5 border-[#d4af37]/10 text-[#b69248] hover:bg-[#d4af37]/10",
-    textColor: "text-[#4a5568]",
-    titleColor: "text-[#1a202c]",
-    chipColor: "bg-[#d4af37]/20 border-[#d4af37]/40 text-[#b69248]"
-  },
-  MCB_LIGHT_NAVY: {
-    bg: "bg-gradient-to-br from-[#F4F6F9] via-[#EBF0F5] to-[#E2E8F0]",
-    cardBg: "bg-white/90 backdrop-blur-md",
-    cardBorder: "border-[#0A2540]/20 shadow-[0_8px_30px_rgb(10,37,64,0.06)]",
-    accentText: "text-[#0A2540]",
-    badgeBg: "bg-[#0A2540]/5 border-[#0A2540]/10 text-[#0A2540]",
-    primaryBtn: "bg-gradient-to-r from-[#0A2540] to-[#1e3a8a] text-white",
-    iconBg: "bg-[#0A2540]/5 border-[#0A2540]/10 text-[#0A2540] hover:bg-[#0A2540]/10",
-    textColor: "text-[#4a5568]",
-    titleColor: "text-[#0A2540]",
-    chipColor: "bg-[#0A2540]/10 border-[#0A2540]/25 text-[#0A2540]"
-  },
-  GHANA_SUNSHINE_LIGHT: {
-    bg: "bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3ECE0]",
-    cardBg: "bg-white/85 backdrop-blur-md",
-    cardBorder: "border-yellow-500/30 shadow-[0_8px_30px_rgba(234,179,8,0.05)]",
-    accentText: "text-emerald-700",
-    badgeBg: "bg-emerald-500/10 border-emerald-500/20 text-emerald-700",
-    primaryBtn: "bg-gradient-to-r from-emerald-600 via-yellow-500 to-red-600 text-white",
-    iconBg: "bg-emerald-500/5 border-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10",
-    textColor: "text-[#4a5568]",
-    titleColor: "text-slate-800",
-    chipColor: "bg-yellow-500/20 border-yellow-500/40 text-yellow-700"
-  },
-  MIDNIGHT_LUXURY: {
-    bg: "bg-gradient-to-br from-[#0d0f12] via-[#08090a] to-[#040405]",
-    cardBg: "bg-[#171a21]/50 backdrop-blur-2xl",
-    cardBorder: "border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]",
-    accentText: "text-blue-400",
-    badgeBg: "bg-blue-400/10 border-blue-400/20 text-blue-400",
-    primaryBtn: "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white",
-    iconBg: "bg-white/5 border-white/10 text-white hover:bg-white/20",
-    textColor: "text-gray-300",
-    titleColor: "text-white",
-    chipColor: "bg-blue-500/20 border-blue-500/40 text-blue-400"
-  },
-  MCB_GOLD: {
-    bg: "bg-gradient-to-br from-[#0c1c15] via-[#050b07] to-[#040605]",
-    cardBg: "bg-[#11241a]/60 backdrop-blur-2xl",
-    cardBorder: "border-[#dfb76c]/30 shadow-[0_8px_30px_rgba(0,0,0,0.6)]",
-    accentText: "text-[#dfb76c]",
-    badgeBg: "bg-[#dfb76c]/10 border-[#dfb76c]/20 text-[#dfb76c]",
-    primaryBtn: "bg-gradient-to-r from-[#dfb76c] to-[#b69248] text-[#050b07]",
-    iconBg: "bg-[#dfb76c]/5 border-[#dfb76c]/10 text-[#dfb76c] hover:bg-[#dfb76c]/20",
-    textColor: "text-[#e2e8f0]",
-    titleColor: "text-white",
-    chipColor: "bg-[#dfb76c]/20 border-[#dfb76c]/40 text-[#dfb76c]"
-  },
-  GHANA_SUNSHINE: {
-    bg: "bg-gradient-to-br from-[#1c0808] via-[#0c0505] to-[#050202]",
-    cardBg: "bg-[#251010]/60 backdrop-blur-2xl",
-    cardBorder: "border-red-500/30 shadow-[0_8px_30px_rgba(0,0,0,0.6)]",
-    accentText: "text-[#f97316]",
-    badgeBg: "bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]",
-    primaryBtn: "bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white",
-    iconBg: "bg-[#f97316]/5 border-[#f97316]/10 text-[#f97316] hover:bg-[#f97316]/20",
-    textColor: "text-[#fed7aa]",
-    titleColor: "text-white",
-    chipColor: "bg-[#f97316]/20 border-[#f97316]/40 text-[#f97316]"
+  isDark: boolean;
+  styles?: {
+    accentText?: React.CSSProperties;
+    badgeBg?: React.CSSProperties;
+    primaryBtn?: React.CSSProperties;
+    iconBg?: React.CSSProperties;
+    chip?: React.CSSProperties;
+  };
+}
+
+export const getThemeStyles = (themeName: string, primaryColor?: string, accentColor?: string): ThemeStyles => {
+  const brandPrimary = primaryColor || '#009EE3';
+  const brandAccent = accentColor || '#EE7100';
+
+  switch (themeName) {
+    case 'MCB_LIGHT_GOLD':
+      return {
+        bg: "bg-gradient-to-br from-[#FAF9F6] via-[#F5F2EB] to-[#EAE6DF]",
+        cardBg: "bg-white/85 backdrop-blur-md",
+        cardBorder: "border-[#d4af37]/30 shadow-[0_8px_30px_rgba(212,175,55,0.06)]",
+        accentText: "text-[#b69248]",
+        badgeBg: "bg-[#d4af37]/10 border-[#d4af37]/20 text-[#b69248]",
+        primaryBtn: "bg-gradient-to-r from-[#d4af37] to-[#b69248] text-white hover:shadow-[#d4af37]/20",
+        iconBg: "bg-[#d4af37]/5 border-[#d4af37]/10 text-[#b69248] hover:bg-[#d4af37]/10",
+        textColor: "text-[#4a5568]",
+        titleColor: "text-[#1a202c]",
+        chipColor: "bg-[#d4af37]/20 border-[#d4af37]/40 text-[#b69248]",
+        isDark: false,
+        styles: {
+          accentText: { color: '#b69248' },
+          badgeBg: { backgroundColor: 'rgba(212, 175, 55, 0.1)', borderColor: 'rgba(212, 175, 55, 0.2)', color: '#b69248' },
+          primaryBtn: { background: 'linear-gradient(135deg, #d4af37, #b69248)', color: '#ffffff' },
+          iconBg: { color: '#b69248' },
+          chip: { borderColor: '#d4af37', color: '#b69248' }
+        }
+      };
+
+    case 'MCB_LIGHT_NAVY':
+      return {
+        bg: "bg-gradient-to-br from-[#F4F8FA] via-[#EBF4FA] to-[#E2EDF5]",
+        cardBg: "bg-white/90 backdrop-blur-lg",
+        cardBorder: "border-[var(--brand-primary)]/20 shadow-[0_8px_32px_rgba(0,158,227,0.08)]",
+        accentText: "text-[var(--brand-accent)]",
+        badgeBg: "bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20 text-[var(--brand-primary)]",
+        primaryBtn: "bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-accent)] text-white hover:shadow-lg",
+        iconBg: "bg-[var(--brand-primary)]/5 border-[var(--brand-primary)]/10 text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10",
+        textColor: "text-slate-600",
+        titleColor: "text-slate-800",
+        chipColor: "bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/30 text-[var(--brand-primary)]",
+        isDark: false,
+        styles: {
+          accentText: { color: brandAccent },
+          badgeBg: { backgroundColor: `${brandPrimary}15`, borderColor: `${brandPrimary}30`, color: brandPrimary },
+          primaryBtn: { background: `linear-gradient(135deg, ${brandPrimary}, ${brandAccent})`, color: '#ffffff' },
+          iconBg: { color: brandPrimary },
+          chip: { borderColor: `${brandPrimary}50`, color: brandPrimary }
+        }
+      };
+
+    case 'GHANA_SUNSHINE_LIGHT':
+      return {
+        bg: "bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3ECE0]",
+        cardBg: "bg-white/85 backdrop-blur-md",
+        cardBorder: "border-amber-500/30 shadow-[0_8px_30px_rgba(245,158,11,0.05)]",
+        accentText: "text-amber-600",
+        badgeBg: "bg-amber-500/10 border-amber-500/20 text-amber-700",
+        primaryBtn: "bg-gradient-to-r from-red-500 via-yellow-500 to-emerald-600 text-white hover:shadow-emerald-500/20",
+        iconBg: "bg-amber-500/5 border-amber-500/10 text-amber-700 hover:bg-amber-500/10",
+        textColor: "text-slate-600",
+        titleColor: "text-slate-800",
+        chipColor: "bg-yellow-500/20 border-yellow-500/40 text-yellow-700",
+        isDark: false,
+        styles: {
+          accentText: { color: '#d97706' },
+          badgeBg: { backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)', color: '#b45309' },
+          primaryBtn: { background: 'linear-gradient(135deg, #ef4444, #f59e0b, #10b981)', color: '#ffffff' },
+          iconBg: { color: '#b45309' },
+          chip: { borderColor: '#f59e0b', color: '#b45309' }
+        }
+      };
+
+    case 'MIDNIGHT_LUXURY':
+      return {
+        bg: "bg-gradient-to-br from-[#0d0f12] via-[#08090a] to-[#040405]",
+        cardBg: "bg-[#171a21]/50 backdrop-blur-2xl",
+        cardBorder: "border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]",
+        accentText: "text-blue-400",
+        badgeBg: "bg-blue-400/10 border-blue-400/20 text-blue-400",
+        primaryBtn: "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white hover:shadow-blue-500/25",
+        iconBg: "bg-white/5 border-white/10 text-white hover:bg-white/20",
+        textColor: "text-gray-300",
+        titleColor: "text-white",
+        chipColor: "bg-blue-500/20 border-blue-500/40 text-blue-400",
+        isDark: true,
+        styles: {
+          accentText: { color: '#60a5fa' },
+          badgeBg: { backgroundColor: 'rgba(96, 165, 250, 0.1)', borderColor: 'rgba(96, 165, 250, 0.2)', color: '#60a5fa' },
+          primaryBtn: { background: 'linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6)', color: '#ffffff' },
+          iconBg: { color: '#60a5fa' },
+          chip: { borderColor: '#3b82f6', color: '#60a5fa' }
+        }
+      };
+
+    case 'GHANA_SUNSHINE':
+      return {
+        bg: "bg-gradient-to-br from-[#1c0808] via-[#0c0505] to-[#050202]",
+        cardBg: "bg-[#251010]/60 backdrop-blur-2xl",
+        cardBorder: "border-red-500/30 shadow-[0_8px_30px_rgba(239,68,68,0.3)]",
+        accentText: "text-[#f97316]",
+        badgeBg: "bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]",
+        primaryBtn: "bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white hover:shadow-orange-500/25",
+        iconBg: "bg-[#f97316]/5 border-[#f97316]/10 text-[#f97316] hover:bg-[#f97316]/20",
+        textColor: "text-[#fed7aa]",
+        titleColor: "text-white",
+        chipColor: "bg-red-500/20 border-red-500/40 text-red-400",
+        isDark: true,
+        styles: {
+          accentText: { color: '#f97316' },
+          badgeBg: { backgroundColor: 'rgba(249, 115, 22, 0.1)', borderColor: 'rgba(249, 115, 22, 0.2)', color: '#f97316' },
+          primaryBtn: { background: 'linear-gradient(135deg, #dc2626, #f97316, #eab308)', color: '#ffffff' },
+          iconBg: { color: '#f97316' },
+          chip: { borderColor: '#ef4444', color: '#f87171' }
+        }
+      };
+
+    case 'MCB_GOLD':
+    default:
+      return {
+        bg: "bg-gradient-to-br from-[#0c1c15] via-[#050b07] to-[#040605]",
+        cardBg: "bg-[#11241a]/60 backdrop-blur-2xl",
+        cardBorder: "border-[#dfb76c]/30 shadow-[0_8px_30px_rgba(0,0,0,0.6)]",
+        accentText: "text-[#dfb76c]",
+        badgeBg: "bg-[#dfb76c]/10 border-[#dfb76c]/20 text-[#dfb76c]",
+        primaryBtn: "bg-gradient-to-r from-[#dfb76c] to-[#b69248] text-[#050b07] hover:shadow-[#dfb76c]/20",
+        iconBg: "bg-[#dfb76c]/5 border-[#dfb76c]/10 text-[#dfb76c] hover:bg-[#dfb76c]/20",
+        textColor: "text-[#e2e8f0]",
+        titleColor: "text-white",
+        chipColor: "bg-[#dfb76c]/20 border-[#dfb76c]/40 text-[#dfb76c]",
+        isDark: true,
+        styles: {
+          accentText: { color: '#dfb76c' },
+          badgeBg: { backgroundColor: 'rgba(223, 183, 108, 0.1)', borderColor: 'rgba(223, 183, 108, 0.2)', color: '#dfb76c' },
+          primaryBtn: { background: 'linear-gradient(135deg, #dfb76c, #b69248)', color: '#050b07' },
+          iconBg: { color: '#dfb76c' },
+          chip: { borderColor: '#dfb76c', color: '#dfb76c' }
+        }
+      };
   }
 };
 
 const ITAdmin = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { refreshSettings } = useTheme();
+  const { settings, refreshSettings } = useTheme();
   const [overview, setOverview] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -757,7 +832,11 @@ const ITAdmin = () => {
                              {/* Live Theme Preview & QR Hub */}
                               <div className="xl:col-span-5 space-y-8">
                                  {(() => {
-                                    const activeTheme = themeConfig[cardData.theme] || themeConfig.MCB_LIGHT_GOLD;
+                                    const primaryCol = settings?.primaryColor || '#009EE3';
+                                    const accentCol = settings?.accentColor || '#EE7100';
+                                    const logoSrc = settings?.logoUrl || settings?.companyLogoUrl || '';
+                                    const themeStyles = getThemeStyles(cardData.theme || 'MCB_LIGHT_GOLD', primaryCol, accentCol);
+
                                     return (
                                        <div className="flex flex-col items-center space-y-4">
                                           <div className="flex justify-between items-center w-full px-2">
@@ -779,15 +858,21 @@ const ITAdmin = () => {
                                           >
                                              <div className={cn("card-flip-inner shadow-2xl rounded-[24px] transition-transform duration-700", isFlipped && "card-flipped")}>
                                                 {/* Front Side */}
-                                                <div className={cn("card-flip-front p-6 border flex flex-col justify-between overflow-hidden", activeTheme.bg, activeTheme.cardBg, activeTheme.cardBorder)}>
+                                                <div className={cn("card-flip-front p-6 border flex flex-col justify-between overflow-hidden", themeStyles.bg, themeStyles.cardBg, themeStyles.cardBorder)}>
                                                    {/* Top branding */}
                                                    <div className="flex justify-between items-start">
-                                                      <span className={cn("px-2 py-0.5 rounded-full border text-[7px] font-black uppercase tracking-widest", activeTheme.badgeBg)}>
+                                                      <span className={cn("px-2 py-0.5 rounded-full border text-[7px] font-black uppercase tracking-widest", themeStyles.badgeBg)} style={themeStyles.styles?.badgeBg}>
                                                          {cardData.isActive !== false ? "Active Card" : "Suspended"}
                                                       </span>
-                                                      <div className="text-right">
-                                                         <h4 className={cn("text-[11px] font-black tracking-widest uppercase", activeTheme.titleColor)}>MCB</h4>
-                                                         <p className="text-[5px] font-black uppercase text-gray-400">Ghana</p>
+                                                      <div className="flex items-center gap-2">
+                                                         {logoSrc ? (
+                                                            <img src={logoSrc} alt="Company Logo" className="h-6 max-w-[80px] object-contain" />
+                                                         ) : (
+                                                            <div className="text-right">
+                                                               <h4 className={cn("text-[11px] font-black tracking-widest uppercase", themeStyles.titleColor)}>MCB</h4>
+                                                               <p className="text-[5px] font-black uppercase text-gray-400">Ghana</p>
+                                                            </div>
+                                                         )}
                                                       </div>
                                                    </div>
 
@@ -799,19 +884,19 @@ const ITAdmin = () => {
 
                                                    {/* User details */}
                                                    <div className="flex items-center gap-4 mt-auto">
-                                                      <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center font-black text-[11px] border p-0.5 shadow-sm shrink-0", activeTheme.chipColor)}>
+                                                      <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center font-black text-[11px] border p-0.5 shadow-sm shrink-0", themeStyles.chipColor)} style={themeStyles.styles?.chip}>
                                                          {cardData.fullName?.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC'}
                                                       </div>
                                                       <div className="min-w-0">
-                                                         <h4 className={cn("font-black text-[13px] uppercase truncate tracking-wide", activeTheme.titleColor)}>{cardData.fullName || 'Name Placeholder'}</h4>
-                                                         <p className={cn("text-[9px] font-bold uppercase tracking-wider", activeTheme.accentText)}>{cardData.jobTitle || 'Role Title'}</p>
+                                                         <h4 className={cn("font-black text-[13px] uppercase truncate tracking-wide", themeStyles.titleColor)}>{cardData.fullName || 'Name Placeholder'}</h4>
+                                                         <p className={cn("text-[9px] font-bold uppercase tracking-wider", themeStyles.accentText)} style={themeStyles.styles?.accentText}>{cardData.jobTitle || 'Role Title'}</p>
                                                          {cardData.department && <p className="text-[7px] text-gray-400 font-bold uppercase">{cardData.department}</p>}
                                                       </div>
                                                    </div>
 
                                                    {/* Bio / statement */}
                                                    {cardData.bio && (
-                                                      <p className={cn("text-[8px] leading-relaxed italic border-l pl-2 mt-2 line-clamp-1 opacity-90", activeTheme.accentText === 'text-[#dfb76c]' ? 'border-[#dfb76c]/40' : 'border-gray-300')}>
+                                                      <p className={cn("text-[8px] leading-relaxed italic border-l pl-2 mt-2 line-clamp-1 opacity-90")} style={{ borderColor: accentCol, ...themeStyles.styles?.accentText }}>
                                                          "{cardData.bio}"
                                                       </p>
                                                    )}
@@ -819,18 +904,18 @@ const ITAdmin = () => {
                                                    {/* Footer Channels */}
                                                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200/10 text-[8px] font-bold text-gray-400">
                                                       <div className="truncate flex items-center gap-1.5 max-w-[50%]">
-                                                         <Mail size={10} className={activeTheme.accentText} /> 
+                                                         <Mail size={10} className={themeStyles.accentText} style={themeStyles.styles?.accentText} /> 
                                                          <span className="truncate">{cardData.email || 'No Email'}</span>
                                                       </div>
                                                       <div className="truncate flex items-center gap-1.5 max-w-[50%]">
-                                                         <Phone size={10} className={activeTheme.accentText} /> 
+                                                         <Phone size={10} className={themeStyles.accentText} style={themeStyles.styles?.accentText} /> 
                                                          <span className="truncate">{cardData.phone || 'No Phone'}</span>
                                                       </div>
                                                    </div>
                                                 </div>
 
                                                 {/* Back Side */}
-                                                <div className={cn("card-flip-back p-6 border flex flex-col items-center justify-between overflow-hidden", activeTheme.bg, activeTheme.cardBg, activeTheme.cardBorder)}>
+                                                <div className={cn("card-flip-back p-6 border flex flex-col items-center justify-between overflow-hidden", themeStyles.bg, themeStyles.cardBg, themeStyles.cardBorder)}>
                                                    <div className="flex justify-between items-center w-full">
                                                       <div className="flex items-center gap-1 text-[8px] font-bold text-gray-400">
                                                          {/* Wave contactless icon */}
@@ -839,32 +924,36 @@ const ITAdmin = () => {
                                                             <span className="text-[7px] uppercase font-black tracking-widest">NFC Contactless</span>
                                                          </div>
                                                       </div>
-                                                      <div className="text-right">
-                                                         <h4 className={cn("text-[10px] font-black tracking-widest uppercase", activeTheme.titleColor)}>MCB</h4>
-                                                         <p className="text-[4px] font-black uppercase text-gray-400">Ghana</p>
-                                                      </div>
+                                                      {logoSrc ? (
+                                                         <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[70px] object-contain" />
+                                                      ) : (
+                                                         <div className="text-right">
+                                                            <h4 className={cn("text-[10px] font-black tracking-widest uppercase", themeStyles.titleColor)}>MCB</h4>
+                                                            <p className="text-[4px] font-black uppercase text-gray-400">Ghana</p>
+                                                         </div>
+                                                      )}
                                                    </div>
 
                                                    {/* QR Code Container centered */}
                                                    <div className="flex flex-col items-center justify-center my-auto space-y-2">
                                                       <div className="p-2 bg-white rounded-xl shadow-inner border border-gray-100 flex items-center justify-center">
-                                                         {cardData.id ? (
-                                                            <QRCodeCanvas 
-                                                               id="card-qr-canvas"
-                                                               value={`${window.location.origin}/shared-card/${cardData.id}`}
-                                                               size={80}
-                                                               level="H"
-                                                               includeMargin={true}
-                                                            />
-                                                         ) : (
-                                                            <div className="w-[80px] h-[80px] bg-gray-100 flex flex-col items-center justify-center text-[7px] text-gray-400 font-bold uppercase">
-                                                               <QrCode size={20} className="mb-1 opacity-40 animate-pulse" />
-                                                               Unsaved
-                                                            </div>
-                                                         )}
+                                                         {(() => {
+                                                            const qrValue = cardData.id 
+                                                               ? `${window.location.origin}/shared-card/${cardData.id}`
+                                                               : `${window.location.origin}/shared-card/preview/${selectedCardEmployee?.id || 'temp_preview'}`;
+                                                            return (
+                                                               <QRCodeCanvas 
+                                                                  id="card-qr-canvas"
+                                                                  value={qrValue}
+                                                                  size={80}
+                                                                  level="H"
+                                                                  includeMargin={true}
+                                                               />
+                                                            );
+                                                         })()}
                                                       </div>
                                                       <div className="text-center">
-                                                         <p className={cn("text-[7px] font-black tracking-widest uppercase", activeTheme.accentText)}>Scan to Connect</p>
+                                                         <p className={cn("text-[7px] font-black tracking-widest uppercase", themeStyles.accentText)} style={themeStyles.styles?.accentText}>Scan to Connect</p>
                                                          <p className="text-[5px] text-gray-400 font-bold">Touchless QR/NFC Technology</p>
                                                       </div>
                                                    </div>
@@ -884,54 +973,61 @@ const ITAdmin = () => {
                                           <div className="nx-card p-6 border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col items-center text-center space-y-4 w-full rounded-3xl mt-4">
                                              <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">QR & NFC Assets</h4>
                                              
-                                             {cardData.id ? (
-                                                <div className="space-y-4 flex flex-col items-center w-full">
-                                                   <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[240px]">
-                                                      Scan this QR to open the mobile-optimized business card in real-time.
-                                                   </p>
+                                             {(() => {
+                                                const hasId = !!cardData.id;
+                                                return (
+                                                   <div className="space-y-4 flex flex-col items-center w-full">
+                                                      <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[240px]">
+                                                         {hasId 
+                                                            ? "Scan this QR to open the mobile-optimized business card in real-time."
+                                                            : "Workable preview QR code. Once committed, this points to the hosted profile."}
+                                                      </p>
 
-                                                   <div className="flex gap-3 w-full">
-                                                      <button 
-                                                         type="button"
-                                                         onClick={() => {
-                                                            const canvas = document.getElementById('card-qr-canvas') as HTMLCanvasElement;
-                                                            if (!canvas) {
-                                                               toast.error("QR Code canvas not found. Make sure the card is flipped to the QR side to generate it!");
-                                                               return;
-                                                            }
-                                                            const url = canvas.toDataURL('image/png');
-                                                            const link = document.createElement('a');
-                                                            link.href = url;
-                                                            link.download = `QR_${cardData.fullName.replace(/\s+/g, '_')}.png`;
-                                                            document.body.appendChild(link);
-                                                            link.click();
-                                                            document.body.removeChild(link);
-                                                         }}
-                                                         className="flex-1 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center justify-center gap-2 hover:bg-[var(--bg-sidebar-active)] transition-all"
-                                                      >
-                                                         <Download size={12} /> Export QR PNG
-                                                      </button>
-                                                      
-                                                      <Link 
-                                                         to={`/shared-card/${cardData.id}`}
-                                                         target="_blank"
-                                                         className="flex-1 h-12 rounded-xl bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-transform"
-                                                      >
-                                                         <Eye size={12} /> View Card
-                                                      </Link>
+                                                      <div className="flex gap-3 w-full">
+                                                         <button 
+                                                            type="button"
+                                                            onClick={() => {
+                                                               const canvas = document.getElementById('card-qr-canvas') as HTMLCanvasElement;
+                                                               if (!canvas) {
+                                                                  toast.error("QR Code canvas not found. Make sure the card is flipped to the QR side to generate it!");
+                                                                  return;
+                                                               }
+                                                               const url = canvas.toDataURL('image/png');
+                                                               const link = document.createElement('a');
+                                                               link.href = url;
+                                                               link.download = `QR_${(cardData.fullName || 'Employee').replace(/\s+/g, '_')}.png`;
+                                                               document.body.appendChild(link);
+                                                               link.click();
+                                                               document.body.removeChild(link);
+                                                               toast.success("QR Code downloaded successfully!");
+                                                            }}
+                                                            className="flex-1 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center justify-center gap-2 hover:bg-[var(--bg-sidebar-active)] transition-all"
+                                                         >
+                                                            <Download size={12} /> Export QR PNG
+                                                         </button>
+                                                         
+                                                         <Link 
+                                                            to={hasId ? `/shared-card/${cardData.id}` : '#'}
+                                                            onClick={(e) => {
+                                                               if (!hasId) {
+                                                                  e.preventDefault();
+                                                                  toast.info("Please click 'Commit Card Configurations' first to save and enable live hosting.");
+                                                               }
+                                                            }}
+                                                            target={hasId ? "_blank" : undefined}
+                                                            className={cn(
+                                                               "flex-1 h-12 rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-transform",
+                                                               hasId 
+                                                                  ? "bg-[var(--primary)] text-white" 
+                                                                  : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-50"
+                                                            )}
+                                                         >
+                                                            <Eye size={12} /> View Card
+                                                         </Link>
+                                                      </div>
                                                    </div>
-                                                </div>
-                                             ) : (
-                                                <div className="py-4 flex flex-col items-center gap-2">
-                                                   <QrCode className="text-[var(--text-muted)] opacity-30" size={32} />
-                                                   <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-[8px] font-black uppercase tracking-wider animate-pulse">
-                                                      Pending Save
-                                                   </span>
-                                                   <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[220px]">
-                                                      Please click "Commit Card Configurations" first to generate the hosted QR target link.
-                                                   </p>
-                                                </div>
-                                             )}
+                                                );
+                                             })()}
                                           </div>
                                        </div>
                                     );
