@@ -132,6 +132,16 @@ const getDashboardStats = async (req, res) => {
         const attendanceRate = totalPotentialLogs > 0
             ? Math.min(100, Math.round((presentLogs / totalPotentialLogs) * 100))
             : 0;
+        // Check if the current user is on leave (Out of Office)
+        const today = new Date();
+        const activeLeave = await client_1.default.leaveRequest.findFirst({
+            where: {
+                employeeId: user.id,
+                status: 'APPROVED',
+                startDate: { lte: today },
+                endDate: { gte: today },
+            },
+        });
         res.json({
             avgPerformance: Math.round(currentPerf),
             performanceChange: formatChange(currentPerf, previousPerf),
@@ -144,7 +154,8 @@ const getDashboardStats = async (req, res) => {
             myClaims: Number(personalExpenses._sum.amount || 0),
             activeTickets,
             attendanceRate,
-            headcount: totalUsers
+            headcount: totalUsers,
+            isOnLeave: !!activeLeave
         });
     }
     catch (error) {

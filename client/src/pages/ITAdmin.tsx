@@ -38,6 +38,92 @@ const statusBadge: Record<string, string> = {
   TERMINATED: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10'
 };
 
+const themeConfig: Record<string, {
+  bg: string;
+  cardBg: string;
+  accentText: string;
+  badgeBg: string;
+  primaryBtn: string;
+  iconBg: string;
+  textColor: string;
+  titleColor: string;
+  chipColor: string;
+  cardBorder: string;
+}> = {
+  MCB_LIGHT_GOLD: {
+    bg: "bg-gradient-to-br from-[#FAF9F6] via-[#F5F2EB] to-[#EAE6DF]",
+    cardBg: "bg-white/85 backdrop-blur-md",
+    cardBorder: "border-[#d4af37]/40 shadow-[0_8px_30px_rgb(212,175,55,0.06)]",
+    accentText: "text-[#b69248]",
+    badgeBg: "bg-[#d4af37]/10 border-[#d4af37]/20 text-[#b69248]",
+    primaryBtn: "bg-gradient-to-r from-[#d4af37] to-[#b69248] text-white",
+    iconBg: "bg-[#d4af37]/5 border-[#d4af37]/10 text-[#b69248] hover:bg-[#d4af37]/10",
+    textColor: "text-[#4a5568]",
+    titleColor: "text-[#1a202c]",
+    chipColor: "bg-[#d4af37]/20 border-[#d4af37]/40 text-[#b69248]"
+  },
+  MCB_LIGHT_NAVY: {
+    bg: "bg-gradient-to-br from-[#F4F6F9] via-[#EBF0F5] to-[#E2E8F0]",
+    cardBg: "bg-white/90 backdrop-blur-md",
+    cardBorder: "border-[#0A2540]/20 shadow-[0_8px_30px_rgb(10,37,64,0.06)]",
+    accentText: "text-[#0A2540]",
+    badgeBg: "bg-[#0A2540]/5 border-[#0A2540]/10 text-[#0A2540]",
+    primaryBtn: "bg-gradient-to-r from-[#0A2540] to-[#1e3a8a] text-white",
+    iconBg: "bg-[#0A2540]/5 border-[#0A2540]/10 text-[#0A2540] hover:bg-[#0A2540]/10",
+    textColor: "text-[#4a5568]",
+    titleColor: "text-[#0A2540]",
+    chipColor: "bg-[#0A2540]/10 border-[#0A2540]/25 text-[#0A2540]"
+  },
+  GHANA_SUNSHINE_LIGHT: {
+    bg: "bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3ECE0]",
+    cardBg: "bg-white/85 backdrop-blur-md",
+    cardBorder: "border-yellow-500/30 shadow-[0_8px_30px_rgba(234,179,8,0.05)]",
+    accentText: "text-emerald-700",
+    badgeBg: "bg-emerald-500/10 border-emerald-500/20 text-emerald-700",
+    primaryBtn: "bg-gradient-to-r from-emerald-600 via-yellow-500 to-red-600 text-white",
+    iconBg: "bg-emerald-500/5 border-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10",
+    textColor: "text-[#4a5568]",
+    titleColor: "text-slate-800",
+    chipColor: "bg-yellow-500/20 border-yellow-500/40 text-yellow-700"
+  },
+  MIDNIGHT_LUXURY: {
+    bg: "bg-gradient-to-br from-[#0d0f12] via-[#08090a] to-[#040405]",
+    cardBg: "bg-[#171a21]/50 backdrop-blur-2xl",
+    cardBorder: "border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]",
+    accentText: "text-blue-400",
+    badgeBg: "bg-blue-400/10 border-blue-400/20 text-blue-400",
+    primaryBtn: "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white",
+    iconBg: "bg-white/5 border-white/10 text-white hover:bg-white/20",
+    textColor: "text-gray-300",
+    titleColor: "text-white",
+    chipColor: "bg-blue-500/20 border-blue-500/40 text-blue-400"
+  },
+  MCB_GOLD: {
+    bg: "bg-gradient-to-br from-[#0c1c15] via-[#050b07] to-[#040605]",
+    cardBg: "bg-[#11241a]/60 backdrop-blur-2xl",
+    cardBorder: "border-[#dfb76c]/30 shadow-[0_8px_30px_rgba(0,0,0,0.6)]",
+    accentText: "text-[#dfb76c]",
+    badgeBg: "bg-[#dfb76c]/10 border-[#dfb76c]/20 text-[#dfb76c]",
+    primaryBtn: "bg-gradient-to-r from-[#dfb76c] to-[#b69248] text-[#050b07]",
+    iconBg: "bg-[#dfb76c]/5 border-[#dfb76c]/10 text-[#dfb76c] hover:bg-[#dfb76c]/20",
+    textColor: "text-[#e2e8f0]",
+    titleColor: "text-white",
+    chipColor: "bg-[#dfb76c]/20 border-[#dfb76c]/40 text-[#dfb76c]"
+  },
+  GHANA_SUNSHINE: {
+    bg: "bg-gradient-to-br from-[#1c0808] via-[#0c0505] to-[#050202]",
+    cardBg: "bg-[#251010]/60 backdrop-blur-2xl",
+    cardBorder: "border-red-500/30 shadow-[0_8px_30px_rgba(0,0,0,0.6)]",
+    accentText: "text-[#f97316]",
+    badgeBg: "bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]",
+    primaryBtn: "bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white",
+    iconBg: "bg-[#f97316]/5 border-[#f97316]/10 text-[#f97316] hover:bg-[#f97316]/20",
+    textColor: "text-[#fed7aa]",
+    titleColor: "text-white",
+    chipColor: "bg-[#f97316]/20 border-[#f97316]/40 text-[#f97316]"
+  }
+};
+
 const ITAdmin = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -79,6 +165,7 @@ const ITAdmin = () => {
   });
   const [loadingCard, setLoadingCard] = useState(false);
   const [savingCard, setSavingCard] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
     const fetchCardDetails = async () => {
@@ -560,12 +647,15 @@ const ITAdmin = () => {
                                              <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Corporate Theme</label>
                                              <select 
                                                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none"
-                                                value={cardData.theme || 'MCB_GOLD'}
+                                                value={cardData.theme || 'MCB_LIGHT_GOLD'}
                                                 onChange={e => setCardData((prev: any) => ({ ...prev, theme: e.target.value }))}
                                              >
-                                                <option value="MCB_GOLD">MCB Corporate Gold</option>
-                                                <option value="MIDNIGHT_LUXURY">Midnight Luxury</option>
-                                                <option value="GHANA_SUNSHINE">Ghana Sunshine</option>
+                                                <option value="MCB_LIGHT_GOLD">⚜️ MCB Prestige Light Gold</option>
+                                                <option value="MCB_LIGHT_NAVY">⚓ MCB Corporate Light Navy</option>
+                                                <option value="GHANA_SUNSHINE_LIGHT">☀️ Ghana Sunshine Light</option>
+                                                <option value="MIDNIGHT_LUXURY">🌌 Midnight Luxury (Dark)</option>
+                                                <option value="MCB_GOLD">🏆 MCB Corporate Gold (Dark)</option>
+                                                <option value="GHANA_SUNSHINE">🔥 Ghana Sunshine (Dark)</option>
                                              </select>
                                           </div>
                                        </div>
@@ -665,122 +755,188 @@ const ITAdmin = () => {
                              </form>
 
                              {/* Live Theme Preview & QR Hub */}
-                             <div className="xl:col-span-5 space-y-8">
-                                {/* Visual Card Mini Preview */}
-                                <div className={cn(
-                                   "p-6 rounded-[2.5rem] border relative overflow-hidden space-y-6 shadow-xl transition-all duration-500",
-                                   cardData.theme === 'MCB_GOLD' ? "bg-gradient-to-br from-[#0c1c15] to-[#040605] border-[#dfb76c]/30 text-white" :
-                                   cardData.theme === 'GHANA_SUNSHINE' ? "bg-gradient-to-br from-[#1c0808] to-[#050202] border-red-500/30 text-white" :
-                                   "bg-[#171a21] border-white/10 text-white"
-                                )}>
-                                   <div className="flex justify-between items-start">
-                                      <span className={cn(
-                                         "px-2 py-0.5 rounded-full border text-[6px] font-black uppercase tracking-widest",
-                                         cardData.theme === 'MCB_GOLD' ? "bg-[#dfb76c]/10 border-[#dfb76c]/20 text-[#dfb76c]" :
-                                         cardData.theme === 'GHANA_SUNSHINE' ? "bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]" :
-                                         "bg-blue-400/10 border-blue-400/20 text-blue-400"
-                                      )}>
-                                         Preview Frame
-                                      </span>
-                                      <div className="text-right">
-                                         <h4 className="text-[10px] font-black tracking-widest uppercase">MCB</h4>
-                                         <p className="text-[5px] font-black uppercase text-gray-500">Ghana</p>
-                                      </div>
-                                   </div>
-
-                                   <div className="flex items-center gap-4">
-                                      <div className={cn(
-                                         "w-12 h-12 rounded-xl flex items-center justify-center font-black text-xs border p-0.5",
-                                         cardData.theme === 'MCB_GOLD' ? "border-[#dfb76c] bg-[#dfb76c]/5 text-[#dfb76c]" :
-                                         cardData.theme === 'GHANA_SUNSHINE' ? "border-orange-500 bg-[#f97316]/5 text-[#f97316]" :
-                                         "border-blue-400 bg-white/5 text-white"
-                                      )}>
-                                         {cardData.fullName?.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC'}
-                                      </div>
-                                      <div className="min-w-0">
-                                         <h4 className="font-black text-[14px] uppercase truncate">{cardData.fullName || 'Name Placeholder'}</h4>
-                                         <p className={cn(
-                                            "text-[9px] font-bold uppercase",
-                                            cardData.theme === 'MCB_GOLD' ? "text-[#dfb76c]" :
-                                            cardData.theme === 'GHANA_SUNSHINE' ? "text-[#f97316]" :
-                                            "text-blue-400"
-                                         )}>{cardData.jobTitle || 'Role Title'}</p>
-                                      </div>
-                                   </div>
-
-                                   {cardData.bio && (
-                                       <p className="text-[9px] leading-relaxed italic opacity-80 border-l border-white/20 pl-3">
-                                          "{cardData.bio}"
-                                       </p>
-                                   )}
-
-                                   <div className="grid grid-cols-2 gap-2 text-[8px] font-bold text-gray-400">
-                                      {cardData.email && <div className="truncate flex items-center gap-1.5"><Mail size={10} /> {cardData.email}</div>}
-                                      {cardData.phone && <div className="truncate flex items-center gap-1.5"><Phone size={10} /> {cardData.phone}</div>}
-                                   </div>
-                                </div>
-
-                                {/* QR Code & Export Card */}
-                                <div className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col items-center text-center space-y-6">
-                                   <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">QR/NFC Asset Portal</h4>
-                                   
-                                   {cardData.id ? (
-                                       <div className="space-y-6 flex flex-col items-center w-full">
-                                          <div className="p-4 bg-white rounded-2xl shadow-inner border border-gray-100 relative group">
-                                             <QRCodeCanvas 
-                                                id="card-qr-canvas"
-                                                value={`${window.location.origin}/shared-card/${cardData.id}`}
-                                                size={160}
-                                                level="H"
-                                                includeMargin={true}
-                                             />
-                                          </div>
-                                          
-                                          <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[200px]">
-                                             Scan this QR to open the mobile-optimized business card in real-time.
-                                          </p>
-
-                                          <div className="flex gap-3 w-full">
+                              <div className="xl:col-span-5 space-y-8">
+                                 {(() => {
+                                    const activeTheme = themeConfig[cardData.theme] || themeConfig.MCB_LIGHT_GOLD;
+                                    return (
+                                       <div className="flex flex-col items-center space-y-4">
+                                          <div className="flex justify-between items-center w-full px-2">
+                                             <span className="px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[8px] font-black uppercase tracking-widest text-[var(--primary)]">
+                                                3D Interactive Card Preview
+                                             </span>
                                              <button 
                                                 type="button"
-                                                onClick={() => {
-                                                   const canvas = document.getElementById('card-qr-canvas') as HTMLCanvasElement;
-                                                   if (!canvas) return;
-                                                   const url = canvas.toDataURL('image/png');
-                                                   const link = document.createElement('a');
-                                                   link.href = url;
-                                                   link.download = `QR_${cardData.fullName.replace(/\s+/g, '_')}.png`;
-                                                   document.body.appendChild(link);
-                                                   link.click();
-                                                   document.body.removeChild(link);
-                                                }}
-                                                className="flex-1 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center justify-center gap-2 hover:bg-[var(--bg-sidebar-active)] transition-all"
+                                                onClick={() => setIsFlipped(prev => !prev)}
+                                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-[var(--primary)] hover:underline"
                                              >
-                                                <Download size={12} /> Export PNG
+                                                <Sparkles size={11} className="animate-pulse" /> Flip Card
                                              </button>
+                                          </div>
+
+                                          <div 
+                                             className="card-flip-container w-full cursor-pointer select-none"
+                                             onClick={() => setIsFlipped(prev => !prev)}
+                                          >
+                                             <div className={cn("card-flip-inner shadow-2xl rounded-[24px] transition-transform duration-700", isFlipped && "card-flipped")}>
+                                                {/* Front Side */}
+                                                <div className={cn("card-flip-front p-6 border flex flex-col justify-between overflow-hidden", activeTheme.bg, activeTheme.cardBg, activeTheme.cardBorder)}>
+                                                   {/* Top branding */}
+                                                   <div className="flex justify-between items-start">
+                                                      <span className={cn("px-2 py-0.5 rounded-full border text-[7px] font-black uppercase tracking-widest", activeTheme.badgeBg)}>
+                                                         {cardData.isActive !== false ? "Active Card" : "Suspended"}
+                                                      </span>
+                                                      <div className="text-right">
+                                                         <h4 className={cn("text-[11px] font-black tracking-widest uppercase", activeTheme.titleColor)}>MCB</h4>
+                                                         <p className="text-[5px] font-black uppercase text-gray-400">Ghana</p>
+                                                      </div>
+                                                   </div>
+
+                                                   {/* Hologram / Gold Chip Graphic for Premium Corporate look */}
+                                                   <div className="w-8 h-6 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 rounded-md border border-amber-400/40 relative shadow-inner overflow-hidden flex items-center justify-center">
+                                                      <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                                                      <div className="w-5 h-4 border border-amber-600/30 rounded flex flex-wrap opacity-50" />
+                                                   </div>
+
+                                                   {/* User details */}
+                                                   <div className="flex items-center gap-4 mt-auto">
+                                                      <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center font-black text-[11px] border p-0.5 shadow-sm shrink-0", activeTheme.chipColor)}>
+                                                         {cardData.fullName?.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC'}
+                                                      </div>
+                                                      <div className="min-w-0">
+                                                         <h4 className={cn("font-black text-[13px] uppercase truncate tracking-wide", activeTheme.titleColor)}>{cardData.fullName || 'Name Placeholder'}</h4>
+                                                         <p className={cn("text-[9px] font-bold uppercase tracking-wider", activeTheme.accentText)}>{cardData.jobTitle || 'Role Title'}</p>
+                                                         {cardData.department && <p className="text-[7px] text-gray-400 font-bold uppercase">{cardData.department}</p>}
+                                                      </div>
+                                                   </div>
+
+                                                   {/* Bio / statement */}
+                                                   {cardData.bio && (
+                                                      <p className={cn("text-[8px] leading-relaxed italic border-l pl-2 mt-2 line-clamp-1 opacity-90", activeTheme.accentText === 'text-[#dfb76c]' ? 'border-[#dfb76c]/40' : 'border-gray-300')}>
+                                                         "{cardData.bio}"
+                                                      </p>
+                                                   )}
+
+                                                   {/* Footer Channels */}
+                                                   <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200/10 text-[8px] font-bold text-gray-400">
+                                                      <div className="truncate flex items-center gap-1.5 max-w-[50%]">
+                                                         <Mail size={10} className={activeTheme.accentText} /> 
+                                                         <span className="truncate">{cardData.email || 'No Email'}</span>
+                                                      </div>
+                                                      <div className="truncate flex items-center gap-1.5 max-w-[50%]">
+                                                         <Phone size={10} className={activeTheme.accentText} /> 
+                                                         <span className="truncate">{cardData.phone || 'No Phone'}</span>
+                                                      </div>
+                                                   </div>
+                                                </div>
+
+                                                {/* Back Side */}
+                                                <div className={cn("card-flip-back p-6 border flex flex-col items-center justify-between overflow-hidden", activeTheme.bg, activeTheme.cardBg, activeTheme.cardBorder)}>
+                                                   <div className="flex justify-between items-center w-full">
+                                                      <div className="flex items-center gap-1 text-[8px] font-bold text-gray-400">
+                                                         {/* Wave contactless icon */}
+                                                         <div className="flex gap-1 items-center">
+                                                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+                                                            <span className="text-[7px] uppercase font-black tracking-widest">NFC Contactless</span>
+                                                         </div>
+                                                      </div>
+                                                      <div className="text-right">
+                                                         <h4 className={cn("text-[10px] font-black tracking-widest uppercase", activeTheme.titleColor)}>MCB</h4>
+                                                         <p className="text-[4px] font-black uppercase text-gray-400">Ghana</p>
+                                                      </div>
+                                                   </div>
+
+                                                   {/* QR Code Container centered */}
+                                                   <div className="flex flex-col items-center justify-center my-auto space-y-2">
+                                                      <div className="p-2 bg-white rounded-xl shadow-inner border border-gray-100 flex items-center justify-center">
+                                                         {cardData.id ? (
+                                                            <QRCodeCanvas 
+                                                               id="card-qr-canvas"
+                                                               value={`${window.location.origin}/shared-card/${cardData.id}`}
+                                                               size={80}
+                                                               level="H"
+                                                               includeMargin={true}
+                                                            />
+                                                         ) : (
+                                                            <div className="w-[80px] h-[80px] bg-gray-100 flex flex-col items-center justify-center text-[7px] text-gray-400 font-bold uppercase">
+                                                               <QrCode size={20} className="mb-1 opacity-40 animate-pulse" />
+                                                               Unsaved
+                                                            </div>
+                                                         )}
+                                                      </div>
+                                                      <div className="text-center">
+                                                         <p className={cn("text-[7px] font-black tracking-widest uppercase", activeTheme.accentText)}>Scan to Connect</p>
+                                                         <p className="text-[5px] text-gray-400 font-bold">Touchless QR/NFC Technology</p>
+                                                      </div>
+                                                   </div>
+
+                                                   <div className="text-[6px] font-black uppercase tracking-widest text-center text-gray-400 opacity-60">
+                                                      MCB Ghana HRM © 2026. All Corporate Rights Reserved.
+                                                   </div>
+                                                </div>
+                                             </div>
+                                          </div>
+                                          
+                                          <p className="text-[9px] font-bold text-[var(--text-muted)] italic flex items-center gap-1.5 justify-center animate-pulse mt-2">
+                                             🔄 Click anywhere on the card to flip between Front & Back
+                                          </p>
+
+                                          {/* QR Code & Export Card */}
+                                          <div className="nx-card p-6 border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col items-center text-center space-y-4 w-full rounded-3xl mt-4">
+                                             <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">QR & NFC Assets</h4>
                                              
-                                             <Link 
-                                                to={`/shared-card/${cardData.id}`}
-                                                target="_blank"
-                                                className="flex-1 h-12 rounded-xl bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-transform"
-                                             >
-                                                <Eye size={12} /> View Card
-                                             </Link>
+                                             {cardData.id ? (
+                                                <div className="space-y-4 flex flex-col items-center w-full">
+                                                   <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[240px]">
+                                                      Scan this QR to open the mobile-optimized business card in real-time.
+                                                   </p>
+
+                                                   <div className="flex gap-3 w-full">
+                                                      <button 
+                                                         type="button"
+                                                         onClick={() => {
+                                                            const canvas = document.getElementById('card-qr-canvas') as HTMLCanvasElement;
+                                                            if (!canvas) {
+                                                               toast.error("QR Code canvas not found. Make sure the card is flipped to the QR side to generate it!");
+                                                               return;
+                                                            }
+                                                            const url = canvas.toDataURL('image/png');
+                                                            const link = document.createElement('a');
+                                                            link.href = url;
+                                                            link.download = `QR_${cardData.fullName.replace(/\s+/g, '_')}.png`;
+                                                            document.body.appendChild(link);
+                                                            link.click();
+                                                            document.body.removeChild(link);
+                                                         }}
+                                                         className="flex-1 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center justify-center gap-2 hover:bg-[var(--bg-sidebar-active)] transition-all"
+                                                      >
+                                                         <Download size={12} /> Export QR PNG
+                                                      </button>
+                                                      
+                                                      <Link 
+                                                         to={`/shared-card/${cardData.id}`}
+                                                         target="_blank"
+                                                         className="flex-1 h-12 rounded-xl bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-transform"
+                                                      >
+                                                         <Eye size={12} /> View Card
+                                                      </Link>
+                                                   </div>
+                                                </div>
+                                             ) : (
+                                                <div className="py-4 flex flex-col items-center gap-2">
+                                                   <QrCode className="text-[var(--text-muted)] opacity-30" size={32} />
+                                                   <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-[8px] font-black uppercase tracking-wider animate-pulse">
+                                                      Pending Save
+                                                   </span>
+                                                   <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[220px]">
+                                                      Please click "Commit Card Configurations" first to generate the hosted QR target link.
+                                                   </p>
+                                                </div>
+                                             )}
                                           </div>
                                        </div>
-                                   ) : (
-                                       <div className="py-8 flex flex-col items-center gap-4">
-                                          <QrCode className="text-[var(--text-muted)] opacity-30" size={48} />
-                                          <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-[8px] font-black uppercase tracking-wider">
-                                             Pending Generation
-                                          </span>
-                                          <p className="text-[9px] font-bold text-[var(--text-muted)] leading-relaxed max-w-[200px]">
-                                             Please commit the card configuration first to generate the hosted QR / NFC target link.
-                                          </p>
-                                       </div>
-                                   )}
-                                </div>
-                             </div>
+                                    );
+                                 })()}
+                              </div>
                           </div>
                       )}
                    </div>

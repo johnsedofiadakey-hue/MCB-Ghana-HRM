@@ -864,3 +864,35 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
   100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
 }
 
+/* 🔄 Next-Gen 3D Business Card Flipping System */
+.card-flip-container {
+  perspective: 1500px;
+}
+
+.card-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 230px;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.card-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-flip-front,
+.card-flip-back {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 24px;
+}
+
+.card-flip-back {
+  transform: rotateY(180deg);
+}
+

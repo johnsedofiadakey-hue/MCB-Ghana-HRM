@@ -117,6 +117,7 @@ const continuous_performance_routes_1 = __importDefault(require("./routes/contin
 const manager_cockpit_routes_1 = __importDefault(require("./routes/manager-cockpit.routes"));
 const card_routes_1 = __importDefault(require("./routes/card.routes"));
 const competency_routes_1 = __importDefault(require("./routes/competency.routes"));
+const callCard_routes_1 = __importDefault(require("./routes/callCard.routes"));
 // Config already loaded at top level
 const validateConfig = () => {
     const required = ['JWT_SECRET', 'DATABASE_URL'];
@@ -317,7 +318,7 @@ app.use('/api/announcements', announcement_routes_1.default);
 app.use('/api/sub-units', sub_unit_routes_1.default);
 app.use('/api/team', team_routes_1.default);
 app.use('/api/kpi', kpi_routes_1.default);
-app.use('/api/kpis', kpi_routes_1.default);
+// Note: /api/kpis alias removed — use /api/kpi (consolidated 2026-05-17)
 app.use('/api/targets', target_routes_1.default);
 app.use('/api/leave', leave_routes_1.default);
 app.use('/api/cycles', cycle_routes_1.default);
@@ -367,6 +368,7 @@ app.use('/api/policy', policy_routes_1.default);
 app.use('/api/continuous-performance', continuous_performance_routes_1.default);
 app.use('/api/manager', manager_cockpit_routes_1.default);
 app.use('/api', card_routes_1.default);
+app.use('/api', callCard_routes_1.default);
 app.use('/api/competencies', competency_routes_1.default);
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {

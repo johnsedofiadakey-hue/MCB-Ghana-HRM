@@ -133,7 +133,7 @@ const createUser = async (organizationId, data) => {
 };
 exports.createUser = createUser;
 const getUserById = async (organizationId, id) => {
-    return client_1.default.user.findFirst({
+    const user = await client_1.default.user.findFirst({
         where: { id, organizationId },
         include: {
             organization: { select: { defaultLeaveAllowance: true } },
@@ -166,6 +166,21 @@ const getUserById = async (organizationId, id) => {
             }
         }
     });
+    if (!user)
+        return null;
+    const today = new Date();
+    const activeLeave = await client_1.default.leaveRequest.findFirst({
+        where: {
+            employeeId: id,
+            status: 'APPROVED',
+            startDate: { lte: today },
+            endDate: { gte: today },
+        },
+    });
+    return {
+        ...user,
+        isOnLeave: !!activeLeave
+    };
 };
 exports.getUserById = getUserById;
 const getAllUsers = async (organizationId, filter) => {
@@ -182,7 +197,7 @@ const getAllUsers = async (organizationId, filter) => {
         ];
     }
     // If organizationId is null (e.g. for autonomous DEV), it returns all users across all organizations
-    return client_1.default.user.findMany({
+    const users = await client_1.default.user.findMany({
         where,
         orderBy: { fullName: 'asc' },
         take: parseInt(take) || 100,
@@ -207,6 +222,24 @@ const getAllUsers = async (organizationId, filter) => {
             }
         }
     });
+    if (users.length === 0)
+        return [];
+    // Bulk-fetch active approved leaves spanning today for these users
+    const today = new Date();
+    const activeLeaves = await client_1.default.leaveRequest.findMany({
+        where: {
+            employeeId: { in: users.map(u => u.id) },
+            status: 'APPROVED',
+            startDate: { lte: today },
+            endDate: { gte: today },
+        },
+        select: { employeeId: true }
+    });
+    const leaveUserIds = new Set(activeLeaves.map(l => l.employeeId));
+    return users.map(user => ({
+        ...user,
+        isOnLeave: leaveUserIds.has(user.id)
+    }));
 };
 exports.getAllUsers = getAllUsers;
 const updateUser = async (organizationId, id, data, actorId) => {

@@ -230,13 +230,24 @@ class AnalyticsController {
                 { label: 'alignment', status: (personalPacket?.currentStage === 'MANAGER_REVIEW' || personalPacket?.currentStage === 'HR_REVIEW') ? 'active' : (personalPacket && ['FINAL_SIGN_OFF', 'COMPLETED'].includes(personalPacket.currentStage) ? 'done' : 'pending') },
                 { label: 'final_verdict', status: personalPacket?.currentStage === 'FINAL_SIGN_OFF' ? 'active' : (personalPacket?.status === 'COMPLETED' ? 'done' : 'pending') }
             ];
+            // 6. Check if user is currently on leave (Out of Office)
+            const today = new Date();
+            const activeLeave = await client_1.default.leaveRequest.findFirst({
+                where: {
+                    employeeId: userId,
+                    status: 'APPROVED',
+                    startDate: { lte: today },
+                    endDate: { gte: today },
+                },
+            });
             res.json({
                 overallPerformance: Math.round(overallPerformance * 10) / 10,
                 attendanceRate: Math.round(attendanceRate * 10) / 10,
                 leaveBalance: userRec?.leaveBalance || 0,
                 leaveAllowance: userRec?.leaveAllowance || 0,
                 activeGoals,
-                journeyPhases
+                journeyPhases,
+                isOnLeave: !!activeLeave
             });
         }
         catch (error) {

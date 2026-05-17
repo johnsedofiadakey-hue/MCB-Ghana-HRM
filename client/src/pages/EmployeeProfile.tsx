@@ -17,6 +17,94 @@ import { getSafeAvatarUrl } from '../utils/avatar';
 import HistoryLog from '../components/profile/HistoryLog';
 import EmployeePrintDossier from '../components/profile/EmployeePrintDossier';
 import EmployeeIDCard from '../components/profile/EmployeeIDCard';
+import { QRCodeCanvas } from 'qrcode.react';
+
+// Design Theme Configs matching ITAdmin card themes exactly
+const themeConfigs: Record<string, {
+    cardBg: string;
+    textPrimary: string;
+    textMuted: string;
+    border: string;
+    tagBg: string;
+    tagBorder: string;
+    tagText: string;
+    avatarBorder: string;
+    logoColor: string;
+    isDark: boolean;
+}> = {
+    MCB_LIGHT_GOLD: {
+        cardBg: "bg-gradient-to-br from-[#FCFBF7] via-[#F8F5EC] to-[#EFEADA]",
+        textPrimary: "text-[#3D321D]",
+        textMuted: "text-[#8C7A5B]",
+        border: "border-[#DFB76C]/30",
+        tagBg: "bg-[#DFB76C]/10",
+        tagBorder: "border-[#DFB76C]/30",
+        tagText: "text-[#B08A42]",
+        avatarBorder: "border-[#DFB76C]",
+        logoColor: "#B08A42",
+        isDark: false
+    },
+    MCB_LIGHT_NAVY: {
+        cardBg: "bg-gradient-to-br from-[#F5F8FC] via-[#EEF2F9] to-[#E2EAF5]",
+        textPrimary: "text-[#0F1E36]",
+        textMuted: "text-[#627797]",
+        border: "border-[#1E3A8A]/10",
+        tagBg: "bg-[#1E3A8A]/5",
+        tagBorder: "border-[#1E3A8A]/10",
+        tagText: "text-[#1E3A8A]",
+        avatarBorder: "border-[#1E3A8A]",
+        logoColor: "#1E3A8A",
+        isDark: false
+    },
+    GHANA_SUNSHINE_LIGHT: {
+        cardBg: "bg-gradient-to-br from-[#FFFDF9] via-[#FFF8EC] to-[#FEF0D9]",
+        textPrimary: "text-[#541B1B]",
+        textMuted: "text-[#9E5F5F]",
+        border: "border-[#EF4444]/15",
+        tagBg: "bg-[#EF4444]/5",
+        tagBorder: "border-[#EF4444]/10",
+        tagText: "text-[#EF4444]",
+        avatarBorder: "border-[#F59E0B]",
+        logoColor: "#D97706",
+        isDark: false
+    },
+    MIDNIGHT_LUXURY: {
+        cardBg: "bg-gradient-to-br from-[#0B0D19] via-[#05060B] to-[#010103]",
+        textPrimary: "text-[#F8FAFC]",
+        textMuted: "text-[#64748B]",
+        border: "border-[#38BDF8]/20",
+        tagBg: "bg-[#38BDF8]/10",
+        tagBorder: "border-[#38BDF8]/20",
+        tagText: "text-[#38BDF8]",
+        avatarBorder: "border-[#38BDF8]",
+        logoColor: "#38BDF8",
+        isDark: true
+    },
+    MCB_GOLD: {
+        cardBg: "bg-gradient-to-br from-[#0C1C15] via-[#050B07] to-[#010201]",
+        textPrimary: "text-[#F5EAD4]",
+        textMuted: "text-[#A39274]",
+        border: "border-[#DFB76C]/30",
+        tagBg: "bg-[#DFB76C]/10",
+        tagBorder: "border-[#DFB76C]/20",
+        tagText: "text-[#DFB76C]",
+        avatarBorder: "border-[#DFB76C]",
+        logoColor: "#DFB76C",
+        isDark: true
+    },
+    GHANA_SUNSHINE: {
+        cardBg: "bg-gradient-to-br from-[#1C0808] via-[#0C0303] to-[#030101]",
+        textPrimary: "text-[#FED7AA]",
+        textMuted: "text-[#A8A29E]",
+        border: "border-[#EF4444]/25",
+        tagBg: "bg-[#EF4444]/10",
+        tagBorder: "border-[#EF4444]/20",
+        tagText: "text-[#F97316]",
+        avatarBorder: "border-[#EF4444]",
+        logoColor: "#EF4444",
+        isDark: true
+    }
+};
 
 const EmployeeProfile = () => {
     const { id } = useParams();
@@ -29,6 +117,7 @@ const EmployeeProfile = () => {
     // Call card connections state fields
     const [connectionData, setConnectionData] = useState<{ views: number; connections: any[] }>({ views: 0, connections: [] });
     const [userCard, setUserCard] = useState<any>(null);
+    const [isFlipped, setIsFlipped] = useState(false);
     const [loadingConnections, setLoadingConnections] = useState(false);
     const [nfcWriting, setNfcWriting] = useState(false);
     const [nfcSuccess, setNfcSuccess] = useState(false);
@@ -740,52 +829,118 @@ const EmployeeProfile = () => {
 
                                 {userCard ? (
                                     <div className="space-y-6">
-                                        {/* Mock visual card container simulating client-side themes */}
-                                        <div className={cn(
-                                            "p-6 rounded-[24px] border shadow-xl relative overflow-hidden transition-all duration-300",
-                                            userCard.theme === 'MCB_GOLD' ? "bg-gradient-to-br from-[#0c1c15] via-[#050b07] to-[#040605] border-[#dfb76c]/30 text-[#e2e8f0]" :
-                                            userCard.theme === 'GHANA_SUNSHINE' ? "bg-gradient-to-br from-[#1c0808] via-[#0c0505] to-[#050202] border-red-500/30 text-[#fed7aa]" :
-                                            "bg-gradient-to-br from-[#0d0f12] via-[#08090a] to-[#040405] border-white/10 text-gray-300"
-                                        )}>
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <span className={cn(
-                                                        "px-2 py-0.5 rounded-full border text-[6px] font-black uppercase tracking-wider",
-                                                        userCard.theme === 'MCB_GOLD' ? "bg-[#dfb76c]/10 border-[#dfb76c]/20 text-[#dfb76c]" :
-                                                        userCard.theme === 'GHANA_SUNSHINE' ? "bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]" :
-                                                        "bg-blue-400/10 border-blue-400/20 text-blue-400"
-                                                    )}>
-                                                        MCB Professional
-                                                    </span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">MCB</h4>
-                                                    <p className="text-[5px] font-bold uppercase tracking-widest text-gray-500">Ghana</p>
-                                                </div>
-                                            </div>
+                                        {/* Perspective Container for 3D flip */}
+                                        <div className="relative w-full h-[230px] [perspective:1000px] cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
+                                            <div className={cn(
+                                                "w-full h-full relative transition-transform duration-700 [transform-style:preserve-3d]",
+                                                isFlipped ? "[transform:rotateY(180deg)]" : ""
+                                            )}>
+                                                {/* FRONT SIDE */}
+                                                <div className={cn(
+                                                    "absolute inset-0 w-full h-full rounded-[24px] border p-6 shadow-xl [backface-visibility:hidden] flex flex-col justify-between transition-all duration-300",
+                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).cardBg,
+                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).border,
+                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).textPrimary
+                                                )}>
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <span className={cn(
+                                                                "px-2.5 py-1 rounded-full border text-[7px] font-black uppercase tracking-wider",
+                                                                (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).tagBg,
+                                                                (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).tagBorder,
+                                                                (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).tagText
+                                                            )}>
+                                                                MCB Professional
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-right flex items-center gap-1.5">
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="inline-block">
+                                                                <path d="M12 2L2 22h20L12 2z" fill={(themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).logoColor} />
+                                                            </svg>
+                                                            <div>
+                                                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">MCB</h4>
+                                                                <p className="text-[5px] font-black uppercase tracking-widest opacity-60 mt-0.5">Ghana</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                            <div className="flex items-center gap-4 mt-6">
-                                                <img 
-                                                    src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
-                                                    alt={employee.fullName} 
-                                                    className={cn(
-                                                        "w-12 h-12 rounded-xl object-cover border-2 p-0.5",
-                                                        userCard.theme === 'MCB_GOLD' ? "border-[#dfb76c]" :
-                                                        userCard.theme === 'GHANA_SUNSHINE' ? "border-orange-500" :
-                                                        "border-blue-400"
-                                                    )}
-                                                />
-                                                <div>
-                                                    <h3 className="text-sm font-black uppercase tracking-tight text-white">{userCard.fullName}</h3>
-                                                    <p className="text-[9px] font-bold opacity-80 uppercase tracking-wide">{userCard.jobTitle}</p>
-                                                    {userCard.department && <p className="text-[7px] font-semibold opacity-60 uppercase">{userCard.department}</p>}
+                                                    <div className="flex items-center gap-4 my-2">
+                                                        <img 
+                                                            src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
+                                                            alt={employee.fullName} 
+                                                            className={cn(
+                                                                "w-12 h-12 rounded-xl object-cover border-2 p-0.5 shadow-md",
+                                                                (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).avatarBorder
+                                                            )}
+                                                        />
+                                                        <div className="min-w-0">
+                                                            <h3 className="text-sm font-black uppercase tracking-tight truncate">{userCard.fullName}</h3>
+                                                            <p className="text-[9px] font-bold opacity-80 uppercase tracking-wide truncate">{userCard.jobTitle}</p>
+                                                            {userCard.department && <p className="text-[7px] font-semibold opacity-60 uppercase tracking-widest truncate">{userCard.department}</p>}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="border-t border-current/10 pt-3 text-[8px] font-bold space-y-1 opacity-80">
+                                                        <p className="truncate">✉ {userCard.email}</p>
+                                                        {userCard.phone && <p className="truncate">☎ {userCard.phone}</p>}
+                                                    </div>
+                                                </div>
+
+                                                {/* BACK SIDE */}
+                                                <div className={cn(
+                                                    "absolute inset-0 w-full h-full rounded-[24px] border p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between transition-all duration-300",
+                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).cardBg,
+                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).border,
+                                                    (themeConfigs[userCard.theme] || themeConfigs.MCB_LIGHT_GOLD).textPrimary
+                                                )}>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Scan to Connect</span>
+                                                        <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Back Side</span>
+                                                    </div>
+                                                    <div className="flex-1 flex items-center justify-center py-2">
+                                                        <div className="p-2 bg-white rounded-xl shadow-md border border-gray-150 inline-block">
+                                                            <QRCodeCanvas 
+                                                                id={`qr-canvas-profile-${userCard.id}`}
+                                                                value={`${window.location.origin}/shared-card/${userCard.id}`}
+                                                                size={90}
+                                                                level="H"
+                                                                includeMargin={false}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-center text-[7px] font-black uppercase tracking-widest opacity-60">
+                                                        MCB Ghana Corporate Network
+                                                    </div>
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            <div className="mt-6 border-t border-white/5 pt-4 text-[8px] font-bold space-y-1.5 opacity-80">
-                                                <p>✉ {userCard.email}</p>
-                                                {userCard.phone && <p>☎ {userCard.phone}</p>}
-                                            </div>
+                                        {/* Action controls below card */}
+                                        <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">
+                                            <button 
+                                                onClick={() => setIsFlipped(!isFlipped)}
+                                                className="hover:text-[var(--primary)] transition-all flex items-center gap-1.5"
+                                            >
+                                                🔄 Tap to Flip Card
+                                            </button>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const canvas = document.getElementById(`qr-canvas-profile-${userCard.id}`) as HTMLCanvasElement;
+                                                    if (canvas) {
+                                                        const link = document.createElement('a');
+                                                        link.download = `MCB-Card-QR-${userCard.fullName.replace(/\s+/g, '-')}.png`;
+                                                        link.href = canvas.toDataURL();
+                                                        link.click();
+                                                        toast.success("QR Code downloaded successfully!");
+                                                    } else {
+                                                        toast.error("Could not generate download file.");
+                                                    }
+                                                }}
+                                                className="hover:text-[var(--primary)] transition-all flex items-center gap-1.5"
+                                            >
+                                                📥 Save QR Code
+                                            </button>
                                         </div>
 
                                         {/* Physical card programming utility via Web NFC */}

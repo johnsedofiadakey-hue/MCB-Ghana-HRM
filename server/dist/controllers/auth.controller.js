@@ -343,7 +343,20 @@ const getMe = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         if (user.status === 'TERMINATED')
             return res.status(403).json({ error: 'Account deactivated' });
-        return res.json(user);
+        // Check if user is currently on leave (Out of Office)
+        const today = new Date();
+        const activeLeave = await client_1.default.leaveRequest.findFirst({
+            where: {
+                employeeId: userId,
+                status: 'APPROVED',
+                startDate: { lte: today },
+                endDate: { gte: today },
+            },
+        });
+        return res.json({
+            ...user,
+            isOnLeave: !!activeLeave,
+        });
     }
     catch {
         return res.status(500).json({ error: 'Internal Server Error' });
