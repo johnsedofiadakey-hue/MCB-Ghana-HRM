@@ -148,6 +148,28 @@ class AnalyticsController {
                 take: 5,
                 select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
             });
+            // 🌟 Direct reports metrics for hybrid executive managers (e.g. IT Admin/Manager, HR Manager, Finance Manager)
+            const directTeam = await client_1.default.user.findMany({
+                where: { organizationId, supervisorId: userId, status: 'ACTIVE' },
+                orderBy: { rank: 'desc' },
+                select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
+            });
+            const hasDirectReports = directTeam.length > 0;
+            let directTeamPerf = 0;
+            if (hasDirectReports) {
+                const directEmployeeIds = directTeam.map(u => u.id);
+                const directLockedSheets = await client_1.default.kpiSheet.groupBy({
+                    by: ['employeeId'],
+                    where: {
+                        organizationId,
+                        status: { in: ['LOCKED', 'SUBMITTED'] },
+                        employeeId: { in: directEmployeeIds }
+                    },
+                    _avg: { totalScore: true }
+                });
+                const directAvgScores = directLockedSheets.map(s => Number(s._avg.totalScore) || 0);
+                directTeamPerf = directAvgScores.length ? directAvgScores.reduce((a, b) => a + b, 0) / directAvgScores.length : 0;
+            }
             res.json({
                 totalEmployees,
                 activeLeaves,
@@ -158,7 +180,10 @@ class AnalyticsController {
                 teamPerf,
                 strategyPhases,
                 growthPhases,
-                team
+                team,
+                directTeam,
+                directTeamPerf,
+                hasDirectReports
             });
         }
         catch (error) {

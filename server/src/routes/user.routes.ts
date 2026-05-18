@@ -21,29 +21,32 @@ router.get('/:id', getEmployee);
 router.get('/:id/risk', requireRole(80), getUserRiskProfile);
 router.get('/:id/risk-profile', requireRole(80), getUserRiskProfile); // alias
 
-// Create (HR Manager / IT Manager / MD only)
-router.post('/', authorize(['HR_MANAGER', 'HR_DIRECTOR', 'IT_MANAGER', 'MD']), validate(CreateUserSchema), createEmployee);
+const hrAdminRoles = ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'MD', 'SUPER_ADMIN', 'DEV'];
+const hrSeniorRoles = ['HR_DIRECTOR', 'HR_MANAGER', 'HR_ADMIN', 'MD', 'SUPER_ADMIN', 'DEV'];
+
+// Create (HR / IT Manager / MD only)
+router.post('/', authorize(['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'SUPER_ADMIN', 'DEV']), validate(CreateUserSchema), createEmployee);
 
 // Update
 // Allow self-edit; require rank 70+ to edit others
 router.patch('/:id', (req, res, next) => {
   if ((req as any).user?.id === req.params.id) return next();
-  return requireSpecificRole(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV'])(req, res, next);
+  return requireSpecificRole(hrAdminRoles)(req, res, next);
 }, updateEmployee);
 
 // PUT alias for EmployeeProfile compatibility
 router.put('/:id', (req, res, next) => {
   if ((req as any).user?.id === req.params.id) return next();
-  return requireSpecificRole(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV'])(req, res, next);
+  return requireSpecificRole(hrAdminRoles)(req, res, next);
 }, updateEmployee);
 
 // Delete (Archive) - Only HR and MD
-router.delete('/:id', requireSpecificRole(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']), deleteEmployee);
-router.delete('/:id/hard', requireSpecificRole(['HR_MANAGER', 'MD', 'DEV']), hardDeleteEmployee);
-router.post('/:id/restore', requireSpecificRole(['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']), restoreEmployee);
+router.delete('/:id', requireSpecificRole(hrAdminRoles), deleteEmployee);
+router.delete('/:id/hard', requireSpecificRole(hrSeniorRoles), hardDeleteEmployee);
+router.post('/:id/restore', requireSpecificRole(hrAdminRoles), restoreEmployee);
 
 // Role assignment (Only HR and MD)
-router.post('/assign-role', requireSpecificRole(['HR_MANAGER', 'MD', 'DEV']), assignRole);
+router.post('/assign-role', requireSpecificRole(hrSeniorRoles), assignRole);
 
 router.post('/:id/upload-image', upload.single('avatar'), uploadImage);
 router.post('/:id/avatar', uploadImage); // base64 path

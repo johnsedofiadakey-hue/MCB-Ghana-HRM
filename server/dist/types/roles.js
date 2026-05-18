@@ -12,6 +12,7 @@ var RoleRank;
     RoleRank[RoleRank["IT_MANAGER"] = 85] = "IT_MANAGER";
     RoleRank[RoleRank["HR_OFFICER"] = 80] = "HR_OFFICER";
     RoleRank[RoleRank["MANAGER"] = 75] = "MANAGER";
+    RoleRank[RoleRank["MID_MANAGER"] = 65] = "MID_MANAGER";
     RoleRank[RoleRank["SUPERVISOR"] = 65] = "SUPERVISOR";
     RoleRank[RoleRank["STAFF"] = 50] = "STAFF";
     RoleRank[RoleRank["CASUAL"] = 40] = "CASUAL";
@@ -26,6 +27,7 @@ exports.ROLE_RANK_MAP = {
     IT_MANAGER: RoleRank.IT_MANAGER,
     HR_OFFICER: RoleRank.HR_OFFICER,
     MANAGER: RoleRank.MANAGER,
+    MID_MANAGER: RoleRank.MID_MANAGER,
     SUPERVISOR: RoleRank.SUPERVISOR,
     STAFF: RoleRank.STAFF,
     CASUAL: RoleRank.CASUAL,
@@ -41,6 +43,8 @@ exports.ROLE_RANK_MAP = {
     'HR OFFICER': RoleRank.HR_OFFICER,
     'HR MANAGER': RoleRank.HR_MANAGER,
     'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,
+    'FIANANCE MANAGER': RoleRank.FINANCE_MANAGER,
     'IT MANAGER': RoleRank.IT_MANAGER,
     'IT ADMIN': RoleRank.IT_MANAGER,
+    'MID MANAGER': RoleRank.MID_MANAGER,
 };
