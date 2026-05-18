@@ -167,6 +167,30 @@ export class AnalyticsController {
             select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
         });
 
+        // 🌟 Direct reports metrics for hybrid executive managers (e.g. IT Admin/Manager, HR Manager, Finance Manager)
+        const directTeam = await prisma.user.findMany({
+            where: { organizationId, supervisorId: userId, status: 'ACTIVE' },
+            orderBy: { rank: 'desc' },
+            select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
+        });
+        const hasDirectReports = directTeam.length > 0;
+
+        let directTeamPerf = 0;
+        if (hasDirectReports) {
+            const directEmployeeIds = directTeam.map(u => u.id);
+            const directLockedSheets = await prisma.kpiSheet.groupBy({
+                by: ['employeeId'],
+                where: { 
+                    organizationId, 
+                    status: { in: ['LOCKED', 'SUBMITTED'] },
+                    employeeId: { in: directEmployeeIds }
+                },
+                _avg: { totalScore: true }
+            });
+            const directAvgScores = directLockedSheets.map(s => Number(s._avg.totalScore) || 0);
+            directTeamPerf = directAvgScores.length ? directAvgScores.reduce((a, b) => a + b, 0) / directAvgScores.length : 0;
+        }
+
         res.json({ 
             totalEmployees, 
             activeLeaves, 
@@ -177,7 +201,10 @@ export class AnalyticsController {
             teamPerf,
             strategyPhases,
             growthPhases,
-            team
+            team,
+            directTeam,
+            directTeamPerf,
+            hasDirectReports
         });
     } catch (error: any) {
         res.status(500).json({ message: error.message });

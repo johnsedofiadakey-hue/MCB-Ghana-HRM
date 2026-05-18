@@ -9,6 +9,7 @@ export const RoleRank = {
     IT_ADMIN: 85,
     HR_OFFICER: 80,
     MANAGER: 75,
+    MID_MANAGER: 65,
     SUPERVISOR: 65,
     STAFF: 50,
     CASUAL: 40
@@ -30,6 +31,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     'IT MANAGER': RoleRank.IT_MANAGER,
     'HR MANAGER': RoleRank.HR_MANAGER,
     'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,
+    'FIANANCE MANAGER': RoleRank.FINANCE_MANAGER,
     FINANCE: RoleRank.FINANCE_MANAGER,
     'IT ADMINISTRATOR': RoleRank.IT_ADMIN,
     'HR OFFICER': RoleRank.HR_OFFICER,
@@ -39,7 +41,8 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     EMPLOYEE_MEMBER: RoleRank.STAFF,
     'EMPLOYEE MEMBER': RoleRank.STAFF,
     'STAFF MEMBER': RoleRank.STAFF,
-    'CASUAL WORKER': RoleRank.CASUAL
+    'CASUAL WORKER': RoleRank.CASUAL,
+    'MID MANAGER': RoleRank.MID_MANAGER
 };
 
 export const ROLE_LABELS: Record<string, string> = {
@@ -53,8 +56,9 @@ export const ROLE_LABELS: Record<string, string> = {
   IT_ADMIN: 'IT Administrator',
   HR_OFFICER: 'HR Officer',
   MANAGER: 'Manager',
-  SUPERVISOR: 'Supervisor',
-  STAFF: 'Staff Member',
+  MID_MANAGER: 'Mid Manager',
+  SUPERVISOR: 'Mid Manager',
+  STAFF: 'Staff',
   CASUAL: 'Casual Worker',
 };
 

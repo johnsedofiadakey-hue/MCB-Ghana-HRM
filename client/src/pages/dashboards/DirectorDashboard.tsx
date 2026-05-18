@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, BarChart3, Target, Calendar, Building2, TrendingUp, Zap, ArrowRight, Sparkles } from 'lucide-react';
+import { 
+  Users, BarChart3, Target, Calendar, Building2, TrendingUp, Zap, ArrowRight, 
+  Sparkles, ClipboardCheck, Activity, Clock, Shield, CheckCircle2, AlertCircle, Award 
+} from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import ActionInbox from '../../components/dashboard/ActionInbox';
 import { useTranslation } from 'react-i18next';
-// Removed User type import to resolve build conflict
-
+import { cn } from '../../utils/cn';
 
 const COLORS = ['var(--primary)', 'var(--accent)', 'var(--warning)', 'var(--info)', 'var(--error)', 'var(--success)'];
 
@@ -24,7 +26,12 @@ const DirectorDashboard = () => {
     efficiency: 0,
     activeReviews: 0,
     openTargets: 0,
-    pendingLeaves: 0
+    pendingLeaves: 0,
+    directTeam: [] as any[],
+    directTeamPerf: 0,
+    hasDirectReports: false,
+    strategyPhases: [] as any[],
+    growthPhases: [] as any[]
   });
 
   useEffect(() => {
@@ -42,8 +49,13 @@ const DirectorDashboard = () => {
         headcount: execRes.data?.totalEmployees || 0,
         efficiency: execRes.data?.attendanceRate || 0,
         activeReviews: execRes.data?.pendingTasks || 0,
-        openTargets: execRes.data?.totalEmployees || 0, // Placeholder or real target count if available
-        pendingLeaves: execRes.data?.activeLeaves || 0
+        openTargets: execRes.data?.totalEmployees || 0, 
+        pendingLeaves: execRes.data?.activeLeaves || 0,
+        directTeam: execRes.data?.directTeam || [],
+        directTeamPerf: execRes.data?.directTeamPerf || 0,
+        hasDirectReports: execRes.data?.hasDirectReports || false,
+        strategyPhases: execRes.data?.strategyPhases || [],
+        growthPhases: execRes.data?.growthPhases || []
       });
     }).catch(console.error);
   }, []);
@@ -54,6 +66,16 @@ const DirectorDashboard = () => {
     { label: t('dashboard.open_targets'), value: data.openTargets || '0', icon: Target, color: 'var(--primary)', delay: 0.3 },
     { label: t('dashboard.pending_leave'), value: data.pendingLeaves || '0', icon: Calendar, color: 'var(--success)', delay: 0.4 },
   ];
+
+  if (data.hasDirectReports) {
+    statsArr.push({
+      label: t('manager_dashboard.team_performance', 'Direct Team Perf'),
+      value: `${Number(data.directTeamPerf || 0).toFixed(1)}%`,
+      icon: CheckCircle2,
+      color: 'var(--success)',
+      delay: 0.5
+    });
+  }
 
   return (
     <div className="relative space-y-12 pb-20 max-w-[1700px] mx-auto page-enter">
@@ -67,7 +89,7 @@ const DirectorDashboard = () => {
           <div className="flex items-center gap-3 mb-4">
              <div className="px-4 py-1.5 rounded-full premium-glass border-glow-premium text-[11px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2 shadow-xl">
                 <Sparkles size={14} className="animate-pulse text-[var(--primary)]" /> 
-                {t('common.admin')} {t('dashboard.intelligence')}
+                {data.hasDirectReports ? `${t('common.management')} / ${t('common.admin')}` : t('common.admin')} {t('dashboard.intelligence')}
              </div>
              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 rounded-full bg-[var(--success)] shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
              <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{greeting}</span>
@@ -98,7 +120,7 @@ const DirectorDashboard = () => {
         {/* Left Col: Insights & Stats */}
         <div className="lg:col-span-8 flex flex-col gap-8">
           {/* Stats Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-6", data.hasDirectReports ? "lg:grid-cols-5" : "lg:grid-cols-4")}>
             {statsArr.map((s, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: s.delay }}
                 className="premium-glass border-glow-premium p-6 hover-float group shadow-xl">
@@ -169,6 +191,68 @@ const DirectorDashboard = () => {
               </ResponsiveContainer>
             </motion.div>
           </div>
+
+          {/* 🌟 Direct Team Strategy section for hybrid managers */}
+          {data.hasDirectReports && (
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+              <div className="premium-glass border-glow-premium p-8 bg-gradient-to-br from-[var(--primary)]/5 to-transparent shadow-xl">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-8 flex items-center gap-3">
+                  <Sparkles size={16} />
+                  {t('manager_dashboard.team_strategy', 'My Team Strategy')}
+                </h3>
+                <div className="flex items-center justify-between gap-4">
+                   {(data.strategyPhases?.length ? data.strategyPhases : [
+                      { label: 'corp_strategy', status: 'pending' },
+                      { label: 'operational', status: 'pending' },
+                      { label: 'execution', status: 'pending' }
+                   ]).map((phase: any, i: number) => (
+                      <div key={i} className="flex flex-col items-center gap-4 relative flex-1">
+                         <div className={cn(
+                           "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all shadow-lg",
+                           phase.status === 'active' 
+                             ? "bg-[var(--primary)] border-[var(--primary)] text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.4)]" 
+                             : phase.status === 'done'
+                               ? "bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success)]"
+                               : "bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)] opacity-60"
+                         )}>
+                            {phase.status === 'done' ? <CheckCircle2 size={18} /> : <Zap size={18} />}
+                         </div>
+                         <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center">{t(`manager_dashboard.phases.${phase.label}`, phase.label)}</span>
+                      </div>
+                   ))}
+                </div>
+              </div>
+
+              <div className="premium-glass border-glow-premium p-8 bg-gradient-to-br from-[var(--accent)]/5 to-transparent shadow-xl">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--accent)] mb-8 flex items-center gap-3">
+                  <TrendingUp size={16} />
+                  {t('manager_dashboard.team_growth', 'My Team Growth')}
+                </h3>
+                <div className="flex items-center justify-between gap-4">
+                   {(data.growthPhases?.length ? data.growthPhases : [
+                      { label: 'self_review', status: 'pending' },
+                      { label: 'alignment', status: 'pending' },
+                      { label: 'final_verdict', status: 'pending' }
+                   ]).map((phase: any, i: number) => (
+                      <div key={i} className="flex flex-col items-center gap-4 relative flex-1">
+                         <div className={cn(
+                           "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all shadow-lg",
+                           phase.status === 'active' 
+                             ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)]" 
+                             : phase.status === 'done'
+                               ? "bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success)]"
+                               : "bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)] opacity-60"
+                         )}>
+                            {phase.status === 'done' ? <CheckCircle2 size={18} /> : <Award size={18} />}
+                         </div>
+                         <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center">{t(`manager_dashboard.phases.${phase.label}`, phase.label)}</span>
+                      </div>
+                   ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Right Col: Action Center */}
@@ -176,6 +260,33 @@ const DirectorDashboard = () => {
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
             <ActionInbox />
           </motion.div>
+
+          {/* 🌟 Direct Team Headcount list in Sidebar for hybrid managers */}
+          {data.hasDirectReports && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}
+              className="premium-glass border-glow-premium p-8 shadow-2xl bg-gradient-to-br from-[var(--primary)]/5 to-transparent">
+              <h4 className="text-[11px] font-black text-[var(--primary)] uppercase tracking-[0.3em] mb-8">{t('manager_dashboard.active_headcount', 'My Direct Reports')}</h4>
+              <div className="space-y-6">
+                {data.directTeam.map((member: any) => (
+                  <div key={member.id} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center overflow-hidden group-hover:border-[var(--primary)]/30 transition-all">
+                        {member.avatarUrl ? <img src={member.avatarUrl} alt="" className="w-full h-full object-cover" /> : <Users size={16} className="text-[var(--text-muted)]" />}
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-black text-[var(--text-primary)] tracking-tight">{member.fullName}</div>
+                        <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{member.jobTitle}</div>
+                      </div>
+                    </div>
+                    <div className={cn("w-2 h-2 rounded-full", member.status === 'ACTIVE' ? "bg-[var(--success)] shadow-[0_0_8px_var(--success)]" : "bg-[var(--text-muted)]")} />
+                  </div>
+                ))}
+              </div>
+              <Link to="/employees" className="block mt-10 p-4 text-center rounded-xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)]/30 transition-all no-underline">
+                {t('manager_dashboard.view_team', 'View Org Directory')}
+              </Link>
+            </motion.div>
+          )}
 
           <div className="flex flex-col gap-4">
             <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] px-2">{t('dashboard.strategic_shortcuts')}</h4>
@@ -202,4 +313,3 @@ const DirectorDashboard = () => {
 };
 
 export default DirectorDashboard;
-
