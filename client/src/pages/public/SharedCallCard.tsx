@@ -32,110 +32,126 @@ interface CallCardData {
 }
 
 // Design Theme Configs matching ITAdmin and EmployeeProfile card themes exactly
-const themeConfigs: Record<string, {
-    cardBg: string;
-    textPrimary: string;
-    textMuted: string;
-    border: string;
-    tagBg: string;
-    tagBorder: string;
-    tagText: string;
-    avatarBorder: string;
-    logoColor: string;
-    isDark: boolean;
-}> = {
-    MCB_LIGHT_GOLD: {
-        cardBg: "bg-gradient-to-br from-[#FCFBF7] via-[#F8F5EC] to-[#EFEADA]",
-        textPrimary: "text-[#3D321D]",
-        textMuted: "text-[#8C7A5B]",
-        border: "border-[#DFB76C]/30",
-        tagBg: "bg-[#DFB76C]/10",
-        tagBorder: "border-[#DFB76C]/30",
-        tagText: "text-[#B08A42]",
-        avatarBorder: "border-[#DFB76C]",
-        logoColor: "#B08A42",
-        isDark: false
-    },
-    MCB_LIGHT_NAVY: {
-        cardBg: "bg-gradient-to-br from-[#F5F8FC] via-[#EEF2F9] to-[#E2EAF5]",
-        textPrimary: "text-[#0F1E36]",
-        textMuted: "text-[#627797]",
-        border: "border-[#1E3A8A]/10",
-        tagBg: "bg-[#1E3A8A]/5",
-        tagBorder: "border-[#1E3A8A]/10",
-        tagText: "text-[#1E3A8A]",
-        avatarBorder: "border-[#1E3A8A]",
-        logoColor: "#1E3A8A",
-        isDark: false
-    },
-    GHANA_SUNSHINE_LIGHT: {
-        cardBg: "bg-gradient-to-br from-[#FFFDF9] via-[#FFF8EC] to-[#FEF0D9]",
-        textPrimary: "text-[#541B1B]",
-        textMuted: "text-[#9E5F5F]",
-        border: "border-[#EF4444]/15",
-        tagBg: "bg-[#EF4444]/5",
-        tagBorder: "border-[#EF4444]/10",
-        tagText: "text-[#EF4444]",
-        avatarBorder: "border-[#F59E0B]",
-        logoColor: "#D97706",
-        isDark: false
-    },
-    MIDNIGHT_LUXURY: {
-        cardBg: "bg-gradient-to-br from-[#0B0D19] via-[#05060B] to-[#010103]",
-        textPrimary: "text-[#F8FAFC]",
-        textMuted: "text-[#64748B]",
-        border: "border-[#38BDF8]/20",
-        tagBg: "bg-[#38BDF8]/10",
-        tagBorder: "border-[#38BDF8]/20",
-        tagText: "text-[#38BDF8]",
-        avatarBorder: "border-[#38BDF8]",
-        logoColor: "#38BDF8",
-        isDark: true
-    },
-    MCB_GOLD: {
-        cardBg: "bg-gradient-to-br from-[#0C1C15] via-[#050B07] to-[#010201]",
-        textPrimary: "text-[#F5EAD4]",
-        textMuted: "text-[#A39274]",
-        border: "border-[#DFB76C]/30",
-        tagBg: "bg-[#DFB76C]/10",
-        tagBorder: "border-[#DFB76C]/20",
-        tagText: "text-[#DFB76C]",
-        avatarBorder: "border-[#DFB76C]",
-        logoColor: "#DFB76C",
-        isDark: true
-    },
-    GHANA_SUNSHINE: {
-        cardBg: "bg-gradient-to-br from-[#1C0808] via-[#0C0303] to-[#030101]",
-        textPrimary: "text-[#FED7AA]",
-        textMuted: "text-[#A8A29E]",
-        border: "border-[#EF4444]/25",
-        tagBg: "bg-[#EF4444]/10",
-        tagBorder: "border-[#EF4444]/20",
-        tagText: "text-[#F97316]",
-        avatarBorder: "border-[#EF4444]",
-        logoColor: "#EF4444",
-        isDark: true
-    }
-};
-
 const getThemeConfigs = (themeName: string, primaryColor: string, accentColor: string) => {
-    const base = themeConfigs[themeName] || themeConfigs.MCB_LIGHT_GOLD;
-    const styles: any = {
-        textPrimary: {},
-        tagBg: {},
-        avatarBorder: {}
-    };
+    const brandPrimary = primaryColor || '#009EE3';
+    const brandAccent = accentColor || '#EE7100';
 
-    if (themeName === 'MCB_LIGHT_NAVY') {
-        styles.textPrimary = { color: primaryColor };
-        styles.tagBg = { backgroundColor: `${primaryColor}15`, borderColor: `${primaryColor}30`, color: primaryColor };
-        styles.avatarBorder = { borderColor: primaryColor };
+    switch (themeName) {
+        case 'MCB_LIGHT_GOLD':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-50 via-slate-100/40 to-slate-100",
+                textPrimary: "text-slate-900",
+                textMuted: "text-slate-500",
+                border: "border-[var(--brand-primary)]/20 shadow-[0_8px_30px_rgba(0,0,0,0.03)]",
+                tagBg: "bg-[var(--brand-primary)]/10",
+                tagBorder: "border-[var(--brand-primary)]/20",
+                tagText: "text-[var(--brand-primary)]",
+                avatarBorder: "border-[var(--brand-accent)]",
+                logoColor: brandPrimary,
+                isDark: false,
+                styles: {
+                    textPrimary: { color: '#0f172a' },
+                    tagBg: { backgroundColor: `${brandPrimary}15`, borderColor: `${brandPrimary}30`, color: brandPrimary },
+                    avatarBorder: { borderColor: brandAccent }
+                }
+            };
+
+        case 'MCB_LIGHT_NAVY':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-50 via-slate-100/40 to-slate-100",
+                textPrimary: "text-slate-900",
+                textMuted: "text-slate-500",
+                border: "border-[var(--brand-primary)]/20 shadow-[0_8px_30px_rgba(0,0,0,0.03)]",
+                tagBg: "bg-[var(--brand-accent)]/10",
+                tagBorder: "border-[var(--brand-accent)]/20",
+                tagText: "text-[var(--brand-accent)]",
+                avatarBorder: "border-[var(--brand-primary)]",
+                logoColor: brandPrimary,
+                isDark: false,
+                styles: {
+                    textPrimary: { color: brandPrimary },
+                    tagBg: { backgroundColor: `${brandAccent}15`, borderColor: `${brandAccent}30`, color: brandAccent },
+                    avatarBorder: { borderColor: brandPrimary }
+                }
+            };
+
+        case 'GHANA_SUNSHINE_LIGHT':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-50 via-slate-100/40 to-slate-100",
+                textPrimary: "text-slate-900",
+                textMuted: "text-slate-500",
+                border: "border-[var(--brand-accent)]/20 shadow-[0_8px_30px_rgba(0,0,0,0.03)]",
+                tagBg: "bg-[var(--brand-accent)]/10",
+                tagBorder: "border-[var(--brand-accent)]/20",
+                tagText: "text-[var(--brand-accent)]",
+                avatarBorder: "border-[var(--brand-accent)]",
+                logoColor: brandAccent,
+                isDark: false,
+                styles: {
+                    textPrimary: { color: '#0f172a' },
+                    tagBg: { backgroundColor: `${brandAccent}15`, borderColor: `${brandAccent}30`, color: brandAccent },
+                    avatarBorder: { borderColor: brandAccent }
+                }
+            };
+
+        case 'MIDNIGHT_LUXURY':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950",
+                textPrimary: "text-slate-100",
+                textMuted: "text-slate-400",
+                border: "border-[var(--brand-primary)]/30 shadow-[0_8px_30px_rgba(0,0,0,0.4)]",
+                tagBg: "bg-[var(--brand-primary)]/15",
+                tagBorder: "border-[var(--brand-primary)]/30",
+                tagText: "text-[var(--brand-primary)]",
+                avatarBorder: "border-[var(--brand-primary)]",
+                logoColor: brandPrimary,
+                isDark: true,
+                styles: {
+                    textPrimary: { color: '#f8fafc' },
+                    tagBg: { backgroundColor: `${brandPrimary}20`, borderColor: `${brandPrimary}45`, color: brandPrimary },
+                    avatarBorder: { borderColor: brandPrimary }
+                }
+            };
+
+        case 'GHANA_SUNSHINE':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950",
+                textPrimary: "text-slate-100",
+                textMuted: "text-slate-400",
+                border: "border-[var(--brand-accent)]/30 shadow-[0_8px_30px_rgba(0,0,0,0.4)]",
+                tagBg: "bg-[var(--brand-accent)]/15",
+                tagBorder: "border-[var(--brand-accent)]/30",
+                tagText: "text-[var(--brand-accent)]",
+                avatarBorder: "border-[var(--brand-accent)]",
+                logoColor: brandAccent,
+                isDark: true,
+                styles: {
+                    textPrimary: { color: '#f8fafc' },
+                    tagBg: { backgroundColor: `${brandAccent}25`, borderColor: `${brandAccent}50`, color: brandAccent },
+                    avatarBorder: { borderColor: brandAccent }
+                }
+            };
+
+        case 'MCB_GOLD':
+        default:
+            return {
+                cardBg: "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950",
+                textPrimary: "text-slate-100",
+                textMuted: "text-slate-400",
+                border: "border-[var(--brand-primary)]/30 shadow-[0_8px_30px_rgba(0,0,0,0.4)]",
+                tagBg: "bg-[var(--brand-accent)]/15",
+                tagBorder: "border-[var(--brand-accent)]/30",
+                tagText: "text-[var(--brand-accent)]",
+                avatarBorder: "border-[var(--brand-accent)]",
+                logoColor: brandAccent,
+                isDark: true,
+                styles: {
+                    textPrimary: { color: '#f8fafc' },
+                    tagBg: { backgroundColor: `${brandPrimary}20`, borderColor: `${brandPrimary}45`, color: brandAccent },
+                    avatarBorder: { borderColor: brandAccent }
+                }
+            };
     }
-
-    return {
-        ...base,
-        styles
-    };
 };
 
 const SharedCallCard: React.FC = () => {
@@ -156,6 +172,17 @@ const SharedCallCard: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
 
   const { settings } = useTheme();
+
+  // Automatic save contact prompt when the visitor opens the link/NFC/QR
+  useEffect(() => {
+    if (card) {
+      // Small timeout to allow the premium page animations to play smoothly first
+      const timer = setTimeout(() => {
+        handleSaveContact();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [card]);
 
   const handleConnectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -347,88 +374,142 @@ const SharedCallCard: React.FC = () => {
               isFlipped ? "[transform:rotateY(180deg)]" : ""
           )}>
               {/* FRONT SIDE */}
-              <div className={cn(
-                  "absolute inset-0 w-full h-full rounded-[24px] border p-6 shadow-xl [backface-visibility:hidden] flex flex-col justify-between transition-all duration-300",
-                  themeStyles.cardBg,
-                  themeStyles.border,
-                  themeStyles.textPrimary
-              )} style={themeStyles.styles?.textPrimary}>
-                  <div className="flex justify-between items-start">
-                      <div>
-                          <span className={cn(
-                              "px-2.5 py-1 rounded-full border text-[7px] font-black uppercase tracking-wider",
-                              themeStyles.tagBg,
-                              themeStyles.tagBorder,
-                              themeStyles.tagText
-                          )} style={themeStyles.styles?.tagBg}>
-                              MCB Ghana Lead Card
-                          </span>
-                      </div>
-                      <div className="text-right flex items-center gap-1.5">
-                          {logoSrc ? (
-                              <img src={logoSrc} alt="Company Logo" className="h-6 max-w-[70px] object-contain" />
-                          ) : (
-                              <>
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="inline-block">
-                                      <path d="M12 2L2 22h20L12 2z" fill={themeStyles.logoColor} />
-                                  </svg>
-                                  <div>
-                                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">MCB</h4>
-                                      <p className="text-[5px] font-black uppercase tracking-widest opacity-60 mt-0.5">Ghana</p>
-                                  </div>
-                              </>
-                          )}
-                      </div>
-                  </div>
+              {card.theme === 'vertical' ? (
+                 /* Vertical Front Design */
+                 <div className="absolute inset-0 w-full h-full rounded-[24px] bg-white border border-zinc-200/60 p-5 shadow-xl [backface-visibility:hidden] flex flex-col items-center justify-between text-center overflow-hidden text-zinc-900">
+                     {/* SVG Bezier Brand Swooshes */}
+                     <svg className="absolute bottom-0 right-0 left-0 w-full h-[65px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                        <path d="M0,80 C150,170 350,20 500,80 L500,150 L0,150 Z" fill={primaryCol} opacity="0.15"></path>
+                        <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={primaryCol} opacity="0.85"></path>
+                        <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.75"></path>
+                     </svg>
 
-                  <div className="flex items-center gap-4 my-2">
-                      <img 
-                          src={getSafeAvatarUrl(card.employee?.avatarUrl, card.fullName)} 
-                          alt={card.fullName} 
-                          className="w-12 h-12 rounded-xl object-cover border-2 p-0.5 shadow-md"
-                          style={themeStyles.styles?.avatarBorder}
-                      />
-                      <div className="min-w-0">
-                          <h3 className="text-sm font-black uppercase tracking-tight truncate">{card.fullName}</h3>
-                          <p className="text-[9px] font-bold opacity-80 uppercase tracking-wide truncate">{card.jobTitle}</p>
-                          {card.department && <p className="text-[7px] font-semibold opacity-60 uppercase tracking-widest truncate">{card.department}</p>}
-                      </div>
-                  </div>
+                     <div className="flex justify-between items-center w-full z-10">
+                        <span className="px-2.5 py-0.5 rounded-full text-[6px] font-black uppercase tracking-widest bg-zinc-100 border border-zinc-200 text-zinc-600">
+                           Active Member
+                        </span>
+                        {logoSrc ? (
+                           <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[80px] object-contain" />
+                        ) : (
+                           <h4 className="text-[10px] font-black tracking-widest uppercase text-zinc-800">MCB</h4>
+                        )}
+                     </div>
 
-                  <div className="border-t border-current/10 pt-3 text-[8px] font-bold space-y-1 opacity-80">
-                      <p className="truncate">✉ {card.email}</p>
-                      {card.phone && <p className="truncate">☎ {card.phone}</p>}
-                  </div>
-              </div>
+                     <div className="flex flex-col items-center z-10 mt-1 space-y-1">
+                        <div 
+                           className="w-14 h-14 rounded-full flex-shrink-0 bg-zinc-50 border-2 p-0.5 shadow-sm overflow-hidden" 
+                           style={{ borderColor: accentCol }}
+                        >
+                           <img src={getSafeAvatarUrl(card.employee?.avatarUrl, card.fullName)} alt={card.fullName} className="w-full h-full object-cover rounded-full" />
+                        </div>
+                        <div>
+                           <h4 className="font-black text-[13px] uppercase truncate tracking-wide text-zinc-900 leading-tight">{card.fullName}</h4>
+                           <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: accentCol }}>{card.jobTitle}</p>
+                           {card.department && <p className="text-[7px] text-zinc-500 font-bold uppercase">{card.department}</p>}
+                        </div>
+                     </div>
+
+                     <div className="w-full flex justify-center gap-4 z-10 pt-2 border-t border-zinc-100 text-[8px] font-bold text-zinc-500 mt-1">
+                        <div className="flex items-center gap-1.5">
+                           <Mail size={10} style={{ color: primaryCol }} />
+                           <span className="truncate max-w-[90px]">{card.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                           <Phone size={10} style={{ color: primaryCol }} />
+                           <span className="truncate max-w-[90px]">{card.phone || 'No Phone'}</span>
+                        </div>
+                     </div>
+                 </div>
+              ) : (
+                 /* Horizontal Front Design (Default) */
+                 <div className="absolute inset-0 w-full h-full rounded-[24px] bg-white border border-zinc-200/60 p-6 shadow-xl [backface-visibility:hidden] flex flex-col justify-between overflow-hidden text-zinc-900">
+                     {/* SVG Bezier Brand Swooshes */}
+                     <svg className="absolute bottom-0 right-0 left-0 w-full h-[70px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                        <path d="M0,80 C150,170 350,20 500,80 L500,150 L0,150 Z" fill={primaryCol} opacity="0.15"></path>
+                        <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={primaryCol} opacity="0.85"></path>
+                        <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.75"></path>
+                     </svg>
+
+                     <div className="flex justify-between items-start z-10">
+                        <span className="px-2.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest bg-zinc-100 border border-zinc-200 text-zinc-600">
+                           Active Member
+                        </span>
+                        {logoSrc ? (
+                           <img src={logoSrc} alt="Company Logo" className="h-6 max-w-[90px] object-contain" />
+                        ) : (
+                           <div className="text-right">
+                              <h4 className="text-[11px] font-black tracking-widest uppercase text-zinc-800">MCB</h4>
+                              <p className="text-[5px] font-black uppercase text-zinc-400">Ghana</p>
+                           </div>
+                        )}
+                     </div>
+
+                     <div className="flex items-center gap-4 z-10 mt-2">
+                        <div 
+                           className="w-16 h-16 rounded-2xl flex-shrink-0 bg-zinc-50 border p-1 shadow-sm overflow-hidden" 
+                           style={{ borderColor: accentCol }}
+                        >
+                           <img src={getSafeAvatarUrl(card.employee?.avatarUrl, card.fullName)} alt={card.fullName} className="w-full h-full object-cover rounded-xl" />
+                        </div>
+                        <div className="min-w-0">
+                           <h4 className="font-black text-[14px] uppercase truncate tracking-wide text-zinc-900">{card.fullName}</h4>
+                           <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: accentCol }}>{card.jobTitle}</p>
+                           {card.department && <p className="text-[8px] text-zinc-500 font-bold uppercase">{card.department}</p>}
+                        </div>
+                     </div>
+
+                     <div className="flex justify-between items-center z-10 border-t border-zinc-100 pt-2 text-[8px] font-bold text-zinc-500 mt-2">
+                        <div className="truncate flex items-center gap-1.5 max-w-[48%]">
+                           <Mail size={10} style={{ color: primaryCol }} /> 
+                           <span className="truncate">{card.email}</span>
+                        </div>
+                        <div className="truncate flex items-center gap-1.5 max-w-[48%]">
+                           <Phone size={10} style={{ color: primaryCol }} /> 
+                           <span className="truncate">{card.phone || 'No Phone'}</span>
+                        </div>
+                     </div>
+                 </div>
+              )}
 
               {/* BACK SIDE */}
-              <div className={cn(
-                  "absolute inset-0 w-full h-full rounded-[24px] border p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between transition-all duration-300",
-                  themeStyles.cardBg,
-                  themeStyles.border,
-                  themeStyles.textPrimary
-              )} style={themeStyles.styles?.textPrimary}>
-                  <div className="flex justify-between items-center mb-1">
-                      <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Scan to Connect</span>
-                      {logoSrc ? (
-                          <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[60px] object-contain" />
-                      ) : (
-                          <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Back Side</span>
-                      )}
+              <div 
+                  className="absolute inset-0 w-full h-full rounded-[24px] border p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between overflow-hidden"
+                  style={{ 
+                     backgroundColor: primaryCol,
+                     borderColor: primaryCol + '30'
+                  }}
+              >
+                  <svg className="absolute bottom-0 right-0 left-0 w-full h-[60px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                     <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={accentCol} opacity="0.25"></path>
+                     <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.45"></path>
+                  </svg>
+
+                  <div className="flex justify-between items-center w-full z-10">
+                     <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
+                        <span className="text-[6px] uppercase font-black tracking-widest text-white/80">NFC Contactless</span>
+                     </div>
+                     {logoSrc ? (
+                        <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[80px] object-contain brightness-0 invert" />
+                     ) : (
+                        <h4 className="text-[10px] font-black tracking-widest uppercase text-white">MCB</h4>
+                     )}
                   </div>
-                  <div className="flex-1 flex items-center justify-center py-2">
-                      <div className="p-2 bg-white rounded-xl shadow-md border border-gray-150 inline-block">
-                          <QRCodeCanvas 
-                              id={`qr-canvas-public-${card.id}`}
-                              value={`${window.location.origin}/shared-card/${card.id}`}
-                              size={90}
-                              level="H"
-                              includeMargin={false}
-                          />
-                      </div>
+
+                  <div className="flex flex-col items-center justify-center my-auto space-y-2 z-10">
+                     <div className="p-2 bg-white rounded-2xl shadow-inner flex items-center justify-center border border-white/20">
+                        <QRCodeCanvas 
+                           id={'qr-canvas-public-' + card.id}
+                           value={window.location.origin + '/shared-card/' + card.id}
+                           size={75}
+                           level="H"
+                           includeMargin={true}
+                        />
+                     </div>
                   </div>
-                  <div className="text-center text-[7px] font-black uppercase tracking-widest opacity-60">
-                      MCB Ghana Corporate Network
+
+                  <div className="z-10 text-[7px] font-black tracking-widest uppercase text-white/80 pb-1 flex items-center gap-1.5">
+                     <QrCode size={10} style={{ color: accentCol }} /> Scan to Connect & Save
                   </div>
               </div>
           </div>
@@ -550,117 +631,122 @@ const SharedCallCard: React.FC = () => {
         </div>
 
         {/* Bilateral Lead capture portal */}
-        <div className={cn(
-          "p-8 rounded-[32px] shadow-lg border space-y-6",
-          themeStyles.isDark 
-            ? "bg-[#111827]/50 border-gray-800" 
-            : "bg-white/95 border-slate-200"
-        )}>
-          <div className="space-y-1">
-            <span className={cn(
-              "px-3 py-1 rounded-full border text-[7px] sm:text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 w-max",
-              themeStyles.tagBg,
-              themeStyles.tagBorder,
-              themeStyles.tagText
-            )} style={themeStyles.styles?.tagBg}>
-              <Award size={9} />
-              Bilateral Lead Exchange
-            </span>
-            <h3 className={`text-sm font-black uppercase tracking-wider ${titleText}`}>Share Your Contact Info</h3>
-            <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
-              Send your professional contact details back to {card.fullName.split(' ')[0]} to establish a mutual connection.
-            </p>
-          </div>
-
-          {success ? (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl text-center space-y-2"
-            >
-              <p className="text-xs font-black uppercase tracking-wider text-emerald-500">Connection Sent!</p>
-              <p className="text-[10px] text-emerald-600/80 font-medium">
-                Your details have been successfully synced to {card.fullName.split(' ')[0]}'s corporate dashboard log.
+        {card?.enableContactCollection && (
+          <div className={cn(
+            "p-8 rounded-[32px] shadow-lg border space-y-6",
+            themeStyles.isDark 
+              ? "bg-[#111827]/50 border-gray-800" 
+              : "bg-white/95 border-slate-200"
+          )}>
+            <div className="space-y-1">
+              <span className={cn(
+                "px-3 py-1 rounded-full border text-[7px] sm:text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 w-max",
+                themeStyles.tagBg,
+                themeStyles.tagBorder,
+                themeStyles.tagText
+              )} style={themeStyles.styles?.tagBg}>
+                <Award size={9} />
+                Bilateral Lead Exchange
+              </span>
+              <h3 className={`text-sm font-black uppercase tracking-wider ${titleText}`}>Share Your Contact Info</h3>
+              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                Send your professional contact details back to {card.fullName.split(' ')[0]} to establish a mutual connection.
               </p>
-            </motion.div>
-          ) : (
-            <form onSubmit={handleConnectSubmit} className="space-y-4">
-              {formError && (
-                <div className="bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl text-center">
-                  <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">{formError}</p>
-                </div>
-              )}
+            </div>
 
-              <div className="space-y-1">
-                <label className={labelClass}>Your Full Name *</label>
-                <input 
-                  type="text" 
-                  value={visitorName}
-                  onChange={(e) => setVisitorName(e.target.value)}
-                  placeholder="Kwame Mensah"
-                  className={inputClass}
-                  required
-                />
-              </div>
+            {success ? (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl text-center space-y-2"
+              >
+                <p className="text-xs font-black uppercase tracking-wider text-emerald-500">Connection Sent!</p>
+                <p className="text-[10px] text-emerald-600/80 font-medium">
+                  Your details have been successfully synced to {card.fullName.split(' ')[0]}'s corporate dashboard log.
+                </p>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleConnectSubmit} className="space-y-4">
+                {formError && (
+                  <div className="bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl text-center">
+                    <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">{formError}</p>
+                  </div>
+                )}
 
-              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className={labelClass}>Email Address *</label>
+                  <label className={labelClass}>Your Full Name *</label>
                   <input 
-                    type="email" 
-                    value={visitorEmail}
-                    onChange={(e) => setVisitorEmail(e.target.value)}
-                    placeholder="kwame@company.com"
+                    type="text" 
+                    value={visitorName}
+                    onChange={(e) => setVisitorName(e.target.value)}
+                    placeholder="Kwame Mensah"
                     className={inputClass}
                     required
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className={labelClass}>Email Address *</label>
+                    <input 
+                      type="email" 
+                      value={visitorEmail}
+                      onChange={(e) => setVisitorEmail(e.target.value)}
+                      placeholder="kwame@company.com"
+                      className={inputClass}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelClass}>Phone Number</label>
+                    <input 
+                      type="tel" 
+                      value={visitorPhone}
+                      onChange={(e) => setVisitorPhone(e.target.value)}
+                      placeholder="+233 24 000 0000"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1">
-                  <label className={labelClass}>Phone Number</label>
+                  <label className={labelClass}>Company & Title</label>
                   <input 
-                    type="tel" 
-                    value={visitorPhone}
-                    onChange={(e) => setVisitorPhone(e.target.value)}
-                    placeholder="+233 24 000 0000"
+                    type="text" 
+                    value={visitorCompany}
+                    onChange={(e) => setVisitorCompany(e.target.value)}
+                    placeholder="MCB Ghana - Manager"
                     className={inputClass}
                   />
                 </div>
-              </div>
 
-              <div className="space-y-1">
-                <label className={labelClass}>Company & Title</label>
-                <input 
-                  type="text" 
-                  value={visitorCompany}
-                  onChange={(e) => setVisitorCompany(e.target.value)}
-                  placeholder="Enterprise GH, Director"
-                  className={inputClass}
-                />
-              </div>
+                <div className="space-y-1">
+                  <label className={labelClass}>Professional Notes</label>
+                  <textarea 
+                    value={visitorNotes}
+                    onChange={(e) => setVisitorNotes(e.target.value)}
+                    placeholder="Discussed partnership synergy opportunities..."
+                    rows={3}
+                    className={cn(inputClass, "resize-none")}
+                  />
+                </div>
 
-              <div className="space-y-1">
-                <label className={labelClass}>Add a Short Note</label>
-                <textarea 
-                  value={visitorNotes}
-                  onChange={(e) => setVisitorNotes(e.target.value)}
-                  placeholder="Great meeting you today!"
-                  rows={2}
-                  className={cn(inputClass, "resize-none")}
-                />
-              </div>
-
-              <button 
-                type="submit"
-                disabled={submitting}
-                className={primaryBtnClass}
-                style={primaryBtnStyle}
-              >
-                {submitting ? 'Submitting...' : 'Send My Info Back'}
-              </button>
-            </form>
-          )}
-        </div>
-
+                <button 
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-[8px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 border border-transparent shadow-lg active:scale-[0.98] transition-all"
+                  style={{
+                    backgroundColor: primaryCol,
+                    boxShadow: '0 4px 12px ' + primaryCol + '30'
+                  }}
+                >
+                  {submitting ? 'Exchanging details...' : 'Exchange Contact Details'}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+        
         {/* Footer */}
         <p className="text-center text-[8px] font-bold uppercase tracking-widest text-slate-400 mt-8">
           Powered by MCB Ghana digital workspace systems

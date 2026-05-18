@@ -119,6 +119,7 @@ const SettingsHub = () => {
     city: '',
     country: '',
     isAiEnabled: false,
+    allowCallCard: false,
     defaultLeaveAllowance: 24,
     allowLeaveCarryForward: true,
     allowLeaveBorrowing: false,
@@ -633,6 +634,37 @@ const SettingsHub = () => {
                               Activate institutional intelligence features including predictive attrition risk, AI Job Architect, and organizational sentiment heatmap.
                            </p>
                         </div>
+
+                        {/* Digital Call Cards & Lead Collection Toggle */}
+                        <div className="p-6 rounded-3xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 group hover:border-[var(--primary)]/30 transition-all mb-8">
+                           <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3">
+                                 <div className="p-2 rounded-xl bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20">
+                                    <CreditCard size={16} />
+                                 </div>
+                                 <div>
+                                    <p className="text-[14px] font-black uppercase tracking-tight text-[var(--text-primary)]">Digital Call Cards</p>
+                                    <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Lead & Contact Collection</p>
+                                 </div>
+                              </div>
+                              <button 
+                                 onClick={() => setFormData({ ...formData, allowCallCard: !formData.allowCallCard })}
+                                 className={cn(
+                                    "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none",
+                                    formData.allowCallCard ? "bg-[var(--primary)]" : "bg-[var(--text-muted)]/20"
+                                 )}
+                              >
+                                 <span className={cn(
+                                    "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out",
+                                    formData.allowCallCard ? "translate-x-5" : "translate-x-0"
+                                 )} />
+                              </button>
+                           </div>
+                           <p className="text-[12px] text-[var(--text-secondary)] mt-4 leading-relaxed font-medium">
+                              Enable the corporate Digital Call Card hub for employees, allowing them to issue business cards, print QR codes, and collect client leads synced to the organization.
+                           </p>
+                        </div>
+
                         <div className="space-y-8">
                           <div>
                             <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.company_name', 'Company Name')}</label>

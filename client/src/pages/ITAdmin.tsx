@@ -63,140 +63,26 @@ export const getThemeStyles = (themeName: string, primaryColor?: string, accentC
   const brandPrimary = primaryColor || '#009EE3';
   const brandAccent = accentColor || '#EE7100';
 
-  switch (themeName) {
-    case 'MCB_LIGHT_GOLD':
-      return {
-        bg: "bg-gradient-to-br from-[#FAF9F6] via-[#F5F2EB] to-[#EAE6DF]",
-        cardBg: "bg-white/85 backdrop-blur-md",
-        cardBorder: "border-[#d4af37]/30 shadow-[0_8px_30px_rgba(212,175,55,0.06)]",
-        accentText: "text-[#b69248]",
-        badgeBg: "bg-[#d4af37]/10 border-[#d4af37]/20 text-[#b69248]",
-        primaryBtn: "bg-gradient-to-r from-[#d4af37] to-[#b69248] text-white hover:shadow-[#d4af37]/20",
-        iconBg: "bg-[#d4af37]/5 border-[#d4af37]/10 text-[#b69248] hover:bg-[#d4af37]/10",
-        textColor: "text-[#4a5568]",
-        titleColor: "text-[#1a202c]",
-        chipColor: "bg-[#d4af37]/20 border-[#d4af37]/40 text-[#b69248]",
-        isDark: false,
-        styles: {
-          accentText: { color: '#b69248' },
-          badgeBg: { backgroundColor: 'rgba(212, 175, 55, 0.1)', borderColor: 'rgba(212, 175, 55, 0.2)', color: '#b69248' },
-          primaryBtn: { background: 'linear-gradient(135deg, #d4af37, #b69248)', color: '#ffffff' },
-          iconBg: { color: '#b69248' },
-          chip: { borderColor: '#d4af37', color: '#b69248' }
-        }
-      };
-
-    case 'MCB_LIGHT_NAVY':
-      return {
-        bg: "bg-gradient-to-br from-[#F4F8FA] via-[#EBF4FA] to-[#E2EDF5]",
-        cardBg: "bg-white/90 backdrop-blur-lg",
-        cardBorder: "border-[var(--brand-primary)]/20 shadow-[0_8px_32px_rgba(0,158,227,0.08)]",
-        accentText: "text-[var(--brand-accent)]",
-        badgeBg: "bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20 text-[var(--brand-primary)]",
-        primaryBtn: "bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-accent)] text-white hover:shadow-lg",
-        iconBg: "bg-[var(--brand-primary)]/5 border-[var(--brand-primary)]/10 text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10",
-        textColor: "text-slate-600",
-        titleColor: "text-slate-800",
-        chipColor: "bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/30 text-[var(--brand-primary)]",
-        isDark: false,
-        styles: {
-          accentText: { color: brandAccent },
-          badgeBg: { backgroundColor: `${brandPrimary}15`, borderColor: `${brandPrimary}30`, color: brandPrimary },
-          primaryBtn: { background: `linear-gradient(135deg, ${brandPrimary}, ${brandAccent})`, color: '#ffffff' },
-          iconBg: { color: brandPrimary },
-          chip: { borderColor: `${brandPrimary}50`, color: brandPrimary }
-        }
-      };
-
-    case 'GHANA_SUNSHINE_LIGHT':
-      return {
-        bg: "bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3ECE0]",
-        cardBg: "bg-white/85 backdrop-blur-md",
-        cardBorder: "border-amber-500/30 shadow-[0_8px_30px_rgba(245,158,11,0.05)]",
-        accentText: "text-amber-600",
-        badgeBg: "bg-amber-500/10 border-amber-500/20 text-amber-700",
-        primaryBtn: "bg-gradient-to-r from-red-500 via-yellow-500 to-emerald-600 text-white hover:shadow-emerald-500/20",
-        iconBg: "bg-amber-500/5 border-amber-500/10 text-amber-700 hover:bg-amber-500/10",
-        textColor: "text-slate-600",
-        titleColor: "text-slate-800",
-        chipColor: "bg-yellow-500/20 border-yellow-500/40 text-yellow-700",
-        isDark: false,
-        styles: {
-          accentText: { color: '#d97706' },
-          badgeBg: { backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)', color: '#b45309' },
-          primaryBtn: { background: 'linear-gradient(135deg, #ef4444, #f59e0b, #10b981)', color: '#ffffff' },
-          iconBg: { color: '#b45309' },
-          chip: { borderColor: '#f59e0b', color: '#b45309' }
-        }
-      };
-
-    case 'MIDNIGHT_LUXURY':
-      return {
-        bg: "bg-gradient-to-br from-[#0d0f12] via-[#08090a] to-[#040405]",
-        cardBg: "bg-[#171a21]/50 backdrop-blur-2xl",
-        cardBorder: "border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]",
-        accentText: "text-blue-400",
-        badgeBg: "bg-blue-400/10 border-blue-400/20 text-blue-400",
-        primaryBtn: "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white hover:shadow-blue-500/25",
-        iconBg: "bg-white/5 border-white/10 text-white hover:bg-white/20",
-        textColor: "text-gray-300",
-        titleColor: "text-white",
-        chipColor: "bg-blue-500/20 border-blue-500/40 text-blue-400",
-        isDark: true,
-        styles: {
-          accentText: { color: '#60a5fa' },
-          badgeBg: { backgroundColor: 'rgba(96, 165, 250, 0.1)', borderColor: 'rgba(96, 165, 250, 0.2)', color: '#60a5fa' },
-          primaryBtn: { background: 'linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6)', color: '#ffffff' },
-          iconBg: { color: '#60a5fa' },
-          chip: { borderColor: '#3b82f6', color: '#60a5fa' }
-        }
-      };
-
-    case 'GHANA_SUNSHINE':
-      return {
-        bg: "bg-gradient-to-br from-[#1c0808] via-[#0c0505] to-[#050202]",
-        cardBg: "bg-[#251010]/60 backdrop-blur-2xl",
-        cardBorder: "border-red-500/30 shadow-[0_8px_30px_rgba(239,68,68,0.3)]",
-        accentText: "text-[#f97316]",
-        badgeBg: "bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]",
-        primaryBtn: "bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white hover:shadow-orange-500/25",
-        iconBg: "bg-[#f97316]/5 border-[#f97316]/10 text-[#f97316] hover:bg-[#f97316]/20",
-        textColor: "text-[#fed7aa]",
-        titleColor: "text-white",
-        chipColor: "bg-red-500/20 border-red-500/40 text-red-400",
-        isDark: true,
-        styles: {
-          accentText: { color: '#f97316' },
-          badgeBg: { backgroundColor: 'rgba(249, 115, 22, 0.1)', borderColor: 'rgba(249, 115, 22, 0.2)', color: '#f97316' },
-          primaryBtn: { background: 'linear-gradient(135deg, #dc2626, #f97316, #eab308)', color: '#ffffff' },
-          iconBg: { color: '#f97316' },
-          chip: { borderColor: '#ef4444', color: '#f87171' }
-        }
-      };
-
-    case 'MCB_GOLD':
-    default:
-      return {
-        bg: "bg-gradient-to-br from-[#0c1c15] via-[#050b07] to-[#040605]",
-        cardBg: "bg-[#11241a]/60 backdrop-blur-2xl",
-        cardBorder: "border-[#dfb76c]/30 shadow-[0_8px_30px_rgba(0,0,0,0.6)]",
-        accentText: "text-[#dfb76c]",
-        badgeBg: "bg-[#dfb76c]/10 border-[#dfb76c]/20 text-[#dfb76c]",
-        primaryBtn: "bg-gradient-to-r from-[#dfb76c] to-[#b69248] text-[#050b07] hover:shadow-[#dfb76c]/20",
-        iconBg: "bg-[#dfb76c]/5 border-[#dfb76c]/10 text-[#dfb76c] hover:bg-[#dfb76c]/20",
-        textColor: "text-[#e2e8f0]",
-        titleColor: "text-white",
-        chipColor: "bg-[#dfb76c]/20 border-[#dfb76c]/40 text-[#dfb76c]",
-        isDark: true,
-        styles: {
-          accentText: { color: '#dfb76c' },
-          badgeBg: { backgroundColor: 'rgba(223, 183, 108, 0.1)', borderColor: 'rgba(223, 183, 108, 0.2)', color: '#dfb76c' },
-          primaryBtn: { background: 'linear-gradient(135deg, #dfb76c, #b69248)', color: '#050b07' },
-          iconBg: { color: '#dfb76c' },
-          chip: { borderColor: '#dfb76c', color: '#dfb76c' }
-        }
-      };
-  }
+  return {
+    bg: "bg-gradient-to-br from-[#FAF9F6] via-[#F5F2EB] to-[#EAE6DF]",
+    cardBg: "bg-white/85 backdrop-blur-md",
+    cardBorder: "border-zinc-200/60 shadow-xl",
+    accentText: "text-zinc-600",
+    badgeBg: "bg-zinc-100 border-zinc-200 text-zinc-600",
+    primaryBtn: "text-white hover:shadow-lg",
+    iconBg: "bg-zinc-50 border border-zinc-200 text-zinc-600 hover:bg-zinc-100",
+    textColor: "text-zinc-500",
+    titleColor: "text-zinc-800",
+    chipColor: "bg-zinc-100 border-zinc-200 text-zinc-600",
+    isDark: false,
+    styles: {
+      accentText: { color: brandAccent },
+      badgeBg: { backgroundColor: 'rgba(0,0,0,0.05)', borderColor: 'rgba(0,0,0,0.1)', color: '#333' },
+      primaryBtn: { background: `linear-gradient(135deg, ${brandPrimary}, ${brandAccent})`, color: '#ffffff' },
+      iconBg: { color: brandPrimary },
+      chip: { borderColor: brandPrimary, color: brandPrimary }
+    }
+  };
 };
 
 const ITAdmin = () => {
@@ -719,19 +605,31 @@ const ITAdmin = () => {
                                              />
                                           </div>
                                           <div className="space-y-2">
-                                             <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Corporate Theme</label>
+                                             <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Card Orientation</label>
                                              <select 
                                                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[11px] font-bold focus:border-[var(--primary)] outline-none"
-                                                value={cardData.theme || 'MCB_LIGHT_GOLD'}
+                                                value={cardData.theme || 'horizontal'}
                                                 onChange={e => setCardData((prev: any) => ({ ...prev, theme: e.target.value }))}
                                              >
-                                                <option value="MCB_LIGHT_GOLD">⚜️ MCB Prestige Light Gold</option>
-                                                <option value="MCB_LIGHT_NAVY">⚓ MCB Corporate Light Navy</option>
-                                                <option value="GHANA_SUNSHINE_LIGHT">☀️ Ghana Sunshine Light</option>
-                                                <option value="MIDNIGHT_LUXURY">🌌 Midnight Luxury (Dark)</option>
-                                                <option value="MCB_GOLD">🏆 MCB Corporate Gold (Dark)</option>
-                                                <option value="GHANA_SUNSHINE">🔥 Ghana Sunshine (Dark)</option>
+                                                <option value="horizontal">💳 Horizontal Card Layout</option>
+                                                <option value="vertical">📱 Vertical Card Layout</option>
                                              </select>
+                                          </div>
+                                       </div>
+
+                                       <div className="space-y-2">
+                                          <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Bilateral Sync Settings</label>
+                                          <div className="flex items-center gap-3 h-11 px-4 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl">
+                                             <input 
+                                                type="checkbox"
+                                                id="enableContactCollection"
+                                                className="w-4 h-4 rounded text-[var(--primary)] focus:ring-[var(--primary)] border-[var(--border-subtle)] cursor-pointer"
+                                                checked={cardData.enableContactCollection || false}
+                                                onChange={e => setCardData((prev: any) => ({ ...prev, enableContactCollection: e.target.checked }))}
+                                             />
+                                             <label htmlFor="enableContactCollection" className="text-[9px] font-black uppercase tracking-wider text-[var(--text-primary)] cursor-pointer select-none">
+                                                Enable visitor contact capture & sync (Bilateral Sync)
+                                             </label>
                                           </div>
                                        </div>
 
@@ -858,111 +756,177 @@ const ITAdmin = () => {
                                           >
                                              <div className={cn("card-flip-inner shadow-2xl rounded-[24px] transition-transform duration-700", isFlipped && "card-flipped")}>
                                                 {/* Front Side */}
-                                                <div className={cn("card-flip-front p-6 border flex flex-col justify-between overflow-hidden", themeStyles.bg, themeStyles.cardBg, themeStyles.cardBorder)}>
-                                                   {/* Top branding */}
-                                                   <div className="flex justify-between items-start">
-                                                      <span className={cn("px-2 py-0.5 rounded-full border text-[7px] font-black uppercase tracking-widest", themeStyles.badgeBg)} style={themeStyles.styles?.badgeBg}>
-                                                         {cardData.isActive !== false ? "Active Card" : "Suspended"}
-                                                      </span>
-                                                      <div className="flex items-center gap-2">
+                                                {cardData.theme === 'vertical' ? (
+                                                   /* Vertical Design */
+                                                   <div className="card-flip-front w-full h-full bg-white relative rounded-[24px] overflow-hidden border border-zinc-200/60 shadow-xl flex flex-col items-center justify-between p-5 text-center">
+                                                      {/* Bezier Curve Swooshes using Brand Colors */}
+                                                      <svg className="absolute bottom-0 right-0 left-0 w-full h-[65px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                                                         <path d="M0,80 C150,170 350,20 500,80 L500,150 L0,150 Z" fill={primaryCol} opacity="0.15"></path>
+                                                         <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={primaryCol} opacity="0.85"></path>
+                                                         <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.75"></path>
+                                                      </svg>
+
+                                                      <div className="flex justify-between items-center w-full z-10">
+                                                         <span className="px-2.5 py-0.5 rounded-full text-[6px] font-black uppercase tracking-widest bg-zinc-100 border border-zinc-200 text-zinc-600">
+                                                            {cardData.isActive !== false ? "Active Member" : "Suspended"}
+                                                         </span>
                                                          {logoSrc ? (
-                                                            <img src={logoSrc} alt="Company Logo" className="h-6 max-w-[80px] object-contain" />
+                                                            <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[80px] object-contain" />
+                                                         ) : (
+                                                            <h4 className="text-[10px] font-black tracking-widest uppercase text-zinc-800">MCB</h4>
+                                                         )}
+                                                      </div>
+
+                                                      <div className="flex flex-col items-center z-10 mt-1 space-y-1">
+                                                         <div 
+                                                            className="w-14 h-14 rounded-full flex-shrink-0 bg-zinc-50 border-2 p-0.5 shadow-sm overflow-hidden" 
+                                                            style={{ borderColor: accentCol }}
+                                                         >
+                                                            {selectedCardEmployee?.profilePhotoUrl ? (
+                                                               <img src={selectedCardEmployee.profilePhotoUrl} alt={cardData.fullName} className="w-full h-full object-cover rounded-full" />
+                                                            ) : (
+                                                               <div className="w-full h-full bg-zinc-100 rounded-full flex items-center justify-center font-black text-[14px] text-zinc-500">
+                                                                  {cardData.fullName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC'}
+                                                               </div>
+                                                            )}
+                                                         </div>
+                                                         <div>
+                                                            <h4 className="font-black text-[13px] uppercase truncate tracking-wide text-zinc-900 leading-tight">{cardData.fullName || 'Name Placeholder'}</h4>
+                                                            <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: accentCol }}>{cardData.jobTitle || 'Role Title'}</p>
+                                                            {cardData.department && <p className="text-[7px] text-zinc-500 font-bold uppercase">{cardData.department}</p>}
+                                                         </div>
+                                                      </div>
+
+                                                      <div className="w-full flex justify-center gap-4 z-10 pt-2 border-t border-zinc-100 text-[8px] font-bold text-zinc-500 mt-1">
+                                                         <div className="flex items-center gap-1.5">
+                                                            <Mail size={10} style={{ color: primaryCol }} />
+                                                            <span className="truncate max-w-[90px]">{cardData.email || 'No Email'}</span>
+                                                         </div>
+                                                         <div className="flex items-center gap-1.5">
+                                                            <Phone size={10} style={{ color: primaryCol }} />
+                                                            <span className="truncate max-w-[90px]">{cardData.phone || 'No Phone'}</span>
+                                                         </div>
+                                                      </div>
+                                                   </div>
+                                                ) : (
+                                                   /* Horizontal Design (Default) */
+                                                   <div className="card-flip-front w-full h-full bg-white relative rounded-[24px] overflow-hidden border border-zinc-200/60 shadow-xl flex flex-col justify-between p-6">
+                                                      {/* Bezier Curve Swooshes using Brand Colors */}
+                                                      <svg className="absolute bottom-0 right-0 left-0 w-full h-[70px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                                                         <path d="M0,80 C150,170 350,20 500,80 L500,150 L0,150 Z" fill={primaryCol} opacity="0.15"></path>
+                                                         <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={primaryCol} opacity="0.85"></path>
+                                                         <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.75"></path>
+                                                      </svg>
+
+                                                      <div className="flex justify-between items-start z-10">
+                                                         <span className="px-2.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest bg-zinc-100 border border-zinc-200 text-zinc-600">
+                                                            {cardData.isActive !== false ? "Active Member" : "Suspended"}
+                                                         </span>
+                                                         {logoSrc ? (
+                                                            <img src={logoSrc} alt="Company Logo" className="h-6 max-w-[90px] object-contain" />
                                                          ) : (
                                                             <div className="text-right">
-                                                               <h4 className={cn("text-[11px] font-black tracking-widest uppercase", themeStyles.titleColor)}>MCB</h4>
-                                                               <p className="text-[5px] font-black uppercase text-gray-400">Ghana</p>
+                                                               <h4 className="text-[11px] font-black tracking-widest uppercase text-zinc-800">MCB</h4>
+                                                               <p className="text-[5px] font-black uppercase text-zinc-400">Ghana</p>
                                                             </div>
                                                          )}
                                                       </div>
-                                                   </div>
 
-                                                   {/* Hologram / Gold Chip Graphic for Premium Corporate look */}
-                                                   <div className="w-8 h-6 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 rounded-md border border-amber-400/40 relative shadow-inner overflow-hidden flex items-center justify-center">
-                                                      <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                                                      <div className="w-5 h-4 border border-amber-600/30 rounded flex flex-wrap opacity-50" />
-                                                   </div>
-
-                                                   {/* User details */}
-                                                   <div className="flex items-center gap-4 mt-auto">
-                                                      <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center font-black text-[11px] border p-0.5 shadow-sm shrink-0", themeStyles.chipColor)} style={themeStyles.styles?.chip}>
-                                                         {cardData.fullName?.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC'}
+                                                      <div className="flex items-center gap-4 z-10 mt-2">
+                                                         <div 
+                                                            className="w-16 h-16 rounded-2xl flex-shrink-0 bg-zinc-50 border p-1 shadow-sm overflow-hidden" 
+                                                            style={{ borderColor: accentCol }}
+                                                         >
+                                                            {selectedCardEmployee?.profilePhotoUrl ? (
+                                                               <img src={selectedCardEmployee.profilePhotoUrl} alt={cardData.fullName} className="w-full h-full object-cover rounded-xl" />
+                                                            ) : (
+                                                               <div className="w-full h-full bg-zinc-100 rounded-xl flex items-center justify-center font-black text-[15px] text-zinc-500">
+                                                                  {cardData.fullName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'CC'}
+                                                               </div>
+                                                            )}
+                                                         </div>
+                                                         <div className="min-w-0">
+                                                            <h4 className="font-black text-[14px] uppercase truncate tracking-wide text-zinc-900">{cardData.fullName || 'Name Placeholder'}</h4>
+                                                            <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: accentCol }}>{cardData.jobTitle || 'Role Title'}</p>
+                                                            {cardData.department && <p className="text-[8px] text-zinc-500 font-bold uppercase">{cardData.department}</p>}
+                                                         </div>
                                                       </div>
-                                                      <div className="min-w-0">
-                                                         <h4 className={cn("font-black text-[13px] uppercase truncate tracking-wide", themeStyles.titleColor)}>{cardData.fullName || 'Name Placeholder'}</h4>
-                                                         <p className={cn("text-[9px] font-bold uppercase tracking-wider", themeStyles.accentText)} style={themeStyles.styles?.accentText}>{cardData.jobTitle || 'Role Title'}</p>
-                                                         {cardData.department && <p className="text-[7px] text-gray-400 font-bold uppercase">{cardData.department}</p>}
-                                                      </div>
-                                                   </div>
 
-                                                   {/* Bio / statement */}
-                                                   {cardData.bio && (
-                                                      <p className={cn("text-[8px] leading-relaxed italic border-l pl-2 mt-2 line-clamp-1 opacity-90")} style={{ borderColor: accentCol, ...themeStyles.styles?.accentText }}>
-                                                         "{cardData.bio}"
-                                                      </p>
-                                                   )}
-
-                                                   {/* Footer Channels */}
-                                                   <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200/10 text-[8px] font-bold text-gray-400">
-                                                      <div className="truncate flex items-center gap-1.5 max-w-[50%]">
-                                                         <Mail size={10} className={themeStyles.accentText} style={themeStyles.styles?.accentText} /> 
-                                                         <span className="truncate">{cardData.email || 'No Email'}</span>
-                                                      </div>
-                                                      <div className="truncate flex items-center gap-1.5 max-w-[50%]">
-                                                         <Phone size={10} className={themeStyles.accentText} style={themeStyles.styles?.accentText} /> 
-                                                         <span className="truncate">{cardData.phone || 'No Phone'}</span>
+                                                      <div className="flex justify-between items-center z-10 border-t border-zinc-100 pt-2 text-[8px] font-bold text-zinc-500 mt-2">
+                                                         <div className="truncate flex items-center gap-1.5 max-w-[48%]">
+                                                            <Mail size={10} style={{ color: primaryCol }} /> 
+                                                            <span className="truncate">{cardData.email || 'No Email'}</span>
+                                                         </div>
+                                                         <div className="truncate flex items-center gap-1.5 max-w-[48%]">
+                                                            <Phone size={10} style={{ color: primaryCol }} /> 
+                                                            <span className="truncate">{cardData.phone || 'No Phone'}</span>
+                                                         </div>
                                                       </div>
                                                    </div>
-                                                </div>
+                                                )}
 
                                                 {/* Back Side */}
-                                                <div className={cn("card-flip-back p-6 border flex flex-col items-center justify-between overflow-hidden", themeStyles.bg, themeStyles.cardBg, themeStyles.cardBorder)}>
-                                                   <div className="flex justify-between items-center w-full">
-                                                      <div className="flex items-center gap-1 text-[8px] font-bold text-gray-400">
-                                                         {/* Wave contactless icon */}
-                                                         <div className="flex gap-1 items-center">
-                                                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
-                                                            <span className="text-[7px] uppercase font-black tracking-widest">NFC Contactless</span>
-                                                         </div>
+                                                <div 
+                                                   className="card-flip-back w-full h-full relative rounded-[24px] overflow-hidden border shadow-xl flex flex-col items-center justify-between p-6"
+                                                   style={{ 
+                                                      backgroundColor: primaryCol,
+                                                      borderColor: primaryCol + "30"
+                                                   }}
+                                                >
+                                                   <svg className="absolute bottom-0 right-0 left-0 w-full h-[60px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                                                      <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={accentCol} opacity="0.25"></path>
+                                                      <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.45"></path>
+                                                   </svg>
+
+                                                   <div className="flex justify-between items-center w-full z-10">
+                                                      <div className="flex items-center gap-1">
+                                                         <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
+                                                         <span className="text-[6px] uppercase font-black tracking-widest text-white/80">NFC Contactless</span>
                                                       </div>
                                                       {logoSrc ? (
-                                                         <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[70px] object-contain" />
+                                                         <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[80px] object-contain brightness-0 invert" />
                                                       ) : (
-                                                         <div className="text-right">
-                                                            <h4 className={cn("text-[10px] font-black tracking-widest uppercase", themeStyles.titleColor)}>MCB</h4>
-                                                            <p className="text-[4px] font-black uppercase text-gray-400">Ghana</p>
-                                                         </div>
+                                                         <h4 className="text-[10px] font-black tracking-widest uppercase text-white">MCB</h4>
                                                       )}
                                                    </div>
 
-                                                   {/* QR Code Container centered */}
-                                                   <div className="flex flex-col items-center justify-center my-auto space-y-2">
-                                                      <div className="p-2 bg-white rounded-xl shadow-inner border border-gray-100 flex items-center justify-center">
+                                                   <div className="flex flex-col items-center justify-center my-auto space-y-2 z-10">
+                                                      <div className="p-2 bg-white rounded-2xl shadow-inner flex items-center justify-center border border-white/20">
                                                          {(() => {
                                                             const qrValue = cardData.id 
-                                                               ? `${window.location.origin}/shared-card/${cardData.id}`
-                                                               : `${window.location.origin}/shared-card/preview/${selectedCardEmployee?.id || 'temp_preview'}`;
+                                                               ? (cardData.id.indexOf("http") === 0 ? cardData.id : window.location.origin + "/shared-card/" + cardData.id)
+                                                               : window.location.origin + "/shared-card/preview/" + (selectedCardEmployee?.id || "temp_preview");
                                                             return (
                                                                <QRCodeCanvas 
                                                                   id="card-qr-canvas"
                                                                   value={qrValue}
-                                                                  size={80}
+                                                                  size={75}
                                                                   level="H"
                                                                   includeMargin={true}
                                                                />
                                                             );
                                                          })()}
                                                       </div>
-                                                      <div className="text-center">
-                                                         <p className={cn("text-[7px] font-black tracking-widest uppercase", themeStyles.accentText)} style={themeStyles.styles?.accentText}>Scan to Connect</p>
-                                                         <p className="text-[5px] text-gray-400 font-bold">Touchless QR/NFC Technology</p>
-                                                      </div>
                                                    </div>
 
-                                                   <div className="text-[6px] font-black uppercase tracking-widest text-center text-gray-400 opacity-60">
-                                                      MCB Ghana HRM © 2026. All Corporate Rights Reserved.
+                                                   <div className="z-10 text-[7px] font-black tracking-widest uppercase text-white/80 pb-1 flex items-center gap-1.5">
+                                                      <QrCode size={10} style={{ color: accentCol }} /> Scan to Connect & Save
                                                    </div>
                                                 </div>
                                              </div>
+                                          </div>
+
+                                          {/* Hidden High-Resolution QR Canvas for Instant Crisp PNG Download */}
+                                          <div style={{ display: 'none' }}>
+                                             <QRCodeCanvas
+                                                id="card-qr-hidden-canvas"
+                                                value={cardData.id 
+                                                   ? `${window.location.origin}/shared-card/${cardData.id}`
+                                                   : `${window.location.origin}/shared-card/preview/${selectedCardEmployee?.id || 'temp_preview'}`}
+                                                size={256}
+                                                level="H"
+                                                includeMargin={true}
+                                             />
                                           </div>
                                           
                                           <p className="text-[9px] font-bold text-[var(--text-muted)] italic flex items-center gap-1.5 justify-center animate-pulse mt-2">
@@ -987,9 +951,9 @@ const ITAdmin = () => {
                                                          <button 
                                                             type="button"
                                                             onClick={() => {
-                                                               const canvas = document.getElementById('card-qr-canvas') as HTMLCanvasElement;
+                                                               const canvas = document.getElementById('card-qr-hidden-canvas') as HTMLCanvasElement;
                                                                if (!canvas) {
-                                                                  toast.error("QR Code canvas not found. Make sure the card is flipped to the QR side to generate it!");
+                                                                  toast.error("QR Code generator not ready yet. Please try again.");
                                                                   return;
                                                                }
                                                                const url = canvas.toDataURL('image/png');
@@ -999,7 +963,7 @@ const ITAdmin = () => {
                                                                document.body.appendChild(link);
                                                                link.click();
                                                                document.body.removeChild(link);
-                                                               toast.success("QR Code downloaded successfully!");
+                                                               toast.success("Crisp high-resolution QR downloaded!");
                                                             }}
                                                             className="flex-1 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center justify-center gap-2 hover:bg-[var(--bg-sidebar-active)] transition-all"
                                                          >

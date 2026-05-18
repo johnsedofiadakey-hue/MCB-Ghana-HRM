@@ -52,6 +52,7 @@ export const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin =
       country: true,
       allowLeaveCarryForward: true,
       allowLeaveBorrowing: true,
+      allowCallCard: true,
       carryForwardLimit: true,
       borrowingLimit: true,
       ssnitRate: true,
@@ -220,6 +221,7 @@ export const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin =
     country: org.country || '',
     allowLeaveCarryForward: org.allowLeaveCarryForward ?? true,
     allowLeaveBorrowing: org.allowLeaveBorrowing ?? false,
+    allowCallCard: org.allowCallCard ?? false,
     carryForwardLimit: Number(org.carryForwardLimit || 10),
     borrowingLimit: Number(org.borrowingLimit || 5),
     ssnitRate: Number(org.ssnitRate || 0.055),
@@ -264,7 +266,7 @@ export const updateSettings = async (
           discountPercentage, discountFixed,
           isAiEnabled,
           defaultLeaveAllowance,
-          allowLeaveCarryForward, allowLeaveBorrowing, carryForwardLimit, borrowingLimit,
+          allowLeaveCarryForward, allowLeaveBorrowing, allowCallCard, carryForwardLimit, borrowingLimit,
           ssnitRate, employerSsnitRate, payeBands,
           successColor, warningColor, errorColor, infoColor,
           address, phone, email, city, country, vatRate,
@@ -329,6 +331,7 @@ export const updateSettings = async (
   if (defaultLeaveAllowance !== undefined) orgUpdate.defaultLeaveAllowance = safeNum(defaultLeaveAllowance);
   if (allowLeaveCarryForward !== undefined) orgUpdate.allowLeaveCarryForward = !!allowLeaveCarryForward;
   if (allowLeaveBorrowing !== undefined) orgUpdate.allowLeaveBorrowing = !!allowLeaveBorrowing;
+  if (allowCallCard !== undefined) orgUpdate.allowCallCard = !!allowCallCard;
   if (carryForwardLimit !== undefined) orgUpdate.carryForwardLimit = safeNum(carryForwardLimit);
   if (borrowingLimit !== undefined) orgUpdate.borrowingLimit = safeNum(borrowingLimit);
   if (ssnitRate !== undefined) orgUpdate.ssnitRate = safeNum(ssnitRate);

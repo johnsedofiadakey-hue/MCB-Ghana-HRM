@@ -52,6 +52,7 @@ export interface Settings {
   city: string;
   country: string;
   isAiEnabled: boolean;
+  allowCallCard?: boolean;
   successColor?: string;
   warningColor?: string;
   errorColor?: string;

@@ -88,6 +88,7 @@ const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false)
             country: true,
             allowLeaveCarryForward: true,
             allowLeaveBorrowing: true,
+            allowCallCard: true,
             carryForwardLimit: true,
             borrowingLimit: true,
             ssnitRate: true,
@@ -253,6 +254,7 @@ const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false)
         country: org.country || '',
         allowLeaveCarryForward: org.allowLeaveCarryForward ?? true,
         allowLeaveBorrowing: org.allowLeaveBorrowing ?? false,
+        allowCallCard: org.allowCallCard ?? false,
         carryForwardLimit: Number(org.carryForwardLimit || 10),
         borrowingLimit: Number(org.borrowingLimit || 5),
         ssnitRate: Number(org.ssnitRate || 0.055),
@@ -285,7 +287,7 @@ const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false)
 exports.getSettings = getSettings;
 const updateSettings = async (organizationId = 'mcb-ghana-tenant', data) => {
     // Split: branding → Organization, config → SystemSettings
-    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, isAiEnabled, defaultLeaveAllowance, allowLeaveCarryForward, allowLeaveBorrowing, carryForwardLimit, borrowingLimit, ssnitRate, employerSsnitRate, payeBands, successColor, warningColor, errorColor, infoColor, address, phone, email, city, country, vatRate, idCardPrimaryColor, idCardAccentColor, idCardShowLogo, idCardShowQrCode, idCardOrientation, idCardTheme, idCardBackMessage, idCardSecurityText, attendanceScanningEnabled, attendanceApiKey, ...rest } = data;
+    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, isAiEnabled, defaultLeaveAllowance, allowLeaveCarryForward, allowLeaveBorrowing, allowCallCard, carryForwardLimit, borrowingLimit, ssnitRate, employerSsnitRate, payeBands, successColor, warningColor, errorColor, infoColor, address, phone, email, city, country, vatRate, idCardPrimaryColor, idCardAccentColor, idCardShowLogo, idCardShowQrCode, idCardOrientation, idCardTheme, idCardBackMessage, idCardSecurityText, attendanceScanningEnabled, attendanceApiKey, ...rest } = data;
     const orgUpdate = {};
     if (companyName !== undefined)
         orgUpdate.name = companyName;
@@ -378,6 +380,8 @@ const updateSettings = async (organizationId = 'mcb-ghana-tenant', data) => {
         orgUpdate.allowLeaveCarryForward = !!allowLeaveCarryForward;
     if (allowLeaveBorrowing !== undefined)
         orgUpdate.allowLeaveBorrowing = !!allowLeaveBorrowing;
+    if (allowCallCard !== undefined)
+        orgUpdate.allowCallCard = !!allowCallCard;
     if (carryForwardLimit !== undefined)
         orgUpdate.carryForwardLimit = safeNum(carryForwardLimit);
     if (borrowingLimit !== undefined)

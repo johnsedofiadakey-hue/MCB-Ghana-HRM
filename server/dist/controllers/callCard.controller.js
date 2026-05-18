@@ -9,7 +9,7 @@ const enterprise_controller_1 = require("./enterprise.controller");
 const upsertCallCard = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const { employeeId, fullName, jobTitle, department, bio, email, phone, whatsapp, linkedin, github, website, theme, logoUrl, isActive } = req.body;
+        const { employeeId, fullName, jobTitle, department, bio, email, phone, whatsapp, linkedin, github, website, theme, logoUrl, isActive, enableContactCollection } = req.body;
         if (!employeeId) {
             return res.status(400).json({ error: 'Employee ID is required' });
         }
@@ -31,7 +31,8 @@ const upsertCallCard = async (req, res) => {
                 website: website?.trim() || '',
                 theme: theme || 'MCB_GOLD',
                 logoUrl: logoUrl || '',
-                isActive: isActive !== undefined ? isActive : true
+                isActive: isActive !== undefined ? isActive : true,
+                enableContactCollection: enableContactCollection !== undefined ? enableContactCollection : false
             },
             create: {
                 employeeId,
@@ -48,7 +49,8 @@ const upsertCallCard = async (req, res) => {
                 website: website?.trim() || '',
                 theme: theme || 'MCB_GOLD',
                 logoUrl: logoUrl || '',
-                isActive: isActive !== undefined ? isActive : true
+                isActive: isActive !== undefined ? isActive : true,
+                enableContactCollection: enableContactCollection !== undefined ? enableContactCollection : false
             }
         });
         console.log(`[CallCard] Successfully configured card for Employee ID ${employeeId} with theme ${theme}`);
@@ -92,9 +94,10 @@ const getCallCardByEmployee = async (req, res) => {
             linkedin: '',
             github: '',
             website: '',
-            theme: 'MCB_GOLD',
+            theme: 'horizontal',
             logoUrl: '',
             isActive: true,
+            enableContactCollection: false,
             isNew: true
         };
         res.json(defaultCard);
@@ -153,6 +156,9 @@ const submitConnection = async (req, res) => {
         });
         if (!card) {
             return res.status(404).json({ error: 'Call Card not found.' });
+        }
+        if (!card.enableContactCollection) {
+            return res.status(403).json({ error: 'Contact collection is not enabled for this employee by the IT Admin.' });
         }
         const connection = await client_1.default.callCardConnection.create({
             data: {

@@ -19,7 +19,8 @@ export const upsertCallCard = async (req: Request, res: Response) => {
       website,
       theme,
       logoUrl,
-      isActive
+      isActive,
+      enableContactCollection
     } = req.body;
 
     if (!employeeId) {
@@ -44,7 +45,8 @@ export const upsertCallCard = async (req: Request, res: Response) => {
         website: website?.trim() || '',
         theme: theme || 'MCB_GOLD',
         logoUrl: logoUrl || '',
-        isActive: isActive !== undefined ? isActive : true
+        isActive: isActive !== undefined ? isActive : true,
+        enableContactCollection: enableContactCollection !== undefined ? enableContactCollection : false
       },
       create: {
         employeeId,
@@ -61,7 +63,8 @@ export const upsertCallCard = async (req: Request, res: Response) => {
         website: website?.trim() || '',
         theme: theme || 'MCB_GOLD',
         logoUrl: logoUrl || '',
-        isActive: isActive !== undefined ? isActive : true
+        isActive: isActive !== undefined ? isActive : true,
+        enableContactCollection: enableContactCollection !== undefined ? enableContactCollection : false
       }
     });
 
@@ -111,9 +114,10 @@ export const getCallCardByEmployee = async (req: Request, res: Response) => {
       linkedin: '',
       github: '',
       website: '',
-      theme: 'MCB_GOLD',
+      theme: 'horizontal',
       logoUrl: '',
       isActive: true,
+      enableContactCollection: false,
       isNew: true
     };
 
@@ -179,6 +183,10 @@ export const submitConnection = async (req: Request, res: Response) => {
 
     if (!card) {
       return res.status(404).json({ error: 'Call Card not found.' });
+    }
+
+    if (!card.enableContactCollection) {
+      return res.status(403).json({ error: 'Contact collection is not enabled for this employee by the IT Admin.' });
     }
 
     const connection = await prisma.callCardConnection.create({

@@ -715,6 +715,7 @@ model Organization {
   updatedAt              DateTime              @updatedAt
   allowLeaveBorrowing    Boolean               @default(false)
   allowLeaveCarryForward Boolean               @default(true)
+  allowCallCard          Boolean               @default(false)
   bgElevated             String?               @default("#f1f5f9")
   bgInput                String?               @default("#ffffff")
   borderSubtle           String?               @default("#e2e8f0")
@@ -1881,27 +1882,28 @@ model CardLifecycleEvent {
 }
 
 model CallCard {
-  id             String               @id @default(uuid())
-  organizationId String?              @default("mcb-ghana-tenant")
-  employeeId     String               @unique
-  fullName       String
-  jobTitle       String
-  department     String?
-  bio            String?              @default("")
-  email          String
-  phone          String?              @default("")
-  whatsapp       String?              @default("")
-  linkedin       String?              @default("")
-  github         String?              @default("")
-  website        String?              @default("")
-  theme          String               @default("MCB_GOLD") // MCB_GOLD, MIDNIGHT_LUXURY, GHANA_SUNSHINE
-  logoUrl        String?              @default("")
-  isActive       Boolean              @default(true)
-  views          Int                  @default(0)
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  employee       User                 @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  connections    CallCardConnection[]
+  id                      String               @id @default(uuid())
+  organizationId          String?              @default("mcb-ghana-tenant")
+  employeeId              String               @unique
+  fullName                String
+  jobTitle                String
+  department              String?
+  bio                     String?              @default("")
+  email                   String
+  phone                   String?              @default("")
+  whatsapp                String?              @default("")
+  linkedin                String?              @default("")
+  github                  String?              @default("")
+  website                 String?              @default("")
+  theme                   String               @default("MCB_GOLD") // MCB_GOLD, MIDNIGHT_LUXURY, GHANA_SUNSHINE
+  logoUrl                 String?              @default("")
+  isActive                Boolean              @default(true)
+  enableContactCollection Boolean              @default(false)
+  views                   Int                  @default(0)
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  employee                User                 @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  connections             CallCardConnection[]
 
   @@index([organizationId, employeeId])
 }

@@ -13,117 +13,133 @@ import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { useAI } from '../context/AIContext';
+import { useTheme } from '../context/ThemeContext';
 import { getSafeAvatarUrl } from '../utils/avatar';
 import HistoryLog from '../components/profile/HistoryLog';
 import EmployeePrintDossier from '../components/profile/EmployeePrintDossier';
 import EmployeeIDCard from '../components/profile/EmployeeIDCard';
 import { QRCodeCanvas } from 'qrcode.react';
 
-// Design Theme Configs matching ITAdmin card themes exactly
-const themeConfigs: Record<string, {
-    cardBg: string;
-    textPrimary: string;
-    textMuted: string;
-    border: string;
-    tagBg: string;
-    tagBorder: string;
-    tagText: string;
-    avatarBorder: string;
-    logoColor: string;
-    isDark: boolean;
-}> = {
-    MCB_LIGHT_GOLD: {
-        cardBg: "bg-gradient-to-br from-[#FCFBF7] via-[#F8F5EC] to-[#EFEADA]",
-        textPrimary: "text-[#3D321D]",
-        textMuted: "text-[#8C7A5B]",
-        border: "border-[#DFB76C]/30",
-        tagBg: "bg-[#DFB76C]/10",
-        tagBorder: "border-[#DFB76C]/30",
-        tagText: "text-[#B08A42]",
-        avatarBorder: "border-[#DFB76C]",
-        logoColor: "#B08A42",
-        isDark: false
-    },
-    MCB_LIGHT_NAVY: {
-        cardBg: "bg-gradient-to-br from-[#F5F8FC] via-[#EEF2F9] to-[#E2EAF5]",
-        textPrimary: "text-[#0F1E36]",
-        textMuted: "text-[#627797]",
-        border: "border-[#1E3A8A]/10",
-        tagBg: "bg-[#1E3A8A]/5",
-        tagBorder: "border-[#1E3A8A]/10",
-        tagText: "text-[#1E3A8A]",
-        avatarBorder: "border-[#1E3A8A]",
-        logoColor: "#1E3A8A",
-        isDark: false
-    },
-    GHANA_SUNSHINE_LIGHT: {
-        cardBg: "bg-gradient-to-br from-[#FFFDF9] via-[#FFF8EC] to-[#FEF0D9]",
-        textPrimary: "text-[#541B1B]",
-        textMuted: "text-[#9E5F5F]",
-        border: "border-[#EF4444]/15",
-        tagBg: "bg-[#EF4444]/5",
-        tagBorder: "border-[#EF4444]/10",
-        tagText: "text-[#EF4444]",
-        avatarBorder: "border-[#F59E0B]",
-        logoColor: "#D97706",
-        isDark: false
-    },
-    MIDNIGHT_LUXURY: {
-        cardBg: "bg-gradient-to-br from-[#0B0D19] via-[#05060B] to-[#010103]",
-        textPrimary: "text-[#F8FAFC]",
-        textMuted: "text-[#64748B]",
-        border: "border-[#38BDF8]/20",
-        tagBg: "bg-[#38BDF8]/10",
-        tagBorder: "border-[#38BDF8]/20",
-        tagText: "text-[#38BDF8]",
-        avatarBorder: "border-[#38BDF8]",
-        logoColor: "#38BDF8",
-        isDark: true
-    },
-    MCB_GOLD: {
-        cardBg: "bg-gradient-to-br from-[#0C1C15] via-[#050B07] to-[#010201]",
-        textPrimary: "text-[#F5EAD4]",
-        textMuted: "text-[#A39274]",
-        border: "border-[#DFB76C]/30",
-        tagBg: "bg-[#DFB76C]/10",
-        tagBorder: "border-[#DFB76C]/20",
-        tagText: "text-[#DFB76C]",
-        avatarBorder: "border-[#DFB76C]",
-        logoColor: "#DFB76C",
-        isDark: true
-    },
-    GHANA_SUNSHINE: {
-        cardBg: "bg-gradient-to-br from-[#1C0808] via-[#0C0303] to-[#030101]",
-        textPrimary: "text-[#FED7AA]",
-        textMuted: "text-[#A8A29E]",
-        border: "border-[#EF4444]/25",
-        tagBg: "bg-[#EF4444]/10",
-        tagBorder: "border-[#EF4444]/20",
-        tagText: "text-[#F97316]",
-        avatarBorder: "border-[#EF4444]",
-        logoColor: "#EF4444",
-        isDark: true
-    }
-};
-
 const getThemeConfigs = (themeName: string, primaryColor: string, accentColor: string) => {
-    const base = themeConfigs[themeName] || themeConfigs.MCB_LIGHT_GOLD;
-    const styles: any = {
-        textPrimary: {},
-        tagBg: {},
-        avatarBorder: {}
-    };
+    const brandPrimary = primaryColor || '#009EE3';
+    const brandAccent = accentColor || '#EE7100';
 
-    if (themeName === 'MCB_LIGHT_NAVY') {
-        styles.textPrimary = { color: primaryColor };
-        styles.tagBg = { backgroundColor: `${primaryColor}15`, borderColor: `${primaryColor}30`, color: primaryColor };
-        styles.avatarBorder = { borderColor: primaryColor };
+    switch (themeName) {
+        case 'MCB_LIGHT_GOLD':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-50 via-slate-100/40 to-slate-100",
+                textPrimary: "text-slate-900",
+                textMuted: "text-slate-500",
+                border: "border-[var(--brand-primary)]/20 shadow-[0_8px_30px_rgba(0,0,0,0.03)]",
+                tagBg: "bg-[var(--brand-primary)]/10",
+                tagBorder: "border-[var(--brand-primary)]/20",
+                tagText: "text-[var(--brand-primary)]",
+                avatarBorder: "border-[var(--brand-accent)]",
+                logoColor: brandPrimary,
+                isDark: false,
+                styles: {
+                    textPrimary: { color: '#0f172a' },
+                    tagBg: { backgroundColor: `${brandPrimary}15`, borderColor: `${brandPrimary}30`, color: brandPrimary },
+                    avatarBorder: { borderColor: brandAccent }
+                }
+            };
+
+        case 'MCB_LIGHT_NAVY':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-50 via-slate-100/40 to-slate-100",
+                textPrimary: "text-slate-900",
+                textMuted: "text-slate-500",
+                border: "border-[var(--brand-primary)]/20 shadow-[0_8px_30px_rgba(0,0,0,0.03)]",
+                tagBg: "bg-[var(--brand-accent)]/10",
+                tagBorder: "border-[var(--brand-accent)]/20",
+                tagText: "text-[var(--brand-accent)]",
+                avatarBorder: "border-[var(--brand-primary)]",
+                logoColor: brandPrimary,
+                isDark: false,
+                styles: {
+                    textPrimary: { color: brandPrimary },
+                    tagBg: { backgroundColor: `${brandAccent}15`, borderColor: `${brandAccent}30`, color: brandAccent },
+                    avatarBorder: { borderColor: brandPrimary }
+                }
+            };
+
+        case 'GHANA_SUNSHINE_LIGHT':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-50 via-slate-100/40 to-slate-100",
+                textPrimary: "text-slate-900",
+                textMuted: "text-slate-500",
+                border: "border-[var(--brand-accent)]/20 shadow-[0_8px_30px_rgba(0,0,0,0.03)]",
+                tagBg: "bg-[var(--brand-accent)]/10",
+                tagBorder: "border-[var(--brand-accent)]/20",
+                tagText: "text-[var(--brand-accent)]",
+                avatarBorder: "border-[var(--brand-accent)]",
+                logoColor: brandAccent,
+                isDark: false,
+                styles: {
+                    textPrimary: { color: '#0f172a' },
+                    tagBg: { backgroundColor: `${brandAccent}15`, borderColor: `${brandAccent}30`, color: brandAccent },
+                    avatarBorder: { borderColor: brandAccent }
+                }
+            };
+
+        case 'MIDNIGHT_LUXURY':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950",
+                textPrimary: "text-slate-100",
+                textMuted: "text-slate-400",
+                border: "border-[var(--brand-primary)]/30 shadow-[0_8px_30px_rgba(0,0,0,0.4)]",
+                tagBg: "bg-[var(--brand-primary)]/15",
+                tagBorder: "border-[var(--brand-primary)]/30",
+                tagText: "text-[var(--brand-primary)]",
+                avatarBorder: "border-[var(--brand-primary)]",
+                logoColor: brandPrimary,
+                isDark: true,
+                styles: {
+                    textPrimary: { color: '#f8fafc' },
+                    tagBg: { backgroundColor: `${brandPrimary}20`, borderColor: `${brandPrimary}45`, color: brandPrimary },
+                    avatarBorder: { borderColor: brandPrimary }
+                }
+            };
+
+        case 'GHANA_SUNSHINE':
+            return {
+                cardBg: "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950",
+                textPrimary: "text-slate-100",
+                textMuted: "text-slate-400",
+                border: "border-[var(--brand-accent)]/30 shadow-[0_8px_30px_rgba(0,0,0,0.4)]",
+                tagBg: "bg-[var(--brand-accent)]/15",
+                tagBorder: "border-[var(--brand-accent)]/30",
+                tagText: "text-[var(--brand-accent)]",
+                avatarBorder: "border-[var(--brand-accent)]",
+                logoColor: brandAccent,
+                isDark: true,
+                styles: {
+                    textPrimary: { color: '#f8fafc' },
+                    tagBg: { backgroundColor: `${brandAccent}25`, borderColor: `${brandAccent}50`, color: brandAccent },
+                    avatarBorder: { borderColor: brandAccent }
+                }
+            };
+
+        case 'MCB_GOLD':
+        default:
+            return {
+                cardBg: "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950",
+                textPrimary: "text-slate-100",
+                textMuted: "text-slate-400",
+                border: "border-[var(--brand-primary)]/30 shadow-[0_8px_30px_rgba(0,0,0,0.4)]",
+                tagBg: "bg-[var(--brand-accent)]/15",
+                tagBorder: "border-[var(--brand-accent)]/30",
+                tagText: "text-[var(--brand-accent)]",
+                avatarBorder: "border-[var(--brand-accent)]",
+                logoColor: brandAccent,
+                isDark: true,
+                styles: {
+                    textPrimary: { color: '#f8fafc' },
+                    tagBg: { backgroundColor: `${brandPrimary}20`, borderColor: `${brandPrimary}45`, color: brandAccent },
+                    avatarBorder: { borderColor: brandAccent }
+                }
+            };
     }
-
-    return {
-        ...base,
-        styles
-    };
 };
 
 const EmployeeProfile = () => {
@@ -159,6 +175,7 @@ const EmployeeProfile = () => {
     });
     const { t } = useTranslation();
     const { setContextData } = useAI();
+    const { settings } = useTheme();
 
     const currentUser = getStoredUser();
     const normalizedRole = (currentUser?.role || '').toUpperCase().replace(/ /g, '_');
@@ -505,7 +522,7 @@ const EmployeeProfile = () => {
                     'documents', 
                     'history', 
                     'onboarding',
-                    ...(currentUser?.id === employee.id ? ['call-card'] : [])
+                    ...(settings?.allowCallCard && currentUser?.id === employee.id ? ['call-card'] : [])
                 ] as const).map(t => (
                     <button key={t} onClick={() => setActiveTab(t as any)}
                         className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative whitespace-nowrap",
@@ -520,7 +537,8 @@ const EmployeeProfile = () => {
             <AnimatePresence mode="wait">
                 {activeTab === 'overview' && (
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                        className="grid grid-cols-1 lg:grid-cols-3 gap-10"
+                        className={cn("grid grid-cols-1 gap-10", userCard?.enableContactCollection ? "lg:grid-cols-3" : "max-w-xl mx-auto w-full")}
+                        style={{ justifyItems: "center" }}
                     >
                         <div className="lg:col-span-2 space-y-10">
                             <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] group">
@@ -820,7 +838,8 @@ const EmployeeProfile = () => {
 
                 {activeTab === 'call-card' && (
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                        className="grid grid-cols-1 lg:grid-cols-3 gap-10"
+                        className={cn("grid grid-cols-1 gap-10", userCard?.enableContactCollection ? "lg:grid-cols-3" : "max-w-xl mx-auto w-full")}
+                        style={{ justifyItems: "center" }}
                     >
                         {/* LEFT COLUMN: Visual Preview Card */}
                         <div className="space-y-10">
@@ -862,91 +881,156 @@ const EmployeeProfile = () => {
                                                     isFlipped ? "[transform:rotateY(180deg)]" : ""
                                                 )}>
                                                     {/* FRONT SIDE */}
-                                                    <div className={cn(
-                                                        "absolute inset-0 w-full h-full rounded-[24px] border p-6 shadow-xl [backface-visibility:hidden] flex flex-col justify-between transition-all duration-300",
-                                                        themeStyles.cardBg,
-                                                        themeStyles.border,
-                                                        themeStyles.textPrimary
-                                                    )} style={themeStyles.styles?.textPrimary}>
-                                                        <div className="flex justify-between items-start">
-                                                            <div>
-                                                                <span className={cn(
-                                                                    "px-2.5 py-1 rounded-full border text-[7px] font-black uppercase tracking-wider",
-                                                                    themeStyles.tagBg,
-                                                                    themeStyles.tagBorder,
-                                                                    themeStyles.tagText
-                                                                )} style={themeStyles.styles?.tagBg}>
-                                                                    MCB Professional
-                                                                </span>
-                                                            </div>
-                                                            <div className="text-right flex items-center gap-1.5">
-                                                                {logoSrc ? (
-                                                                    <img src={logoSrc} alt="Company Logo" className="h-6 max-w-[70px] object-contain" />
-                                                                ) : (
-                                                                    <>
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="inline-block">
-                                                                            <path d="M12 2L2 22h20L12 2z" fill={themeStyles.logoColor} />
-                                                                        </svg>
-                                                                        <div>
-                                                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">MCB</h4>
-                                                                            <p className="text-[5px] font-black uppercase tracking-widest opacity-60 mt-0.5">Ghana</p>
-                                                                        </div>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
+                                                    {userCard.theme === "vertical" ? (
+                                                       /* Vertical Front Design */
+                                                       <div className="absolute inset-0 w-full h-full rounded-[24px] bg-white border border-zinc-200/60 p-5 shadow-xl [backface-visibility:hidden] flex flex-col items-center justify-between text-center overflow-hidden">
+                                                           {/* SVG Bezier Brand Swooshes */}
+                                                           <svg className="absolute bottom-0 right-0 left-0 w-full h-[65px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                                                              <path d="M0,80 C150,170 350,20 500,80 L500,150 L0,150 Z" fill={primaryCol} opacity="0.15"></path>
+                                                              <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={primaryCol} opacity="0.85"></path>
+                                                              <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.75"></path>
+                                                           </svg>
 
-                                                        <div className="flex items-center gap-4 my-2">
-                                                            <img 
-                                                                src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
-                                                                alt={employee.fullName} 
-                                                                className="w-12 h-12 rounded-xl object-cover border-2 p-0.5 shadow-md"
-                                                                style={themeStyles.styles?.avatarBorder}
-                                                            />
-                                                            <div className="min-w-0">
-                                                                <h3 className="text-sm font-black uppercase tracking-tight truncate">{userCard.fullName}</h3>
-                                                                <p className="text-[9px] font-bold opacity-80 uppercase tracking-wide truncate">{userCard.jobTitle}</p>
-                                                                {userCard.department && <p className="text-[7px] font-semibold opacity-60 uppercase tracking-widest truncate">{userCard.department}</p>}
-                                                            </div>
-                                                        </div>
+                                                           <div className="flex justify-between items-center w-full z-10">
+                                                              <span className="px-2.5 py-0.5 rounded-full text-[6px] font-black uppercase tracking-widest bg-zinc-100 border border-zinc-200 text-zinc-600">
+                                                                 Active Member
+                                                              </span>
+                                                              {logoSrc ? (
+                                                                 <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[80px] object-contain" />
+                                                              ) : (
+                                                                 <h4 className="text-[10px] font-black tracking-widest uppercase text-zinc-800">MCB</h4>
+                                                              )}
+                                                           </div>
 
-                                                        <div className="border-t border-current/10 pt-3 text-[8px] font-bold space-y-1 opacity-80">
-                                                            <p className="truncate">✉ {userCard.email}</p>
-                                                            {userCard.phone && <p className="truncate">☎ {userCard.phone}</p>}
-                                                        </div>
-                                                    </div>
+                                                           <div className="flex flex-col items-center z-10 mt-1 space-y-1">
+                                                              <div 
+                                                                 className="w-14 h-14 rounded-full flex-shrink-0 bg-zinc-50 border-2 p-0.5 shadow-sm overflow-hidden" 
+                                                                 style={{ borderColor: accentCol }}
+                                                              >
+                                                                 <img src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} alt={userCard.fullName} className="w-full h-full object-cover rounded-full" />
+                                                              </div>
+                                                              <div>
+                                                                 <h4 className="font-black text-[13px] uppercase truncate tracking-wide text-zinc-900 leading-tight">{userCard.fullName}</h4>
+                                                                 <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: accentCol }}>{userCard.jobTitle}</p>
+                                                                 {userCard.department && <p className="text-[7px] text-zinc-500 font-bold uppercase">{userCard.department}</p>}
+                                                              </div>
+                                                           </div>
+
+                                                           <div className="w-full flex justify-center gap-4 z-10 pt-2 border-t border-zinc-100 text-[8px] font-bold text-zinc-500 mt-1">
+                                                              <div className="flex items-center gap-1.5">
+                                                                 <Mail size={10} style={{ color: primaryCol }} />
+                                                                 <span className="truncate max-w-[90px]">{userCard.email}</span>
+                                                              </div>
+                                                              <div className="flex items-center gap-1.5">
+                                                                 <Phone size={10} style={{ color: primaryCol }} />
+                                                                 <span className="truncate max-w-[90px]">{userCard.phone || "No Phone"}</span>
+                                                              </div>
+                                                           </div>
+                                                       </div>
+                                                    ) : (
+                                                       /* Horizontal Front Design (Default) */
+                                                       <div className="absolute inset-0 w-full h-full rounded-[24px] bg-white border border-zinc-200/60 p-6 shadow-xl [backface-visibility:hidden] flex flex-col justify-between overflow-hidden">
+                                                           {/* SVG Bezier Brand Swooshes */}
+                                                           <svg className="absolute bottom-0 right-0 left-0 w-full h-[70px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                                                              <path d="M0,80 C150,170 350,20 500,80 L500,150 L0,150 Z" fill={primaryCol} opacity="0.15"></path>
+                                                              <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={primaryCol} opacity="0.85"></path>
+                                                              <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.75"></path>
+                                                           </svg>
+
+                                                           <div className="flex justify-between items-start z-10">
+                                                              <span className="px-2.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest bg-zinc-100 border border-zinc-200 text-zinc-600">
+                                                                 Active Member
+                                                              </span>
+                                                              {logoSrc ? (
+                                                                 <img src={logoSrc} alt="Company Logo" className="h-6 max-w-[90px] object-contain" />
+                                                              ) : (
+                                                                 <div className="text-right">
+                                                                    <h4 className="text-[11px] font-black tracking-widest uppercase text-zinc-800">MCB</h4>
+                                                                    <p className="text-[5px] font-black uppercase text-zinc-400">Ghana</p>
+                                                                 </div>
+                                                              )}
+                                                           </div>
+
+                                                           <div className="flex items-center gap-4 z-10 mt-2">
+                                                              <div 
+                                                                 className="w-16 h-16 rounded-2xl flex-shrink-0 bg-zinc-50 border p-1 shadow-sm overflow-hidden" 
+                                                                 style={{ borderColor: accentCol }}
+                                                              >
+                                                                 <img src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} alt={userCard.fullName} className="w-full h-full object-cover rounded-xl" />
+                                                              </div>
+                                                              <div className="min-w-0">
+                                                                 <h4 className="font-black text-[14px] uppercase truncate tracking-wide text-zinc-900">{userCard.fullName}</h4>
+                                                                 <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: accentCol }}>{userCard.jobTitle}</p>
+                                                                 {userCard.department && <p className="text-[8px] text-zinc-500 font-bold uppercase">{userCard.department}</p>}
+                                                              </div>
+                                                           </div>
+
+                                                           <div className="flex justify-between items-center z-10 border-t border-zinc-100 pt-2 text-[8px] font-bold text-zinc-500 mt-2">
+                                                              <div className="truncate flex items-center gap-1.5 max-w-[48%]">
+                                                                 <Mail size={10} style={{ color: primaryCol }} /> 
+                                                                 <span className="truncate">{userCard.email}</span>
+                                                              </div>
+                                                              <div className="truncate flex items-center gap-1.5 max-w-[48%]">
+                                                                 <Phone size={10} style={{ color: primaryCol }} /> 
+                                                                 <span className="truncate">{userCard.phone || "No Phone"}</span>
+                                                              </div>
+                                                           </div>
+                                                       </div>
+                                                    )}
 
                                                     {/* BACK SIDE */}
-                                                    <div className={cn(
-                                                        "absolute inset-0 w-full h-full rounded-[24px] border p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between transition-all duration-300",
-                                                        themeStyles.cardBg,
-                                                        themeStyles.border,
-                                                        themeStyles.textPrimary
-                                                    )} style={themeStyles.styles?.textPrimary}>
-                                                        <div className="flex justify-between items-center mb-1">
-                                                            <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Scan to Connect</span>
-                                                            {logoSrc ? (
-                                                                <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[60px] object-contain" />
-                                                            ) : (
-                                                                <span className="text-[7px] font-black uppercase tracking-widest opacity-60">Back Side</span>
-                                                            )}
+                                                    <div 
+                                                        className="absolute inset-0 w-full h-full rounded-[24px] border p-6 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-between overflow-hidden"
+                                                        style={{ 
+                                                           backgroundColor: primaryCol,
+                                                           borderColor: primaryCol + "30"
+                                                        }}
+                                                    >
+                                                        <svg className="absolute bottom-0 right-0 left-0 w-full h-[60px] overflow-hidden pointer-events-none" viewBox="0 0 500 150" preserveAspectRatio="none">
+                                                           <path d="M0,100 C150,180 350,50 500,120 L500,150 L0,150 Z" fill={accentCol} opacity="0.25"></path>
+                                                           <path d="M0,120 C180,180 320,100 500,140 L500,150 L0,150 Z" fill={accentCol} opacity="0.45"></path>
+                                                        </svg>
+
+                                                        <div className="flex justify-between items-center w-full z-10">
+                                                           <div className="flex items-center gap-1">
+                                                              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
+                                                              <span className="text-[6px] uppercase font-black tracking-widest text-white/80">NFC Contactless</span>
+                                                           </div>
+                                                           {logoSrc ? (
+                                                              <img src={logoSrc} alt="Company Logo" className="h-5 max-w-[80px] object-contain brightness-0 invert" />
+                                                           ) : (
+                                                              <h4 className="text-[10px] font-black tracking-widest uppercase text-white">MCB</h4>
+                                                           )}
                                                         </div>
-                                                        <div className="flex-1 flex items-center justify-center py-2">
-                                                            <div className="p-2 bg-white rounded-xl shadow-md border border-gray-150 inline-block">
-                                                                <QRCodeCanvas 
-                                                                    id={`qr-canvas-profile-${userCard.id}`}
-                                                                    value={`${window.location.origin}/shared-card/${userCard.id}`}
-                                                                    size={90}
-                                                                    level="H"
-                                                                    includeMargin={false}
-                                                                />
-                                                            </div>
+
+                                                        <div className="flex flex-col items-center justify-center my-auto space-y-2 z-10">
+                                                           <div className="p-2 bg-white rounded-2xl shadow-inner flex items-center justify-center border border-white/20">
+                                                              <QRCodeCanvas 
+                                                                 id={"qr-canvas-profile-" + userCard.id}
+                                                                 value={window.location.origin + "/shared-card/" + userCard.id}
+                                                                 size={75}
+                                                                 level="H"
+                                                                 includeMargin={true}
+                                                              />
+                                                           </div>
                                                         </div>
-                                                        <div className="text-center text-[7px] font-black uppercase tracking-widest opacity-60">
-                                                            MCB Ghana Corporate Network
+
+                                                        <div className="z-10 text-[7px] font-black tracking-widest uppercase text-white/80 pb-1 flex items-center gap-1.5">
+                                                           <QrCode size={10} style={{ color: accentCol }} /> Scan to Connect & Save
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            {/* Hidden High-Resolution QR Canvas for Instant Crisp PNG Download */}
+                                            <div style={{ display: 'none' }}>
+                                                <QRCodeCanvas
+                                                    id={`qr-canvas-profile-hidden-${userCard.id}`}
+                                                    value={`${window.location.origin}/shared-card/${userCard.id}`}
+                                                    size={256}
+                                                    level="H"
+                                                    includeMargin={true}
+                                                />
                                             </div>
 
                                             {/* Action controls below card */}
@@ -965,13 +1049,13 @@ const EmployeeProfile = () => {
                                                     type="button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        const canvas = document.getElementById(`qr-canvas-profile-${userCard.id}`) as HTMLCanvasElement;
+                                                        const canvas = document.getElementById(`qr-canvas-profile-hidden-${userCard.id}`) as HTMLCanvasElement;
                                                         if (canvas) {
                                                             const link = document.createElement('a');
                                                             link.download = `MCB-Card-QR-${userCard.fullName.replace(/\s+/g, '-')}.png`;
                                                             link.href = canvas.toDataURL();
                                                             link.click();
-                                                            toast.success("QR Code downloaded successfully!");
+                                                            toast.success("Crisp high-resolution QR downloaded!");
                                                         } else {
                                                             toast.error("Could not generate download file.");
                                                         }
@@ -1016,82 +1100,84 @@ const EmployeeProfile = () => {
                         </div>
 
                         {/* RIGHT COLUMN: Impression Analytics & Connection leads log */}
-                        <div className="lg:col-span-2 space-y-10">
-                            {/* Scoreboard Cards */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="nx-card p-6 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-2 opacity-5 text-[var(--primary)]"><Globe size={32} /></div>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Card Impressions (Views)</p>
-                                    <p className="text-3xl font-black text-[var(--text-primary)]">{connectionData.views} <span className="text-[10px] text-[var(--text-muted)] tracking-normal uppercase">Scans</span></p>
-                                </div>
-                                <div className="nx-card p-6 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-2 opacity-5 text-emerald-500"><UserCheck size={32} /></div>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Connections Captured</p>
-                                    <p className="text-3xl font-black text-emerald-500">{connectionData.connections.length} <span className="text-[10px] text-emerald-500/60 tracking-normal uppercase">Leads</span></p>
-                                </div>
-                            </div>
-
-                            {/* Connection Leads table log */}
-                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">
-                                        Connection Exchange Log
-                                    </h3>
-                                    {connectionData.connections.length > 0 && (
-                                        <button 
-                                            onClick={handleExportCSV}
-                                            className="px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2"
-                                        >
-                                            <Download size={12} /> Export CSV
-                                        </button>
-                                    )}
+                        {userCard?.enableContactCollection && (
+                            <div className="lg:col-span-2 space-y-10">
+                                {/* Scoreboard Cards */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="nx-card p-6 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-2 opacity-5 text-[var(--primary)]"><Globe size={32} /></div>
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Card Impressions (Views)</p>
+                                        <p className="text-3xl font-black text-[var(--text-primary)]">{connectionData.views} <span className="text-[10px] text-[var(--text-muted)] tracking-normal uppercase">Scans</span></p>
+                                    </div>
+                                    <div className="nx-card p-6 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-2 opacity-5 text-emerald-500"><UserCheck size={32} /></div>
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Connections Captured</p>
+                                        <p className="text-3xl font-black text-emerald-500">{connectionData.connections.length} <span className="text-[10px] text-emerald-500/60 tracking-normal uppercase">Leads</span></p>
+                                    </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    {connectionData.connections.length > 0 ? (
-                                        connectionData.connections.map((c: any) => (
-                                            <div key={c.id} className="p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/20 transition-all space-y-4">
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                    <div className="space-y-1">
-                                                        <h4 className="text-sm font-black text-[var(--text-primary)] leading-none uppercase">{c.fullName}</h4>
-                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[var(--text-muted)] font-semibold">
-                                                            {c.company && <span>🏢 {c.company}</span>}
-                                                            {c.company && <span>•</span>}
-                                                            <span>📅 {new Date(c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                {/* Connection Leads table log */}
+                                <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">
+                                            Connection Exchange Log
+                                        </h3>
+                                        {connectionData.connections.length > 0 && (
+                                            <button 
+                                                onClick={handleExportCSV}
+                                                className="px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2"
+                                            >
+                                                <Download size={12} /> Export CSV
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {connectionData.connections.length > 0 ? (
+                                            connectionData.connections.map((c) => (
+                                                <div key={c.id} className="p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/20 transition-all space-y-4">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                        <div className="space-y-1">
+                                                            <h4 className="text-sm font-black text-[var(--text-primary)] leading-none uppercase">{c.fullName}</h4>
+                                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[var(--text-muted)] font-semibold">
+                                                                {c.company && <span>🏢 {c.company}</span>}
+                                                                {c.company && <span>•</span>}
+                                                                <span>📅 {new Date(c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <a 
-                                                            href={`mailto:${c.email}`}
-                                                            className="px-3.5 py-2 rounded-xl border border-[var(--border-subtle)] text-[8px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5"
-                                                        >
-                                                            <Mail size={12} /> Email
-                                                        </a>
-                                                        {c.phone && (
+                                                        <div className="flex items-center gap-3">
                                                             <a 
-                                                                href={`tel:${c.phone}`}
+                                                                href={'mailto:' + c.email}
                                                                 className="px-3.5 py-2 rounded-xl border border-[var(--border-subtle)] text-[8px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5"
                                                             >
-                                                                <Phone size={12} /> Call
+                                                                <Mail size={12} /> Email
                                                             </a>
-                                                        )}
+                                                            {c.phone && (
+                                                                <a 
+                                                                    href={'tel:' + c.phone}
+                                                                    className="px-3.5 py-2 rounded-xl border border-[var(--border-subtle)] text-[8px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5"
+                                                                >
+                                                                    <Phone size={12} /> Call
+                                                                </a>
+                                                            )}
+                                                        </div>
                                                     </div>
+                                                    {c.notes && (
+                                                        <p className="text-[10px] leading-relaxed text-[var(--text-secondary)] italic bg-[var(--bg-elevated)]/30 p-3.5 rounded-xl border border-[var(--border-subtle)]/50">
+                                                            "{c.notes}"
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                {c.notes && (
-                                                    <p className="text-[10px] leading-relaxed text-[var(--text-secondary)] italic bg-[var(--bg-elevated)]/30 p-3.5 rounded-xl border border-[var(--border-subtle)]/50">
-                                                        "{c.notes}"
-                                                    </p>
-                                                )}
+                                            ))
+                                        ) : (
+                                            <div className="p-10 border border-dashed border-[var(--border-subtle)] rounded-3xl text-center opacity-60 italic text-sm">
+                                                No connections captured yet. Share your digital business QR code or NFC tag to receive professional leads!
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="p-10 border border-dashed border-[var(--border-subtle)] rounded-3xl text-center opacity-60 italic text-sm">
-                                            No connections captured yet. Share your digital business QR code or NFC tag to receive professional leads!
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
