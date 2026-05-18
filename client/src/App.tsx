@@ -465,7 +465,7 @@ const AppContent = () => {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardRouter />} />
             {/* Performance/KPI Module - Strict Routing */}
-            <Route path="/kpi/department" element={<RoleGuard minRank={80}><DeptKpiPage /></RoleGuard>} />
+            <Route path="/kpi/department" element={<RoleGuard minRank={75}><DeptKpiPage /></RoleGuard>} />
             <Route path="/kpi/executive" element={<RoleGuard minRank={80}><MDKpiView /></RoleGuard>} />
             <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamReview /></RoleGuard>} />
             <Route path="/kpi/my-targets" element={<RoleGuard minRank={10}><MyTargetsPage /></RoleGuard>} />
@@ -474,15 +474,15 @@ const AppContent = () => {
             <Route path="/performance/check-ins" element={<RoleGuard minRank={10}><CheckIns /></RoleGuard>} />
             <Route path="/performance/feedback" element={<RoleGuard minRank={10}><Feedback360 /></RoleGuard>} />
             <Route path="/manager/cockpit" element={<RoleGuard minRank={70}><Cockpit /></RoleGuard>} />
-            <Route path="/cards" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']}><CardManagement /></RoleGuard>} />
-            <Route path="/analytics/predictive" element={<RoleGuard minRank={80}><PredictiveAnalytics /></RoleGuard>} />
+            <Route path="/cards" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><CardManagement /></RoleGuard>} />
+            <Route path="/analytics/predictive" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><PredictiveAnalytics /></RoleGuard>} />
             
             {/* Appraisal Module - Strict Routing */}
             <Route path="/reviews/my" element={<RoleGuard minRank={10}><Appraisals /></RoleGuard>} />
             <Route path="/reviews/team" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
             <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={10}><AppraisalPacketView /></RoleGuard>} />
-            <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalSignOff /></RoleGuard>} />
-            <Route path="/reviews/cycles" element={<RoleGuard minRank={80}><CycleManagement /></RoleGuard>} />
+            <Route path="/reviews/final" element={<RoleGuard minRank={75}><FinalSignOff /></RoleGuard>} />
+            <Route path="/reviews/cycles" element={<RoleGuard minRank={75}><CycleManagement /></RoleGuard>} />
 
             <Route path="/leave" element={<Leave />} />
             <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
@@ -491,25 +491,25 @@ const AppContent = () => {
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/print/ids" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
             <Route path="/assets" element={<AssetManagement />} />
-            <Route path="/audit" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']}><AuditLogs /></RoleGuard>} />
+            <Route path="/audit" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
-            <Route path="/settings" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']}><SettingsHub /></RoleGuard>} />
+            <Route path="/settings" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><SettingsHub /></RoleGuard>} />
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
-            <Route path="/payroll" element={<RoleGuard allowedRoles={['FINANCE_MANAGER', 'MD', 'DEV']}><Payroll /></RoleGuard>} />
+            <Route path="/payroll" element={<RoleGuard allowedRoles={['FINANCE_MANAGER', 'FINANCE', 'MD', 'DEV']}><Payroll /></RoleGuard>} />
             <Route path="/finance" element={<FinanceHub />} />
             <Route path="/attendance" element={<AttendanceDashboard />} />
-            <Route path="/org-chart" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'MD', 'DEV']}><OrgChart /></RoleGuard>} />
+            <Route path="/org-chart" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><OrgChart /></RoleGuard>} />
             <Route path="/enterprise" element={<RoleGuard minRank={95}><EnterpriseSuite /></RoleGuard>} />
-            <Route path="/it-admin" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'DEV']}><ITAdmin /></RoleGuard>} />
+            <Route path="/it-admin" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><ITAdmin /></RoleGuard>} />
             <Route path="/training" element={<Training />} />
             <Route path="/holidays" element={<HolidayCalendar />} />
             <Route path="/announcements" element={<AnnouncementsPage />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/onboarding" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'MD', 'DEV']}><Onboarding /></RoleGuard>} />
-            <Route path="/offboarding" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'MD', 'DEV']}><Offboarding /></RoleGuard>} />
+            <Route path="/onboarding" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><Onboarding /></RoleGuard>} />
+            <Route path="/offboarding" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><Offboarding /></RoleGuard>} />
             <Route path="/recruitment" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><Recruitment /></RoleGuard>} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/support" element={<Support />} />
