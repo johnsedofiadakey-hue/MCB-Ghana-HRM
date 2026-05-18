@@ -62,7 +62,12 @@ export const ROLE_LABELS: Record<string, string> = {
   CASUAL: 'Casual Worker',
 };
 
-// Returns a sorted list of roles by rank (descending)
+// Roles to exclude from UI selection (legacy aliases)
+const HIDDEN_ROLES: string[] = ['SUPERVISOR', 'DEV'];
+
+// Returns a sorted list of roles by rank (descending), excluding hidden/alias roles
 export const GET_ORDERED_ROLES = (): RoleName[] => {
-    return (Object.keys(RoleRank) as RoleName[]).sort((a, b) => RoleRank[b] - RoleRank[a]);
+    return (Object.keys(RoleRank) as RoleName[])
+        .filter(r => !HIDDEN_ROLES.includes(r))
+        .sort((a, b) => RoleRank[b] - RoleRank[a]);
 };

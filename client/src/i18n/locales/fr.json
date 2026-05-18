@@ -262,6 +262,7 @@
       "IT_ADMIN": "Admin IT",
       "HR_OFFICER": "RH",
       "MANAGER": "Manager",
+      "MID_MANAGER": "Cadre Intermédiaire",
       "SUPERVISOR": "Superviseur",
       "STAFF": "Membre",
       "CASUAL": "Occasionnel"

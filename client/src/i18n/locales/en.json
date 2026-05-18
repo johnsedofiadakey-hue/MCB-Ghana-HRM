@@ -262,6 +262,7 @@
       "IT_ADMIN": "IT Administrator",
       "HR_OFFICER": "HR Officer",
       "MANAGER": "Manager",
+      "MID_MANAGER": "Mid Manager",
       "SUPERVISOR": "Supervisor",
       "STAFF": "Staff Member",
       "CASUAL": "Casual Worker"
