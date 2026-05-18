@@ -590,6 +590,79 @@ const PAGE_GUIDES: Record<string, {
     ],
     example: 'The MD notices a salary was changed without her approval. She opens Audit Logs, filters by action EMPLOYEE_UPDATED, and finds the entry: edited by the Finance Director at 14:32 on 15 May, changing Selasi\'s salary from GHS 3,200 to GHS 3,800. She now has full accountability.',
   },
+  '/recruitment': {
+    title: 'Recruitment Hub',
+    icon: Users,
+    color: '#3b82f6',
+    whoSees: 'HR and Directors (Rank 80+)',
+    summary: 'Manage job postings, track candidates through the hiring pipeline, schedule interviews, and generate official offer letters.',
+    steps: [
+      'Create job vacancies with titles, departments, and descriptions.',
+      'Track candidates through stages: Applied → Shortlisted → Technical → Interview → Offer → Onboarded.',
+      'Schedule interviews and log notes/ratings directly in candidate profiles.',
+      'Generate and send employment offer letters directly from candidate details.',
+      'Click "Convert to Employee" to transition hired candidates to onboarding.',
+    ],
+    tips: [
+      'Use the interview scheduler to prevent double-booking.',
+      'Attach CVs and cover letters directly to candidate profiles for quick access.',
+    ],
+    access: 'HR and Directors (Rank 80+).',
+    connections: [
+      'Enterprise Suite — recruitment stats and candidate pipeline are surfaced on the MD dashboard.',
+      'Onboarding — converting a candidate to hired triggers their onboarding checklist.',
+      'Employee Management — hired candidates automatically generate profiles in the directory.',
+    ],
+    example: 'The HR Director opens Recruitment, clicks "+ New Vacancy" for "Junior Accountant". She reviews 14 applicants, moves 3 to the Shortlisted stage, and schedules an interview. Candidate Abena impresses in the interview, so she moves her to Offer stage, generates an offer letter, and converts her to Onboarding upon acceptance.',
+  },
+  '/disciplinary': {
+    title: 'Disciplinary Cases',
+    icon: Shield,
+    color: '#ef4444',
+    whoSees: 'HR, Managers, and Directors (Rank 70+)',
+    summary: 'Document, track, and manage employee disciplinary issues, warning letters, and official grievances in accordance with corporate policies and labor law.',
+    steps: [
+      'Create a new case detailing the incident, date, and employees involved.',
+      'Track status: Investigating → Hearing Scheduled → Action Pending → Resolved.',
+      'Upload supporting evidence, meeting minutes, and official written warning documents.',
+      'Set disciplinary actions: Verbal Warning, Written Warning, Suspended, or Terminated.',
+    ],
+    tips: [
+      'Always document cases exhaustively — this is critical for labor law compliance.',
+      'Maintain strict confidentiality; only authorized personnel can access these records.',
+    ],
+    access: 'Managers (Rank 70+) and HR/Directors. Staff can only see their own warnings if published.',
+    connections: [
+      'Employee Profiles — active warnings and resolved cases are archived in the employee\'s private history.',
+      'Appraisals — unresolved disciplinary actions are automatically surfaced during appraisal reviews.',
+      'Audit Logs — every case creation, update, or action is captured in the audit trail.',
+    ],
+    example: 'A manager notices repeated lateness from an employee. After a verbal talk, he opens Disciplinary, creates a "Lateness Pattern" case, uploads attendance screenshots, and sets status to Investigating. After a hearing, he generates a first Written Warning, which is saved directly to the employee\'s profile.',
+  },
+  '/policies': {
+    title: 'Policy Library',
+    icon: FileText,
+    color: '#10b981',
+    whoSees: 'All employees',
+    summary: 'The official digital repository for company handbooks, policy documents, code of conduct, and guidelines.',
+    steps: [
+      'Browse policies by category: HR, IT, Finance, Safety, Operations.',
+      'Click any policy to read it directly or download the official PDF.',
+      'Search by keyword to find specific rules or clauses quickly.',
+      'Admins (Rank 80+): click "+ Upload Policy" to add new documents or update versions.',
+    ],
+    tips: [
+      'New hires should review all mandatory policies during week 1.',
+      'Use the search bar to quickly find the policy on Travel Reimbursement or Leave.',
+    ],
+    access: 'View: all roles. Upload/Manage: Rank 80+ (Director and above).',
+    connections: [
+      'Onboarding — reading and signing the employee handbook is a mandatory onboarding step.',
+      'Finance — expense policies here govern allowable claims on the Expenses page.',
+      'Disciplinary — case decisions are referenced directly against the policies listed here.',
+    ],
+    example: 'Daniel wants to know the rules for remote work. He opens Policy Library, types "remote" in search, finds the "MCB Remote Work Policy", reads that he can work up to 2 days hybrid with manager approval, and submits his hybrid request accordingly.',
+  },
   '/dev/dashboard': {
     title: 'Developer Dashboard',
     icon: Activity,
@@ -615,6 +688,68 @@ const PAGE_GUIDES: Record<string, {
     example: 'A new client (Akosombo Textiles Ltd) is onboarded. The DEV user opens the Developer Dashboard, clicks "+ New Tenant", enters the company name and plan tier, sets the admin email. The system creates the organisation, sends the admin login credentials, and Akosombo Textiles Ltd is live.',
   },
 };
+
+// ─── Path normalization helper ───────────────────────────────────────────────
+export function getNormalizedPath(path: string): string {
+  if (!path) return '/dashboard';
+
+  // Strip trailing slashes if any
+  let cleanPath = path;
+  if (cleanPath.length > 1 && cleanPath.endsWith('/')) {
+    cleanPath = cleanPath.slice(0, -1);
+  }
+
+  // Exact matching overrides
+  if (PAGE_GUIDES[cleanPath]) return cleanPath;
+
+  // Pattern matching
+  if (cleanPath.startsWith('/employees/')) return '/profile'; // Dynamic employee profile
+  if (cleanPath.startsWith('/reviews/packet/')) return '/performance-reviews'; // Appraisal packets
+
+  // Custom aliases & mappings
+  const aliases: Record<string, string> = {
+    // KPI/Performance
+    '/kpi/department': '/performance',
+    '/kpi/executive': '/enterprise',
+    '/kpi/team': '/performance',
+    '/kpi/my-targets': '/team-targets',
+    '/performance/check-ins': '/performance',
+    '/performance/feedback': '/performance',
+    '/performance/strategic': '/team-targets',
+    '/performance/calibration': '/performance-reviews',
+    '/manager/cockpit': '/performance',
+
+    // Appraisals
+    '/reviews/my': '/performance-reviews',
+    '/reviews/team': '/performance-reviews',
+    '/reviews/final': '/performance-reviews',
+    '/reviews/cycles': '/performance-reviews',
+
+    // Employees / Management
+    '/employees/history': '/employees',
+    '/print/ids': '/employees',
+    '/disciplinary': '/disciplinary',
+    '/probation': '/employees',
+    '/promotions': '/employees',
+
+    // Attendance
+    '/kiosk': '/attendance',
+
+    // Finance / Expenses
+    '/expenses': '/finance',
+
+    // Settings
+    '/company-settings': '/settings',
+
+    // On/Offboarding
+    '/offboarding': '/onboarding',
+
+    // IT admin
+    '/cards': '/it-admin',
+  };
+
+  return aliases[cleanPath] || '/dashboard'; // default fallback
+}
 
 // ─── FAQ knowledge base ─────────────────────────────────────────────────────
 const FAQS: Array<{ q: string; a: string; tags: string[] }> = [
@@ -648,7 +783,7 @@ function generateResponse(query: string, location: string, companyName: string, 
   const q = query.toLowerCase();
 
   // Page-specific guide
-  const pageGuide = PAGE_GUIDES[location];
+  const pageGuide = PAGE_GUIDES[getNormalizedPath(location)];
 
   // FAQ match
   const faq = FAQS.find(f => f.tags.some(t => q.includes(t)) || f.q.toLowerCase().includes(q.substring(0, 15)));
@@ -712,7 +847,7 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentPage = PAGE_GUIDES[location.pathname];
+  const currentPage = PAGE_GUIDES[getNormalizedPath(location.pathname)];
   const companyName = settings?.companyName || 'SYSTEM';
 
   // Init message when panel opens or page changes

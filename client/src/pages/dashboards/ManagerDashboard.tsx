@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, Target, Clock, ChevronRight, CheckCircle2, 
-  TrendingUp, ClipboardCheck, AlertCircle, Award, Zap, ArrowRight, Shield, Activity, Sparkles
+  TrendingUp, ClipboardCheck, AlertCircle, Award, Zap, ArrowRight, Shield, Activity, Sparkles,
+  Database, CreditCard, DollarSign, Wallet, Briefcase, AlertTriangle
 } from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
@@ -16,6 +17,10 @@ import { cn } from '../../utils/cn';
 const ManagerDashboard = () => {
   const { t } = useTranslation();
   const user = getStoredUser() as any;
+  const role = (user?.role || '').toUpperCase();
+  const isHR = role.includes('HR');
+  const isFinance = role.includes('FINANCE') || role.includes('FIANANCE');
+  const isIT = role.includes('IT');
   const [stats, setStats] = useState({ 
     teamSize: 0, 
     pendingReviews: 0, 
@@ -253,6 +258,151 @@ const ManagerDashboard = () => {
                <p className="text-xs font-medium text-[var(--text-secondary)] opacity-60 leading-relaxed">{t('manager_dashboard.growth_calibration')}</p>
             </Link>
           </div>
+
+          {/* Specialized Operations Grid for Admin Managers */}
+          {(isHR || isIT || isFinance) && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+              className="premium-glass border-glow-premium p-10 shadow-2xl bg-gradient-to-br from-[var(--primary)]/5 to-transparent">
+              <div className="mb-8">
+                <h3 className="font-black text-3xl text-[var(--text-primary)] tracking-ultra">Specialized Operations</h3>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-2 opacity-60">Administrative Registries & Controls</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {isIT && (
+                  <>
+                    <Link to="/it-admin" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Database size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">IT Registries</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Assets, logs & credentials</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/cards" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <CreditCard size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Card Lifecycle</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Biometric cards & smart access</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/audit" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Activity size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">System Audit Logs</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Operations ledger & activity tracking</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/settings" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Shield size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Settings Hub</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">System preferences & variables</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                  </>
+                )}
+                {isFinance && (
+                  <>
+                    <Link to="/payroll" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <DollarSign size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Payroll Processing</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Salaries, taxes & payslips</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/expenses" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Wallet size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Expense Operations</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Claims, disbursements & audits</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                  </>
+                )}
+                {isHR && (
+                  <>
+                    <Link to="/recruitment" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Briefcase size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Recruitment Operations</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Job postings, funnels & offers</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/disciplinary" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <AlertTriangle size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Disciplinary Cases</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Complaints, logs & resolutions</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/probation" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Clock size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Probation Tracking</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Evaluations, timelines & reviews</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/promotions" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Zap size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Promotions Board</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Nominations & career ladder</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Right: Inbox & Sidebar */}

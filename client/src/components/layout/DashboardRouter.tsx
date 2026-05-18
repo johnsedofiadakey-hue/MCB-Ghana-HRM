@@ -25,8 +25,8 @@ const DashboardRouter: React.FC = () => {
   const normalizedRole = (user.role || '').toUpperCase().trim();
 
   const renderDashboard = () => {
-    if (rank >= 90) return <MDDashboard />;
-    if (rank >= 80) return <DirectorDashboard />;
+    if (rank >= 95) return <MDDashboard />;
+    if (rank >= 90) return <DirectorDashboard />;
     if (rank >= 70) return <ManagerDashboard />;
     if (rank >= 60) return <MidManagerDashboard />;
     if (rank >= 50) return <EmployeeDashboard />;

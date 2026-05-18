@@ -487,10 +487,10 @@ const AppContent = () => {
 
             <Route path="/leave" element={<Leave />} />
             <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
-            <Route path="/employees" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
-            <Route path="/employees/history" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
+            <Route path="/employees" element={<RoleGuard minRank={70} allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
+            <Route path="/employees/history" element={<RoleGuard minRank={70} allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
-            <Route path="/print/ids" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
+            <Route path="/print/ids" element={<RoleGuard minRank={70} allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
             <Route path="/assets" element={<AssetManagement />} />
             <Route path="/audit" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
