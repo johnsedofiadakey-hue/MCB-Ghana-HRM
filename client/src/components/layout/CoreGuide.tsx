@@ -32,6 +32,8 @@ const PAGE_GUIDES: Record<string, {
   steps: string[];
   tips: string[];
   access: string;
+  connections: string[];
+  example: string;
 }> = {
   '/dashboard': {
     title: 'Your Dashboard',
@@ -52,6 +54,14 @@ const PAGE_GUIDES: Record<string, {
       'Managers: check Pending Reviews count to stay on top of KPI submissions.',
     ],
     access: 'All roles. Content adapts: DEV=100, MD=90, Director=80, Manager=70, Team Lead=60, Staff=50, Casual=40.',
+    connections: [
+      'Attendance — your clock-in rate feeds the Attendance % stat on this page.',
+      'Leave — approved leave days reduce your available balance shown here.',
+      'Performance/KPIs — your current KPI score is surfaced as a progress ring.',
+      'Payroll — MD/Director dashboards pull the latest approved payroll total.',
+      'Inbox — unread messages show as a badge on the Inbox quick-action card.',
+    ],
+    example: 'Grace opens the dashboard each morning to check her team\'s attendance rate (pulled from yesterday\'s clock-ins), sees 2 pending leave approvals in her Inbox card, and clicks "View Team KPIs" to review last month\'s submission before the 10 AM stand-up.',
   },
   '/profile': {
     title: 'My Profile',
@@ -70,6 +80,13 @@ const PAGE_GUIDES: Record<string, {
       'Upload a profile photo so teammates can recognise you.',
     ],
     access: 'All roles. Salary fields only editable by Rank 80+ (Director and above).',
+    connections: [
+      'Org Chart — your profile photo and job title appear in the live org chart.',
+      'Payroll — your bank account details here are used to generate your payslip.',
+      'Leave — your next-of-kin contact is linked to emergency leave requests.',
+      'Onboarding — incomplete profile fields may appear as onboarding tasks.',
+    ],
+    example: 'Kwame just joined as Logistics Manager. He opens his profile, uploads a photo, adds his emergency contact (wife, +233 24 000 0001), and updates his bank account number so HR can process his first salary.',
   },
   '/attendance': {
     title: 'Attendance & Timekeeping',
@@ -89,6 +106,13 @@ const PAGE_GUIDES: Record<string, {
       'Attendance records link to payroll — missing entries can affect pay.',
     ],
     access: 'All roles for own records. "All Employees" view requires Rank 70+ (Manager).',
+    connections: [
+      'Dashboard — your attendance rate % shown on the dashboard comes from this page.',
+      'Payroll — payroll calculations check actual working days from attendance records.',
+      'Leave — approved leave days are automatically excluded so they don\'t count as absent.',
+      'Analytics — MD/Director dashboards plot team attendance trends over time.',
+    ],
+    example: 'Ama arrives at 8:05 AM, opens the app, and taps Clock In. At 5:00 PM she taps Clock Out. The system logs 8h 55m worked. If she forgets to clock out, HR sees a gap the next morning and can manually correct the record.',
   },
   '/leave': {
     title: 'Time Off / Leave',
@@ -109,6 +133,14 @@ const PAGE_GUIDES: Record<string, {
       'Compassionate leave is granted at management discretion.',
     ],
     access: 'All roles for own requests. Managers (Rank 70+) approve team requests.',
+    connections: [
+      'Attendance — approved leave days are marked as "on leave" so attendance isn\'t penalised.',
+      'Dashboard — your remaining leave balance is shown on your personal dashboard card.',
+      'Payroll — unpaid leave is deducted from gross pay in that month\'s payroll run.',
+      'Holidays — public holidays in the leave period are automatically excluded from day count.',
+      'Inbox — your manager receives a notification the moment you submit a request.',
+    ],
+    example: 'Kofi wants 5 days off for a family trip (Mon 2 Jun – Fri 6 Jun). He clicks "+ New Request", selects Annual Leave, sets dates, picks his reliever (Abena), and submits. Abena gets an inbox alert, accepts the handover, then Kofi\'s manager gets an approval request. Once approved, Kofi\'s balance drops by 5 days and attendance shows him as on leave.',
   },
   '/assets': {
     title: 'Asset Management',
@@ -128,6 +160,12 @@ const PAGE_GUIDES: Record<string, {
       'The serial number field is mandatory — use it for insurance records.',
     ],
     access: 'View: all roles. Create/Assign/Edit: IT Admin and Rank 70+.',
+    connections: [
+      'Employee Profiles — assigned assets appear in the employee\'s profile under Assets.',
+      'Onboarding — IT asset assignment is typically an onboarding checklist task.',
+      'IT Admin — the IT Admin panel links here for provisioning new starter equipment.',
+    ],
+    example: 'A new accountant joins. The IT Admin opens Assets, finds the spare laptop (SN: MCB-LT-009, status: Available), clicks Assign, selects the new employee, and saves. The laptop status changes to Assigned and appears on the employee\'s profile.',
   },
   '/training': {
     title: 'Training & Development',
@@ -148,6 +186,13 @@ const PAGE_GUIDES: Record<string, {
       'Set realistic seat limits — the system enforces them.',
     ],
     access: 'Enrol self: all roles. Create programmes/enrol others: Rank 70+ (Manager).',
+    connections: [
+      'Employee Profiles — completed trainings are recorded on the employee\'s profile.',
+      'Onboarding — mandatory induction sessions often appear as onboarding tasks.',
+      'Performance/Appraisals — training completion can be referenced in appraisal feedback.',
+      'Payroll — training costs feed into the company\'s budget and expense reports.',
+    ],
+    example: 'The HR Manager creates a "Health & Safety" programme: 20 seats, GHS 500/person, running 10–12 June. She then enrols the full Logistics team (8 people). Each enrollee sees it in their Training list with status "Enrolled". After the session, she marks it Completed — it appears on all their profiles.',
   },
   '/finance': {
     title: 'Expenses & Loans',
@@ -169,6 +214,13 @@ const PAGE_GUIDES: Record<string, {
       'Expenses have a monthly category limit — check with your Director.',
     ],
     access: 'Submit: all roles. Approve expenses: Rank 70+. Approve loans: Rank 80+.',
+    connections: [
+      'Payroll — approved loan repayments are automatically deducted each payroll run.',
+      'Dashboard — Finance Managers see total pending expense claims on their dashboard.',
+      'Employee Profiles — active loans are visible on the employee\'s profile for Directors+.',
+      'Inbox — approvers receive an inbox notification when a new request is submitted.',
+    ],
+    example: 'Benjamin attended a client site visit and paid GHS 250 for fuel. He opens Expenses, clicks "+ New Expense Claim", enters GHS 250 under Travel, uploads a photo of the receipt, and submits. His manager gets an inbox alert, reviews, and approves. The amount is reimbursed in the next payroll run.',
   },
   '/org-chart': {
     title: 'Organisation Chart',
@@ -187,6 +239,12 @@ const PAGE_GUIDES: Record<string, {
       'Directors: use this to spot reporting-line gaps.',
     ],
     access: 'All roles — read only.',
+    connections: [
+      'Employee Management — adding or editing employees updates the org chart automatically.',
+      'Departments — department structure and assigned managers are reflected here.',
+      'Employee Profiles — clicking a node links to that person\'s profile (if you have access).',
+    ],
+    example: 'A new member of the Sales team wants to understand who to escalate to. She opens the Org Chart, zooms into the Sales department, sees her line manager (Sales Head), and traces up to the Managing Director. She can also see the two peer colleagues she wasn\'t aware of.',
   },
   '/holidays': {
     title: 'Holiday Calendar',
@@ -205,6 +263,12 @@ const PAGE_GUIDES: Record<string, {
       'National and regional holidays are listed separately.',
     ],
     access: 'View: all roles. Add/edit holidays: Rank 80+ (Director and above).',
+    connections: [
+      'Leave — the leave system automatically skips public holidays when counting leave days.',
+      'Attendance — public holidays mark employees as excused-absent, not penalised.',
+      'Payroll — holiday pay rules reference this calendar for statutory day calculations.',
+    ],
+    example: 'The HR Director adds "Eid ul-Fitr" as a public holiday for 20 March. Going forward, any leave request spanning that date will not count it as a leave day — so a 5-day request from 18–22 March only deducts 4 days from the employee\'s balance.',
   },
   '/employees': {
     title: 'Employee Management',
@@ -226,6 +290,14 @@ const PAGE_GUIDES: Record<string, {
       'Salary fields are only visible to Directors and above.',
     ],
     access: 'Rank 60+ (Team Lead and above). Salary visible to Rank 80+.',
+    connections: [
+      'Org Chart — all employees here appear as nodes in the live org chart.',
+      'Payroll — salary and bank details set here feed directly into payroll runs.',
+      'Leave — employee\'s leave allowance and balance are managed from their profile.',
+      'Departments — department assignment groups employees for KPI and payroll reporting.',
+      'Onboarding — adding a new employee here automatically triggers an onboarding checklist.',
+    ],
+    example: 'HR adds a new Sales Executive: fills in name, email (system sends login credentials), sets role to Staff, assigns her to the Sales department under the Sales Head. Her profile is created, she appears in the Org Chart, and an onboarding checklist is triggered for her first week.',
   },
   '/performance': {
     title: 'KPI Performance',
@@ -247,6 +319,13 @@ const PAGE_GUIDES: Record<string, {
       'A score above 70% is generally considered on-target.',
     ],
     access: 'All roles for own KPIs. Managers (Rank 70+) assign and review sheets.',
+    connections: [
+      'Dashboard — your KPI score (% of target) shows as a progress ring on your dashboard.',
+      'Appraisals — KPI scores are imported as evidence into formal appraisal reviews.',
+      'Departments — each department\'s average KPI score is computed from all member sheets.',
+      'Team Targets — KPI metrics can align with broader team targets set by your manager.',
+    ],
+    example: 'Selasi\'s KPI sheet has 3 goals: Sales Volume (weight 40%), Client Calls (30%), Report Accuracy (30%). She logs her actuals mid-month: 85 units vs target 100, 42 calls vs 40, 98% accuracy vs 95%. System scores her at 82%. She submits; her manager reviews and adds a comment before locking the sheet.',
   },
   '/performance-reviews': {
     title: 'Appraisals',
@@ -268,6 +347,13 @@ const PAGE_GUIDES: Record<string, {
       'Review Cycles are set up by HR — contact them if you don\'t see yours.',
     ],
     access: 'All roles for own appraisals. Create/review: Rank 70+ (Manager).',
+    connections: [
+      'KPI Performance — KPI scores from the period are referenced as performance evidence.',
+      'Employee Profiles — finalised appraisals are archived on the employee\'s profile record.',
+      'Payroll / Enterprise Suite — appraisal outcomes can inform salary review decisions.',
+      'Inbox — you receive a notification when your appraisal is ready for self-assessment.',
+    ],
+    example: 'HR launches a Q2 review cycle. Selasi gets an inbox alert. She opens her appraisal, rates herself across 8 competencies (Goal Achievement, Quality, Teamwork...), writes a 3-sentence summary, and submits. Her manager then opens the same packet, adds ratings and a narrative, and finalises. Selasi\'s appraisal score (e.g. 79%) is stored on her profile.',
   },
   '/team-targets': {
     title: 'Team Targets',
@@ -286,6 +372,12 @@ const PAGE_GUIDES: Record<string, {
       'Individual targets should be specific and measurable.',
     ],
     access: 'Rank 60+ (Team Lead and above).',
+    connections: [
+      'KPI Performance — individual targets feed into the KPI scoring system each month.',
+      'Dashboard — team target progress summaries appear on Manager dashboards.',
+      'Appraisals — target achievement is referenced in formal appraisal narratives.',
+    ],
+    example: 'The Logistics Manager creates a Q3 team target: "Reduce delivery time to under 48 hours" (metric: avg hours, target: 48). She assigns individual targets to 4 drivers. Each driver updates their actual weekly. The team target shows 65% progress by mid-quarter, surfaced on the manager\'s dashboard.',
   },
   '/departments': {
     title: 'Department Management',
@@ -305,6 +397,13 @@ const PAGE_GUIDES: Record<string, {
       'Departments feed the Enterprise Suite\'s KPI dashboard.',
     ],
     access: 'Rank 80+ (Director and above). Delete requires no active employees.',
+    connections: [
+      'Employee Management — employees are assigned to departments here; reassignment is also done here.',
+      'KPI Performance — department KPI score is the average of all employees within it.',
+      'Payroll — payroll reports can be grouped and exported by department.',
+      'Org Chart — departments appear as coloured clusters in the org chart view.',
+    ],
+    example: 'The MD creates a new "Digital Marketing" department, assigns the Marketing Manager as head, and moves 3 employees from Sales into it. The Org Chart updates immediately. The new department starts showing on the KPI dashboard once those employees submit their first KPI sheets.',
   },
   '/payroll': {
     title: 'Payroll Engine',
@@ -326,6 +425,14 @@ const PAGE_GUIDES: Record<string, {
       'The yearly summary view shows total payroll cost per month.',
     ],
     access: 'Rank 80+ (Director and above). Full control: MD only.',
+    connections: [
+      'Attendance — actual working days from attendance records determine the pay base.',
+      'Finance / Loans — approved loan repayments are automatically deducted per run.',
+      'Employee Profiles — bank account details entered on profiles power the bank transfer CSV.',
+      'Holidays — statutory holiday pay rules reference the holiday calendar.',
+      'Leave — unpaid leave days reduce gross pay in that period\'s run.',
+    ],
+    example: 'The Finance Director runs May payroll: clicks "+ New Payroll Run", selects May 2026 / GHS. The system pre-fills 14 employees with their base salaries, deducts 2 loan repayments (total GHS 800), applies SSNIT (13%) and PAYE tax. She reviews, adjusts one transport allowance, and approves. Payslip PDFs are generated and a bank transfer CSV is downloaded.',
   },
   '/announcements': {
     title: 'Announcements',
@@ -346,6 +453,12 @@ const PAGE_GUIDES: Record<string, {
       'Always set an expiry date so the banner doesn\'t linger.',
     ],
     access: 'Create/publish: Rank 80+ (Director and above).',
+    connections: [
+      'All Pages — published announcements display as a top banner across every page system-wide.',
+      'Inbox — employees also receive announcements as inbox notifications.',
+      'Departments — targeted announcements only appear for employees in the selected department.',
+    ],
+    example: 'The HR Director publishes an urgent announcement: "Office closed Friday 30 May for fumigation — work from home." She sets Priority: Urgent, Target: All Employees, Expiry: 31 May. Every employee sees a red banner on every page from that moment until 31 May, and gets an inbox notification.',
   },
   '/onboarding': {
     title: 'Onboarding',
@@ -365,6 +478,13 @@ const PAGE_GUIDES: Record<string, {
       'HR tasks include submitting identification documents — don\'t skip them.',
     ],
     access: 'Own checklist: all roles. Admin view (all sessions): Rank 80+.',
+    connections: [
+      'Employee Management — adding a new employee automatically creates their onboarding session.',
+      'Assets — IT equipment assignment is typically an onboarding step for new starters.',
+      'Training — mandatory induction programmes can be linked as onboarding tasks.',
+      'Profile — submitting ID documents and bank details are common onboarding checklist items.',
+    ],
+    example: 'Daniel starts as Finance Officer on Monday. His onboarding session appears with 12 tasks across HR, IT, Admin and Manager categories. Day 1: IT sets up his laptop (Asset assigned). Day 2: HR checks his Ghana Card and bank details (profile updated). By end of week 1, 10/12 tasks are done and his session shows 83% complete.',
   },
   '/enterprise': {
     title: 'Enterprise Suite',
@@ -388,6 +508,14 @@ const PAGE_GUIDES: Record<string, {
       'Benefits enrollment links to payroll deductions.',
     ],
     access: 'Rank 80+ (Director and above).',
+    connections: [
+      'Payroll — Tax Rules set here power the PAYE deduction engine in every payroll run.',
+      'Recruitment — job postings here feed candidates into the hiring pipeline.',
+      'Onboarding — accepted candidates are moved into onboarding sessions from here.',
+      'Announcements — the Announcements sub-section is the same as the standalone page.',
+      'Benefits — benefit enrollments here trigger payroll deductions automatically.',
+    ],
+    example: 'The MD is setting up for a new quarter. She opens Enterprise Suite: first sets up PAYE tax brackets (Tax Rules), then posts 2 job vacancies (Recruitment), then reviews the 3 candidates at offer stage and converts them to onboarding sessions. She also creates a new Medical Benefit plan and enrols the full Operations team.',
   },
   '/it-admin': {
     title: 'IT Admin',
@@ -406,6 +534,12 @@ const PAGE_GUIDES: Record<string, {
       'IT Admin is for quick account operations, not full HR management.',
     ],
     access: 'Rank 60+ (Team Lead and above).',
+    connections: [
+      'Employee Management — accounts created here also appear in the main employee directory.',
+      'Assets — IT Admin coordinates with this page for equipment provisioning.',
+      'Onboarding — account creation is the first onboarding step for new starters.',
+    ],
+    example: 'The IT Manager needs to quickly provision 3 new call-centre agents starting Monday. He opens IT Admin, uses the "Create User" form three times, generating accounts with temporary passwords. The three employees receive their login credentials by email and appear in Employee Management.',
   },
   '/settings': {
     title: 'Platform Settings',
@@ -424,6 +558,12 @@ const PAGE_GUIDES: Record<string, {
       'Keep your security policies up to date for maximum compliance.',
     ],
     access: 'Rank 80+ (Director and above). Some refined settings require Rank 90+.',
+    connections: [
+      'All Pages — branding changes (logo, colour) reflect across the entire platform instantly.',
+      'Payroll — tax and currency settings here determine payroll calculation defaults.',
+      'Audit Logs — every settings change is captured in the audit trail.',
+    ],
+    example: 'The company rebrands. The MD opens Settings, uploads the new logo, changes the primary colour to the new brand blue, and updates the company name. All employees see the new branding on their next page load — no redeployment needed.',
   },
   '/audit': {
     title: 'Audit Logs',
@@ -442,6 +582,13 @@ const PAGE_GUIDES: Record<string, {
       'Login failures are logged — look for patterns of failed attempts.',
     ],
     access: 'Rank 90+ (MD and DEV only).',
+    connections: [
+      'Every page — all significant user actions across the system write an entry here.',
+      'Settings — configuration changes are logged with before/after values.',
+      'Payroll — payroll approvals and rejections are logged with the approver\'s identity.',
+      'IT Admin — password resets and account creations are logged here for security.',
+    ],
+    example: 'The MD notices a salary was changed without her approval. She opens Audit Logs, filters by action EMPLOYEE_UPDATED, and finds the entry: edited by the Finance Director at 14:32 on 15 May, changing Selasi\'s salary from GHS 3,200 to GHS 3,800. She now has full accountability.',
   },
   '/dev/dashboard': {
     title: 'Developer Dashboard',
@@ -460,6 +607,12 @@ const PAGE_GUIDES: Record<string, {
       'Master Key usage is logged to the audit trail.',
     ],
     access: 'DEV role only (Rank 100).',
+    connections: [
+      'All client organisations — every tenant is provisioned and managed from this dashboard.',
+      'Audit Logs — master key usage and impersonation events are all captured in audit logs.',
+      'Settings — platform-wide defaults can be set here before pushing to individual tenants.',
+    ],
+    example: 'A new client (Akosombo Textiles Ltd) is onboarded. The DEV user opens the Developer Dashboard, clicks "+ New Tenant", enters the company name and plan tier, sets the admin email. The system creates the organisation, sends the admin login credentials, and Akosombo Textiles Ltd is live.',
   },
 };
 
@@ -554,7 +707,7 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
   const { settings } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [tab, setTab] = useState<'chat' | 'guide' | 'roles'>('chat');
+  const [tab, setTab] = useState<'guide' | 'chat' | 'roles'>('guide');
   const [expanded, setExpanded] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -647,8 +800,8 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
             {/* Tabs */}
             <div className="flex border-b border-white/[0.06] flex-shrink-0">
               {([
-                { key: 'chat', label: 'AI Chat', icon: Bot },
-                { key: 'guide', label: 'Manual', icon: BookOpen },
+                { key: 'guide', label: 'This Page', icon: BookOpen },
+                { key: 'chat', label: 'Ask AI', icon: Bot },
                 { key: 'roles', label: 'Roles', icon: Shield },
               ] as const).map(t => (
                 <button
@@ -744,37 +897,69 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
               </>
             )}
 
-            {/* ── GUIDE TAB ── */}
+            {/* ── GUIDE / THIS PAGE TAB ── */}
             {tab === 'guide' && (
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
-                 {currentPage ? (
-                   <div className="space-y-6">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${currentPage.color}20` }}>
-                        <currentPage.icon size={20} style={{ color: currentPage.color }} />
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
+                {currentPage ? (
+                  <div className="space-y-5">
+                    {/* Page identity header */}
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: `${currentPage.color}18`, border: `1px solid ${currentPage.color}30` }}>
+                        <currentPage.icon size={22} style={{ color: currentPage.color }} />
                       </div>
-                      <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Page Context</p>
-                        <p className="text-base font-black text-white uppercase">{currentPage.title}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">You are here</p>
+                        <p className="text-sm font-black text-white uppercase truncate">{currentPage.title}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{currentPage.whoSees}</p>
                       </div>
                     </div>
-                    <p className="text-[12.5px] text-slate-400 leading-relaxed">{currentPage.summary}</p>
-                    
-                    <div className="space-y-3">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600">Operations Workflow</h4>
+
+                    {/* What this page does */}
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2">What this page does</p>
+                      <p className="text-[12.5px] text-slate-300 leading-relaxed">{currentPage.summary}</p>
+                    </div>
+
+                    {/* How to use it — steps */}
+                    <div className="space-y-2">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">How to use it</p>
                       {currentPage.steps.map((s, i) => (
-                        <div key={i} className="flex gap-3 items-start p-3 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
-                          <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary-light text-[10px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                          <p className="text-[12.5px] text-white/80 leading-relaxed font-medium">{s}</p>
+                        <div key={i} className="flex gap-3 items-start p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                          <span className="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 text-[9px] font-black" style={{ background: `${currentPage.color}20`, color: currentPage.color }}>{i + 1}</span>
+                          <p className="text-[12px] text-white/80 leading-relaxed">{s}</p>
                         </div>
                       ))}
                     </div>
 
+                    {/* How it connects */}
+                    <div className="space-y-2">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">How it connects to the rest of the system</p>
+                      {currentPage.connections.map((c, i) => {
+                        const [page, ...rest] = c.split(' — ');
+                        return (
+                          <div key={i} className="flex gap-3 items-start text-[11.5px]">
+                            <span className="text-primary-light font-black flex-shrink-0 mt-0.5">→</span>
+                            <p className="text-slate-400 leading-relaxed"><span className="text-white font-bold">{page}</span>{rest.length ? ` — ${rest.join(' — ')}` : ''}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Real-world example */}
+                    <div className="p-4 rounded-2xl border" style={{ background: `${currentPage.color}08`, borderColor: `${currentPage.color}20` }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Lightbulb size={13} style={{ color: currentPage.color }} />
+                        <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: currentPage.color }}>Real-world example</p>
+                      </div>
+                      <p className="text-[12px] text-slate-300 leading-relaxed italic">{currentPage.example}</p>
+                    </div>
+
+                    {/* Tips */}
                     {currentPage.tips.length > 0 && (
                       <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Lightbulb size={14} className="text-amber-400" />
-                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Expert Tips</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-amber-400 text-xs">💡</span>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-amber-500">Pro tips</p>
                         </div>
                         <div className="space-y-2">
                           {currentPage.tips.map((t, i) => (
@@ -783,13 +968,29 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                         </div>
                       </div>
                     )}
-                   </div>
-                 ) : (
-                   <div className="flex flex-col items-center justify-center py-20 text-center">
-                     <BookOpen size={40} className="text-slate-700 mb-4 opacity-20" />
-                     <p className="text-sm font-bold text-slate-500">Select a section in the sidebar for targeted help.</p>
-                   </div>
-                 )}
+
+                    {/* Access level */}
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Access level</p>
+                      <p className="text-[11.5px] text-slate-400 leading-relaxed">{currentPage.access}</p>
+                    </div>
+
+                    {/* Ask AI prompt */}
+                    <button
+                      onClick={() => { setTab('chat'); quickAsk(`What can I do on the ${currentPage.title} page?`); }}
+                      className="w-full p-3 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Bot size={13} className="text-primary-light" />
+                      <span className="text-[11px] font-black text-primary-light uppercase tracking-widest">Ask AI about this page</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <BookOpen size={40} className="text-slate-700 mb-4 opacity-20" />
+                    <p className="text-sm font-bold text-slate-500">Navigate to a page to see its guide here.</p>
+                    <p className="text-[11px] text-slate-600 mt-2">Try going to Attendance, Leave, or Payroll.</p>
+                  </div>
+                )}
               </div>
             )}
 
