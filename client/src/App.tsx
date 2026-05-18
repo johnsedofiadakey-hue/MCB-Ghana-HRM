@@ -486,10 +486,10 @@ const AppContent = () => {
 
             <Route path="/leave" element={<Leave />} />
             <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
-            <Route path="/employees" element={<RoleGuard allowedRoles={['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
-            <Route path="/employees/history" element={<RoleGuard allowedRoles={['HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
+            <Route path="/employees" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
+            <Route path="/employees/history" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
-            <Route path="/print/ids" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
+            <Route path="/print/ids" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
             <Route path="/assets" element={<AssetManagement />} />
             <Route path="/audit" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
@@ -500,7 +500,7 @@ const AppContent = () => {
             <Route path="/payroll" element={<RoleGuard allowedRoles={['FINANCE_MANAGER', 'MD', 'DEV']}><Payroll /></RoleGuard>} />
             <Route path="/finance" element={<FinanceHub />} />
             <Route path="/attendance" element={<AttendanceDashboard />} />
-            <Route path="/org-chart" element={<RoleGuard allowedRoles={['HR_MANAGER', 'IT_MANAGER', 'MD', 'DEV']}><OrgChart /></RoleGuard>} />
+            <Route path="/org-chart" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'MD', 'DEV']}><OrgChart /></RoleGuard>} />
             <Route path="/enterprise" element={<RoleGuard minRank={95}><EnterpriseSuite /></RoleGuard>} />
             <Route path="/it-admin" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'DEV']}><ITAdmin /></RoleGuard>} />
             <Route path="/training" element={<Training />} />
@@ -508,17 +508,17 @@ const AppContent = () => {
             <Route path="/announcements" element={<AnnouncementsPage />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/onboarding" element={<RoleGuard allowedRoles={['HR_MANAGER', 'IT_MANAGER', 'MD', 'DEV']}><Onboarding /></RoleGuard>} />
-            <Route path="/offboarding" element={<RoleGuard allowedRoles={['HR_MANAGER', 'IT_MANAGER', 'MD', 'DEV']}><Offboarding /></RoleGuard>} />
-            <Route path="/recruitment" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><Recruitment /></RoleGuard>} />
+            <Route path="/onboarding" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'MD', 'DEV']}><Onboarding /></RoleGuard>} />
+            <Route path="/offboarding" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'MD', 'DEV']}><Offboarding /></RoleGuard>} />
+            <Route path="/recruitment" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><Recruitment /></RoleGuard>} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/support" element={<Support />} />
             {/* New HR Modules */}
-            <Route path="/disciplinary" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><Disciplinary /></RoleGuard>} />
+            <Route path="/disciplinary" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><Disciplinary /></RoleGuard>} />
             <Route path="/policies" element={<PolicyLibrary />} />
-            <Route path="/probation" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><ProbationTracker /></RoleGuard>} />
+            <Route path="/probation" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><ProbationTracker /></RoleGuard>} />
             <Route path="/kiosk" element={<AttendanceKiosk />} />
-            <Route path="/promotions" element={<RoleGuard allowedRoles={['HR_MANAGER', 'MD', 'DEV']}><PromotionRequests /></RoleGuard>} />
+            <Route path="/promotions" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><PromotionRequests /></RoleGuard>} />
           </Route>
 
 
