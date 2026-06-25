@@ -142,8 +142,8 @@ const executeTool = async (name, args, user) => {
             return {
                 status: 'SUCCESS',
                 message: 'Leave request created and pending approval',
-                requestId: newLeave.id,
-                days: newLeave.leaveDays
+                requestId: newLeave.leave.id,
+                days: newLeave.leave.leaveDays
             };
         case 'schedule_calendar_event':
             const eventDetails = {

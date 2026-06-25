@@ -1,70 +1,99 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Clock, Calendar, Inbox, User } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../../utils/cn';
-import { useTranslation } from 'react-i18next';
 import { getStoredUser, getRoleRankValue } from '../../utils/session';
+import { motion } from 'framer-motion';
+
+const SPRING = { type: 'spring', stiffness: 480, damping: 38 } as const;
+const LABEL_SPRING = { type: 'spring', stiffness: 480, damping: 38, delay: 0.04 } as const;
 
 const MobileNav = () => {
-    const { t } = useTranslation();
     const location = useLocation();
-
     const user = getStoredUser();
     const rank = getRoleRankValue(user?.role);
 
     const navItems = [
-        { icon: LayoutDashboard, label: t('common.dashboard_label'), path: '/dashboard' },
-        { icon: Inbox, label: t('common.inbox_label'), path: '/inbox' },
-        { icon: Calendar, label: t('common.leave_label'), path: '/leave' },
-        { icon: Clock, label: t('common.attendance_label'), path: '/attendance' },
-        ...(rank >= 70 
-            ? [{ icon: Users, label: t('common.employees_label'), path: '/employees' }]
-            : [{ icon: User, label: t('common.profile_label'), path: '/profile' }]
-        )
+        { icon: LayoutDashboard, label: 'Home',    path: '/dashboard',  accent: false },
+        { icon: Inbox,           label: 'Inbox',   path: '/inbox',      accent: true  },
+        { icon: Calendar,        label: 'Leave',   path: '/leave',      accent: false },
+        { icon: Clock,           label: 'Clock',   path: '/attendance', accent: false },
+        ...(rank >= 70
+            ? [{ icon: Users, label: 'People',  path: '/employees', accent: false }]
+            : [{ icon: User, label: 'Profile',  path: '/profile',   accent: false }]
+        ),
     ];
 
     return (
-        <div className="lg:hidden fixed bottom-6 left-4 right-4 z-[60] safe-area-bottom">
-            <div className="flex items-center justify-between h-[76px] px-1 bg-[var(--bg-card)]/90 backdrop-blur-2xl border border-[var(--border-subtle)] rounded-[2rem] shadow-2xl shadow-black/20">
-                {navItems.map((item, i) => {
-                    const isActive = location.pathname === item.path;
+        <nav
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-[60]"
+            style={{
+                borderTop: '1px solid var(--border-subtle)',
+                paddingBottom: 'env(safe-area-inset-bottom)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                backgroundColor: 'color-mix(in srgb, var(--bg-card) 88%, transparent)',
+            }}
+        >
+            <div className="flex items-center h-16 px-2 gap-1">
+                {navItems.map((item) => {
+                    const isActive =
+                        location.pathname === item.path ||
+                        (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+                    const pillColor = item.accent ? 'var(--accent)' : 'var(--primary)';
+
                     return (
-                        <NavLink
-                            key={i}
-                            to={item.path}
-                            className={({ isActive }) => cn(
-                                "flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative min-w-0 px-1",
-                                isActive ? "text-[var(--primary)]" : "text-[var(--text-secondary)] hover:text-[var(--primary)]/70"
-                            )}
+                        <motion.div
+                            key={item.path}
+                            layout
+                            transition={SPRING}
+                            className="min-w-0 flex items-center justify-center"
+                            style={{ flex: isActive ? '2 0 0' : '1 0 0', height: '100%' }}
                         >
-                            <AnimatePresence>
-                                {isActive && (
-                                    <motion.div 
-                                        layoutId="mobile-nav-pill"
-                                        className="absolute top-0 w-8 h-1 bg-[var(--primary)] rounded-full shadow-[0_0_12px_var(--primary)]"
-                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                    />
+                            <NavLink
+                                to={item.path}
+                                className="flex items-center justify-center w-full h-12 select-none"
+                                style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+                            >
+                                {isActive ? (
+                                    <motion.div
+                                        className="flex items-center justify-center gap-2 px-3 h-10 rounded-2xl w-full overflow-hidden"
+                                        style={{ background: pillColor }}
+                                        initial={{ opacity: 0.5, scale: 0.88 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={SPRING}
+                                    >
+                                        <item.icon
+                                            size={18}
+                                            strokeWidth={2.5}
+                                            className="text-white flex-shrink-0"
+                                        />
+                                        <motion.span
+                                            className="text-[11px] font-black text-white uppercase tracking-wide whitespace-nowrap"
+                                            initial={{ opacity: 0, x: -6 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={LABEL_SPRING}
+                                        >
+                                            {item.label}
+                                        </motion.span>
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        className="flex items-center justify-center w-11 h-10 rounded-2xl"
+                                        whileTap={{ scale: 0.72 }}
+                                        transition={SPRING}
+                                    >
+                                        <item.icon
+                                            size={20}
+                                            strokeWidth={1.8}
+                                            className="text-[var(--text-muted)]"
+                                        />
+                                    </motion.div>
                                 )}
-                            </AnimatePresence>
-                            
-                            <div className={cn(
-                                "mb-1 transition-all duration-300",
-                                isActive ? "scale-110 translate-y-[-2px]" : "scale-100 opacity-60"
-                            )}>
-                                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                            </div>
-                            
-                            <span className={cn(
-                                "text-[7px] xs:text-[8px] font-black uppercase tracking-wider transition-all text-center leading-none truncate w-full px-0.5",
-                                isActive ? "text-[var(--primary)]" : "text-[var(--text-muted)]"
-                            )}>
-                                {item.label}
-                            </span>
-                        </NavLink>
+                            </NavLink>
+                        </motion.div>
                     );
                 })}
             </div>
-        </div>
+        </nav>
     );
 };
 

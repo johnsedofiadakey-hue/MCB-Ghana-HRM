@@ -43,11 +43,11 @@
         const savedTheme = localStorage.getItem(SCOPED_PREF_KEY) || localStorage.getItem(BASE_PREF_KEY) || 'premium-monolith';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
-        // Atomic Defaults
+        // Atomic Defaults — MCB Ghana brand colors
         const defaults = {
-          'premium-monolith': { bg: '#09090b', text: '#ffffff' },
-          'premium-canvas': { bg: '#f8fafc', text: '#0f172a' },
-          'premium-aero': { bg: '#f8fafc', text: '#0f172a' }
+          'premium-monolith': { bg: '#07111A', text: '#EDF5FB' },
+          'premium-canvas':   { bg: '#F4F8FB', text: '#0A1929' },
+          'premium-aero':     { bg: '#FAFBFC', text: '#1A2D3D' }
         };
         const themeDef = defaults[savedTheme] || defaults['premium-monolith'];
         
@@ -132,7 +132,7 @@
     <link rel="apple-touch-icon" id="dynamic-apple-icon" href="/vite.svg?v=5.1" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#4f46e5" />
+    <meta name="theme-color" content="#009EE3" />
     <meta name="description" content="MCB HRM Ghana — Advanced Workforce Management System" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />

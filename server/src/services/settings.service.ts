@@ -2,6 +2,7 @@ import prisma from '../prisma/client';
 import { maybeEncrypt } from '../utils/encryption';
 import { broadcastToAll } from './websocket.service';
 
+
 const isValidHex = (hex: string) => /^#([A-Fa-f0-9]{3}){1,2}$/.test(hex);
 
 /**
@@ -309,10 +310,6 @@ export const updateSettings = async (
     orgUpdate.isAiEnabled = isAiEnabled === true || String(isAiEnabled) === 'true';
   }
 
-  console.log('[SettingsService] Org ID:', organizationId);
-  console.log('[SettingsService] Data received (keys):', Object.keys(data));
-  console.log('[SettingsService] isAiEnabled value:', isAiEnabled, typeof isAiEnabled);
-  console.log('[SettingsService] Org update payload:', JSON.stringify(orgUpdate, null, 2));
   if (successColor !== undefined && isValidHex(successColor)) orgUpdate.successColor = successColor;
   if (warningColor !== undefined && isValidHex(warningColor)) orgUpdate.warningColor = warningColor;
   if (errorColor !== undefined && isValidHex(errorColor)) orgUpdate.errorColor = errorColor;
@@ -353,7 +350,7 @@ export const updateSettings = async (
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;
   if (smtpPort !== undefined) settingsUpdate.smtpPort = parseInt(smtpPort as any) || 587;
   if (smtpUser !== undefined) settingsUpdate.smtpUser = smtpUser;
-  if (smtpPass !== undefined && smtpPass !== '') settingsUpdate.smtpPass = smtpPass; // Never clear with blank
+  if (smtpPass !== undefined && smtpPass !== '') settingsUpdate.smtpPass = maybeEncrypt(smtpPass); // Encrypted at rest; maybeEncrypt skips double-encryption
   if (smtpFrom !== undefined) settingsUpdate.smtpFrom = smtpFrom;
   if (paystackPublicKey !== undefined) settingsUpdate.paystackPublicKey = paystackPublicKey;
   if (paystackSecretKey !== undefined) settingsUpdate.paystackSecretKey = paystackSecretKey;

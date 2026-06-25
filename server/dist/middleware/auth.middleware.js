@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkBilling = exports.requirePermission = exports.authorizeMinimumRole = exports.requireSpecificRole = exports.requireRole = exports.authorize = exports.authenticate = exports.getRoleRank = void 0;
+exports.checkBilling = exports.requirePermission = exports.authorizeMinimumRole = exports.requireSpecificRole = exports.requireRole = exports.authorize = exports.authenticate = exports.invalidateUserCache = exports.getRoleRank = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = __importDefault(require("../prisma/client"));
 const policy_service_1 = require("../services/policy.service");
@@ -25,6 +25,27 @@ const getRoleRank = (role) => {
 };
 exports.getRoleRank = getRoleRank;
 const context_1 = require("../utils/context");
+// Short-lived in-memory cache to avoid a DB hit on every authenticated request.
+// TTL of 30s means a terminated user can still make requests for up to 30s after
+// termination — acceptable for this use-case. Cache is keyed by userId.
+const _userCache = new Map();
+const _USER_CACHE_TTL = 30000;
+const _getCachedUser = (id) => {
+    const entry = _userCache.get(id);
+    if (!entry)
+        return null;
+    if (Date.now() - entry.at > _USER_CACHE_TTL) {
+        _userCache.delete(id);
+        return null;
+    }
+    return entry.data;
+};
+const _setCachedUser = (id, data) => {
+    _userCache.set(id, { data, at: Date.now() });
+};
+// Expose for cache invalidation on role/status changes (called from user.controller etc.)
+const invalidateUserCache = (id) => _userCache.delete(id);
+exports.invalidateUserCache = invalidateUserCache;
 const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     let token = '';
@@ -77,13 +98,18 @@ const authenticate = async (req, res, next) => {
                 next();
             });
         }
-        const user = await client_1.default.user.findUnique({
-            where: { id: decoded.id },
-            select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true },
-        }).catch(err => {
-            console.error('[Auth Middleware] Database Error:', err.message);
-            throw err;
-        });
+        let user = _getCachedUser(decoded.id);
+        if (!user) {
+            user = await client_1.default.user.findUnique({
+                where: { id: decoded.id },
+                select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true },
+            }).catch(err => {
+                console.error('[Auth Middleware] Database Error:', err.message);
+                throw err;
+            });
+            if (user)
+                _setCachedUser(decoded.id, user);
+        }
         if (!user) {
             console.warn(`[Auth Middleware] Account not found for ID: ${decoded.id}`);
             return res.status(401).json({ error: 'Account not found' });
@@ -178,7 +204,10 @@ const requireSpecificRole = (allowedRoles) => {
 exports.requireSpecificRole = requireSpecificRole;
 const authorizeMinimumRole = (minimumRole) => {
     const requiredRank = (0, exports.getRoleRank)(minimumRole);
-    return (0, exports.requireRole)(requiredRank || 999);
+    if (!requiredRank) {
+        return (_req, res) => res.status(500).json({ error: `[Config] authorizeMinimumRole: unknown role "${minimumRole}"` });
+    }
+    return (0, exports.requireRole)(requiredRank);
 };
 exports.authorizeMinimumRole = authorizeMinimumRole;
 const requirePermission = (permission, getContext) => {

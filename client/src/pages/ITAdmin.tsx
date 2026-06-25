@@ -245,11 +245,11 @@ const ITAdmin = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-tight">
-            {currentUser?.rank >= 85 ? 'Strategic Systems Hub' : 'IT Infrastructure Admin'}
+            {currentUser?.rank >= 85 ? 'IT Administration' : 'IT Infrastructure'}
           </h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <ShieldCheck size={18} className="text-[var(--primary)] opacity-60" />
-            Managing identity nodes and technical infrastructure for {orgSettings?.companyName || 'the institution'}.
+            Manage user accounts and IT systems for {orgSettings?.companyName || 'your organisation'}.
           </p>
         </motion.div>
 
@@ -258,7 +258,7 @@ const ITAdmin = () => {
               <button key={tab} onClick={() => setActiveTab(tab)}
                  className={cn("px-4 sm:px-6 py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                  activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'ID Registry' : tab === 'call-cards' ? 'Digital Call Cards' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
+                {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'User Accounts' : tab === 'call-cards' ? 'Digital Call Cards' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
               </button>
            ))}
         </div>
@@ -268,7 +268,7 @@ const ITAdmin = () => {
         {loading ? (
              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-40 flex flex-col items-center gap-6">
                 <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Accessing Identity Grid</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Loading...</p>
              </motion.div>
         ) : (
           <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
@@ -279,7 +279,7 @@ const ITAdmin = () => {
                       { label: 'Total Personnel', value: overview.totalUsers, icon: Users, color: 'text-[var(--primary)] bg-[var(--primary)]/5' },
                       { label: 'Active Sessions', value: overview.activeUsers, icon: Zap, color: 'text-[var(--success)] bg-[var(--success)]/5' },
                       { label: 'Hardware Assets', value: overview.assets, icon: Package, color: 'text-[var(--info)] bg-[var(--info)]/5' },
-                      { label: 'Audit Log Volume', value: overview.systemHealth?.totalAuditLogs || 0, icon: Activity, color: 'text-[var(--warning)] bg-[var(--warning)]/5' },
+                      { label: 'System Log Entries', value: overview.systemHealth?.totalAuditLogs || 0, icon: Activity, color: 'text-[var(--warning)] bg-[var(--warning)]/5' },
                     ].map((s, idx) => (
                       <motion.div key={s.label} className="nx-card p-8 bg-[var(--bg-card)] border-[var(--border-subtle)] group">
                          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-6 border border-[var(--border-subtle)]", s.color)}>
@@ -296,7 +296,7 @@ const ITAdmin = () => {
                      <div className="lg:col-span-4 space-y-6">
                         <div className="nx-card p-8 bg-[var(--bg-card)] border-[var(--border-subtle)] relative overflow-hidden shadow-sm">
                            <div className="flex items-center justify-between mb-8">
-                              <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Security Threat Matrix</h3>
+                              <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Security Alerts</h3>
                               <div className={cn("px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter", 
                                  securityPulse?.threatLevel === 'CRITICAL' ? "bg-rose-500 text-white animate-pulse" : "bg-emerald-500 text-white")}>
                                  {securityPulse?.threatLevel || 'STABLE'}
@@ -322,7 +322,7 @@ const ITAdmin = () => {
                         <div className="nx-card bg-[var(--bg-card)] border-[var(--border-subtle)] h-full flex flex-col overflow-hidden shadow-sm">
                            <div className="p-6 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex justify-between items-center">
                               <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-2">
-                                 <Activity size={14} className="text-[var(--primary)]" /> Real-Time Observability Pulse
+                                 <Activity size={14} className="text-[var(--primary)]" /> Activity Feed
                               </h3>
                               <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                                  <div className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
@@ -354,11 +354,10 @@ const ITAdmin = () => {
                         <div className="absolute top-0 right-0 p-10 opacity-[0.03] rotate-12"><ShieldCheck size={160} /></div>
                         <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-8">IT Manager Mandate</h3>
                         <p className="text-sm font-medium text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
-                          As the Strategic Systems Hub controller, you are the final arbiter of organizational identity. 
-                          Your mandate includes the verification of biometric nodes, the issuance of official personnel tags, and the absolute security of the cloud data vault.
+                          As the IT Manager, you are responsible for managing user accounts, issuing employee ID cards, and maintaining system security. Use the accounts tab to create or update user profiles and manage access permissions.
                         </p>
                         <button onClick={() => setActiveTab('accounts')} className="px-8 h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 hover:scale-[1.02] transition-transform">
-                          Initialize Identity Registry
+                          Manage User Accounts
                         </button>
                       </div>
 

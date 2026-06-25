@@ -38,6 +38,26 @@ export const getRoleRank = (role?: string): number => {
 
 import { tenantContext } from '../utils/context';
 
+// Short-lived in-memory cache to avoid a DB hit on every authenticated request.
+// TTL of 30s means a terminated user can still make requests for up to 30s after
+// termination — acceptable for this use-case. Cache is keyed by userId.
+const _userCache = new Map<string, { data: any; at: number }>();
+const _USER_CACHE_TTL = 30_000;
+
+const _getCachedUser = (id: string) => {
+  const entry = _userCache.get(id);
+  if (!entry) return null;
+  if (Date.now() - entry.at > _USER_CACHE_TTL) { _userCache.delete(id); return null; }
+  return entry.data;
+};
+
+const _setCachedUser = (id: string, data: any) => {
+  _userCache.set(id, { data, at: Date.now() });
+};
+
+// Expose for cache invalidation on role/status changes (called from user.controller etc.)
+export const invalidateUserCache = (id: string) => _userCache.delete(id);
+
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   let token = '';
@@ -99,13 +119,17 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true },
-    }).catch(err => {
-      console.error('[Auth Middleware] Database Error:', err.message);
-      throw err;
-    });
+    let user = _getCachedUser(decoded.id);
+    if (!user) {
+      user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true },
+      }).catch(err => {
+        console.error('[Auth Middleware] Database Error:', err.message);
+        throw err;
+      });
+      if (user) _setCachedUser(decoded.id, user);
+    }
 
     if (!user) {
       console.warn(`[Auth Middleware] Account not found for ID: ${decoded.id}`);
@@ -212,7 +236,11 @@ export const requireSpecificRole = (allowedRoles: string[]) => {
 
 export const authorizeMinimumRole = (minimumRole: string) => {
   const requiredRank = getRoleRank(minimumRole);
-  return requireRole(requiredRank || 999);
+  if (!requiredRank) {
+    return (_req: Request, res: Response) =>
+      res.status(500).json({ error: `[Config] authorizeMinimumRole: unknown role "${minimumRole}"` });
+  }
+  return requireRole(requiredRank);
 };
 
 export const requirePermission = (permission: string, getContext?: (req: Request) => any) => {

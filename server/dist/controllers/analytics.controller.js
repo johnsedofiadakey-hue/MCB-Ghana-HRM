@@ -51,124 +51,88 @@ class AnalyticsController {
             const userWhere = { organizationId, status: 'ACTIVE', role: { not: 'DEV' } };
             if (!isExecutive)
                 userWhere.supervisorId = userId;
-            const totalEmployees = await client_1.default.user.count({ where: userWhere });
-            const employeeIds = isExecutive ? [] : (await client_1.default.user.findMany({ where: userWhere, select: { id: true } })).map(u => u.id);
+            // Phase 1: employee scope (IDs needed to build subsequent where clauses)
+            const [totalEmployees, scopedUsers] = await Promise.all([
+                client_1.default.user.count({ where: userWhere }),
+                isExecutive
+                    ? Promise.resolve([])
+                    : client_1.default.user.findMany({ where: userWhere, select: { id: true } }),
+            ]);
+            const employeeIds = scopedUsers.map(u => u.id);
             const leaveWhere = { organizationId };
             if (!isExecutive)
                 leaveWhere.employeeId = { in: employeeIds };
-            const activeLeaves = await client_1.default.leaveRequest.count({
-                where: { ...leaveWhere, status: 'APPROVED' }
-            });
-            const pendingTasks = await client_1.default.leaveRequest.count({
-                where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } }
-            });
-            const pendingKpis = await client_1.default.kpiSheet.count({
-                where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } }
-            });
-            const pendingAppraisals = await client_1.default.appraisalPacket.count({
-                where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] }
-            });
-            let payrollTotal = 0;
-            if (isExecutive) {
-                const latestRun = await client_1.default.payrollRun.findFirst({
-                    where: { organizationId, status: { in: ['APPROVED', 'PAID'] } },
-                    orderBy: { createdAt: 'desc' },
-                    select: { totalNet: true }
-                });
-                payrollTotal = Number(latestRun?.totalNet) || 0;
-            }
-            // Attendance rate: real clock-ins vs expected (employees * 22 working days/month)
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            const clockIns = await client_1.default.attendanceLog.count({
-                where: {
-                    organizationId,
-                    clockIn: { gte: thirtyDaysAgo },
-                    ...(isExecutive ? {} : { employeeId: { in: employeeIds } })
-                }
-            });
-            const expectedDays = totalEmployees * 22;
-            const attendanceRate = expectedDays > 0
-                ? Math.min(100, Math.round((clockIns / expectedDays) * 100 * 10) / 10)
-                : 0;
-            // Team Performance (Average of current team's latest locked sheet)
-            const lockedSheets = await client_1.default.kpiSheet.groupBy({
-                by: ['employeeId'],
-                where: {
-                    organizationId,
-                    status: { in: ['LOCKED', 'SUBMITTED'] },
-                    ...(isExecutive ? {} : { employeeId: { in: employeeIds } })
-                },
-                _avg: { totalScore: true }
-            });
-            const avgScores = lockedSheets.map(s => Number(s._avg.totalScore) || 0);
-            const teamPerf = avgScores.length ? avgScores.reduce((a, b) => a + b, 0) / avgScores.length : 0;
-            // Growth: real headcount per month (last 7 months) - Executives only
+            const today = new Date();
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const now = new Date();
-            const growth = isExecutive ? await Promise.all(Array.from({ length: 7 }, (_, i) => {
-                const d = new Date(now.getFullYear(), now.getMonth() - (6 - i), 1);
-                const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
-                return client_1.default.user.count({
-                    where: { organizationId, status: { not: 'TERMINATED' }, joinDate: { lte: end }, role: { not: 'DEV' } }
-                }).then(value => ({ name: monthNames[d.getMonth()], value }));
-            })) : [];
-            // Strategy Phases (Dynamic based on current activities)
-            const activeCycle = await client_1.default.appraisalCycle.findFirst({
-                where: { organizationId, status: { in: ['ACTIVE', 'OPEN'] } }
-            });
-            const activeKpis = await client_1.default.kpiSheet.count({
-                where: { organizationId, status: 'ACTIVE' }
-            });
-            const activeAppraisals = await client_1.default.appraisalPacket.count({
-                where: { organizationId, status: 'OPEN' }
-            });
+            // Phase 2: all independent metrics in one parallel round-trip
+            const [activeLeaves, pendingTasks, pendingKpis, pendingAppraisals, latestRun, clockIns, approvedLeavesDays, publicHolidays, lockedSheets, activeCycle, activeKpis, activeAppraisals, appraisalStages, team, directTeam, growth,] = await Promise.all([
+                client_1.default.leaveRequest.count({ where: { ...leaveWhere, status: 'APPROVED' } }),
+                client_1.default.leaveRequest.count({ where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } } }),
+                client_1.default.kpiSheet.count({ where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } } }),
+                client_1.default.appraisalPacket.count({ where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] } }),
+                isExecutive
+                    ? client_1.default.payrollRun.findFirst({ where: { organizationId, status: { in: ['APPROVED', 'PAID'] } }, orderBy: { createdAt: 'desc' }, select: { totalNet: true } })
+                    : Promise.resolve(null),
+                client_1.default.attendanceLog.count({ where: { organizationId, clockIn: { gte: thirtyDaysAgo }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) } }),
+                client_1.default.leaveRequest.findMany({ where: { organizationId, status: 'APPROVED', startDate: { gte: thirtyDaysAgo } }, select: { leaveDays: true }, take: 500 }),
+                client_1.default.publicHoliday.count({ where: { date: { gte: thirtyDaysAgo } } }),
+                client_1.default.kpiSheet.groupBy({ by: ['employeeId'], where: { organizationId, status: { in: ['LOCKED', 'SUBMITTED'] }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) }, _avg: { totalScore: true } }),
+                client_1.default.appraisalCycle.findFirst({ where: { organizationId, status: { in: ['ACTIVE', 'OPEN'] } } }),
+                client_1.default.kpiSheet.count({ where: { organizationId, status: 'ACTIVE' } }),
+                client_1.default.appraisalPacket.count({ where: { organizationId, status: 'OPEN' } }),
+                client_1.default.appraisalPacket.groupBy({ by: ['currentStage'], where: { organizationId, status: 'OPEN' }, _count: true }),
+                client_1.default.user.findMany({ where: userWhere, orderBy: { rank: 'desc' }, take: 5, select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true } }),
+                client_1.default.user.findMany({ where: { organizationId, supervisorId: userId, status: 'ACTIVE' }, orderBy: { rank: 'desc' }, select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true } }),
+                isExecutive
+                    ? Promise.all(Array.from({ length: 7 }, (_, i) => {
+                        const d = new Date(today.getFullYear(), today.getMonth() - (6 - i), 1);
+                        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+                        return client_1.default.user.count({ where: { organizationId, status: { not: 'TERMINATED' }, joinDate: { lte: end }, role: { not: 'DEV' } } })
+                            .then(value => ({ name: monthNames[d.getMonth()], value }));
+                    }))
+                    : Promise.resolve([]),
+            ]);
+            // Derive scalar metrics
+            const payrollTotal = Number(latestRun?.totalNet) || 0;
+            let workingDays = 0;
+            for (let d = new Date(thirtyDaysAgo); d <= today; d.setDate(d.getDate() + 1)) {
+                const day = d.getDay();
+                if (day !== 0 && day !== 6)
+                    workingDays++;
+            }
+            const totalApprovedLeaveDays = approvedLeavesDays.reduce((s, r) => s + Number(r.leaveDays || 0), 0);
+            const expectedDays = Math.max(1, totalEmployees * Math.max(1, workingDays - publicHolidays) - totalApprovedLeaveDays);
+            const attendanceRate = Math.min(100, Math.round((clockIns / expectedDays) * 100 * 10) / 10);
+            const avgScores = lockedSheets.map(s => Number(s._avg.totalScore) || 0);
+            const teamPerf = avgScores.length ? Math.round((avgScores.reduce((a, b) => a + b, 0) / avgScores.length) * 10) / 10 : 0;
             const strategyPhases = [
                 { label: 'corp_strategy', status: activeCycle ? 'active' : 'pending' },
                 { label: 'operational', status: activeKpis > 0 ? 'active' : 'pending' },
-                { label: 'execution', status: activeAppraisals > 0 ? 'active' : 'pending' }
+                { label: 'execution', status: activeAppraisals > 0 ? 'active' : 'pending' },
             ];
-            // Growth Phases (Aggregate of all active appraisals)
-            const appraisalStages = await client_1.default.appraisalPacket.groupBy({
-                by: ['currentStage'],
-                where: { organizationId, status: 'OPEN' },
-                _count: true
-            });
-            const hasSelf = appraisalStages.some((s) => s.currentStage === 'SELF_REVIEW');
-            const hasManager = appraisalStages.some((s) => s.currentStage === 'MANAGER_REVIEW' || s.currentStage === 'HR_REVIEW');
-            const hasFinal = appraisalStages.some((s) => s.currentStage === 'FINAL_SIGN_OFF');
+            const hasSelf = appraisalStages.some(s => s.currentStage === 'SELF_REVIEW');
+            const hasManager = appraisalStages.some(s => s.currentStage === 'MANAGER_REVIEW' || s.currentStage === 'HR_REVIEW');
+            const hasFinal = appraisalStages.some(s => s.currentStage === 'FINAL_SIGN_OFF');
             const growthPhases = [
                 { label: 'self_review', status: hasSelf ? 'active' : (activeAppraisals > 0 && !hasSelf ? 'done' : 'pending') },
                 { label: 'alignment', status: hasManager ? 'active' : (activeAppraisals > 0 && hasFinal ? 'done' : 'pending') },
-                { label: 'final_verdict', status: hasFinal ? 'active' : 'pending' }
+                { label: 'final_verdict', status: hasFinal ? 'active' : 'pending' },
             ];
-            const team = await client_1.default.user.findMany({
-                where: userWhere,
-                orderBy: { rank: 'desc' },
-                take: 5,
-                select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
-            });
-            // 🌟 Direct reports metrics for hybrid executive managers (e.g. IT Admin/Manager, HR Manager, Finance Manager)
-            const directTeam = await client_1.default.user.findMany({
-                where: { organizationId, supervisorId: userId, status: 'ACTIVE' },
-                orderBy: { rank: 'desc' },
-                select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
-            });
             const hasDirectReports = directTeam.length > 0;
             let directTeamPerf = 0;
             if (hasDirectReports) {
                 const directEmployeeIds = directTeam.map(u => u.id);
                 const directLockedSheets = await client_1.default.kpiSheet.groupBy({
                     by: ['employeeId'],
-                    where: {
-                        organizationId,
-                        status: { in: ['LOCKED', 'SUBMITTED'] },
-                        employeeId: { in: directEmployeeIds }
-                    },
-                    _avg: { totalScore: true }
+                    where: { organizationId, status: { in: ['LOCKED', 'SUBMITTED'] }, employeeId: { in: directEmployeeIds } },
+                    _avg: { totalScore: true },
                 });
                 const directAvgScores = directLockedSheets.map(s => Number(s._avg.totalScore) || 0);
-                directTeamPerf = directAvgScores.length ? directAvgScores.reduce((a, b) => a + b, 0) / directAvgScores.length : 0;
+                directTeamPerf = directAvgScores.length
+                    ? Math.round((directAvgScores.reduce((a, b) => a + b, 0) / directAvgScores.length) * 10) / 10
+                    : 0;
             }
             res.json({
                 totalEmployees,
@@ -183,7 +147,7 @@ class AnalyticsController {
                 team,
                 directTeam,
                 directTeamPerf,
-                hasDirectReports
+                hasDirectReports,
             });
         }
         catch (error) {
@@ -214,57 +178,55 @@ class AnalyticsController {
             const user = req.user;
             const organizationId = user.organizationId || 'mcb-ghana-tenant';
             const userId = user.id;
-            // 1. Overall Performance (Average of all completed KPI Sheets)
-            const sheets = await client_1.default.kpiSheet.findMany({
-                where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL', 'ACTIVE'] } },
-                select: { totalScore: true }
-            });
-            const perfScores = sheets.map(s => Number(s.totalScore) || 0);
-            const overallPerformance = perfScores.length ? perfScores.reduce((a, b) => a + b, 0) / perfScores.length : 0;
-            // 2. Attendance Rate (Last 30 days)
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            const clockIns = await client_1.default.attendanceLog.count({
-                where: { employeeId: userId, organizationId, clockIn: { gte: thirtyDaysAgo } }
-            });
-            const expectedDays = 22; // Approx working days in a month
-            const attendanceRate = Math.min(100, (clockIns / expectedDays) * 100);
-            // 3. Leave Balance
-            const userRec = await client_1.default.user.findFirst({
-                where: { id: userId, organizationId },
-                select: { leaveBalance: true, leaveAllowance: true }
-            });
-            // 4. My Active Goals (Items from the most recent active/pending sheet)
-            const latestSheet = await client_1.default.kpiSheet.findFirst({
-                where: { employeeId: userId, organizationId },
-                orderBy: [{ year: 'desc' }, { month: 'desc' }],
-                include: { items: true }
-            });
-            const activeGoals = latestSheet ? latestSheet.items.map(item => ({
+            const today = new Date();
+            // All personal stat queries are independent — run in parallel
+            const [sheets, clockIns, userRec, latestSheet, personalPacket, activeLeave] = await Promise.all([
+                client_1.default.kpiSheet.findMany({
+                    where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL', 'ACTIVE'] } },
+                    select: { totalScore: true },
+                }),
+                client_1.default.attendanceLog.count({
+                    where: { employeeId: userId, organizationId, clockIn: { gte: thirtyDaysAgo } },
+                }),
+                client_1.default.user.findFirst({
+                    where: { id: userId, organizationId },
+                    select: { leaveBalance: true, leaveAllowance: true },
+                }),
+                client_1.default.kpiSheet.findFirst({
+                    where: { employeeId: userId, organizationId },
+                    orderBy: [{ year: 'desc' }, { month: 'desc' }],
+                    include: { items: true },
+                }),
+                client_1.default.appraisalPacket.findFirst({
+                    where: { employeeId: userId, organizationId },
+                    orderBy: { createdAt: 'desc' },
+                }),
+                client_1.default.leaveRequest.findFirst({
+                    where: { employeeId: userId, status: 'APPROVED', startDate: { lte: today }, endDate: { gte: today } },
+                }),
+            ]);
+            const perfScores = sheets.map(s => Number(s.totalScore) || 0);
+            const overallPerformance = perfScores.length ? perfScores.reduce((a, b) => a + b, 0) / perfScores.length : 0;
+            // Attendance rate: working days in the last 30 days (excluding weekends)
+            let workingDays = 0;
+            for (let d = new Date(thirtyDaysAgo); d <= today; d.setDate(d.getDate() + 1)) {
+                const day = d.getDay();
+                if (day !== 0 && day !== 6)
+                    workingDays++;
+            }
+            const attendanceRate = Math.min(100, (clockIns / Math.max(1, workingDays)) * 100);
+            const activeGoals = latestSheet ? latestSheet.items.map((item) => ({
                 name: item.name || item.description,
                 progress: Number(item.targetValue) > 0 ? Math.min(100, Math.round((Number(item.actualValue) / Number(item.targetValue)) * 100)) : 0,
-                color: 'var(--primary)' // Dynamic theme color
-            })).slice(0, 4) : []; // Limit to top 4 for dashboard
-            // 5. Strategic & Growth Journeys
-            const personalPacket = await client_1.default.appraisalPacket.findFirst({
-                where: { employeeId: userId, organizationId },
-                orderBy: { createdAt: 'desc' }
-            });
+                color: 'var(--primary)',
+            })).slice(0, 4) : [];
             const journeyPhases = [
                 { label: 'self_review', status: personalPacket?.currentStage === 'SELF_REVIEW' ? 'active' : (personalPacket && personalPacket.currentStage !== 'SELF_REVIEW' ? 'done' : 'pending') },
                 { label: 'alignment', status: (personalPacket?.currentStage === 'MANAGER_REVIEW' || personalPacket?.currentStage === 'HR_REVIEW') ? 'active' : (personalPacket && ['FINAL_SIGN_OFF', 'COMPLETED'].includes(personalPacket.currentStage) ? 'done' : 'pending') },
-                { label: 'final_verdict', status: personalPacket?.currentStage === 'FINAL_SIGN_OFF' ? 'active' : (personalPacket?.status === 'COMPLETED' ? 'done' : 'pending') }
+                { label: 'final_verdict', status: personalPacket?.currentStage === 'FINAL_SIGN_OFF' ? 'active' : (personalPacket?.status === 'COMPLETED' ? 'done' : 'pending') },
             ];
-            // 6. Check if user is currently on leave (Out of Office)
-            const today = new Date();
-            const activeLeave = await client_1.default.leaveRequest.findFirst({
-                where: {
-                    employeeId: userId,
-                    status: 'APPROVED',
-                    startDate: { lte: today },
-                    endDate: { gte: today },
-                },
-            });
             res.json({
                 overallPerformance: Math.round(overallPerformance * 10) / 10,
                 attendanceRate: Math.round(attendanceRate * 10) / 10,

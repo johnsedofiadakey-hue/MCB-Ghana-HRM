@@ -334,34 +334,34 @@ export const revokeRefreshToken = async (req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true, fullName: true, email: true, role: true,
-        status: true, avatarUrl: true, jobTitle: true,
-        organizationId: true,
-        departmentObj: { select: { name: true } },
-      },
-    });
+    const today = new Date();
+
+    // Single query: fetch user + active leave in one round trip
+    const [user, activeLeave] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true, fullName: true, email: true, role: true,
+          status: true, avatarUrl: true, jobTitle: true,
+          organizationId: true,
+          departmentObj: { select: { name: true } },
+        },
+      }),
+      prisma.leaveRequest.findFirst({
+        where: {
+          employeeId: userId,
+          status: 'APPROVED',
+          startDate: { lte: today },
+          endDate: { gte: today },
+        },
+        select: { id: true },
+      }),
+    ]);
 
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (user.status === 'TERMINATED') return res.status(403).json({ error: 'Account deactivated' });
 
-    // Check if user is currently on leave (Out of Office)
-    const today = new Date();
-    const activeLeave = await prisma.leaveRequest.findFirst({
-      where: {
-        employeeId: userId,
-        status: 'APPROVED',
-        startDate: { lte: today },
-        endDate: { gte: today },
-      },
-    });
-
-    return res.json({
-      ...user,
-      isOnLeave: !!activeLeave,
-    });
+    return res.json({ ...user, isOnLeave: !!activeLeave });
   } catch {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
@@ -587,25 +587,47 @@ export const impersonateTenant = async (req: Request, res: Response) => {
     const { organizationId } = req.body;
     if (!organizationId) return res.status(400).json({ error: 'Target tenant ID required' });
 
-    // Verify tenant exists
     const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
     if (!organization) return res.status(404).json({ error: 'Tenant not found' });
 
-    // Generate a temporary impersonation token
+    // Find a real MD user in the target org so the token has a valid DB user ID
+    const targetMD = await prisma.user.findFirst({
+      where: { organizationId, role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER'] }, status: 'ACTIVE' },
+      orderBy: { rank: 'desc' },
+      select: { id: true, fullName: true, role: true },
+    });
+
+    if (!targetMD) {
+      return res.status(404).json({ error: 'No active admin user found in target organisation.' });
+    }
+
     const token = jwt.sign(
-      { 
-        id: `impersonated-${adminUser.id}`, 
-        email: adminUser.email, 
-        role: 'MD', // Default to MD for the tenant
-        organizationId: organizationId,
+      {
+        id: targetMD.id,
+        role: targetMD.role,
+        name: targetMD.fullName,
+        organizationId,
         isImpersonating: true,
-        realAdminId: adminUser.id
+        realAdminId: adminUser.id,
       },
       JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    res.json({ token, user: { name: `Impersonating: ${organization.name}`, role: 'MD', organizationId, isImpersonating: true } });
+    // Write an audit trail so impersonation is never silent
+    await prisma.auditLog.create({
+      data: {
+        organizationId,
+        userId: adminUser.id,
+        action: 'IMPERSONATE_TENANT',
+        entity: 'Organization',
+        entityId: organizationId,
+        details: `DEV user ${adminUser.id} impersonated tenant "${organization.name}" (${organizationId}) as user ${targetMD.id} (${targetMD.role})`,
+        ipAddress: req.ip || null,
+      },
+    }).catch(() => {}); // Non-blocking
+
+    res.json({ token, user: { id: targetMD.id, name: targetMD.fullName, role: targetMD.role, organizationId, isImpersonating: true } });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -650,12 +672,19 @@ export const sandboxLogin = async (req: Request, res: Response) => {
     });
 
     if (!sandboxMD) {
-        // Fail-safe: if seeder somehow missed it, re-seed
+      try {
         const { DemoSeederService } = await import('../services/demo-seeder.service');
         await DemoSeederService.seedTenantData(SANDBOX_ORG_ID);
+      } catch (seedErr) {
+        console.error('[Auth] Sandbox seeder failed:', seedErr);
+        return res.status(503).json({ error: 'Sandbox environment is being initialised. Please try again in a moment.' });
+      }
     }
 
-    const targetUser = sandboxMD || { id: 'fallback-md', fullName: 'Sandbox Director', role: 'MD', email: 'md@demo-sand.com' };
+    const targetUser = sandboxMD || await prisma.user.findFirst({ where: { organizationId: SANDBOX_ORG_ID, role: 'MD' } });
+    if (!targetUser) {
+      return res.status(503).json({ error: 'Sandbox environment failed to initialise. Please try again.' });
+    }
 
     // 3. Issue Token using the REAL database ID
     const token = signAccessToken({

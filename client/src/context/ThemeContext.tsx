@@ -137,9 +137,9 @@ const mergeSettings = (prev: Settings | null, next: any): Settings => {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolean }[] = [
-  { id: 'premium-monolith', label: 'Premium Monolith', emoji: '🌑', dark: true },
-  { id: 'premium-canvas', label: 'Premium Canvas', emoji: '⚪', dark: false },
-  { id: 'premium-aero', label: 'Premium Aero', emoji: '🌿', dark: false },
+  { id: 'premium-monolith', label: 'Dark Navy', emoji: '🌊', dark: true },
+  { id: 'premium-canvas', label: 'Canvas', emoji: '☀️', dark: false },
+  { id: 'premium-aero', label: 'Aero', emoji: '💧', dark: false },
 ];
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -207,29 +207,39 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     lastAppliedRef.current = colorSignature;
     root.setAttribute('data-theme', themeName);
 
+    const primaryRgb = hexToRgb(settingsToUse.primaryColor || '');
+    const accentRgb  = hexToRgb(settingsToUse.accentColor  || '');
+
     const tokens: [string, string | null][] = [
-      ['primary', settingsToUse.primaryColor],
-      ['primary-rgb', hexToRgb(settingsToUse.primaryColor || '')],
-      ['accent', settingsToUse.accentColor],
-      ['bg-main', settingsToUse.bgMain],
-      ['bg-card', settingsToUse.bgCard],
-      ['bg-elevated', settingsToUse.bgElevated || settingsToUse.secondaryColor || settingsToUse.bgCard], 
-      ['bg-input', settingsToUse.bgInput || settingsToUse.bgMain],
-      ['border-subtle', settingsToUse.borderSubtle || 'rgba(0,0,0,0.1)'],
-      ['text-primary', settingsToUse.textPrimary],
-      ['text-secondary', settingsToUse.textSecondary],
-      ['text-muted', settingsToUse.textMuted],
-      ['text-inverse', settingsToUse.textInverse || (getLuminosity(settingsToUse.primaryColor || '#000000') > 0.6 ? 'rgba(0,0,0,0.85)' : '#ffffff')],
-      ['bg-sidebar', settingsToUse.sidebarBg],
-      ['growth', settingsToUse.secondaryColor || settingsToUse.primaryColor],
+      ['primary',       settingsToUse.primaryColor],
+      ['primary-rgb',   primaryRgb],
+      ['primary-10',    primaryRgb  ? `rgba(${primaryRgb}, 0.10)`  : null],
+      ['primary-hover', settingsToUse.primaryColor ? null : null], // keep theme default
+      ['accent',        settingsToUse.accentColor],
+      ['accent-rgb',    accentRgb],
+      ['accent-10',     accentRgb   ? `rgba(${accentRgb}, 0.10)`  : null],
+      ['ring-color',    primaryRgb  ? `rgba(${primaryRgb}, 0.25)`  : null],
+      ['bg-hover',      primaryRgb  ? `rgba(${primaryRgb}, 0.05)`  : null],
+      ['bg-main',       settingsToUse.bgMain],
+      ['bg-card',       settingsToUse.bgCard],
+      ['bg-elevated',   settingsToUse.bgElevated || settingsToUse.secondaryColor || settingsToUse.bgCard],
+      ['bg-input',      settingsToUse.bgInput || settingsToUse.bgMain],
+      ['border',        settingsToUse.borderSubtle || null],
+      ['border-subtle', settingsToUse.borderSubtle || null],
+      ['text-primary',  settingsToUse.textPrimary],
+      ['text-secondary',settingsToUse.textSecondary],
+      ['text-muted',    settingsToUse.textMuted],
+      ['text-inverse',  settingsToUse.textInverse || (getLuminosity(settingsToUse.primaryColor || '#000000') > 0.6 ? 'rgba(0,0,0,0.85)' : '#ffffff')],
+      ['bg-sidebar',         settingsToUse.sidebarBg],
+      ['bg-sidebar-active',  settingsToUse.sidebarActive],
+      ['text-sidebar',       settingsToUse.sidebarColor || settingsToUse.textSecondary || null],
+      ['text-sidebar-active',settingsToUse.sidebarText  || settingsToUse.primaryColor],
+      ['growth',       settingsToUse.secondaryColor || settingsToUse.primaryColor],
       ['growth-light', hexToRgb(settingsToUse.secondaryColor || settingsToUse.primaryColor || '')],
-      ['bg-sidebar-active', settingsToUse.sidebarActive],
-      ['text-sidebar', settingsToUse.textSecondary || '#64748b'],
-      ['text-sidebar-active', settingsToUse.sidebarText || settingsToUse.primaryColor],
-      ['success', settingsToUse.successColor || '#10b981'],
-      ['warning', settingsToUse.warningColor || '#f59e0b'],
-      ['error', settingsToUse.errorColor || '#ef4444'],
-      ['info', settingsToUse.infoColor || '#06b6d4'],
+      ['success', settingsToUse.successColor || null],
+      ['warning', settingsToUse.warningColor || null],
+      ['error',   settingsToUse.errorColor   || null],
+      ['info',    settingsToUse.infoColor    || null],
     ];
 
     // 🚀 ATOMIC PERF: Update CSS Variables directly on root for zero-latency color shifts

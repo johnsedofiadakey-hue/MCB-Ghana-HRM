@@ -247,7 +247,7 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
 
   if (submit && sheet.reviewerId) {
     await notify(sheet.reviewerId, 'KPI Sheet Submitted for Review',
-      'An employee submitted their KPI sheet.', 'INFO', '/team');
+      'An employee submitted their KPI sheet.', 'INFO', '/kpi/team');
   }
   await logAction(userId, submit ? 'KPI_SUBMITTED' : 'KPI_UPDATED', 'KpiSheet', sheetId, { score: total }, req.ip);
   return res.json({ success: true, totalScore: total, status });

@@ -38,14 +38,17 @@ const accrueLeaveBalances = async () => {
     });
     if (users.length === 0)
         return 0;
+    // Pre-fetch all distinct orgs in one query to avoid N+1 inside the transaction
+    const orgIds = [...new Set(users.map(u => u.organizationId || 'mcb-ghana-tenant'))];
+    const orgRows = await client_1.default.organization.findMany({
+        where: { id: { in: orgIds } },
+        select: { id: true, allowLeaveCarryForward: true, carryForwardLimit: true },
+    });
+    const orgMap = new Map(orgRows.map(o => [o.id, o]));
     let updatedCount = 0;
-    // Use a transaction for the entire batch to ensure data integrity
     await client_1.default.$transaction(async (tx) => {
         for (const user of users) {
-            const org = await tx.organization.findUnique({
-                where: { id: user.organizationId || 'mcb-ghana-tenant' },
-                select: { allowLeaveCarryForward: true, carryForwardLimit: true }
-            });
+            const org = orgMap.get(user.organizationId || 'mcb-ghana-tenant') || { allowLeaveCarryForward: true, carryForwardLimit: 10 };
             const lastAccruedAt = user.leaveAccruedAt || new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const monthsToAccrue = monthsBetween(lastAccruedAt, now);
             if (monthsToAccrue <= 0)
@@ -62,11 +65,13 @@ const accrueLeaveBalances = async () => {
                 console.log(`[LeaveAccrued] Year transition for ${user.id}. Capping carry forward to ${limit}. Old Balance: ${balance}`);
                 balance = Math.min(balance, limit);
             }
-            const newBalance = balance + (monthlyAccrual * monthsToAccrue);
+            // Round at each step to prevent floating-point compounding drift
+            const accrued = Math.round(monthlyAccrual * monthsToAccrue * 100) / 100;
+            const newBalance = Math.round((balance + accrued) * 100) / 100;
             await tx.user.update({
                 where: { id: user.id },
                 data: {
-                    leaveBalance: Number(newBalance.toFixed(2)),
+                    leaveBalance: newBalance,
                     leaveAccruedAt: now
                 }
             });

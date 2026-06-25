@@ -46,10 +46,12 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     };
 
     return (
-        <header 
-            className={`fixed top-0 left-0 right-0 h-20 sm:h-24 z-40 flex items-center justify-between px-4 sm:px-8 lg:px-12 border-b border-[var(--border-subtle)] transition-[left] duration-300 ease-in-out ${isCollapsed ? 'lg:left-20' : 'lg:left-[280px]'}`}
-            style={{ 
-                background: 'var(--bg-card)',
+        <header
+            className={`fixed top-0 left-0 right-0 h-14 lg:h-20 z-40 flex items-center justify-between px-4 lg:px-12 border-b border-[var(--border-subtle)] transition-[left] duration-300 ease-in-out ${isCollapsed ? 'lg:left-20' : 'lg:left-[280px]'}`}
+            style={{
+                background: 'color-mix(in srgb, var(--bg-card) 92%, transparent)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
             }}
         >
             {/* Search Bar / Mobile Menu Toggle */}
@@ -102,7 +104,7 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
                              ? "text-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/25 ring-2 ring-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.2)]" 
                              : "text-[var(--primary)] bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10 border-[var(--primary)]/20 hover:border-[var(--primary)]/40"
                          )}
-                         title={getRoleRankValue(user?.role) >= 85 ? "Management Insights Active" : "AI Helper Active"}
+                         title={getRoleRankValue(user?.role) >= 85 ? "Management insights enabled" : "AI assistant enabled"}
                      >
                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                          <Sparkles size={18} className={cn("shrink-0", getRoleRankValue(user?.role) >= 85 ? "animate-pulse scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "")} />

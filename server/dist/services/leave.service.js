@@ -50,20 +50,22 @@ class LeaveService {
         });
         if (!user)
             throw new Error('User not found');
-        if (user.departmentId) {
-            const audit = await this.checkLeaveOverlap(organizationId, user.departmentId, start, end);
-            if (audit.warning) {
-                console.warn(`[LeaveService] Concurrency Warning: ${audit.message}`);
-            }
-        }
-        // Check for public holidays and weekends
+        // Check for public holidays and weekends — scope recurring holidays by month/day
         const holidays = await client_1.default.publicHoliday.findMany({
             where: {
                 OR: [
                     { date: { gte: start, lte: end } },
-                    { isRecurring: true }
+                    // Only load recurring holidays whose month/day falls within the leave window
+                    {
+                        isRecurring: true,
+                        date: {
+                            gte: new Date(start.getFullYear() - 1, start.getMonth(), start.getDate()),
+                            lte: new Date(end.getFullYear() + 1, end.getMonth(), end.getDate()),
+                        }
+                    }
                 ]
-            }
+            },
+            take: 200,
         });
         const leaveDays = this.calculateWorkingDaysWithHolidays(start, end, holidays);
         const metrics = (0, leave_utils_1.getEffectiveLeaveMetrics)(user);
@@ -77,6 +79,15 @@ class LeaveService {
             const allowedToBorrow = (0, leave_utils_1.canBorrowLeave)(user, leaveDays, availableBalance);
             if (!allowedToBorrow) {
                 throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
+            }
+        }
+        // Check capacity and capture any warning to surface to the user
+        let capacityWarning = null;
+        if (user.departmentId) {
+            const audit = await this.checkLeaveOverlap(organizationId, user.departmentId, start, end);
+            if (audit.warning) {
+                capacityWarning = audit.message || null;
+                console.warn(`[LeaveService] Concurrency Warning: ${audit.message}`);
             }
         }
         const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
@@ -102,7 +113,7 @@ class LeaveService {
         else if (user.supervisorId) {
             await (0, websocket_service_1.notify)(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/leave');
         }
-        return leave;
+        return { leave, warning: capacityWarning };
     }
     /**
      * Reliever accepts or declines
@@ -166,8 +177,9 @@ class LeaveService {
         if (!['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) {
             throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
         }
-        if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
-            throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
+        // If there is a pending reliever, block approval until they respond regardless of the flag
+        if (leave.status === 'SUBMITTED' && leave.relieverId) {
+            throw new Error('Reliever acceptance is still pending. The handover request must be resolved before managerial review.');
         }
         const actor = await client_1.default.user.findUnique({ where: { id: managerId } });
         if (!actor)
@@ -175,9 +187,9 @@ class LeaveService {
         const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
         const isPrimaryManager = leave.employee.supervisorId === managerId;
         const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
-        const isHRorHigher = rank >= 75;
+        const isHRorHigher = rank >= 80; // HR_OFFICER (80)+ can approve across departments; MANAGER (75) cannot
         if (!isPrimaryManager && !isDeptManager && !isHRorHigher) {
-            throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor or a department manager.');
+            throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a department manager, or HR (rank 80+).');
         }
         if (!approve && (!comment || comment.trim().length < 3)) {
             throw new Error('Please provide a reason for rejecting this leave request.');
@@ -194,16 +206,12 @@ class LeaveService {
         await (0, websocket_service_1.notify)(leave.employeeId, approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected', approve
             ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to HR for validation.`
             : `Management has rejected your leave request. Reason: ${comment}`, approve ? 'INFO' : 'ERROR', '/leave');
-        // Notify HR
         if (approve) {
-            // Broad notification to HR personnel
             const hrUsers = await client_1.default.user.findMany({
-                where: { organizationId: leave.organizationId, role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'SUPER_ADMIN'] }, isArchived: false },
+                where: { organizationId: leave.organizationId, role: { in: ['MD', 'HR_DIRECTOR', 'DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'SUPER_ADMIN'] }, isArchived: false },
                 select: { id: true }
             });
-            for (const hr of hrUsers) {
-                await (0, websocket_service_1.notify)(hr.id, '📋 Leave Pending HR Validation', `${leave.employee.fullName} needs HR sign-off.`, 'INFO', '/leave');
-            }
+            await Promise.all(hrUsers.map(hr => (0, websocket_service_1.notify)(hr.id, '📋 Leave Pending HR Validation', `${leave.employee.fullName} needs HR sign-off.`, 'INFO', '/leave')));
         }
         return updated;
     }
@@ -225,8 +233,8 @@ class LeaveService {
         if (!actor)
             throw new Error('Reviewer account not found');
         const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
-        if (rank < 85) {
-            throw new Error('Unauthorized for HR Validation. This action is reserved for HR Managers/Officers (Rank 85+).');
+        if (rank < 80) {
+            throw new Error('Unauthorized for HR Validation. This action is reserved for HR Officers and above (Rank 80+).');
         }
         if (!approve && (!comment || comment.trim().length < 3)) {
             throw new Error('A rejection reason is required for the HR audit trail.');

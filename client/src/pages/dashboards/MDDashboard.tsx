@@ -174,12 +174,18 @@ const MDDashboard = () => {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {statCards.map((s, i) => (
+        {statCards.map((s, i) => {
+          const isAccentStat = s.color === 'var(--accent)' || s.color === 'var(--warning)';
+          return (
           <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all">
+            className={`nx-card p-10 group transition-all ${isAccentStat ? 'hover:border-[var(--accent)]/30' : 'hover:border-[var(--primary)]/30'}`}>
             <div className="flex items-center justify-between mb-8">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-colors group-hover:border-[var(--primary)]/30">
-                <s.icon size={22} style={{ color: s.color }} className="opacity-80" />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors"
+                style={{
+                  background: isAccentStat ? 'var(--accent-10)' : 'var(--primary-10)',
+                  borderColor: isAccentStat ? 'rgba(238,113,0,0.22)' : 'rgba(0,158,227,0.22)',
+                }}>
+                <s.icon size={22} style={{ color: s.color }} />
               </div>
               {s.change && (
                 <div className="px-3 py-1 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[10px] font-black text-[var(--success)] flex items-center gap-1">
@@ -192,7 +198,8 @@ const MDDashboard = () => {
             </div>
             <div className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] truncate">{s.label}</div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Growth Chart */}
@@ -202,7 +209,7 @@ const MDDashboard = () => {
             <h3 className="font-black text-2xl text-[var(--text-primary)] tracking-tight">{t('md_dashboard.workforce_growth')}</h3>
             <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('md_dashboard.headcount_trend')}</p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)]">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[var(--primary)]" style={{ background: 'var(--primary-10)', border: '1px solid rgba(0,158,227,0.22)' }}>
              <TrendingUp size={20} />
           </div>
         </div>
@@ -250,28 +257,35 @@ const MDDashboard = () => {
           { icon: DollarSign, label: "Payroll Authorization", desc: "Final Disbursement Approval", href: '/payroll', color: 'var(--success)' },
           { icon: Award, label: "Institutional Growth", desc: "Talent & Culture Pulse", href: '/enterprise', color: 'var(--accent)' },
           { icon: FileText, label: "Executive Board Report", desc: "Generate Monthly Summary", href: '#', onClick: handleDownloadBoardReport, color: 'var(--warning)' },
-        ].map((item, i) => (
-          <Link 
-            key={i} 
-            to={item.href} 
+        ].map((item, i) => {
+          const isAccentAction = item.color === 'var(--accent)' || item.color === 'var(--warning)';
+          return (
+          <Link
+            key={i}
+            to={item.href}
             onClick={(e) => {
               if (item.onClick) {
                 e.preventDefault();
                 item.onClick();
               }
-            }} 
-            className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all no-underline block"
+            }}
+            className={`nx-card p-10 group transition-all no-underline block ${isAccentAction ? 'hover:border-[var(--accent)]/30' : 'hover:border-[var(--primary)]/30'}`}
           >
             <div className="flex items-center justify-between mb-8">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all">
-                <item.icon size={22} style={{ color: item.color }} className="opacity-80" />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center border transition-all"
+                style={{
+                  background: isAccentAction ? 'var(--accent-10)' : 'var(--primary-10)',
+                  borderColor: isAccentAction ? 'rgba(238,113,0,0.22)' : 'rgba(0,158,227,0.22)',
+                }}>
+                <item.icon size={22} style={{ color: item.color }} />
               </div>
-              <ArrowRight size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+              <ArrowRight size={18} className={`text-[var(--text-muted)] group-hover:translate-x-1 transition-all ${isAccentAction ? 'group-hover:text-[var(--accent)]' : 'group-hover:text-[var(--primary)]'}`} />
             </div>
-            <p className="text-lg font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors mb-2 uppercase tracking-tight">{item.label}</p>
+            <p className={`text-lg font-black text-[var(--text-primary)] transition-colors mb-2 uppercase tracking-tight ${isAccentAction ? 'group-hover:text-[var(--accent)]' : 'group-hover:text-[var(--primary)]'}`}>{item.label}</p>
             <p className="text-[11px] font-medium text-[var(--text-secondary)] opacity-60 uppercase tracking-widest leading-relaxed">{item.desc}</p>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

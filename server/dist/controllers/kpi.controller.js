@@ -250,7 +250,7 @@ const updateKpiProgress = async (req, res) => {
             data: { totalScore: total, status }
         });
         if (submit && sheet.reviewerId) {
-            await (0, websocket_service_1.notify)(sheet.reviewerId, 'KPI Sheet Submitted for Review', 'An employee submitted their KPI sheet.', 'INFO', '/team');
+            await (0, websocket_service_1.notify)(sheet.reviewerId, 'KPI Sheet Submitted for Review', 'An employee submitted their KPI sheet.', 'INFO', '/kpi/team');
         }
         await (0, audit_service_1.logAction)(userId, submit ? 'KPI_SUBMITTED' : 'KPI_UPDATED', 'KpiSheet', sheetId, { score: total }, req.ip);
         return res.json({ success: true, totalScore: total, status });

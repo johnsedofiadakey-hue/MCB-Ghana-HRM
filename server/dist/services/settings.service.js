@@ -38,6 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateSettings = exports.getSettings = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
+const encryption_1 = require("../utils/encryption");
 const websocket_service_1 = require("./websocket.service");
 const isValidHex = (hex) => /^#([A-Fa-f0-9]{3}){1,2}$/.test(hex);
 /**
@@ -346,10 +347,6 @@ const updateSettings = async (organizationId = 'mcb-ghana-tenant', data) => {
     if (isAiEnabled !== undefined) {
         orgUpdate.isAiEnabled = isAiEnabled === true || String(isAiEnabled) === 'true';
     }
-    console.log('[SettingsService] Org ID:', organizationId);
-    console.log('[SettingsService] Data received (keys):', Object.keys(data));
-    console.log('[SettingsService] isAiEnabled value:', isAiEnabled, typeof isAiEnabled);
-    console.log('[SettingsService] Org update payload:', JSON.stringify(orgUpdate, null, 2));
     if (successColor !== undefined && isValidHex(successColor))
         orgUpdate.successColor = successColor;
     if (warningColor !== undefined && isValidHex(warningColor))
@@ -422,7 +419,7 @@ const updateSettings = async (organizationId = 'mcb-ghana-tenant', data) => {
     if (smtpUser !== undefined)
         settingsUpdate.smtpUser = smtpUser;
     if (smtpPass !== undefined && smtpPass !== '')
-        settingsUpdate.smtpPass = smtpPass; // Never clear with blank
+        settingsUpdate.smtpPass = (0, encryption_1.maybeEncrypt)(smtpPass); // Encrypted at rest; maybeEncrypt skips double-encryption
     if (smtpFrom !== undefined)
         settingsUpdate.smtpFrom = smtpFrom;
     if (paystackPublicKey !== undefined)

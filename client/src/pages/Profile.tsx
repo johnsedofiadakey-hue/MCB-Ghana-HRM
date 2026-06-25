@@ -218,7 +218,7 @@ const Profile = () => {
     };
 
     return (
-        <div className="page-transition space-y-8 pb-20">
+        <div className="page-transition space-y-8 pb-20 overflow-x-hidden">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight mb-2">My Profile</h1>
@@ -248,12 +248,12 @@ const Profile = () => {
             </AnimatePresence>
 
             {/* Matrix Tabs */}
-            <div className="flex border-b border-[var(--border-subtle)]/30 gap-6 sm:gap-10 overflow-x-auto no-scrollbar">
+            <div className="flex border-b border-[var(--border-subtle)]/30 overflow-x-auto no-scrollbar">
                 {(['info', 'security', 'id-card', 'history'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveTab(tab)}
-                        className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative whitespace-nowrap",
+                        className={cn("pb-5 px-4 sm:px-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap flex-shrink-0",
                         activeTab === tab ? "text-[var(--primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
-                        {tab === 'id-card' ? 'Company ID Card' : t(`common.${tab}`)}
+                        {tab === 'id-card' ? <><span className="sm:hidden">ID Card</span><span className="hidden sm:inline">Company ID Card</span></> : t(`common.${tab}`)}
                         {activeTab === tab && <motion.div layoutId="profile-tab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]" />}
                     </button>
                 ))}
@@ -793,10 +793,11 @@ const Profile = () => {
                                         </div>
 
                                         {/* Right Side: High Fidelity Visual Render */}
-                                        <div className="flex-1 flex items-center justify-center p-4 bg-slate-950/40 rounded-3xl border border-[var(--border-subtle)]/20 relative min-h-[480px]">
+                                        <div className="flex-1 flex items-center justify-center p-4 bg-slate-950/40 rounded-3xl border border-[var(--border-subtle)]/20 relative min-h-[420px] overflow-hidden">
                                             <div className="absolute inset-0 bg-radial-gradient from-[var(--primary)]/5 to-transparent pointer-events-none" />
-                                            
-                                            <div className="scale-90 md:scale-95 lg:scale-100 transition-transform duration-500">
+                                            {/* Scrollable wrapper: on mobile the card is larger than the container, scroll within */}
+                                            <div className="overflow-auto w-full max-h-full flex items-center justify-center p-2">
+                                            <div className="transition-transform duration-500" style={{ zoom: 0.88 }}>
                                                 <EmployeeIDCard
                                                     employee={{
                                                         fullName: profile?.fullName || user?.name || '',
@@ -818,6 +819,7 @@ const Profile = () => {
                                                     }}
                                                     status={card?.status || 'REQUESTED'}
                                                 />
+                                            </div>
                                             </div>
                                         </div>
                                     </div>

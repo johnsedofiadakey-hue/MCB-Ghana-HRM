@@ -21,11 +21,11 @@ export interface LeaveMetrics {
 export const getEffectiveLeaveMetrics = (user: any): LeaveMetrics => {
   const org = user.organization || {};
   
-  // 1. Allowance: User Specific -> Org Default -> System Fallback (30)
+  // 1. Allowance: User Specific -> Org Default -> System Fallback (24)
   const allowance = Number(
-    user.leaveAllowance ?? 
-    org.defaultLeaveAllowance ?? 
-    30
+    user.leaveAllowance ??
+    org.defaultLeaveAllowance ??
+    24
   );
 
   // 2. Balance Logic

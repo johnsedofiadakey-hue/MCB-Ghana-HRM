@@ -87,6 +87,8 @@ const Cockpit = lazy(() => import('./pages/manager/Cockpit'));
 const CardManagement = lazy(() => import('./pages/cards/CardManagement'));
 const PredictiveAnalytics = lazy(() => import('./pages/analytics/PredictiveAnalytics'));
 const SharedCallCard = lazy(() => import('./pages/public/SharedCallCard'));
+const ResetPassword = lazy(() => import('./pages/public/ResetPassword'));
+const BillingLock = lazy(() => import('./pages/public/BillingLock'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64 bg-[var(--bg-main)]">
@@ -241,11 +243,11 @@ const Layout = () => {
             isCollapsed={isCollapsed} 
           />
           <main className={cn(
-            "flex-1 relative p-4 transition-none overflow-x-hidden pt-24",
-            "lg:p-10 lg:pt-28", 
-            isImpersonating && "mt-12"
+            "flex-1 relative px-4 pb-4 transition-none overflow-x-hidden pt-14",
+            "lg:px-10 lg:pb-10 lg:pt-28",
+            isImpersonating && "mt-10"
           )}>
-            <div className="max-w-[1600px] mx-auto pb-24 lg:pb-0">
+            <div className="max-w-[1600px] mx-auto mobile-scroll-clearance lg:pb-0">
               <ChunkErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
                   <AnimatePresence mode="wait" initial={false}>
@@ -269,7 +271,8 @@ const Layout = () => {
               whileHover={{ scale: 1.1, rotate: 10 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsHelpOpen(true)}
-              className="fixed bottom-28 right-8 z-50 w-14 h-14 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] shadow-lg flex items-center justify-center border border-white/10 transition-all"
+              className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+12px)] lg:bottom-8 right-4 lg:right-8 z-50 w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center border border-white/10 transition-all"
+              style={{ boxShadow: '0 4px 20px rgba(238,113,0,0.40)' }}
             >
               <HelpCircle size={24} />
             </motion.button>
@@ -462,6 +465,8 @@ const AppContent = () => {
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/force-logout" element={<ForceLogout />} />
           <Route path="/shared-card/:id" element={<SharedCallCard />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/billing-lock" element={<BillingLock />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardRouter />} />

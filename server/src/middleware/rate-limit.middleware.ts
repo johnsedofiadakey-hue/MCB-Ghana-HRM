@@ -37,8 +37,21 @@ export const generalLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: (req) => {
-    // R2 FIX: Use userId for limiting if available to prevent office-wide blocks
-    return (req as any).user?.id || req.ip;
+    // Prefer userId so shared office IPs don't share a single bucket.
+    // auth middleware hasn't run yet at this point, so we decode the JWT
+    // payload directly (no verification needed — this is only for key selection).
+    if ((req as any).user?.id) return (req as any).user.id;
+    try {
+      const authHeader = (req.headers as any).authorization as string | undefined;
+      if (authHeader?.startsWith('Bearer ')) {
+        const payloadB64 = authHeader.split('.')[1];
+        if (payloadB64) {
+          const decoded = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+          if (decoded?.id) return decoded.id;
+        }
+      }
+    } catch {}
+    return req.ip || 'anonymous';
   },
   message: { error: 'Too many requests. Please slow down.' },
   skip: (req) => req.originalUrl?.startsWith('/api/dev'), // Robust DEV bypass

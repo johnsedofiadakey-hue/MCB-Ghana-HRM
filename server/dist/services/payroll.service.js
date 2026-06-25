@@ -44,20 +44,23 @@ const websocket_service_1 = require("./websocket.service");
 const DEFAULT_CURRENCY = 'GHS';
 const SSNIT_EMPLOYEE_RATE = 0.055; // 5.5%
 const SSNIT_EMPLOYER_RATE = 0.13; // 13%
-// ── GHANA PAYE (2024 GRA Monthly Bands) ────────────────────────────────────────
 // ── GHANA PAYE (GRA Monthly Bands) ──────────────────────────────────────────
+const DEFAULT_PAYE_BANDS = [
+    { limit: 490, rate: 0.00 },
+    { limit: 110, rate: 0.05 },
+    { limit: 130, rate: 0.10 },
+    { limit: 3166.67, rate: 0.175 },
+    { limit: 16000, rate: 0.25 },
+    { limit: 30520, rate: 0.30 },
+    { limit: Infinity, rate: 0.35 },
+];
 const calculateGhanaPAYE = (taxableIncome, customBands) => {
     if (taxableIncome <= 0)
         return 0;
-    const bands = customBands || [
-        { limit: 490, rate: 0.00 },
-        { limit: 110, rate: 0.05 },
-        { limit: 130, rate: 0.10 },
-        { limit: 3166.67, rate: 0.175 },
-        { limit: 16000, rate: 0.25 },
-        { limit: 30520, rate: 0.30 },
-        { limit: Infinity, rate: 0.35 },
-    ];
+    if (!customBands || customBands.length === 0) {
+        console.warn('[Payroll] No custom PAYE bands configured — using hardcoded 2024 GRA monthly bands. Update via Settings → Payroll to stay compliant.');
+    }
+    const bands = (customBands && customBands.length > 0) ? customBands : DEFAULT_PAYE_BANDS;
     let tax = 0;
     let remaining = taxableIncome;
     for (const band of bands) {

@@ -46,13 +46,17 @@ class AnalyticsService {
     }
     static async getPredictiveSignals(organizationId) {
         // Attrition Risk: Low performance (< 50)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
         const lowPerformers = await client_1.default.kpiSheet.findMany({
             where: {
                 organizationId,
                 totalScore: { lt: 50 },
                 isTemplate: false,
+                createdAt: { gte: sixMonthsAgo },
             },
             include: { employee: { select: { id: true, fullName: true } } },
+            take: 100,
         });
         // Leave Abuse Signal: Frequent short leaves (> 3 short leaves in 3 months)
         const threeMonthsAgo = new Date();
@@ -65,6 +69,7 @@ class AnalyticsService {
                 startDate: { gte: threeMonthsAgo },
             },
             select: { employeeId: true },
+            take: 500,
         });
         const leaveCounts = {};
         shortLeaves.forEach(l => {

@@ -33,18 +33,18 @@ const EmployeeDashboard: React.FC = () => {
           className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/20 backdrop-blur-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6"
         >
           <div className="absolute top-0 right-0 w-48 h-48 bg-radial-gradient from-amber-500/15 to-transparent pointer-events-none opacity-40 animate-pulse" />
-          <div className="flex items-center gap-6">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-              <Calendar size={28} className="animate-pulse" />
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 flex-shrink-0 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500">
+              <Calendar size={22} className="animate-pulse" />
             </div>
-            <div>
-              <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight">OUT OF OFFICE (ON LEAVE)</h2>
-              <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mt-1">Automatic Out-of-Office coverage active</p>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-xl font-black text-[var(--text-primary)] tracking-tight truncate">Out of office — on leave</h2>
+              <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mt-0.5">Out-of-office coverage active</p>
             </div>
           </div>
           <div className="text-right">
             <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[9px] font-black uppercase tracking-[0.2em] text-amber-400">
-              System Muted & Coverage Enabled
+              Out-of-office coverage active
             </span>
           </div>
         </motion.div>
@@ -60,8 +60,8 @@ const EmployeeDashboard: React.FC = () => {
              <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{greeting}</span>
           </div>
-          <h1 className="font-black text-5xl text-[var(--text-primary)] tracking-tight leading-none">
-            {user.name?.split(' ')[0] || 'Team'} <span className="text-[var(--text-muted)] font-thin">/ {t('employee_dashboard.title')}</span>
+          <h1 className="font-black text-3xl sm:text-4xl lg:text-5xl text-[var(--text-primary)] tracking-tight leading-tight">
+            {user.name?.split(' ')[0] || 'Team'} <span className="text-[var(--text-muted)] font-thin hidden sm:inline">/ {t('employee_dashboard.title')}</span>
           </h1>
           <p className="text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
             {user.jobTitle || t('employees.roles.EMPLOYEE')} &nbsp;·&nbsp; {t('employee_dashboard.subtitle')}
@@ -76,7 +76,7 @@ const EmployeeDashboard: React.FC = () => {
             {t('employee_dashboard.strategic_journey')}
           </h3>
           <div className="flex items-center justify-center">
-             <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
+             <div className="grid grid-cols-3 gap-2 w-full max-w-2xl">
                {(stats?.journeyPhases?.length ? stats.journeyPhases : [
                  { label: 'md_goals', status: 'done' },
                  { label: 'team_kpi', status: 'done' },
@@ -88,13 +88,13 @@ const EmployeeDashboard: React.FC = () => {
                  const isDone = step.status === 'done';
 
                  return (
-                   <div key={idx} className="flex flex-col items-center gap-3 relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${isActive ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : isDone ? 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
-                        <Icon size={20} />
+                   <div key={idx} className="flex flex-col items-center gap-2 relative min-w-0">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all flex-shrink-0 ${isActive ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : isDone ? 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
+                        <Icon size={17} />
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{t(`employee_dashboard.${step.label}`)}</span>
+                      <span className={`text-[9px] font-black uppercase tracking-wide text-center w-full leading-tight line-clamp-2 ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{t(`employee_dashboard.${step.label}`)}</span>
                       {idx < 2 && (
-                        <div className={`absolute top-7 -right-2 w-4 h-0.5 ${isDone ? 'bg-[var(--primary)]/30' : 'bg-[var(--border-subtle)]'}`} />
+                        <div className={`absolute top-6 -right-2 w-4 h-0.5 ${isDone ? 'bg-[var(--primary)]/30' : 'bg-[var(--border-subtle)]'}`} />
                       )}
                    </div>
                  );
@@ -103,13 +103,13 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="nx-card p-10 border-[var(--primary)]/20 bg-[var(--primary)]/5">
-          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-10 text-center flex items-center justify-center gap-3">
+        <div className="nx-card p-10 border-[var(--accent)]/20 bg-[var(--accent)]/5">
+          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--accent)] mb-10 text-center flex items-center justify-center gap-3">
             <Award size={14} />
             {t('employee_dashboard.growth_journey')}
           </h3>
           <div className="flex items-center justify-center">
-             <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
+             <div className="grid grid-cols-3 gap-2 w-full max-w-2xl">
                {(stats?.journeyPhases?.length ? stats.journeyPhases : [
                  { label: 'self_review', status: 'active' },
                  { label: 'manager_alignment', status: 'pending' },
@@ -121,13 +121,13 @@ const EmployeeDashboard: React.FC = () => {
                  const isDone = step.status === 'done';
 
                  return (
-                   <div key={idx} className="flex flex-col items-center gap-3 relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${isActive ? 'bg-[var(--primary)] border-[var(--primary)] text-[var(--text-inverse)] shadow-lg shadow-[var(--primary)]/20' : isDone ? 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
-                        <Icon size={20} />
+                   <div key={idx} className="flex flex-col items-center gap-2 relative min-w-0">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all flex-shrink-0 ${isActive ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20' : isDone ? 'bg-[var(--accent)]/20 border-[var(--accent)]/30 text-[var(--accent)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
+                        <Icon size={17} />
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{t(`employee_dashboard.${step.label}`)}</span>
+                      <span className={`text-[9px] font-black uppercase tracking-wide text-center w-full leading-tight line-clamp-2 ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{t(`employee_dashboard.${step.label}`)}</span>
                       {idx < 2 && (
-                        <div className={`absolute top-7 -right-2 w-4 h-0.5 ${isDone ? 'bg-[var(--primary)]/30' : 'bg-[var(--border-subtle)]'}`} />
+                        <div className={`absolute top-6 -right-2 w-4 h-0.5 ${isDone ? 'bg-[var(--accent)]/30' : 'bg-[var(--border-subtle)]'}`} />
                       )}
                    </div>
                  );
@@ -166,22 +166,31 @@ const EmployeeDashboard: React.FC = () => {
           { title: t('employee_dashboard.attendance_rate'), value: loading ? '…' : `${stats?.attendanceRate ?? 0}%`, icon: Clock, color: 'var(--success)' },
           { title: t('employee_dashboard.leave_balance'), value: loading ? '…' : `${stats?.leaveBalance ?? 0} ${t('employee_dashboard.days')}`, icon: Calendar, color: 'var(--warning)' },
           { title: t('employee_dashboard.training_status'), value: t('employee_dashboard.on_track'), icon: Award, color: 'var(--accent)' },
-        ].map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-colors mb-8">
-              <stat.icon size={22} style={{ color: stat.color }} className="opacity-80" />
-            </div>
-            <div className="text-4xl font-black text-[var(--text-primary)] tracking-tight mb-2">{stat.value}</div>
-            <div className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{stat.title}</div>
-          </motion.div>
-        ))}
+        ].map((stat, i) => {
+          const isAccent = stat.color === 'var(--accent)' || stat.color === 'var(--warning)';
+          return (
+            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              className={`nx-card p-10 group transition-all ${isAccent ? 'hover:border-[var(--accent)]/30' : 'hover:border-[var(--primary)]/30'}`}>
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors mb-8"
+                style={{
+                  background: isAccent ? 'var(--accent-10)' : 'var(--primary-10)',
+                  borderColor: isAccent ? 'rgba(238,113,0,0.22)' : 'rgba(0,158,227,0.22)',
+                }}
+              >
+                <stat.icon size={22} style={{ color: stat.color }} />
+              </div>
+              <div className="text-4xl font-black text-[var(--text-primary)] tracking-tight mb-2">{stat.value}</div>
+              <div className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{stat.title}</div>
+            </motion.div>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="nx-card p-10">
           <div className="flex items-center gap-4 mb-10">
-             <div className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)]">
+             <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[var(--primary)]" style={{ background: 'var(--primary-10)', border: '1px solid rgba(0,158,227,0.22)' }}>
                 <Target size={20} />
              </div>
              <h3 className="font-black text-2xl text-[var(--text-primary)] tracking-tight">{t('employee_dashboard.my_goals')}</h3>
@@ -210,7 +219,7 @@ const EmployeeDashboard: React.FC = () => {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="nx-card p-10">
           <div className="flex items-center gap-4 mb-10">
-             <div className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)]">
+             <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[var(--accent)]" style={{ background: 'var(--accent-10)', border: '1px solid rgba(238,113,0,0.22)' }}>
                 <Zap size={20} />
              </div>
              <h3 className="font-black text-2xl text-[var(--text-primary)] tracking-tight">{t('employee_dashboard.quick_actions')}</h3>

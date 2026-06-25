@@ -17,10 +17,10 @@ exports.canBorrowLeave = exports.getEffectiveLeaveMetrics = void 0;
  */
 const getEffectiveLeaveMetrics = (user) => {
     const org = user.organization || {};
-    // 1. Allowance: User Specific -> Org Default -> System Fallback (30)
+    // 1. Allowance: User Specific -> Org Default -> System Fallback (24)
     const allowance = Number(user.leaveAllowance ??
         org.defaultLeaveAllowance ??
-        30);
+        24);
     // 2. Balance Logic
     let balance = Number(user.leaveBalance ?? allowance);
     // Apply Carry Forward Logic if enabled

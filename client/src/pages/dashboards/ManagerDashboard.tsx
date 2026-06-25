@@ -187,7 +187,7 @@ const ManagerDashboard = () => {
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-all group-hover:scale-110 mb-8 shadow-inner">
               <s.icon size={22} style={{ color: s.color }} />
             </div>
-            <div className="text-5xl font-black text-[var(--text-primary)] tracking-ultra mb-2">
+            <div className="text-3xl sm:text-5xl font-black text-[var(--text-primary)] tracking-ultra mb-2">
               {loading ? <span className="text-[var(--text-muted)] animate-pulse">···</span> : s.value}
             </div>
             <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] opacity-60 group-hover:opacity-100 transition-opacity">{s.label}</div>

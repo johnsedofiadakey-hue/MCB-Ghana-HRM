@@ -226,7 +226,7 @@ const PAGE_GUIDES: Record<string, {
     title: 'Organisation Chart',
     icon: Building2,
     color: '#0ea5e9',
-    whoSees: 'All employees',
+    whoSees: 'HR, IT Manager, MD and DEV roles',
     summary: 'A live visual map of the company hierarchy — who reports to whom, across all departments and levels. Updates automatically as employees are added or organisational structures change.',
     steps: [
       'The chart renders your entire company tree from the top down.',
@@ -238,7 +238,7 @@ const PAGE_GUIDES: Record<string, {
       'Great for new employees learning the team structure.',
       'Directors: use this to spot reporting-line gaps.',
     ],
-    access: 'All roles — read only.',
+    access: 'HR, IT Manager, MD and DEV roles. Not visible to general staff.',
     connections: [
       'Employee Management — adding or editing employees updates the org chart automatically.',
       'Departments — department structure and assigned managers are reflected here.',
@@ -490,7 +490,7 @@ const PAGE_GUIDES: Record<string, {
     title: 'Enterprise Suite',
     icon: Zap,
     color: '#f43f5e',
-    whoSees: 'Directors and above (Rank 80+)',
+    whoSees: 'MD and DEV only (Rank 95+)',
     summary: 'The central power hub. Combines recruitment, benefits, shifts, tax rules, department KPIs, and more into one interface.',
     steps: [
       'Role Dashboard — high-level overview of people, KPIs, recruitment, onboarding.',
@@ -507,7 +507,7 @@ const PAGE_GUIDES: Record<string, {
       'Recruitment → Offer Letter → Onboarding is the full hiring pipeline.',
       'Benefits enrollment links to payroll deductions.',
     ],
-    access: 'Rank 80+ (Director and above).',
+    access: 'MD (Rank 95+) and DEV only. Directors do not have access to the Enterprise Suite.',
     connections: [
       'Payroll — Tax Rules set here power the PAYE deduction engine in every payroll run.',
       'Recruitment — job postings here feed candidates into the hiring pipeline.',
@@ -533,7 +533,7 @@ const PAGE_GUIDES: Record<string, {
       'Prefer using Employee Management for full onboarding workflow.',
       'IT Admin is for quick account operations, not full HR management.',
     ],
-    access: 'Rank 60+ (Team Lead and above).',
+    access: 'IT Manager, IT Admin, MD and DEV roles only. Not available to general Managers.',
     connections: [
       'Employee Management — accounts created here also appear in the main employee directory.',
       'Assets — IT Admin coordinates with this page for equipment provisioning.',
@@ -581,7 +581,7 @@ const PAGE_GUIDES: Record<string, {
       'Check audit logs first whenever something unexpected happens.',
       'Login failures are logged — look for patterns of failed attempts.',
     ],
-    access: 'Rank 90+ (MD and DEV only).',
+    access: 'IT Manager, IT Admin, MD and DEV roles only.',
     connections: [
       'Every page — all significant user actions across the system write an entry here.',
       'Settings — configuration changes are logged with before/after values.',
@@ -663,6 +663,113 @@ const PAGE_GUIDES: Record<string, {
     ],
     example: 'Daniel wants to know the rules for remote work. He opens Policy Library, types "remote" in search, finds the "MCB Remote Work Policy", reads that he can work up to 2 days hybrid with manager approval, and submits his hybrid request accordingly.',
   },
+  '/inbox': {
+    title: 'Inbox',
+    icon: Megaphone,
+    color: '#009EE3',
+    whoSees: 'All employees',
+    summary: 'Your centralised notification hub. Every system event that concerns you — leave approvals, KPI submissions, announcements, expense decisions, and more — lands here as an actionable message.',
+    steps: [
+      'Unread messages appear with a blue dot — click any to read and act on it.',
+      'Leave approval requests come with Approve/Reject buttons directly in the message.',
+      'Announcements from Directors appear here alongside your personal notifications.',
+      'Use the filter tabs to separate "My Notifications", "Approvals", and "Announcements".',
+      'Mark all as read from the top-right action menu.',
+    ],
+    tips: [
+      'Inbox is also your approval queue — managers should check it daily.',
+      'Leave requests and expense claims both route their approval through here.',
+      'Urgent announcements show with a red badge so they can\'t be missed.',
+    ],
+    access: 'All roles. Managers see their team\'s approval requests. Staff see their own alerts.',
+    connections: [
+      'Leave — leave requests trigger an inbox notification to the approver.',
+      'Finance — expense and loan submissions send an inbox alert to the reviewing manager.',
+      'Announcements — all published announcements also appear in every employee\'s inbox.',
+      'KPI Performance — manager receives an inbox alert when an employee submits their KPI sheet.',
+      'Appraisals — employees are notified via inbox when their appraisal cycle opens.',
+    ],
+    example: 'Kofi submits a 5-day annual leave request. His manager Ama instantly gets an inbox notification with Approve/Reject buttons. She opens her inbox, reads the request, approves it with one click. Kofi gets a follow-up inbox notification confirming approval.',
+  },
+  '/support': {
+    title: 'Support Centre',
+    icon: BookOpen,
+    color: '#6366f1',
+    whoSees: 'All employees',
+    summary: 'Raise helpdesk tickets, access the knowledge base, and contact technical or HR support. All requests are tracked through the ticketing system so nothing falls through the cracks.',
+    steps: [
+      'Click "+ New Ticket" to submit an issue or request.',
+      'Choose a category: Technical, HR, Finance, or General.',
+      'Set priority: Normal or Urgent.',
+      'Track your open tickets and their resolution status here.',
+      'View previously resolved tickets in your history.',
+    ],
+    tips: [
+      'Be specific in your ticket description to get faster resolution.',
+      'Urgent tickets are escalated to the on-duty admin immediately.',
+    ],
+    access: 'All roles. Admins (Rank 80+) can view and resolve all tickets.',
+    connections: [
+      'IT Admin — technical tickets may be escalated to the IT Admin for account or device issues.',
+      'Inbox — ticket status updates are sent as inbox notifications.',
+      'Audit Logs — ticket creation and resolution are captured for compliance tracking.',
+    ],
+    example: 'An employee can\'t clock in — the biometric device isn\'t recognising her fingerprint. She opens Support, raises a ticket under "Technical / Attendance Device", sets priority Urgent, and describes the issue. The IT Manager gets an inbox notification and resolves it within the hour. She can track the ticket status in real time.',
+  },
+  '/analytics/predictive': {
+    title: 'Predictive Analytics',
+    icon: Activity,
+    color: '#8b5cf6',
+    whoSees: 'HR Officers, HR Managers, MD and DEV',
+    summary: 'Advanced AI-powered workforce analytics. Surfaces attrition risk, headcount forecasts, performance trend predictions, and anomaly detection — turning historical HR data into forward-looking insights.',
+    steps: [
+      'View the Attrition Risk panel to see which employees are flagged as flight risks.',
+      'Headcount Forecast projects staffing levels based on current trends and seasonality.',
+      'Performance trend charts show whether team KPI scores are improving or declining.',
+      'Anomaly detection highlights unusual patterns — sudden attendance drops, salary outliers.',
+      'Export any chart to PDF or CSV for board reporting.',
+    ],
+    tips: [
+      'Attrition risk scores are based on attendance patterns, KPI trends, and tenure — not personal opinions.',
+      'Run predictive reports before quarterly reviews to front-load the conversation with data.',
+      'Cross-reference with the Departments page to identify which teams need more support.',
+    ],
+    access: 'HR roles and MD/DEV only.',
+    connections: [
+      'Attendance — attendance trends feed the attrition risk and anomaly detection models.',
+      'KPI Performance — performance score trajectories are the primary input for performance trend forecasts.',
+      'Departments — attrition and performance predictions are broken down by department.',
+      'Payroll — payroll cost trend feeds the headcount cost projection model.',
+    ],
+    example: 'The HR Manager opens Predictive Analytics before the Q3 board meeting. The attrition risk model flags 3 employees in the Logistics team as high-risk (poor attendance + declining KPIs). She schedules check-ins with their managers before the quarter ends. The headcount forecast shows the company needs 2 more Sales staff by Q4 to hit revenue targets.',
+  },
+  '/offboarding': {
+    title: 'Offboarding',
+    icon: GraduationCap,
+    color: '#ef4444',
+    whoSees: 'HR, IT Managers, and Directors',
+    summary: 'Manage structured offboarding checklists for departing employees. Ensure IT access is revoked, assets are returned, final payroll is processed, and all handover tasks are completed before an employee\'s last day.',
+    steps: [
+      'Create a new offboarding session for the departing employee.',
+      'The checklist covers IT (revoke access, collect equipment), HR (final docs, NOC), and Admin tasks.',
+      'Track task completion in real time — see which items are pending.',
+      'HR marks the session complete once all tasks are done.',
+      'The employee\'s profile is archived (not deleted) after offboarding is finalised.',
+    ],
+    tips: [
+      'Start offboarding at least 2 weeks before the employee\'s last day.',
+      'IT access revocation should happen on the last working day, not before.',
+      'Ensure the final payslip is generated in the Payroll module before archiving.',
+    ],
+    access: 'HR roles (HR Officer, HR Manager), IT Manager, and Directors.',
+    connections: [
+      'Employee Management — the offboarding session links to the employee\'s full profile.',
+      'Assets — asset return tasks are tracked as part of the offboarding checklist.',
+      'IT Admin — account deactivation is an offboarding step managed from this page.',
+      'Payroll — final pay calculations should be run before the offboarding session is closed.',
+    ],
+    example: 'The Sales Manager resigns with 2 weeks notice. HR opens Offboarding, creates a session for him, and assigns tasks: IT to revoke VPN and email access on his last day, Admin to collect his laptop and ID card, HR to issue a reference letter and process his final pay. By his last Friday, all 9 tasks are ticked off and his profile is archived.',
+  },
   '/dev/dashboard': {
     title: 'Developer Dashboard',
     icon: Activity,
@@ -742,10 +849,19 @@ export function getNormalizedPath(path: string): string {
     '/company-settings': '/settings',
 
     // On/Offboarding
-    '/offboarding': '/onboarding',
+    '/offboarding': '/offboarding',
 
     // IT admin
     '/cards': '/it-admin',
+
+    // Analytics
+    '/analytics/predictive': '/analytics/predictive',
+
+    // Support
+    '/support': '/support',
+
+    // Inbox
+    '/inbox': '/inbox',
   };
 
   return aliases[cleanPath] || '/dashboard'; // default fallback
@@ -768,12 +884,16 @@ const FAQS: Array<{ q: string; a: string; tags: string[] }> = [
 // ─── Role summary ────────────────────────────────────────────────────────────
 const ROLE_SUMMARIES: Record<string, { label: string; color: string; desc: string; sees: string[] }> = {
   DEV: { label: 'System Developer', color: '#10b981', desc: 'Full superuser access. Manages all tenants, platform analytics, and system configuration.', sees: ['Everything — including Developer Dashboard and Tenant Control'] },
-  MD: { label: 'Managing Director', color: '#6366f1', desc: 'Full company access. Sees all employees, all payroll, all analytics.', sees: ['All modules', 'Company Settings', 'Audit Logs', 'Full payroll data', 'All employee records with salary'] },
-  DIRECTOR: { label: 'Director', color: '#8b5cf6', desc: 'Senior leadership access. Manages departments, approves payroll, runs enterprise features.', sees: ['Departments', 'Payroll', 'Announcements', 'Enterprise Suite', 'Employee records (salary visible)', 'Onboarding Management'] },
-  HR_OFFICER: { label: 'HR Officer', color: '#ec4899', desc: 'Central HR governance. Manages leave policies, appraisals, and employee dossiers.', sees: ['Employee Management', 'Leave Approval', 'Appraisals', 'Onboarding', 'Enterprise Suite'] },
-  IT_MANAGER: { label: 'IT Manager', color: '#06b6d4', desc: 'Technical system oversight. Provisions accounts, manages assets, and handles security protocols.', sees: ['IT Admin tools', 'Asset Management', 'User Provisioning', 'Direct Team Management', 'Identity Services'] },
-  MANAGER: { label: 'Manager', color: '#f59e0b', desc: 'Team-level management. Approves leave, runs appraisals, creates training.', sees: ['Team Members', 'Team Targets', 'Appraisals', 'IT Admin tools', 'Training creation', 'Expense approvals'] },
-  SUPERVISOR: { label: 'Supervisor', color: '#06b6d4', desc: 'Operational team oversight. Can see and manage their direct team.', sees: ['Team Members', 'Team Targets', 'Basic Appraisals', 'IT Admin tools'] },
+  MD: { label: 'Managing Director', color: '#6366f1', desc: 'Full company access. Final approver for all leave, payroll, and HR decisions.', sees: ['All modules', 'Company Settings', 'Audit Logs', 'Full payroll data', 'All employee records with salary', 'Enterprise Suite'] },
+  HR_DIRECTOR: { label: 'HR Director', color: '#a855f7', desc: 'Senior HR leadership. Oversees all HR operations, validates leave, manages appraisal cycles, and approves HR strategy.', sees: ['All employee records', 'Leave validation (HR step)', 'Payroll view', 'Appraisals', 'Recruitment', 'Onboarding', 'Announcements', 'Org Chart', 'Departments'] },
+  DIRECTOR: { label: 'Director', color: '#8b5cf6', desc: 'Senior leadership. Manages departments, approves payroll, runs recruitment, and oversees operations.', sees: ['Departments', 'Payroll', 'Announcements', 'Recruitment', 'Employee records (salary visible)', 'Onboarding Management', 'Org Chart'] },
+  HR_MANAGER: { label: 'HR Manager', color: '#ec4899', desc: 'HR department head. Manages all HR operations, validates leave requests, runs appraisal cycles and recruitment pipelines.', sees: ['Employee Management', 'Leave Validation (HR step)', 'Appraisals', 'Recruitment', 'Onboarding', 'Org Chart', 'Announcements'] },
+  FINANCE_MANAGER: { label: 'Finance Manager', color: '#10b981', desc: 'Finance department head. Full access to payroll, expenses, loans, and financial reporting.', sees: ['Payroll engine', 'Expense approvals', 'Loan approvals', 'Finance Hub', 'Employee records (salary visible)'] },
+  IT_MANAGER: { label: 'IT Manager', color: '#06b6d4', desc: 'Technical system oversight. Provisions accounts, manages assets, hardware nodes, and audit logs.', sees: ['IT Admin tools', 'Asset Management', 'Audit Logs', 'Card Management', 'User Provisioning', 'Attendance Hardware Config'] },
+  HR_OFFICER: { label: 'HR Officer', color: '#f43f5e', desc: 'HR operations. Manages leave, appraisals, and employee records. Validates leave requests at the HR stage.', sees: ['Employee Management', 'Leave Approval (HR validation)', 'Appraisals', 'Org Chart', 'Onboarding', 'Policies'] },
+  MANAGER: { label: 'Manager', color: '#f59e0b', desc: 'Team-level management. Approves leave, runs appraisals, assigns KPIs, and creates training.', sees: ['Team Members', 'Team Targets / KPIs', 'Leave Approvals (Manager step)', 'Appraisals', 'Training creation', 'Expense approvals'] },
+  MID_MANAGER: { label: 'Mid Manager', color: '#fb923c', desc: 'Middle management. Team oversight with limited HR access. Can view and manage direct reports.', sees: ['Direct team members', 'Team Targets', 'Basic Appraisals', 'Training enrolment'] },
+  SUPERVISOR: { label: 'Supervisor', color: '#06b6d4', desc: 'Operational team oversight. Can see and manage their direct team.', sees: ['Team Members', 'Team Targets', 'Basic Appraisals'] },
   STAFF: { label: 'Staff', color: '#64748b', desc: 'Standard employee access. Personal records, requests, and performance.', sees: ['Dashboard', 'Profile', 'Attendance', 'Leave', 'Training', 'Assets (own)', 'Finance (own)', 'KPI Performance'] },
   CASUAL: { label: 'Casual Worker', color: '#475569', desc: 'Limited access. Core personal records only.', sees: ['Dashboard', 'Profile', 'Attendance', 'Leave', 'Assets (own)'] },
 };
@@ -817,8 +937,15 @@ function generateResponse(query: string, location: string, companyName: string, 
   if (q.includes('asset') || q.includes('laptop') || q.includes('equipment')) return `**Assets**\n\n${PAGE_GUIDES['/assets'].summary}`;
   if (q.includes('announce')) return `**Announcements**\n\n${PAGE_GUIDES['/announcements'].summary}`;
   if (q.includes('onboard')) return `**Onboarding**\n\n${PAGE_GUIDES['/onboarding'].summary}`;
+  if (q.includes('offboard')) return `**Offboarding**\n\n${PAGE_GUIDES['/offboarding'].summary}`;
   if (q.includes('enterprise')) return `**Enterprise Suite**\n\n${PAGE_GUIDES['/enterprise'].summary}`;
   if (q.includes('chart') || q.includes('hierarchy') || q.includes('org')) return `**Org Chart**\n\n${PAGE_GUIDES['/org-chart'].summary}`;
+  if (q.includes('inbox') || q.includes('notification') || q.includes('message')) return `**Inbox**\n\n${PAGE_GUIDES['/inbox'].summary}\n\n${PAGE_GUIDES['/inbox'].steps.slice(0, 3).map(s => `• ${s}`).join('\n')}`;
+  if (q.includes('support') || q.includes('ticket') || q.includes('helpdesk')) return `**Support Centre**\n\n${PAGE_GUIDES['/support'].summary}`;
+  if (q.includes('predict') || q.includes('analytics') || q.includes('attrition') || q.includes('forecast')) return `**Predictive Analytics**\n\n${PAGE_GUIDES['/analytics/predictive'].summary}`;
+  if (q.includes('disciplinary') || q.includes('warning') || q.includes('grievance')) return `**Disciplinary Cases**\n\n${PAGE_GUIDES['/disciplinary'].summary}`;
+  if (q.includes('polic') || q.includes('handbook') || q.includes('conduct')) return `**Policy Library**\n\n${PAGE_GUIDES['/policies'].summary}`;
+  if (q.includes('recruit') || q.includes('hiring') || q.includes('candidate') || q.includes('vacancy')) return `**Recruitment Hub**\n\n${PAGE_GUIDES['/recruitment'].summary}`;
 
   // Fallback contextual
   if (pageGuide) {

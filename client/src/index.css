@@ -1,3 +1,4 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
@@ -7,7 +8,73 @@
 html {
   scrollbar-gutter: stable;
   scroll-behavior: auto !important;
+  /* iOS: prevent elastic bounce on the root */
+  overscroll-behavior: none;
 }
+
+/* ── Native-app touch feel ─────────────────────────────────────────────────── */
+* {
+  /* Remove the grey flash on tap (iOS/Android) */
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+button, a, [role="button"], label, summary,
+nav a, .nx-card, [tabindex] {
+  /* Instant tap — no 300ms delay, no double-tap-to-zoom on interactive elements */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, [role="button"], a, li {
+  /* Prevent text selection on long press / drag */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow selection in inputs and content areas */
+input, textarea, [contenteditable], p, span, h1, h2, h3, h4, h5, h6 {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ── iOS zoom prevention: always render inputs at ≥16px ───────────────────── */
+@media (max-width: 1023px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* ── Momentum scrolling in all scroll containers ──────────────────────────── */
+.overflow-y-auto, .overflow-auto, .overflow-y-scroll,
+[data-scroll], .scroll-y {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ── Horizontal-overflow containment for tables ───────────────────────────── */
+table {
+  min-width: 100%;
+}
+
+.table-scroll, .nx-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* Responsive table wrapper — auto-wrap any table inside a card */
+.nx-card table,
+.nx-card .table-container,
+[class*="overflow-x-auto"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Safe-area aware helpers ──────────────────────────────────────────────── */
+.safe-top    { padding-top:    env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-left   { padding-left:   env(safe-area-inset-left); }
+.safe-right  { padding-right:  env(safe-area-inset-right); }
 
 html.boot-lock, 
 html.boot-lock *,
@@ -30,6 +97,11 @@ html.modal-lock body {
 
 html.modal-lock .nx-modal-content {
   pointer-events: auto; /* Re-enable for modal content */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Satoshi', 'Inter', system-ui, sans-serif;
+  font-weight: 700;
 }
 
 body {
@@ -240,128 +312,159 @@ body {
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Theme: Premium Monolith (Deep Dark) */
+/* ─── MCB Ghana Brand Colors ────────────────────────────────────────────────
+   Blue  : #009EE3  (HKS 47 / Pantone Process Blue / RGB 0,158,227)
+   Orange: #EE7100  (HKS 8  / Pantone 165           / RGB 238,113,0)
+   Grey  : #9C9C9C  (Pantone Cool Gray 7 C           / RGB 156,156,156)
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Theme: Premium Monolith — deep dark navy, MCB Blue primary, Orange accent */
 [data-theme='premium-monolith'] {
-  --primary: #8b5cf6;
-  --primary-hover: #7c3aed;
-  --primary-light: #a78bfa;
-  --primary-rgb: 139, 92, 246;
-  --accent: #06b6d4;
-  --accent-rgb: 6, 182, 212;
-  --growth: #8b5cf6;
-  --growth-light: #a78bfa;
-  
-  --bg-main: #09090b;
-  --bg-card: #121215; 
-  --bg-card-rgb: 18, 18, 21;
-  --bg-elevated: #18181b;
-  --bg-input: #09090b;
-  
-  --bg-sidebar: #09090b;
-  --bg-sidebar-active: rgba(255, 255, 255, 0.04);
-  
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --text-inverse: #000000;
-  --text-sidebar: #71717a;
-  --text-sidebar-active: #fafafa;
-  
-  --border-subtle: #27272a;
-  --border-strong: #3f3f46;
+  --primary:       #009EE3;
+  --primary-hover: #0087C8;
+  --primary-light: #33B5EC;
+  --primary-10:    rgba(0, 158, 227, 0.10);
+  --primary-rgb:   0, 158, 227;
 
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: #06b6d4;
-  
-  --ring-color: rgba(139, 92, 246, 0.5);
-  
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
-  --shadow-lg: 0 12px 24px rgba(0,0,0,0.6);
+  --accent:        #EE7100;
+  --accent-hover:  #D46500;
+  --accent-light:  #FF9333;
+  --accent-10:     rgba(238, 113, 0, 0.10);
+  --accent-rgb:    238, 113, 0;
+
+  --growth:        #009EE3;
+  --growth-light:  #33B5EC;
+
+  --bg-main:             #07111A;
+  --bg-card:             #0D1E2E;
+  --bg-card-rgb:         13, 30, 46;
+  --bg-elevated:         #142539;
+  --bg-input:            #07111A;
+  --bg-hover:            rgba(0, 158, 227, 0.06);
+  --bg-sidebar:          #07111A;
+  --bg-sidebar-active:   rgba(0, 158, 227, 0.09);
+
+  --text-primary:        #EDF5FB;
+  --text-secondary:      #7AADC8;
+  --text-muted:          #3E6880;
+  --text-inverse:        #ffffff;
+  --text-sidebar:        #4A7A96;
+  --text-sidebar-active: #EDF5FB;
+
+  --border:        #1A3347;
+  --border-subtle: #1A3347;
+  --border-strong: #234A65;
+
+  --success: #22c55e;
+  --warning: #EE7100;
+  --error:   #ef4444;
+  --info:    #009EE3;
+
+  --ring-color: rgba(0, 158, 227, 0.35);
+
+  /* Blue-tinted shadow reads on dark navy — avoid pitch-black */
+  --shadow-sm: 0 1px 3px  rgba(0, 15, 35, 0.55);
+  --shadow-md: 0 4px 16px rgba(0, 15, 35, 0.70), 0 0 0 1px rgba(0, 158, 227, 0.05);
+  --shadow-lg: 0 12px 32px rgba(0, 15, 35, 0.80), 0 0 0 1px rgba(0, 158, 227, 0.08);
 }
 
-/* Theme: Premium Canvas (Light) */
+/* Theme: Premium Canvas — crisp white, MCB Blue for all interactive elements */
 [data-theme='premium-canvas'] {
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-light: #6366f1;
-  --primary-rgb: 79, 70, 229;
-  --accent: #0ea5e9;
-  --accent-rgb: 14, 165, 233;
-  --growth: #7c3aed;
-  --growth-light: #8b5cf6;
-  
-  --bg-main: #f9fafb;
-  --bg-card: #ffffff;
-  --bg-card-rgb: 255, 255, 255;
-  --bg-elevated: #f3f4f6;
-  --bg-input: #ffffff;
-  
-  --bg-sidebar: #ffffff;
-  --bg-sidebar-active: #f1f5f9;
-  
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --text-inverse: #ffffff;
-  --text-sidebar: #64748b;
-  --text-sidebar-active: #0f172a;
-  
-  --border-subtle: #cbd5e1;
-  --border-strong: #94a3b8;
+  /* Slightly deeper blue for WCAG AA contrast on white */
+  --primary:       #007FC5;
+  --primary-hover: #006BA8;
+  --primary-light: #009EE3;
+  --primary-10:    rgba(0, 127, 197, 0.08);
+  --primary-rgb:   0, 127, 197;
+
+  --accent:        #EE7100;
+  --accent-hover:  #D46500;
+  --accent-light:  #FF9333;
+  --accent-10:     rgba(238, 113, 0, 0.10);
+  --accent-rgb:    238, 113, 0;
+
+  --growth:        #007FC5;
+  --growth-light:  #009EE3;
+
+  --bg-main:             #F4F8FB;
+  --bg-card:             #FFFFFF;
+  --bg-card-rgb:         255, 255, 255;
+  --bg-elevated:         #EAF2F8;
+  --bg-input:            #FFFFFF;
+  --bg-hover:            rgba(0, 127, 197, 0.04);
+  --bg-sidebar:          #FFFFFF;
+  --bg-sidebar-active:   rgba(0, 127, 197, 0.06);
+
+  --text-primary:        #0A1929;
+  --text-secondary:      #325270;
+  --text-muted:          #7A9BB5;
+  --text-inverse:        #FFFFFF;
+  --text-sidebar:        #5A7A96;
+  --text-sidebar-active: #0A1929;
+
+  --border:        #C5DAEB;
+  --border-subtle: #C5DAEB;
+  --border-strong: #9BBDD6;
 
   --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: #0ea5e9;
-  
-  --ring-color: rgba(79, 70, 229, 0.1);
-  
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
-  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
+  --warning: #EE7100;
+  --error:   #ef4444;
+  --info:    #007FC5;
+
+  --ring-color: rgba(0, 127, 197, 0.15);
+
+  --shadow-sm: 0 1px 3px  rgba(0, 30, 60, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 30, 60, 0.08), 0 1px 3px rgba(0, 30, 60, 0.05);
+  --shadow-lg: 0 16px 32px rgba(0, 30, 60, 0.10), 0 4px 8px rgba(0, 30, 60, 0.06);
 }
 
-/* Theme: Premium Aero (Modern Utility) */
+/* Theme: Premium Aero — warm light, Blue primary, Orange gets more presence */
 [data-theme='premium-aero'] {
-  --primary: #10b981;
-  --primary-hover: #059669;
-  --primary-light: #34d399;
-  --primary-rgb: 16, 185, 129;
-  --accent: #34d399;
-  --growth: #8b5cf6;
-  --growth-light: #a78bfa;
-  
-  --bg-main: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-elevated: #f1f5f9;
-  --bg-input: #ffffff;
-  
-  --bg-sidebar: #f1f5f9;
-  --bg-sidebar-active: rgba(0, 158, 227, 0.08);
-  
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --text-inverse: #ffffff;
-  --text-sidebar: #64748b;
+  --primary:       #009EE3;
+  --primary-hover: #0087C8;
+  --primary-light: #33B5EC;
+  --primary-10:    rgba(0, 158, 227, 0.08);
+  --primary-rgb:   0, 158, 227;
+
+  --accent:        #EE7100;
+  --accent-hover:  #D46500;
+  --accent-light:  #FF9333;
+  --accent-10:     rgba(238, 113, 0, 0.10);
+  --accent-rgb:    238, 113, 0;
+
+  --growth:        #009EE3;
+  --growth-light:  #33B5EC;
+
+  --bg-main:             #FAFBFC;
+  --bg-card:             #FFFFFF;
+  --bg-card-rgb:         255, 255, 255;
+  --bg-elevated:         #EEF4F9;
+  --bg-input:            #FFFFFF;
+  --bg-hover:            rgba(0, 158, 227, 0.05);
+  --bg-sidebar:          #F3F8FC;
+  --bg-sidebar-active:   rgba(0, 158, 227, 0.08);
+
+  --text-primary:        #1A2D3D;
+  --text-secondary:      #4A6B82;
+  --text-muted:          #8BA8BC;
+  --text-inverse:        #FFFFFF;
+  --text-sidebar:        #6A8EA8;
   --text-sidebar-active: #009EE3;
-  
-  --border-subtle: #f1f5f9;
-  --border-strong: #e2e8f0;
+
+  --border:        #C2D9E8;
+  --border-subtle: #C2D9E8;
+  --border-strong: #99BFCF;
 
   --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: #34d399;
-  
-  --ring-color: rgba(16, 185, 129, 0.1);
-  
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05);
+  --warning: #EE7100;
+  --error:   #ef4444;
+  --info:    #009EE3;
+
+  --ring-color: rgba(0, 158, 227, 0.18);
+
+  --shadow-sm: 0 1px 3px  rgba(0, 40, 70, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 40, 70, 0.08), 0 1px 3px rgba(0, 40, 70, 0.04);
+  --shadow-lg: 0 16px 32px rgba(0, 40, 70, 0.10), 0 4px 8px rgba(0, 40, 70, 0.05);
 }
 
 /* COMPONENTS */
@@ -625,6 +728,75 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
 /* Mobile App Layout Utilities */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ─── MCB Brand: Orange Accent Utilities ─────────────────────────────────── */
+.text-accent   { color: var(--accent); }
+.bg-accent     { background-color: var(--accent); }
+.bg-accent-10  { background-color: var(--accent-10); }
+.border-accent { border-color: var(--accent); }
+
+/* Stat icon — color-aware tinted container */
+.stat-icon-primary {
+  background: var(--primary-10);
+  border: 1px solid rgba(0, 158, 227, 0.20);
+  color: var(--primary);
+}
+.stat-icon-accent {
+  background: var(--accent-10);
+  border: 1px solid rgba(238, 113, 0, 0.20);
+  color: var(--accent);
+}
+
+/* Orange pill badge */
+.badge-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Dual-brand gradient text */
+.text-brand-gradient {
+  background: linear-gradient(135deg, var(--primary) 20%, var(--accent) 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Dual-brand horizontal rule / accent bar */
+.brand-bar {
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 9999px;
+}
+
+/* Accent card tint */
+.nx-card.card-accent {
+  background: var(--accent-10);
+  border-color: rgba(238, 113, 0, 0.18);
+}
+.nx-card.card-accent:hover {
+  border-color: rgba(238, 113, 0, 0.35);
+  box-shadow: 0 4px 20px rgba(238, 113, 0, 0.08);
+}
+
+/* Clears content above the fixed bottom nav on mobile (nav = 64px) */
+.mobile-scroll-clearance {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom) + 16px);
+}
+
+@media (min-width: 1024px) {
+  .mobile-scroll-clearance {
+    padding-bottom: 0;
+  }
 }
 
 .mobile-h-adjust {

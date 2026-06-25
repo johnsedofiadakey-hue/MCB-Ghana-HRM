@@ -76,6 +76,7 @@ const useDashboardData = (departmentId?: string) => {
 const StatCard = ({ title, value, change, icon: Icon, color, sub, index, link }: any) => {
   const navigate = useNavigate();
   const isPositive = change?.startsWith('+') || (!change?.startsWith('-') && change !== '0%');
+  const isAccentColor = typeof color === 'string' && color.includes('accent');
 
   return (
     <motion.div
@@ -85,12 +86,22 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index, link }:
       onClick={() => link && navigate(link)}
       className={cn(
         "nx-card p-6 group min-w-0 transition-all",
-        link ? "cursor-pointer hover:border-[var(--primary)]/50 hover:shadow-lg hover:shadow-[var(--primary)]/5" : "cursor-default"
+        link
+          ? isAccentColor
+            ? "cursor-pointer hover:border-[var(--accent)]/50 hover:shadow-lg hover:shadow-[var(--accent)]/5"
+            : "cursor-pointer hover:border-[var(--primary)]/50 hover:shadow-lg hover:shadow-[var(--primary)]/5"
+          : "cursor-default"
       )}
     >
       <div className="flex items-start justify-between mb-6">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-colors group-hover:border-[var(--primary)]/30 shrink-0">
-          <Icon size={20} style={{ color }} className="opacity-70" />
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 transition-colors"
+          style={{
+            background: isAccentColor ? 'var(--accent-10)' : 'var(--primary-10)',
+            borderColor: isAccentColor ? 'rgba(238,113,0,0.22)' : 'rgba(0,158,227,0.22)',
+          }}
+        >
+          <Icon size={20} style={{ color }} />
         </div>
         {change && (
           <div className={cn(
@@ -102,7 +113,7 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index, link }:
           </div>
         )}
       </div>
-      
+
       <div className="font-bold text-2xl sm:text-3xl text-[var(--text-primary)] tracking-tight mb-1 truncate overflow-hidden">
         {value ?? '--'}
       </div>

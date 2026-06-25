@@ -322,7 +322,7 @@ const Leave = () => {
   };
 
   return (
-    <div className="space-y-12 pb-32">
+    <div className="space-y-12 pb-32 overflow-x-hidden">
        <AnimatePresence>
         {saving && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center backdrop-blur-sm">
@@ -338,7 +338,7 @@ const Leave = () => {
       </AnimatePresence>
 
       {/* Header Architecture */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+      <div className="flex flex-col gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('leave.title')}</h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
@@ -347,36 +347,38 @@ const Leave = () => {
           </p>
         </motion.div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-2xl border border-[var(--border-subtle)] overflow-x-auto no-scrollbar max-w-full">
-             <button onClick={() => setActiveTab('MY')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'MY' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>{t('leave.my_cycle')}</button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Tab pills — scrollable on mobile, never overflow the row */}
+          <div className="flex-1 min-w-0 flex bg-[var(--bg-elevated)]/50 p-1 rounded-2xl border border-[var(--border-subtle)] overflow-x-auto no-scrollbar">
+             <button onClick={() => setActiveTab('MY')} className={cn("px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border flex-shrink-0", activeTab === 'MY' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border-[var(--border-subtle)]" : "text-[var(--text-muted)] border-transparent")}>{t('leave.my_cycle')}</button>
              {userRank >= 60 && (
-               <button onClick={() => setActiveTab('TEAM')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap", activeTab === 'TEAM' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+               <button onClick={() => setActiveTab('TEAM')} className={cn("px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap border flex-shrink-0", activeTab === 'TEAM' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border-[var(--border-subtle)]" : "text-[var(--text-muted)] border-transparent")}>
                  {t('leave.team_hub')}
                  {teamLeaves.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--error)] rounded-full flex items-center justify-center text-[8px] text-white animate-pulse font-black">{teamLeaves.length}</span>}
                </button>
              )}
-              <button onClick={() => setActiveTab('RELIEF')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap", activeTab === 'RELIEF' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+              <button onClick={() => setActiveTab('RELIEF')} className={cn("px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap border flex-shrink-0", activeTab === 'RELIEF' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border-[var(--border-subtle)]" : "text-[var(--text-muted)] border-transparent")}>
                {t('leave.handover')}
                {reliefRequests.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--warning)] rounded-full flex items-center justify-center text-[8px] text-black animate-pulse font-black">{reliefRequests.length}</span>}
               </button>
-              <button onClick={() => setActiveTab('HISTORY')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap", activeTab === 'HISTORY' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+              <button onClick={() => setActiveTab('HISTORY')} className={cn("px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap border flex-shrink-0", activeTab === 'HISTORY' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border-[var(--border-subtle)]" : "text-[var(--text-muted)] border-transparent")}>
                {t('leave.handover_history')}
               </button>
               {userRank >= 75 && (
-                  <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                  <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border flex-shrink-0", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border-[var(--border-subtle)]" : "text-[var(--text-muted)] border-transparent")}>
                     {t('leave.register')}
                   </button>
               )}
                {userRank >= 80 && (
-                  <button onClick={() => setActiveTab('ADMIN')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'ADMIN' ? "bg-[var(--warning)]/10 text-[var(--warning)] shadow-sm border border-[var(--warning)]/20" : "text-[var(--text-muted)]")}>
+                  <button onClick={() => setActiveTab('ADMIN')} className={cn("px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border flex-shrink-0", activeTab === 'ADMIN' ? "bg-[var(--warning)]/10 text-[var(--warning)] shadow-sm border-[var(--warning)]/20" : "text-[var(--text-muted)] border-transparent")}>
                     {t('leave.admin_controls', 'Company Controls')}
                   </button>
               )}
           </div>
+          {/* Initiate button — full-width on mobile, auto-width on sm+ */}
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
+            className="sm:flex-shrink-0 w-full sm:w-auto px-6 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-3"
             onClick={() => setShowModal(true)}
           >
             <Plus size={18} /> {t('leave.initiate_vector')}

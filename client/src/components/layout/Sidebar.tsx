@@ -28,10 +28,14 @@ interface NavItemProps {
   isCollapsed?: boolean;
 }
 
-const NavGroup = ({ label, children, isCollapsed }: { label: string; children: React.ReactNode; isCollapsed?: boolean }) => (
+const NavGroup = ({ label, children, isCollapsed, accent }: { label: string; children: React.ReactNode; isCollapsed?: boolean; accent?: boolean }) => (
   <div className="mb-8 px-4">
     {!isCollapsed && (
-      <p className="px-5 mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)] opacity-80">
+      <p className="px-5 mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)] opacity-80 flex items-center gap-2">
+        <span
+          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+          style={{ background: accent ? 'var(--accent)' : 'var(--primary)' }}
+        />
         {label}
       </p>
     )}
@@ -166,7 +170,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         }}
       >
         {/* Toggle / Header */}
-        <div className="flex items-center justify-between h-24 px-6 flex-shrink-0">
+        <div className="flex items-center justify-between h-14 lg:h-24 px-4 lg:px-6 flex-shrink-0">
           {!isCollapsed && (
             <div className="flex items-center gap-4 overflow-hidden ml-1">
               <div className="w-11 h-11 rounded-xl bg-[var(--bg-card)] flex items-center justify-center flex-shrink-0 border border-[var(--border-subtle)] relative group overflow-hidden shadow-sm">
@@ -210,15 +214,19 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
             {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
           </button>
           
-          <button onClick={onClose} className="lg:hidden p-2 text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] rounded-lg">
-            <X size={20} />
+          <button
+            onClick={onClose}
+            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-[var(--bg-sidebar-active)] transition-all"
+            style={{ touchAction: 'manipulation' }}
+          >
+            <X size={22} />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-8 overflow-y-auto custom-scrollbar overflow-x-hidden">
+        <nav className="flex-1 py-4 lg:py-8 overflow-y-auto custom-scrollbar overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
             <>
-              <NavGroup label={t('common.personal')} isCollapsed={isCollapsed}>
+              <NavGroup label={t('common.personal')} isCollapsed={isCollapsed} accent={false}>
                 <NavItem to="/dashboard" icon={LayoutDashboard} label={t('common.dashboard_label')} isCollapsed={isCollapsed} />
                 <NavItem to="/inbox" icon={Megaphone} label={t('common.inbox_label')} isCollapsed={isCollapsed} />
                 <NavItem to="/profile" icon={Users} label={t('common.profile_label')} isCollapsed={isCollapsed} />
@@ -227,7 +235,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/finance" icon={Wallet} label={t('common.finance_label')} isCollapsed={isCollapsed} />
               </NavGroup>
 
-              <NavGroup label={t('common.performance_label')} isCollapsed={isCollapsed}>
+              <NavGroup label={t('common.performance_label')} isCollapsed={isCollapsed} accent={true}>
                 <NavItem to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} isCollapsed={isCollapsed} />
                 {rank >= 75 && (
                   <NavItem to="/kpi/department" icon={Building2} label={t('common.departmental_goals')} isCollapsed={isCollapsed} />
@@ -258,7 +266,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 )}
               </NavGroup>
 
-                 <NavGroup label={t('common.organization')} isCollapsed={isCollapsed}>
+                 <NavGroup label={t('common.organization')} isCollapsed={isCollapsed} accent={false}>
                 <NavItem to="/departments" icon={Briefcase} label={rank < 70 ? t('common.my_department') : t('common.departments_label')} isCollapsed={isCollapsed} />
                 {(rank >= 70 || isHR || isMD) && <NavItem to="/employees" icon={Users} label={t('common.employees_label')} isCollapsed={isCollapsed} />}
                 <NavItem to="/announcements" icon={Megaphone} label={t('common.announcements')} isCollapsed={isCollapsed} />
@@ -271,7 +279,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               </NavGroup>
  
               {!isMD && (
-                <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
+                <NavGroup label={t('common.operations')} isCollapsed={isCollapsed} accent={true}>
                   {(rank >= 60 || isIT || isHR) && <NavItem to="/assets" icon={Package} label={t('common.assets_label')} isCollapsed={isCollapsed} />}
                   {(isIT || isMD) && (
                     <>
@@ -292,14 +300,14 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               )}
 
               {(isFinance || isMD) && (
-                <NavGroup label={t('common.financial_operations')} isCollapsed={isCollapsed}>
+                <NavGroup label={t('common.financial_operations')} isCollapsed={isCollapsed} accent={true}>
                   <NavItem to="/payroll" icon={DollarSign} label={t('common.payroll_label')} isCollapsed={isCollapsed} />
                   <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
                 </NavGroup>
               )}
 
               {(isMD || isIT) && (
-                <NavGroup label={isMD ? "Strategic Governance" : t('common.administration')} isCollapsed={isCollapsed}>
+                <NavGroup label={isMD ? "Strategic Governance" : t('common.administration')} isCollapsed={isCollapsed} accent={false}>
                   <NavItem to="/settings" icon={Settings} label={isMD ? "Governance & Branding" : t('common.admin_settings')} isCollapsed={isCollapsed} />
                   {isMD && (
                     <NavItem to="/enterprise" icon={Zap} label={t('common.enterprise_suite_label')} isCollapsed={isCollapsed} />
@@ -311,6 +319,8 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
         {/* Footer */}
         <div className="p-6">
+          {/* Brand gradient accent line */}
+          <div className="brand-bar mb-5 mx-1" />
           <button
             onClick={handleLogout}
             className={cn(

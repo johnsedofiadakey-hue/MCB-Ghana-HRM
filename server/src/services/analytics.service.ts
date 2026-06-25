@@ -47,13 +47,18 @@ export class AnalyticsService {
 
   static async getPredictiveSignals(organizationId: string) {
     // Attrition Risk: Low performance (< 50)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
     const lowPerformers = await prisma.kpiSheet.findMany({
       where: {
         organizationId,
         totalScore: { lt: 50 },
         isTemplate: false,
+        createdAt: { gte: sixMonthsAgo },
       },
       include: { employee: { select: { id: true, fullName: true } } },
+      take: 100,
     });
 
     // Leave Abuse Signal: Frequent short leaves (> 3 short leaves in 3 months)
@@ -68,6 +73,7 @@ export class AnalyticsService {
         startDate: { gte: threeMonthsAgo },
       },
       select: { employeeId: true },
+      take: 500,
     });
 
     const leaveCounts: { [key: string]: number } = {};

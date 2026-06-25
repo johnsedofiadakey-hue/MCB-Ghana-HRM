@@ -49,21 +49,22 @@ export class LeaveService {
     });
     if (!user) throw new Error('User not found');
 
-    if (user.departmentId) {
-        const audit = await this.checkLeaveOverlap(organizationId, user.departmentId, start, end);
-        if (audit.warning) {
-            console.warn(`[LeaveService] Concurrency Warning: ${audit.message}`);
-        }
-    }
-    
-    // Check for public holidays and weekends
+    // Check for public holidays and weekends — scope recurring holidays by month/day
     const holidays = await prisma.publicHoliday.findMany({
-      where: { 
+      where: {
         OR: [
           { date: { gte: start, lte: end } },
-          { isRecurring: true } 
+          // Only load recurring holidays whose month/day falls within the leave window
+          {
+            isRecurring: true,
+            date: {
+              gte: new Date(start.getFullYear() - 1, start.getMonth(), start.getDate()),
+              lte: new Date(end.getFullYear() + 1, end.getMonth(), end.getDate()),
+            }
+          }
         ]
-      }
+      },
+      take: 200,
     });
 
     const leaveDays = this.calculateWorkingDaysWithHolidays(start, end, holidays);
@@ -82,6 +83,16 @@ export class LeaveService {
       const allowedToBorrow = canBorrowLeave(user, leaveDays, availableBalance);
       if (!allowedToBorrow) {
         throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
+      }
+    }
+
+    // Check capacity and capture any warning to surface to the user
+    let capacityWarning: string | null = null;
+    if (user.departmentId) {
+      const audit = await this.checkLeaveOverlap(organizationId, user.departmentId, start, end);
+      if (audit.warning) {
+        capacityWarning = audit.message || null;
+        console.warn(`[LeaveService] Concurrency Warning: ${audit.message}`);
       }
     }
 
@@ -105,13 +116,13 @@ export class LeaveService {
 
     if (relieverId) {
       const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}` : '';
-      await notify(relieverId, '🤝 Handover Request', 
+      await notify(relieverId, '🤝 Handover Request',
         `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
     } else if (user.supervisorId) {
       await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/leave');
     }
 
-    return leave;
+    return { leave, warning: capacityWarning };
   }
 
   /**
@@ -189,8 +200,9 @@ export class LeaveService {
       throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
     }
 
-    if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
-      throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
+    // If there is a pending reliever, block approval until they respond regardless of the flag
+    if (leave.status === 'SUBMITTED' && leave.relieverId) {
+      throw new Error('Reliever acceptance is still pending. The handover request must be resolved before managerial review.');
     }
 
     const actor = await prisma.user.findUnique({ where: { id: managerId } });
@@ -199,10 +211,10 @@ export class LeaveService {
     const rank = getRoleRank(actor.role);
     const isPrimaryManager = leave.employee.supervisorId === managerId;
     const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
-    const isHRorHigher = rank >= 75; 
+    const isHRorHigher = rank >= 80; // HR_OFFICER (80)+ can approve across departments; MANAGER (75) cannot
 
     if (!isPrimaryManager && !isDeptManager && !isHRorHigher) {
-      throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor or a department manager.');
+      throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a department manager, or HR (rank 80+).');
     }
 
     if (!approve && (!comment || comment.trim().length < 3)) {
@@ -229,16 +241,14 @@ export class LeaveService {
       '/leave'
     );
 
-    // Notify HR
     if (approve) {
-        // Broad notification to HR personnel
-        const hrUsers = await prisma.user.findMany({
-            where: { organizationId: leave.organizationId, role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'SUPER_ADMIN'] }, isArchived: false },
-            select: { id: true }
-        });
-        for (const hr of hrUsers) {
-            await notify(hr.id, '📋 Leave Pending HR Validation', `${leave.employee.fullName} needs HR sign-off.`, 'INFO', '/leave');
-        }
+      const hrUsers = await prisma.user.findMany({
+        where: { organizationId: leave.organizationId, role: { in: ['MD', 'HR_DIRECTOR', 'DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'SUPER_ADMIN'] }, isArchived: false },
+        select: { id: true }
+      });
+      await Promise.all(
+        hrUsers.map(hr => notify(hr.id, '📋 Leave Pending HR Validation', `${leave.employee.fullName} needs HR sign-off.`, 'INFO', '/leave'))
+      );
     }
 
     return updated;
@@ -263,8 +273,8 @@ export class LeaveService {
     if (!actor) throw new Error('Reviewer account not found');
 
     const rank = getRoleRank(actor.role);
-    if (rank < 85) {
-      throw new Error('Unauthorized for HR Validation. This action is reserved for HR Managers/Officers (Rank 85+).');
+    if (rank < 80) {
+      throw new Error('Unauthorized for HR Validation. This action is reserved for HR Officers and above (Rank 80+).');
     }
 
     if (!approve && (!comment || comment.trim().length < 3)) {

@@ -11,13 +11,13 @@ interface AuthenticatedWS extends WebSocket {
 }
 
 let wss: WebSocketServer | null = null;
-const clients = new Map<string, AuthenticatedWS>(); // userId -> ws
+// Support multiple simultaneous connections per user (e.g. multiple browser tabs)
+const clients = new Map<string, Set<AuthenticatedWS>>();
 
 export const initWebSocket = (server: any) => {
   wss = new WebSocketServer({ server, path: '/ws' });
 
   wss.on('connection', (ws: AuthenticatedWS, req: IncomingMessage) => {
-    // Auth via query param token
     const url = new URL(req.url || '', `http://localhost`);
     const token = url.searchParams.get('token');
 
@@ -30,21 +30,26 @@ export const initWebSocket = (server: any) => {
       ws.role = decoded.role;
       ws.isAlive = true;
 
-      // Register client
-      clients.set(decoded.id, ws);
-      console.log(`[WS] Connected: ${decoded.id} (${decoded.role})`);
+      // Add to this user's connection set (don't overwrite other tabs)
+      if (!clients.has(decoded.id)) clients.set(decoded.id, new Set());
+      clients.get(decoded.id)!.add(ws);
+      console.log(`[WS] Connected: ${decoded.id} (${decoded.role}) — ${clients.get(decoded.id)!.size} tab(s)`);
 
-      // Heartbeat
       ws.on('pong', () => { ws.isAlive = true; });
 
       ws.on('close', () => {
-        if (ws.userId) clients.delete(ws.userId);
+        if (ws.userId) {
+          const set = clients.get(ws.userId);
+          if (set) {
+            set.delete(ws);
+            if (set.size === 0) clients.delete(ws.userId);
+          }
+        }
         console.log(`[WS] Disconnected: ${ws.userId}`);
       });
 
       ws.on('error', console.error);
 
-      // Send pending notifications on connect
       sendPendingNotifications(decoded.id);
 
     } catch (e) {
@@ -52,7 +57,6 @@ export const initWebSocket = (server: any) => {
     }
   });
 
-  // Heartbeat interval
   const interval = setInterval(() => {
     wss?.clients.forEach((ws: AuthenticatedWS) => {
       if (!ws.isAlive) { ws.terminate(); return; }
@@ -70,7 +74,7 @@ const sendPendingNotifications = async (userId: string) => {
     const unread = await prisma.notification.findMany({
       where: { userId, isRead: false },
       orderBy: { createdAt: 'desc' },
-      take: 20
+      take: 20,
     });
     if (unread.length > 0) {
       pushToUser(userId, { type: 'PENDING_NOTIFICATIONS', data: unread });
@@ -78,32 +82,40 @@ const sendPendingNotifications = async (userId: string) => {
   } catch (e) {}
 };
 
-export const pushToUser = (userId: string, payload: any) => {
-  const ws = clients.get(userId);
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(payload));
-    return true;
-  }
-  return false;
+export const pushToUser = (userId: string, payload: any): boolean => {
+  const set = clients.get(userId);
+  if (!set || set.size === 0) return false;
+  const msg = JSON.stringify(payload);
+  let sent = false;
+  set.forEach(ws => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(msg);
+      sent = true;
+    }
+  });
+  return sent;
 };
 
 export const broadcastToRole = (role: string, payload: any) => {
-  clients.forEach((ws, _userId) => {
-    if (ws.role === role && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(payload));
-    }
+  const msg = JSON.stringify(payload);
+  clients.forEach(set => {
+    set.forEach(ws => {
+      if (ws.role === role && ws.readyState === WebSocket.OPEN) {
+        ws.send(msg);
+      }
+    });
   });
 };
 
 export const broadcastToAll = (payload: any) => {
-  clients.forEach((ws) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(payload));
-    }
+  const msg = JSON.stringify(payload);
+  clients.forEach(set => {
+    set.forEach(ws => {
+      if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+    });
   });
 };
 
-// Create + push notification in one call
 export const notify = async (
   userId: string,
   title: string,
@@ -115,18 +127,15 @@ export const notify = async (
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, status: true }
+      select: { email: true, status: true },
     });
 
-    // 1. Create DB notification
     const notification = await prisma.notification.create({
-      data: { userId, title, message, type, link }
+      data: { userId, title, message, type, link },
     });
 
-    // 2. Push WebSocket (Real-time)
     pushToUser(userId, { type: 'NOTIFICATION', data: notification });
 
-    // 3. Send Email (Async)
     if (shouldSendEmail && user?.email && user.status === 'ACTIVE') {
       EmailService.sendNotification(user.email, title, message, link);
     }
@@ -137,14 +146,12 @@ export const notify = async (
   }
 };
 
-// Notify all admins
 export const notifyAdmins = async (title: string, message: string, type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' = 'INFO') => {
   try {
     const admins = await prisma.user.findMany({
       where: { role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'IT_MANAGER', 'HR_OFFICER'] }, status: 'ACTIVE' },
-      select: { id: true }
+      select: { id: true },
     });
-    // 🛡️ PERFORMANCE FIX: Send notifications in parallel
     await Promise.all(admins.map(admin => notify(admin.id, title, message, type)));
   } catch (e) {}
 };

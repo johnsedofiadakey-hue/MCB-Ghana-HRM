@@ -53,150 +53,120 @@ export class AnalyticsController {
         const userWhere: any = { organizationId, status: 'ACTIVE', role: { not: 'DEV' } };
         if (!isExecutive) userWhere.supervisorId = userId;
 
-        const totalEmployees = await prisma.user.count({ where: userWhere });
-        const employeeIds = isExecutive ? [] : (await prisma.user.findMany({ where: userWhere, select: { id: true } })).map(u => u.id);
+        // Phase 1: employee scope (IDs needed to build subsequent where clauses)
+        const [totalEmployees, scopedUsers] = await Promise.all([
+            prisma.user.count({ where: userWhere }),
+            isExecutive
+                ? Promise.resolve([] as { id: string }[])
+                : prisma.user.findMany({ where: userWhere, select: { id: true } }),
+        ]);
+        const employeeIds = scopedUsers.map(u => u.id);
 
         const leaveWhere: any = { organizationId };
         if (!isExecutive) leaveWhere.employeeId = { in: employeeIds };
 
-        const activeLeaves = await prisma.leaveRequest.count({
-            where: { ...leaveWhere, status: 'APPROVED' }
-        });
-
-        const pendingTasks = await prisma.leaveRequest.count({
-            where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } }
-        });
-
-        const pendingKpis = await prisma.kpiSheet.count({
-            where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } }
-        });
-
-        const pendingAppraisals = await (prisma as any).appraisalPacket.count({
-             where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] }
-        });
-
-        let payrollTotal = 0;
-        if (isExecutive) {
-            const latestRun = await prisma.payrollRun.findFirst({
-                where: { organizationId, status: { in: ['APPROVED', 'PAID'] } },
-                orderBy: { createdAt: 'desc' },
-                select: { totalNet: true }
-            });
-            payrollTotal = Number(latestRun?.totalNet) || 0;
-        }
-
-        // Attendance rate: real clock-ins vs expected (employees * 22 working days/month)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const clockIns = await prisma.attendanceLog.count({
-            where: {
-                organizationId,
-                clockIn: { gte: thirtyDaysAgo },
-                ...(isExecutive ? {} : { employeeId: { in: employeeIds } })
-            }
-        });
-        const expectedDays = totalEmployees * 22;
-        const attendanceRate = expectedDays > 0
-            ? Math.min(100, Math.round((clockIns / expectedDays) * 100 * 10) / 10)
-            : 0;
-
-        // Team Performance (Average of current team's latest locked sheet)
-        const lockedSheets = await prisma.kpiSheet.groupBy({
-            by: ['employeeId'],
-            where: { 
-                organizationId, 
-                status: { in: ['LOCKED', 'SUBMITTED'] },
-                ...(isExecutive ? {} : { employeeId: { in: employeeIds } })
-            },
-            _avg: { totalScore: true }
-        });
-        const avgScores = lockedSheets.map(s => Number(s._avg.totalScore) || 0);
-        const teamPerf = avgScores.length ? avgScores.reduce((a, b) => a + b, 0) / avgScores.length : 0;
-
-        // Growth: real headcount per month (last 7 months) - Executives only
+        const today = new Date();
         const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const now = new Date();
-        const growth = isExecutive ? await Promise.all(
-            Array.from({ length: 7 }, (_, i) => {
-                const d = new Date(now.getFullYear(), now.getMonth() - (6 - i), 1);
-                const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
-                return prisma.user.count({
-                    where: { organizationId, status: { not: 'TERMINATED' }, joinDate: { lte: end }, role: { not: 'DEV' } }
-                }).then(value => ({ name: monthNames[d.getMonth()], value }));
-            })
-        ) : [];
 
-        // Strategy Phases (Dynamic based on current activities)
-        const activeCycle = await prisma.appraisalCycle.findFirst({
-            where: { organizationId, status: { in: ['ACTIVE', 'OPEN'] } }
-        });
-        const activeKpis = await prisma.kpiSheet.count({
-            where: { organizationId, status: 'ACTIVE' }
-        });
-        const activeAppraisals = await (prisma as any).appraisalPacket.count({
-            where: { organizationId, status: 'OPEN' }
-        });
+        // Phase 2: all independent metrics in one parallel round-trip
+        const [
+            activeLeaves,
+            pendingTasks,
+            pendingKpis,
+            pendingAppraisals,
+            latestRun,
+            clockIns,
+            approvedLeavesDays,
+            publicHolidays,
+            lockedSheets,
+            activeCycle,
+            activeKpis,
+            activeAppraisals,
+            appraisalStages,
+            team,
+            directTeam,
+            growth,
+        ] = await Promise.all([
+            prisma.leaveRequest.count({ where: { ...leaveWhere, status: 'APPROVED' } }),
+            prisma.leaveRequest.count({ where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } } }),
+            prisma.kpiSheet.count({ where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } } }),
+            (prisma as any).appraisalPacket.count({ where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] } }),
+            isExecutive
+                ? prisma.payrollRun.findFirst({ where: { organizationId, status: { in: ['APPROVED', 'PAID'] } }, orderBy: { createdAt: 'desc' }, select: { totalNet: true } })
+                : Promise.resolve(null),
+            prisma.attendanceLog.count({ where: { organizationId, clockIn: { gte: thirtyDaysAgo }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) } }),
+            prisma.leaveRequest.findMany({ where: { organizationId, status: 'APPROVED', startDate: { gte: thirtyDaysAgo } }, select: { leaveDays: true }, take: 500 }),
+            prisma.publicHoliday.count({ where: { date: { gte: thirtyDaysAgo } } }),
+            prisma.kpiSheet.groupBy({ by: ['employeeId'], where: { organizationId, status: { in: ['LOCKED', 'SUBMITTED'] }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) }, _avg: { totalScore: true } }),
+            prisma.appraisalCycle.findFirst({ where: { organizationId, status: { in: ['ACTIVE', 'OPEN'] } } }),
+            prisma.kpiSheet.count({ where: { organizationId, status: 'ACTIVE' } }),
+            (prisma as any).appraisalPacket.count({ where: { organizationId, status: 'OPEN' } }),
+            (prisma as any).appraisalPacket.groupBy({ by: ['currentStage'], where: { organizationId, status: 'OPEN' }, _count: true }),
+            prisma.user.findMany({ where: userWhere, orderBy: { rank: 'desc' }, take: 5, select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true } }),
+            prisma.user.findMany({ where: { organizationId, supervisorId: userId, status: 'ACTIVE' }, orderBy: { rank: 'desc' }, select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true } }),
+            isExecutive
+                ? Promise.all(Array.from({ length: 7 }, (_, i) => {
+                    const d = new Date(today.getFullYear(), today.getMonth() - (6 - i), 1);
+                    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+                    return prisma.user.count({ where: { organizationId, status: { not: 'TERMINATED' }, joinDate: { lte: end }, role: { not: 'DEV' } } })
+                        .then(value => ({ name: monthNames[d.getMonth()], value }));
+                }))
+                : Promise.resolve([] as { name: string; value: number }[]),
+        ]);
+
+        // Derive scalar metrics
+        const payrollTotal = Number((latestRun as any)?.totalNet) || 0;
+
+        let workingDays = 0;
+        for (let d = new Date(thirtyDaysAgo); d <= today; d.setDate(d.getDate() + 1)) {
+            const day = d.getDay();
+            if (day !== 0 && day !== 6) workingDays++;
+        }
+        const totalApprovedLeaveDays = (approvedLeavesDays as { leaveDays: any }[]).reduce((s, r) => s + Number(r.leaveDays || 0), 0);
+        const expectedDays = Math.max(1, totalEmployees * Math.max(1, workingDays - (publicHolidays as number)) - totalApprovedLeaveDays);
+        const attendanceRate = Math.min(100, Math.round(((clockIns as number) / expectedDays) * 100 * 10) / 10);
+
+        const avgScores = (lockedSheets as { _avg: { totalScore: any } }[]).map(s => Number(s._avg.totalScore) || 0);
+        const teamPerf = avgScores.length ? Math.round((avgScores.reduce((a, b) => a + b, 0) / avgScores.length) * 10) / 10 : 0;
 
         const strategyPhases = [
             { label: 'corp_strategy', status: activeCycle ? 'active' : 'pending' },
-            { label: 'operational', status: activeKpis > 0 ? 'active' : 'pending' },
-            { label: 'execution', status: activeAppraisals > 0 ? 'active' : 'pending' }
+            { label: 'operational', status: (activeKpis as number) > 0 ? 'active' : 'pending' },
+            { label: 'execution', status: (activeAppraisals as number) > 0 ? 'active' : 'pending' },
         ];
 
-        // Growth Phases (Aggregate of all active appraisals)
-        const appraisalStages = await (prisma as any).appraisalPacket.groupBy({
-            by: ['currentStage'],
-            where: { organizationId, status: 'OPEN' },
-            _count: true
-        });
-
-        const hasSelf = appraisalStages.some((s: any) => s.currentStage === 'SELF_REVIEW');
-        const hasManager = appraisalStages.some((s: any) => s.currentStage === 'MANAGER_REVIEW' || s.currentStage === 'HR_REVIEW');
-        const hasFinal = appraisalStages.some((s: any) => s.currentStage === 'FINAL_SIGN_OFF');
-
+        const hasSelf = (appraisalStages as any[]).some(s => s.currentStage === 'SELF_REVIEW');
+        const hasManager = (appraisalStages as any[]).some(s => s.currentStage === 'MANAGER_REVIEW' || s.currentStage === 'HR_REVIEW');
+        const hasFinal = (appraisalStages as any[]).some(s => s.currentStage === 'FINAL_SIGN_OFF');
         const growthPhases = [
-            { label: 'self_review', status: hasSelf ? 'active' : (activeAppraisals > 0 && !hasSelf ? 'done' : 'pending') },
-            { label: 'alignment', status: hasManager ? 'active' : (activeAppraisals > 0 && hasFinal ? 'done' : 'pending') },
-            { label: 'final_verdict', status: hasFinal ? 'active' : 'pending' }
+            { label: 'self_review', status: hasSelf ? 'active' : ((activeAppraisals as number) > 0 && !hasSelf ? 'done' : 'pending') },
+            { label: 'alignment', status: hasManager ? 'active' : ((activeAppraisals as number) > 0 && hasFinal ? 'done' : 'pending') },
+            { label: 'final_verdict', status: hasFinal ? 'active' : 'pending' },
         ];
 
-        const team = await prisma.user.findMany({
-            where: userWhere,
-            orderBy: { rank: 'desc' },
-            take: 5,
-            select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
-        });
-
-        // 🌟 Direct reports metrics for hybrid executive managers (e.g. IT Admin/Manager, HR Manager, Finance Manager)
-        const directTeam = await prisma.user.findMany({
-            where: { organizationId, supervisorId: userId, status: 'ACTIVE' },
-            orderBy: { rank: 'desc' },
-            select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true }
-        });
-        const hasDirectReports = directTeam.length > 0;
-
+        const hasDirectReports = (directTeam as any[]).length > 0;
         let directTeamPerf = 0;
         if (hasDirectReports) {
-            const directEmployeeIds = directTeam.map(u => u.id);
+            const directEmployeeIds = (directTeam as { id: string }[]).map(u => u.id);
             const directLockedSheets = await prisma.kpiSheet.groupBy({
                 by: ['employeeId'],
-                where: { 
-                    organizationId, 
-                    status: { in: ['LOCKED', 'SUBMITTED'] },
-                    employeeId: { in: directEmployeeIds }
-                },
-                _avg: { totalScore: true }
+                where: { organizationId, status: { in: ['LOCKED', 'SUBMITTED'] }, employeeId: { in: directEmployeeIds } },
+                _avg: { totalScore: true },
             });
             const directAvgScores = directLockedSheets.map(s => Number(s._avg.totalScore) || 0);
-            directTeamPerf = directAvgScores.length ? directAvgScores.reduce((a, b) => a + b, 0) / directAvgScores.length : 0;
+            directTeamPerf = directAvgScores.length
+                ? Math.round((directAvgScores.reduce((a, b) => a + b, 0) / directAvgScores.length) * 10) / 10
+                : 0;
         }
 
-        res.json({ 
-            totalEmployees, 
-            activeLeaves, 
-            pendingTasks: pendingTasks + pendingKpis + pendingAppraisals, 
-            payrollTotal, 
-            attendanceRate, 
+        res.json({
+            totalEmployees,
+            activeLeaves,
+            pendingTasks: (pendingTasks as number) + (pendingKpis as number) + (pendingAppraisals as number),
+            payrollTotal,
+            attendanceRate,
             growth,
             teamPerf,
             strategyPhases,
@@ -204,7 +174,7 @@ export class AnalyticsController {
             team,
             directTeam,
             directTeamPerf,
-            hasDirectReports
+            hasDirectReports,
         });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
@@ -239,64 +209,59 @@ export class AnalyticsController {
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
         const userId = user.id;
 
-        // 1. Overall Performance (Average of all completed KPI Sheets)
-        const sheets = await prisma.kpiSheet.findMany({
-            where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL', 'ACTIVE'] } },
-            select: { totalScore: true }
-        });
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const today = new Date();
+
+        // All personal stat queries are independent — run in parallel
+        const [sheets, clockIns, userRec, latestSheet, personalPacket, activeLeave] = await Promise.all([
+            prisma.kpiSheet.findMany({
+                where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL', 'ACTIVE'] } },
+                select: { totalScore: true },
+            }),
+            prisma.attendanceLog.count({
+                where: { employeeId: userId, organizationId, clockIn: { gte: thirtyDaysAgo } },
+            }),
+            prisma.user.findFirst({
+                where: { id: userId, organizationId },
+                select: { leaveBalance: true, leaveAllowance: true },
+            }),
+            prisma.kpiSheet.findFirst({
+                where: { employeeId: userId, organizationId },
+                orderBy: [{ year: 'desc' }, { month: 'desc' }],
+                include: { items: true },
+            }),
+            (prisma as any).appraisalPacket.findFirst({
+                where: { employeeId: userId, organizationId },
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.leaveRequest.findFirst({
+                where: { employeeId: userId, status: 'APPROVED', startDate: { lte: today }, endDate: { gte: today } },
+            }),
+        ]);
+
         const perfScores = sheets.map(s => Number(s.totalScore) || 0);
         const overallPerformance = perfScores.length ? perfScores.reduce((a, b) => a + b, 0) / perfScores.length : 0;
 
-        // 2. Attendance Rate (Last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const clockIns = await prisma.attendanceLog.count({
-            where: { employeeId: userId, organizationId, clockIn: { gte: thirtyDaysAgo } }
-        });
-        const expectedDays = 22; // Approx working days in a month
-        const attendanceRate = Math.min(100, (clockIns / expectedDays) * 100);
+        // Attendance rate: working days in the last 30 days (excluding weekends)
+        let workingDays = 0;
+        for (let d = new Date(thirtyDaysAgo); d <= today; d.setDate(d.getDate() + 1)) {
+            const day = d.getDay();
+            if (day !== 0 && day !== 6) workingDays++;
+        }
+        const attendanceRate = Math.min(100, (clockIns / Math.max(1, workingDays)) * 100);
 
-        // 3. Leave Balance
-        const userRec = await prisma.user.findFirst({
-            where: { id: userId, organizationId },
-            select: { leaveBalance: true, leaveAllowance: true }
-        });
-
-        // 4. My Active Goals (Items from the most recent active/pending sheet)
-        const latestSheet = await prisma.kpiSheet.findFirst({
-            where: { employeeId: userId, organizationId },
-            orderBy: [{ year: 'desc' }, { month: 'desc' }],
-            include: { items: true }
-        });
-
-        const activeGoals = latestSheet ? latestSheet.items.map(item => ({
+        const activeGoals = latestSheet ? latestSheet.items.map((item: any) => ({
             name: item.name || item.description,
             progress: Number(item.targetValue) > 0 ? Math.min(100, Math.round((Number(item.actualValue) / Number(item.targetValue)) * 100)) : 0,
-            color: 'var(--primary)' // Dynamic theme color
-        })).slice(0, 4) : []; // Limit to top 4 for dashboard
-
-        // 5. Strategic & Growth Journeys
-        const personalPacket = await (prisma as any).appraisalPacket.findFirst({
-            where: { employeeId: userId, organizationId },
-            orderBy: { createdAt: 'desc' }
-        });
+            color: 'var(--primary)',
+        })).slice(0, 4) : [];
 
         const journeyPhases = [
             { label: 'self_review', status: personalPacket?.currentStage === 'SELF_REVIEW' ? 'active' : (personalPacket && personalPacket.currentStage !== 'SELF_REVIEW' ? 'done' : 'pending') },
             { label: 'alignment', status: (personalPacket?.currentStage === 'MANAGER_REVIEW' || personalPacket?.currentStage === 'HR_REVIEW') ? 'active' : (personalPacket && ['FINAL_SIGN_OFF', 'COMPLETED'].includes(personalPacket.currentStage) ? 'done' : 'pending') },
-            { label: 'final_verdict', status: personalPacket?.currentStage === 'FINAL_SIGN_OFF' ? 'active' : (personalPacket?.status === 'COMPLETED' ? 'done' : 'pending') }
+            { label: 'final_verdict', status: personalPacket?.currentStage === 'FINAL_SIGN_OFF' ? 'active' : (personalPacket?.status === 'COMPLETED' ? 'done' : 'pending') },
         ];
-
-        // 6. Check if user is currently on leave (Out of Office)
-        const today = new Date();
-        const activeLeave = await prisma.leaveRequest.findFirst({
-            where: {
-                employeeId: userId,
-                status: 'APPROVED',
-                startDate: { lte: today },
-                endDate: { gte: today },
-            },
-        });
 
         res.json({
             overallPerformance: Math.round(overallPerformance * 10) / 10,

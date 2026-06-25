@@ -140,11 +140,11 @@ export const executeTool = async (name: string, args: any, user: any) => {
         reason: args.reason || 'Requested via Cortex AI',
         relieverId: args.relieverId || null
       });
-      return { 
-        status: 'SUCCESS', 
+      return {
+        status: 'SUCCESS',
         message: 'Leave request created and pending approval',
-        requestId: newLeave.id,
-        days: newLeave.leaveDays 
+        requestId: newLeave.leave.id,
+        days: newLeave.leave.leaveDays
       };
 
     case 'schedule_calendar_event':

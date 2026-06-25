@@ -99,8 +99,8 @@ export class InboxService {
         // 3c. MD/Final Review (Targeted to MD Rank 90+)
         const isMDAction = l.status === 'MD_REVIEW' && userRank >= 90;
   
-        // 3d. HR Review (Targeted to HR Rank 75+)
-        const isHRAction = l.status === 'HR_REVIEW' && userRank >= 75;
+        // 3d. HR Review (Targeted to HR Rank 80+)
+        const isHRAction = l.status === 'HR_REVIEW' && userRank >= 80;
 
         if (isManagerAction || isMDAction || isHRAction) {
           actions.push({
