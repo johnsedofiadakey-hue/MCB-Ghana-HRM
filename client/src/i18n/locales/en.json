@@ -60,6 +60,7 @@
     "confirm_delete": "Delete this?",
     "success": "Success",
     "error": "Error",
+    "fill_required": "Please complete all required fields before submitting.",
     "actions": "Actions",
     "manager": "Manager",
     "saving": "Saving...",
@@ -127,7 +128,34 @@
     "profile_label": "My Profile",
     "enterprise_suite_label": "Business Tools",
     "final_verdict_label": "Final Decision",
-    "promotions_label": "Promotions"
+    "promotions_label": "Promotions",
+    "action_failed": "Action failed",
+    "all": "All",
+    "approve": "Approve",
+    "attendance": "Attendance",
+    "confirm_delete_title": "Confirm Deletion",
+    "deactivate": "Deactivate",
+    "delete_success": "Deleted successfully",
+    "delete_warning": "This action cannot be undone.",
+    "deletion_failed": "Deletion failed",
+    "departments": "Departments",
+    "employee": "Employee",
+    "export_error": "Export failed",
+    "force_logout": "Force Logout",
+    "generated_on": "Generated on",
+    "load_more": "Load More",
+    "maintenance_active": "Maintenance Mode Active",
+    "no_data_available": "No data available",
+    "official_document": "Official Document",
+    "performance": "Performance",
+    "permanent_action": "This is a permanent action.",
+    "processing": "Processing...",
+    "profile": "Profile",
+    "reject": "Reject",
+    "review_failed": "Review failed",
+    "settings": "Settings",
+    "sync_failed": "Sync failed",
+    "update_failed": "Update failed"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -148,7 +176,9 @@
     "intro_desc": "Access your employee portal to manage work, view payslips, and track your performance.",
     "greeting_morning": "Good Morning",
     "greeting_afternoon": "Good Afternoon",
-    "greeting_evening": "Good Evening"
+    "greeting_evening": "Good Evening",
+    "sign_in_failed": "Sign-in failed",
+    "sign_in_success": "Signed in successfully"
   },
   "department_details": {
     "no_manager": "No Manager",
@@ -166,7 +196,8 @@
     "edit_unit": "Edit Unit",
     "unit_name": "Unit Name",
     "unit_manager": "Unit Manager",
-    "assign_prompt": "Leader Assignment Pending"
+    "assign_prompt": "Leader Assignment Pending",
+    "active_count": "Active Employees"
   },
   "DEPARTMENTS": {
     "MEMBERS": "Department Employees",
@@ -266,7 +297,8 @@
       "MID_MANAGER": "Mid Manager",
       "SUPERVISOR": "Supervisor",
       "STAFF": "Staff Member",
-      "CASUAL": "Casual Worker"
+      "CASUAL": "Casual Worker",
+      "EMPLOYEE": "Staff"
     },
     "statuses": {
       "ACTIVE": "Active",
@@ -305,7 +337,36 @@
     },
     "single": "Single",
     "married": "Married",
-    "divorced": "Divorced"
+    "divorced": "Divorced",
+    "academic_placeholder": "e.g. BSc Computer Science, University of Ghana",
+    "access_restricted": "Access restricted",
+    "account_placeholder": "e.g. 1234567890",
+    "add_new": "Add Employee",
+    "address_placeholder": "e.g. 12 Liberation Road, Accra",
+    "all_departments": "All Departments",
+    "bank_placeholder": "e.g. GCB Bank",
+    "branch_placeholder": "e.g. Accra Main Branch",
+    "bulk_print_ids": "Bulk Print ID Cards",
+    "contact_person_placeholder": "e.g. Jane Doe",
+    "country_placeholder": "e.g. Ghana",
+    "dept": "Department",
+    "dossier_updated_success": "Employee record updated successfully",
+    "emergency_phone": "Emergency Contact Number",
+    "export_dossier": "Export Record",
+    "id_placeholder": "e.g. GHA-XXXXXXXXX-X",
+    "imagery_desc": "Upload a professional identification photo. Recommended aspect ratio is 1:1 (Square) for optimal rendering across the platform.",
+    "legal_full_name": "Legal Full Name",
+    "matrix_manager_desc": "Optional secondary reporting line for matrix/dotted-line management",
+    "nationality_placeholder": "e.g. Ghanaian",
+    "next_of_kin_placeholder": "e.g. Spouse, Parent, Sibling",
+    "no_photo_alert": "Please upload a profile photo before printing the ID card",
+    "personnel_deployment_success": "Employee added successfully",
+    "phone_placeholder": "e.g. +233 24 000 0000",
+    "profile_imagery": "Profile Imagery",
+    "relation_placeholder": "e.g. Spouse",
+    "relationship": "Relationship",
+    "ssn_placeholder": "e.g. P-000000000-0",
+    "supervisor_reporting_rule": "Supervisors must be assigned to a reporting manager"
   },
   "leave": {
     "title": "Leave Management",
@@ -436,7 +497,8 @@
       "MD_REVIEW": "Awaiting MD approval",
       "MD_REJECTED": "MD declined",
       "APPROVED": "Approved",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "ON_LEAVE": "On Leave"
     },
     "alerts": {
       "initiate_success": "Leave request submitted for HR review.",
@@ -458,7 +520,21 @@
     "decommission_btn": "Cancel Request",
     "stage_final": "FINAL REVIEW",
     "stage_initial": "INITIAL REVIEW",
-    "stage_label": "STAGE"
+    "stage_label": "STAGE",
+    "accepted_on": "Accepted on",
+    "admin_controls": "Admin Controls",
+    "covered_by": "Covered by",
+    "covering_for": "Covering for",
+    "handover_personnel": "Handover Personnel",
+    "handover_status": "Handover Status",
+    "leave_timeline": "Leave Timeline",
+    "no_handover_records": "No handover records found",
+    "no_nodes_found": "No records found",
+    "no_reason_provided": "No reason provided",
+    "notes": "Notes",
+    "organization_register": "Organization Register",
+    "personnel": "Personnel",
+    "type": "Leave Type"
   },
   "performance": {
     "title": "Performance",
@@ -579,7 +655,8 @@
       "target": "Target",
       "details": "Details",
       "ip_address": "IP Address"
-    }
+    },
+    "export_csv": "Export CSV"
   },
   "holidays": {
     "title": "Holiday",
@@ -598,7 +675,8 @@
     "cancel": "Cancel",
     "save": "Add Holiday",
     "saving": "Saving...",
-    "delete_confirm": "Delete this holiday?"
+    "delete_confirm": "Delete this holiday?",
+    "seed_ghana": "Seed Ghana Public Holidays"
   },
   "payroll": {
     "title": "Payroll",
@@ -638,7 +716,8 @@
       "baseline": "Base Salary",
       "adjustments": "Changes",
       "fiscal_withholding": "Tax Kept",
-      "net_payout": "Net Pay"
+      "net_payout": "Net Pay",
+      "bonuses": "Bonuses"
     },
     "no_adj": "NO CHANGES",
     "adjustment_suite": "Changes for {{name}}",
@@ -663,7 +742,30 @@
     "initiation_failure": "Start failed",
     "labels": {
       "net_deductions": "Total Deductions"
-    }
+    },
+    "add_tax_band": "Add Tax Band",
+    "cycles": "Payroll Cycles",
+    "gross_total": "Gross Total",
+    "history_title": "Payroll History",
+    "list_title": "Payroll Runs",
+    "my_payslips": "My Payslips",
+    "my_payslips_title": "My Payslips",
+    "net_payout": "Net Payout",
+    "net_total": "Net Total Paid",
+    "new_run": "New Payroll Run",
+    "no_payslips": "No payslips found",
+    "paye_bands": "PAYE Tax Bands",
+    "payouts": "Payouts",
+    "reset_bands": "Reset to Default Bands",
+    "select_cycle": "Select a Cycle",
+    "select_cycle_tip": "Choose a payroll cycle to view its summary",
+    "ssnit_employee": "SSNIT (Employee)",
+    "ssnit_employer": "SSNIT (Employer)",
+    "start_run": "Start Run",
+    "starting": "Starting...",
+    "summary": "Summary",
+    "summary_title": "Payroll Summary",
+    "tax_social_security": "Tax & Social Security"
   },
   "appraisals": {
     "title": "Performance History",
@@ -864,7 +966,8 @@
       "file_expense": "Add Expense",
       "get_support": "Get Help",
       "employee_exit": "Staff Leaving",
-      "system_boost": "Speed Up"
+      "system_boost": "Speed Up",
+      "view_all": "View All"
     },
     "pulse_advisor": "Suggestions",
     "strategic_gap": "Small Problem",
@@ -882,7 +985,11 @@
     "threats": "Risk",
     "none": "None",
     "interaction_stream": "Recent Activity",
-    "real_time_telemetry": "Live Activity Feed"
+    "real_time_telemetry": "Live Activity Feed",
+    "efficiency": "Efficiency",
+    "efficiency_metrics": "Efficiency Metrics",
+    "intelligence": "Intelligence",
+    "strategic_shortcuts": "Strategic Shortcuts"
   },
   "settings": {
     "title": "Settings",
@@ -1002,7 +1109,15 @@
       "textMuted": "Pale Text",
       "sidebarBg": "Sidebar",
       "sidebarActive": "Active Item",
-      "sidebarText": "Active Text"
+      "sidebarText": "Active Text",
+      "bgElevated": "Elevated Background",
+      "bgInput": "Input Background",
+      "borderSubtle": "Subtle Border",
+      "error": "Error Color",
+      "info": "Info Color",
+      "success": "Success Color",
+      "textInverse": "Inverse Text",
+      "warning": "Warning Color"
     },
     "labels": {
       "company_name": "Company Name",
@@ -1014,8 +1129,20 @@
       "country": "Country",
       "company_logo": "Logo",
       "system_currency": "Currency",
-      "default_vat_rate": "VAT Rate (%)"
-    }
+      "default_vat_rate": "VAT Rate (%)",
+      "global_allowance": "Global Leave Allowance"
+    },
+    "ai_assistant": "AI Assistant",
+    "allow_borrowing": "Allow Leave Borrowing",
+    "allow_carry_forward": "Allow Carry-Forward",
+    "allowance_hint": "Default annual leave days granted to new employees",
+    "allowance_subhint": "Can be overridden per employee",
+    "integrations": "Integrations",
+    "integrations_desc": "Connect third-party services and APIs",
+    "leave_policy": "Leave Policy",
+    "leave_policy_desc": "Configure how leave accrues and carries over",
+    "manage_policy": "Manage Policy",
+    "mcb_ai_engine": "MCB AI Engine"
   },
   "org_chart": {
     "title": "Company Chart",
@@ -1025,7 +1152,9 @@
     "linear": "List View",
     "retrieving": "Loading...",
     "no_data": "No chart info",
-    "team_size": "Team Size"
+    "team_size": "Team Size",
+    "dotted_line": "Dotted-line Report",
+    "matrix_reports": "Matrix Reports"
   },
   "inbox": {
     "title": "Inbox",
@@ -1099,7 +1228,9 @@
       "Good": "Good",
       "Fair": "Okay",
       "Poor": "Bad"
-    }
+    },
+    "actions": "Actions",
+    "serial_registry": "Serial Registry"
   },
   "finance": {
     "title": "Finance",
@@ -1124,7 +1255,6 @@
       "REJECTED": "Rejected",
       "PAID": "Paid",
       "RELEASED": "Released",
-      "REJECTED": "Rejected",
       "VOIDED": "Voided"
     },
     "horizon": "Time",
@@ -1221,7 +1351,9 @@
     "team": "Team",
     "focus": "Focus",
     "view_all": "View All",
-    "assign": "Assign"
+    "assign": "Assign",
+    "active_headcount": "Active Headcount",
+    "view_team": "View Team"
   },
   "employee_dashboard": {
     "title": "My Workspace",
@@ -1281,7 +1413,8 @@
       "LATE": "Late",
       "ON_LEAVE": "On Leave",
       "OFF_DUTY": "Off Duty"
-    }
+    },
+    "error_export": "Failed to export attendance data"
   },
   "training": {
     "title": "Training",
@@ -1340,6 +1473,15 @@
       "abort": "Cancel",
       "max_load": "FULL",
       "limit_reached": "No Seats Left"
+    },
+    "table": {
+      "action": "Action",
+      "body": "Provider",
+      "flexible": "Flexible",
+      "header": "Programme",
+      "horizon": "Duration",
+      "load": "Capacity",
+      "state": "Status"
     }
   },
   "it_admin": {
@@ -1716,7 +1858,36 @@
     "cascade": "Share with Team",
     "dismiss": "Close",
     "log_progress": "Log Work",
-    "finalize": "Approve and Close"
+    "finalize": "Approve and Close",
+    "acknowledge_success": "Acknowledged successfully",
+    "active_assignments": "Active Assignments",
+    "all_departments": "All Departments",
+    "assign_subtitle": "Assign a new objective to a team member",
+    "assign_title": "Assign Objective",
+    "assignee_required": "Please select an assignee",
+    "clarification_requested": "Clarification requested",
+    "collapse": "Collapse",
+    "comment_required": "A comment is required",
+    "delete_confirm_title": "Delete this objective?",
+    "dept_objectives": "Department Objectives",
+    "edit_subtitle": "Update the objective details",
+    "edit_title": "Edit Objective",
+    "error_save": "Failed to save objective",
+    "general": "General",
+    "goals_count": "Goals",
+    "indiv_performance": "Individual Performance",
+    "metrics_title_required": "Key result title is required",
+    "no_targets_assigned": "No objectives assigned",
+    "no_targets_desc": "Objectives assigned to you will appear here",
+    "no_team_desc": "Objectives assigned to your team will appear here",
+    "no_team_targets": "No team objectives",
+    "progress_update_hint": "Update the current value for this key result",
+    "progress_update_title": "Update Progress",
+    "status_label": "Status",
+    "success_create": "Objective created successfully",
+    "success_update": "Objective updated successfully",
+    "title_required": "Title is required",
+    "update_target_btn": "Update Objective"
   },
   "data_management": {
     "title": "Data",
@@ -1794,5 +1965,19 @@
     "approve": "Approve",
     "reject": "Reject",
     "hr_comment": "HR/MD Comment"
+  },
+  "announcements": {
+    "post": "Create Dispatch"
+  },
+  "notifications": {
+    "delete_failed": "Failed to delete notification",
+    "inbox_clear": "Inbox cleared",
+    "mark_all_failed": "Failed to mark all as read",
+    "mark_failed": "Failed to mark as read",
+    "no_notifications": "No notifications",
+    "syncing_inbox": "Syncing inbox..."
+  },
+  "recruitment": {
+    "no_jobs": "No job openings found"
   }
 }

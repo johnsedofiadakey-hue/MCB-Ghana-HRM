@@ -60,6 +60,7 @@
     "confirm_delete": "Supprimer ceci ?",
     "success": "Succès",
     "error": "Erreur",
+    "fill_required": "Veuillez remplir tous les champs obligatoires avant de soumettre.",
     "actions": "Actions",
     "manager": "Chef",
     "saving": "Enregistrement...",
@@ -127,7 +128,34 @@
     "profile_label": "Mon Profil",
     "enterprise_suite_label": "Outils Business",
     "final_verdict_label": "Décision Finale",
-    "promotions_label": "Promotions"
+    "promotions_label": "Promotions",
+    "action_failed": "L'action a échoué",
+    "all": "Tous",
+    "approve": "Approuver",
+    "attendance": "Présence",
+    "confirm_delete_title": "Confirmer la suppression",
+    "deactivate": "Désactiver",
+    "delete_success": "Supprimé avec succès",
+    "delete_warning": "Cette action est irréversible.",
+    "deletion_failed": "Échec de la suppression",
+    "departments": "Départements",
+    "employee": "Employé",
+    "export_error": "Échec de l'exportation",
+    "force_logout": "Déconnexion forcée",
+    "generated_on": "Généré le",
+    "load_more": "Charger plus",
+    "maintenance_active": "Mode maintenance actif",
+    "no_data_available": "Aucune donnée disponible",
+    "official_document": "Document officiel",
+    "performance": "Performance",
+    "permanent_action": "Cette action est permanente.",
+    "processing": "Traitement en cours...",
+    "profile": "Profil",
+    "reject": "Rejeter",
+    "review_failed": "Échec de la révision",
+    "settings": "Paramètres",
+    "sync_failed": "Échec de la synchronisation",
+    "update_failed": "Échec de la mise à jour"
   },
   "auth": {
     "sign_in": "Se Connecter",
@@ -148,7 +176,9 @@
     "intro_desc": "Accédez à votre portail employé pour gérer votre travail, consulter vos bulletins de paie et suivre vos performances.",
     "greeting_morning": "Bonjour",
     "greeting_afternoon": "Bon après-midi",
-    "greeting_evening": "Bonsoir"
+    "greeting_evening": "Bonsoir",
+    "sign_in_failed": "Échec de la connexion",
+    "sign_in_success": "Connexion réussie"
   },
   "department_details": {
     "no_manager": "Pas de Chef",
@@ -166,7 +196,8 @@
     "edit_unit": "Modifier l'Unité",
     "unit_name": "Nom de l'Unité",
     "unit_manager": "Chef d'Unité",
-    "assign_prompt": "En attente d'assignation du chef"
+    "assign_prompt": "En attente d'assignation du chef",
+    "active_count": "Employés actifs"
   },
   "DEPARTMENTS": {
     "MEMBERS": "Membres du Département",
@@ -266,7 +297,8 @@
       "MID_MANAGER": "Cadre Intermédiaire",
       "SUPERVISOR": "Superviseur",
       "STAFF": "Membre",
-      "CASUAL": "Occasionnel"
+      "CASUAL": "Occasionnel",
+      "EMPLOYEE": "Personnel"
     },
     "statuses": {
       "ACTIVE": "ACTIF",
@@ -305,7 +337,36 @@
     },
     "single": "Célibataire",
     "married": "Marié(e)",
-    "divorced": "Divorcé(e)"
+    "divorced": "Divorcé(e)",
+    "academic_placeholder": "ex. Licence en informatique, Université du Ghana",
+    "access_restricted": "Accès restreint",
+    "account_placeholder": "ex. 1234567890",
+    "add_new": "Ajouter un employé",
+    "address_placeholder": "ex. 12 Liberation Road, Accra",
+    "all_departments": "Tous les départements",
+    "bank_placeholder": "ex. GCB Bank",
+    "branch_placeholder": "ex. Agence principale d’Accra",
+    "bulk_print_ids": "Impression groupée des cartes d'identité",
+    "contact_person_placeholder": "ex. Jane Doe",
+    "country_placeholder": "ex. Ghana",
+    "dept": "Département",
+    "dossier_updated_success": "Dossier de l'employé mis à jour avec succès",
+    "emergency_phone": "Numéro de contact d'urgence",
+    "export_dossier": "Exporter le dossier",
+    "id_placeholder": "ex. GHA-XXXXXXXXX-X",
+    "imagery_desc": "Téléchargez une photo d'identité professionnelle. Le format carré (1:1) est recommandé pour un rendu optimal sur la plateforme.",
+    "legal_full_name": "Nom complet légal",
+    "matrix_manager_desc": "Ligne hiérarchique secondaire facultative pour la gestion matricielle",
+    "nationality_placeholder": "ex. Ghanéenne",
+    "next_of_kin_placeholder": "ex. Conjoint, Parent, Frère/Sœur",
+    "no_photo_alert": "Veuillez télécharger une photo de profil avant d'imprimer la carte",
+    "personnel_deployment_success": "Employé ajouté avec succès",
+    "phone_placeholder": "ex. +233 24 000 0000",
+    "profile_imagery": "Photo de profil",
+    "relation_placeholder": "ex. Conjoint",
+    "relationship": "Relation",
+    "ssn_placeholder": "ex. P-000000000-0",
+    "supervisor_reporting_rule": "Les superviseurs doivent être rattachés à un responsable hiérarchique"
   },
   "leave": {
     "title": "Gestion des Congés",
@@ -436,7 +497,8 @@
       "MD_REVIEW": "Révision Direction",
       "MD_REJECTED": "Refusé par Direction",
       "APPROVED": "Approuvé",
-      "CANCELLED": "Annulé"
+      "CANCELLED": "Annulé",
+      "ON_LEAVE": "En congé"
     },
     "alerts": {
       "initiate_success": "Demande envoyée",
@@ -458,7 +520,21 @@
     "decommission_btn": "Annuler la Demande",
     "stage_final": "Finale",
     "stage_initial": "Initiale",
-    "stage_label": "Étape"
+    "stage_label": "Étape",
+    "accepted_on": "Accepté le",
+    "admin_controls": "Contrôles administratifs",
+    "covered_by": "Couvert par",
+    "covering_for": "En remplacement de",
+    "handover_personnel": "Personnel de relève",
+    "handover_status": "Statut de la relève",
+    "leave_timeline": "Chronologie du congé",
+    "no_handover_records": "Aucun enregistrement de relève trouvé",
+    "no_nodes_found": "Aucun enregistrement trouvé",
+    "no_reason_provided": "Aucune raison fournie",
+    "notes": "Remarques",
+    "organization_register": "Registre de l'organisation",
+    "personnel": "Personnel",
+    "type": "Type de congé"
   },
   "performance": {
     "title": "Performance",
@@ -579,7 +655,8 @@
       "target": "Cible",
       "details": "Détails",
       "ip_address": "Adresse IP"
-    }
+    },
+    "export_csv": "Exporter en CSV"
   },
   "holidays": {
     "title": "Calendrier des Fêtes",
@@ -598,7 +675,8 @@
     "cancel": "Annuler",
     "save": "Ajouter le Jour Férié",
     "saving": "Enregistrement...",
-    "delete_confirm": "Supprimer ce jour férié ?"
+    "delete_confirm": "Supprimer ce jour férié ?",
+    "seed_ghana": "Importer les jours fériés du Ghana"
   },
   "payroll": {
     "title": "Paie",
@@ -638,7 +716,8 @@
       "baseline": "Base",
       "adjustments": "Ajustements",
       "fiscal_withholding": "Impôt Retenu",
-      "net_payout": "Total Net"
+      "net_payout": "Total Net",
+      "bonuses": "Primes"
     },
     "no_adj": "AUCUN AJUST.",
     "adjustment_suite": "Ajustements",
@@ -663,7 +742,30 @@
     "initiation_failure": "Échec du lancement",
     "labels": {
       "net_deductions": "Total déductions"
-    }
+    },
+    "add_tax_band": "Ajouter une tranche fiscale",
+    "cycles": "Cycles de paie",
+    "gross_total": "Total brut",
+    "history_title": "Historique de paie",
+    "list_title": "Cycles de traitement",
+    "my_payslips": "Mes fiches de paie",
+    "my_payslips_title": "Mes fiches de paie",
+    "net_payout": "Montant net versé",
+    "net_total": "Total net payé",
+    "new_run": "Nouveau cycle de paie",
+    "no_payslips": "Aucune fiche de paie trouvée",
+    "paye_bands": "Tranches d'imposition PAYE",
+    "payouts": "Versements",
+    "reset_bands": "Réinitialiser les tranches par défaut",
+    "select_cycle": "Sélectionner un cycle",
+    "select_cycle_tip": "Choisissez un cycle de paie pour voir son résumé",
+    "ssnit_employee": "SSNIT (Employé)",
+    "ssnit_employer": "SSNIT (Employeur)",
+    "start_run": "Démarrer le cycle",
+    "starting": "Démarrage...",
+    "summary": "Résumé",
+    "summary_title": "Résumé de la paie",
+    "tax_social_security": "Impôts et sécurité sociale"
   },
   "appraisals": {
     "title": "Historique",
@@ -864,7 +966,8 @@
       "file_expense": "Nouvelle Dépense",
       "get_support": "Demander Aide",
       "employee_exit": "Départ Staff",
-      "system_boost": "Accélérer"
+      "system_boost": "Accélérer",
+      "view_all": "Tout afficher"
     },
     "pulse_advisor": "Suggestions",
     "strategic_gap": "Petit problème",
@@ -882,7 +985,11 @@
     "threats": "Menaces",
     "none": "Aucune",
     "interaction_stream": "Flux d'Interaction",
-    "real_time_telemetry": "Télémétrie en temps réel"
+    "real_time_telemetry": "Télémétrie en temps réel",
+    "efficiency": "Efficacité",
+    "efficiency_metrics": "Indicateurs d'efficacité",
+    "intelligence": "Analyse",
+    "strategic_shortcuts": "Raccourcis stratégiques"
   },
   "settings": {
     "title": "Paramètres",
@@ -1002,7 +1109,15 @@
       "textMuted": "Texte 3",
       "sidebarBg": "Barre lat.",
       "sidebarActive": "Actif",
-      "sidebarText": "Texte Actif"
+      "sidebarText": "Texte Actif",
+      "bgElevated": "Arrière-plan surélevé",
+      "bgInput": "Arrière-plan des champs",
+      "borderSubtle": "Bordure subtile",
+      "error": "Couleur d'erreur",
+      "info": "Couleur d'information",
+      "success": "Couleur de succès",
+      "textInverse": "Texte inversé",
+      "warning": "Couleur d'avertissement"
     },
     "labels": {
       "company_name": "Nom de l'Entreprise",
@@ -1014,8 +1129,20 @@
       "country": "Pays",
       "company_logo": "Logo",
       "system_currency": "Devise",
-      "default_vat_rate": "Taux TVA (%)"
-    }
+      "default_vat_rate": "Taux TVA (%)",
+      "global_allowance": "Allocation de congé globale"
+    },
+    "ai_assistant": "Assistant IA",
+    "allow_borrowing": "Autoriser l'emprunt de congés",
+    "allow_carry_forward": "Autoriser le report",
+    "allowance_hint": "Jours de congé annuel par défaut accordés aux nouveaux employés",
+    "allowance_subhint": "Peut être personnalisé par employé",
+    "integrations": "Intégrations",
+    "integrations_desc": "Connecter des services et API tiers",
+    "leave_policy": "Politique de congés",
+    "leave_policy_desc": "Configurer l’accumulation et le report des congés",
+    "manage_policy": "Gérer la politique",
+    "mcb_ai_engine": "Moteur IA MCB"
   },
   "org_chart": {
     "title": "Plan de l'Entreprise",
@@ -1025,7 +1152,9 @@
     "linear": "Liste",
     "retrieving": "Chargement...",
     "no_data": "Aucune info",
-    "team_size": "Taille équipe"
+    "team_size": "Taille équipe",
+    "dotted_line": "Rapport en pointillé",
+    "matrix_reports": "Rapports matriciels"
   },
   "inbox": {
     "title": "Boîte",
@@ -1099,7 +1228,9 @@
       "Good": "Bon",
       "Fair": "Passable",
       "Poor": "Mauvais"
-    }
+    },
+    "actions": "Actions",
+    "serial_registry": "Registre des numéros de série"
   },
   "finance": {
     "title": "Argent & Prêts",
@@ -1121,10 +1252,9 @@
     "status": {
       "PENDING": "En attente",
       "APPROVED": "Approuvé",
-      "REJECTED": "Refusé",
+      "REJECTED": "Rejeté",
       "PAID": "Payé",
       "RELEASED": "Libéré",
-      "REJECTED": "Rejeté",
       "VOIDED": "Annulé"
     },
     "horizon": "Durée",
@@ -1221,7 +1351,9 @@
     "team": "Équipe",
     "focus": "Focus",
     "view_all": "Tout Voir",
-    "assign": "Assigner"
+    "assign": "Assigner",
+    "active_headcount": "Effectif actif",
+    "view_team": "Voir l'équipe"
   },
   "employee_dashboard": {
     "title": "Mon Tableau de Bord",
@@ -1281,7 +1413,8 @@
       "LATE": "En Retard",
       "ON_LEAVE": "En Congé",
       "OFF_DUTY": "Hors Service"
-    }
+    },
+    "error_export": "Échec de l'exportation des données de présence"
   },
   "training": {
     "title": "Centre de Formation",
@@ -1340,6 +1473,15 @@
       "abort": "Abandonner",
       "max_load": "Capacité Maximale",
       "limit_reached": "Limite Atteinte"
+    },
+    "table": {
+      "action": "Action",
+      "body": "Prestataire",
+      "flexible": "Flexible",
+      "header": "Programme",
+      "horizon": "Durée",
+      "load": "Capacité",
+      "state": "Statut"
     }
   },
   "it_admin": {
@@ -1716,7 +1858,36 @@
     "cascade": "Partager avec l'Équipe",
     "dismiss": "Fermer",
     "log_progress": "Noter le Travail",
-    "finalize": "Approuver et Fermer"
+    "finalize": "Approuver et Fermer",
+    "acknowledge_success": "Confirmé avec succès",
+    "active_assignments": "Affectations actives",
+    "all_departments": "Tous les départements",
+    "assign_subtitle": "Assigner un nouvel objectif à un membre de l’équipe",
+    "assign_title": "Assigner un objectif",
+    "assignee_required": "Veuillez sélectionner un destinataire",
+    "clarification_requested": "Clarification demandée",
+    "collapse": "Réduire",
+    "comment_required": "Un commentaire est requis",
+    "delete_confirm_title": "Supprimer cet objectif ?",
+    "dept_objectives": "Objectifs du département",
+    "edit_subtitle": "Mettre à jour les détails de l'objectif",
+    "edit_title": "Modifier l'objectif",
+    "error_save": "Échec de l'enregistrement de l'objectif",
+    "general": "Général",
+    "goals_count": "Objectifs",
+    "indiv_performance": "Performance individuelle",
+    "metrics_title_required": "Le titre du résultat clé est requis",
+    "no_targets_assigned": "Aucun objectif assigné",
+    "no_targets_desc": "Les objectifs qui vous sont assignés apparaîtront ici",
+    "no_team_desc": "Les objectifs assignés à votre équipe apparaîtront ici",
+    "no_team_targets": "Aucun objectif d'équipe",
+    "progress_update_hint": "Mettez à jour la valeur actuelle de ce résultat clé",
+    "progress_update_title": "Mettre à jour la progression",
+    "status_label": "Statut",
+    "success_create": "Objectif créé avec succès",
+    "success_update": "Objectif mis à jour avec succès",
+    "title_required": "Le titre est requis",
+    "update_target_btn": "Mettre à jour l'objectif"
   },
   "data_management": {
     "title": "Données",
@@ -1794,5 +1965,19 @@
     "approve": "Approuver",
     "reject": "Refuser",
     "hr_comment": "Commentaire RH/Direction"
+  },
+  "announcements": {
+    "post": "Créer une annonce"
+  },
+  "notifications": {
+    "delete_failed": "Échec de la suppression de la notification",
+    "inbox_clear": "Boîte de réception vidée",
+    "mark_all_failed": "Échec du marquage de tout comme lu",
+    "mark_failed": "Échec du marquage comme lu",
+    "no_notifications": "Aucune notification",
+    "syncing_inbox": "Synchronisation de la boîte de réception..."
+  },
+  "recruitment": {
+    "no_jobs": "Aucune offre d'emploi trouvée"
   }
 }
