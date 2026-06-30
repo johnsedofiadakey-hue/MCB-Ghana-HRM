@@ -101,6 +101,30 @@ export const getAllAttendance = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+export const exportAttendanceCSV = async (req: Request, res: Response) => {
+    try {
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const logs = await prisma.attendanceLog.findMany({
+            where: whereOrg,
+            include: { employee: { select: { fullName: true, departmentObj: true } } },
+            orderBy: { date: 'desc' },
+            take: 1000
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="attendance-report.csv"');
+
+        let csv = 'Employee,Department,Date,Clock In,Clock Out,Status,Source\n';
+        logs.forEach(log => {
+            csv += `"${log.employee.fullName}","${log.employee.departmentObj?.name || ''}","${log.date.toLocaleDateString()}","${log.clockIn ? log.clockIn.toLocaleTimeString() : ''}","${log.clockOut ? log.clockOut.toLocaleTimeString() : ''}","${log.status}","${log.source}"\n`;
+        });
+        res.send(csv);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 export const nodeScan = async (req: Request, res: Response) => {
     try {
         const apiKey = req.headers['authorization'];

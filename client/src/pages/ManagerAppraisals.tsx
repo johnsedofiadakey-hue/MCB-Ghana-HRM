@@ -59,11 +59,15 @@ const ManagerAppraisals: React.FC = () => {
   const isActionRequired = (packet: any) => {
     if (packet.status !== 'OPEN') return false;
     const stage = packet.currentStage;
-    if (stage === 'SUPERVISOR_REVIEW' && packet.supervisorId === user.id) return true;
-    if (stage === 'MATRIX_REVIEW' && packet.matrixSupervisorId === user.id) return true;
-    if (stage === 'MANAGER_REVIEW' && packet.managerId === user.id) return true;
-    if (stage === 'HR_REVIEW' && packet.hrReviewerId === user.id) return true;
-    if (stage === 'FINAL_REVIEW' && packet.finalReviewerId === user.id) return true;
+    // The system only ever has three stages (SELF_REVIEW, MANAGER_REVIEW, FINAL_REVIEW) —
+    // supervisor/matrix/HR reviewer ids are alternate owners checked within those same two stages,
+    // matching AppraisalService.isStageOwner on the backend.
+    if (stage === 'MANAGER_REVIEW') {
+      return packet.supervisorId === user.id || packet.managerId === user.id || packet.matrixSupervisorId === user.id;
+    }
+    if (stage === 'FINAL_REVIEW') {
+      return packet.finalReviewerId === user.id || packet.hrReviewerId === user.id;
+    }
     return false;
   };
 

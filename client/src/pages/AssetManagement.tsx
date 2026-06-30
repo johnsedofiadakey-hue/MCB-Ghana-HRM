@@ -53,8 +53,8 @@ const AssetManagement = () => {
 
   const currentUser = getStoredUser();
   const role = currentUser?.role?.toUpperCase() || 'STAFF';
-  // Strict governance: Only MD and IT Manager (or system DEV) can manage inventory
-  const isAuthority = ['MD', 'IT_MANAGER', 'DEV'].includes(role);
+  // Strict governance: Only MD and IT Manager/Admin (or system DEV) can manage inventory
+  const isAuthority = ['MD', 'IT_MANAGER', 'IT_ADMIN', 'DEV'].includes(role);
   const canManage = isAuthority;
   const canDelete = isAuthority;
 

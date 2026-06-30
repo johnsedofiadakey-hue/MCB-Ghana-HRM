@@ -120,6 +120,13 @@ export const deleteDepartment = async (req: Request, res: Response) => {
     const deptId = Number(req.params.id);
     const whereOrg = orgId ? { organizationId: orgId } : {};
 
+    const activeEmployeeCount = await prisma.user.count({
+      where: { departmentId: deptId, isArchived: false, ...whereOrg }
+    });
+    if (activeEmployeeCount > 0) {
+      return res.status(409).json({ error: `Cannot delete: ${activeEmployeeCount} active employee(s) are still assigned to this department. Reassign them first.` });
+    }
+
     await prisma.$transaction(async (tx) => {
       // 1. Manually purge DepartmentKPIs first (as they have the most dependencies)
       // This will cascade TeamTargets automatically at the DB level
