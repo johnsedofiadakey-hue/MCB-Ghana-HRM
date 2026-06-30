@@ -7,8 +7,10 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('🚀 Creating Production and Demo Tenants...');
+  const initialPassword = process.env.SEED_INITIAL_PASSWORD;
+  if (!initialPassword || initialPassword.length < 16) throw new Error('SEED_INITIAL_PASSWORD must be at least 16 characters.');
 
-  const commonPass = await bcrypt.hash('unlockme', 12);
+  const commonPass = await bcrypt.hash(initialPassword, 12);
 
   // 0. Master System Architect (Global Access)
   console.log('👑 Provisioning System Architect...');
@@ -23,6 +25,7 @@ async function main() {
       status: 'ACTIVE',
       jobTitle: 'System Architect',
       organizationId: null,
+      mustChangePassword: true,
     }
   });
 
@@ -53,7 +56,8 @@ async function main() {
       passwordHash: commonPass,
       role: 'MD',
       status: 'ACTIVE',
-      jobTitle: 'Managing Director'
+      jobTitle: 'Managing Director',
+      mustChangePassword: true,
     }
   });
 

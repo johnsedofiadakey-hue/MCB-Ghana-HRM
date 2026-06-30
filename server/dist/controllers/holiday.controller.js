@@ -24,8 +24,9 @@ const GHANA_HOLIDAYS_2026 = [
 const getHolidays = async (req, res) => {
     try {
         const year = parseInt(req.query.year) || new Date().getFullYear();
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const holidays = await client_1.default.publicHoliday.findMany({
-            where: { OR: [{ year }, { isRecurring: true }] },
+            where: { organizationId, OR: [{ year }, { isRecurring: true }] },
             orderBy: { date: 'asc' }
         });
         res.json(holidays);
@@ -39,8 +40,9 @@ const getHolidays = async (req, res) => {
 exports.getHolidays = getHolidays;
 const addHoliday = async (req, res) => {
     try {
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const holiday = await client_1.default.publicHoliday.create({
-            data: { ...req.body, date: new Date(req.body.date) }
+            data: { ...req.body, organizationId, date: new Date(req.body.date) }
         });
         res.status(201).json(holiday);
     }
@@ -51,7 +53,10 @@ const addHoliday = async (req, res) => {
 exports.addHoliday = addHoliday;
 const deleteHoliday = async (req, res) => {
     try {
-        await client_1.default.publicHoliday.delete({ where: { id: req.params.id } });
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const deleted = await client_1.default.publicHoliday.deleteMany({ where: { id: req.params.id, organizationId } });
+        if (!deleted.count)
+            return res.status(404).json({ error: 'Holiday not found' });
         res.status(204).send();
     }
     catch (err) {
@@ -63,8 +68,10 @@ const deleteHoliday = async (req, res) => {
 exports.deleteHoliday = deleteHoliday;
 const seedGhanaHolidays = async (req, res) => {
     try {
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const created = await client_1.default.publicHoliday.createMany({
             data: GHANA_HOLIDAYS_2026.map(h => ({
+                organizationId,
                 name: h.name,
                 date: new Date(h.date),
                 country: 'GH',

@@ -78,7 +78,7 @@ const AssetManagement = () => {
       await api.post('/assets', form);
       setShowCreate(false); setForm(emptyAsset); fetchData();
       toast.success(t('assets.success_sync'));
-    } catch (err: any) { setError(err?.response?.data?.message || t('assets.error_init')); }
+    } catch (err: any) { setError(err?.response?.data?.error || err?.response?.data?.message || t('assets.error_init')); }
     finally { setSaving(false); }
   };
 
@@ -88,7 +88,7 @@ const AssetManagement = () => {
       await api.post('/assets/assign', { assetId: showAssign.id, ...assignForm });
       setShowAssign(null); setAssignForm({ userId: '', condition: 'Good' }); fetchData();
       toast.success(t('assets.success_deploy'));
-    } catch (err: any) { setError(err?.response?.data?.message || t('assets.error_deploy')); }
+    } catch (err: any) { setError(err?.response?.data?.error || err?.response?.data?.message || t('assets.error_deploy')); }
     finally { setSaving(false); }
   };
   const handleReturn = async (assetId: string) => {
@@ -96,7 +96,7 @@ const AssetManagement = () => {
       await api.post('/assets/return', { assetId, condition: 'Good' });
       fetchData();
       toast.success(t('assets.success_recover'));
-    } catch (err: any) { toast.error(String(err?.response?.data?.message || t('assets.error_recover'))); }
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || err?.response?.data?.message || t('assets.error_recover'))); }
   };
 
   const handleConfirmDelete = async () => {
@@ -108,7 +108,7 @@ const AssetManagement = () => {
       fetchData();
       toast.success(t('common.delete_success', 'Asset removed from inventory'));
     } catch (err: any) {
-      toast.error(err.response?.data?.message || t('common.error'));
+      toast.error(err.response?.data?.error || err.response?.data?.message || t('common.error'));
     } finally {
       setDeleting(false);
     }

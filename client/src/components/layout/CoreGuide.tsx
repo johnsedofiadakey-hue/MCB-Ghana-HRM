@@ -68,7 +68,7 @@ const PAGE_GUIDES: Record<string, {
     icon: Users,
     color: '#8b5cf6',
     whoSees: 'Every employee',
-    summary: 'View and update your personal details — contact info, job title, avatar, emergency contacts, and more. What you can edit depends on your role; Directors and above can also change salaries.',
+    summary: 'View and update permitted personal details such as contact, bank and emergency information. HR owns employment identity and compensation data; numeric rank does not unlock salary editing.',
     steps: [
       'Click the edit icon to change your avatar or personal details.',
       'Your job title, department, and manager are set by HR/Admin.',
@@ -79,7 +79,7 @@ const PAGE_GUIDES: Record<string, {
       'Keep your phone number current — it\'s used for HR comms.',
       'Upload a profile photo so teammates can recognise you.',
     ],
-    access: 'All roles. Salary fields only editable by Rank 80+ (Director and above).',
+    access: 'All roles can view their profile. HR people administrators maintain employment and compensation records.',
     connections: [
       'Org Chart — your profile photo and job title appear in the live org chart.',
       'Payroll — your bank account details here are used to generate your payslip.',
@@ -103,12 +103,12 @@ const PAGE_GUIDES: Record<string, {
     ],
     tips: [
       'Late clock-ins are flagged automatically.',
-      'Attendance records link to payroll — missing entries can affect pay.',
+      'Attendance is an operational record; it does not currently change payroll automatically.',
     ],
     access: 'All roles for own records. "All Employees" view requires Rank 70+ (Manager).',
     connections: [
       'Dashboard — your attendance rate % shown on the dashboard comes from this page.',
-      'Payroll — payroll calculations check actual working days from attendance records.',
+      'Payroll — Finance may use verified attendance exceptions when entering explicit period adjustments.',
       'Leave — approved leave days are automatically excluded so they don\'t count as absent.',
       'Analytics — MD/Director dashboards plot team attendance trends over time.',
     ],
@@ -136,7 +136,7 @@ const PAGE_GUIDES: Record<string, {
     connections: [
       'Attendance — approved leave days are marked as "on leave" so attendance isn\'t penalised.',
       'Dashboard — your remaining leave balance is shown on your personal dashboard card.',
-      'Payroll — unpaid leave is deducted from gross pay in that month\'s payroll run.',
+      'Payroll — any unpaid-leave deduction must be entered and reviewed explicitly in the payroll run.',
       'Holidays — public holidays in the leave period are automatically excluded from day count.',
       'Inbox — your manager receives a notification the moment you submit a request.',
     ],
@@ -198,14 +198,13 @@ const PAGE_GUIDES: Record<string, {
     title: 'Expenses & Loans',
     icon: Wallet,
     color: '#f43f5e',
-    whoSees: 'All employees for own requests. Managers/Directors approve.',
-    summary: 'Submit expense claims and salary advance/loan requests. Directors and Managers review and approve submissions. All requests are tracked through a full approval workflow.',
+    whoSees: 'Employees see their own requests. Finance Manager and MD provide oversight.',
+    summary: 'Submit expense claims and salary advance/loan requests. Finance manages the organization queue; employees never gain approval rights from rank alone.',
     steps: [
       'Switch between "Loans & Advances" and "Expense Claims" tabs.',
       'Submit a new request with the "+ New" button and fill in the details.',
       'Your request shows as Pending until approved or rejected.',
-      'Managers (Rank 70+) can Approve/Reject expense claims.',
-      'Directors (Rank 80+) can Approve/Reject loan and advance requests.',
+      'The Finance Manager or MD reviews and approves or rejects requests.',
       'Approved loans show repayment schedule and monthly deduction.',
     ],
     tips: [
@@ -213,7 +212,7 @@ const PAGE_GUIDES: Record<string, {
       'Loan repayments are automatically factored into payroll runs.',
       'Expenses have a monthly category limit — check with your Director.',
     ],
-    access: 'Submit: all roles. Approve expenses: Rank 70+. Approve loans: Rank 80+.',
+    access: 'Submit/view own: all employees. Organization approval: Finance Manager and MD only.',
     connections: [
       'Payroll — approved loan repayments are automatically deducted each payroll run.',
       'Dashboard — Finance Managers see total pending expense claims on their dashboard.',
@@ -409,36 +408,35 @@ const PAGE_GUIDES: Record<string, {
     title: 'Payroll Engine',
     icon: DollarSign,
     color: '#10b981',
-    whoSees: 'Directors and above (Rank 80+)',
-    summary: 'Run, review, and approve payroll. Supports multiple currencies. Each run calculates gross pay, deductions (tax, loans, SSNIT), and net pay per employee. Payslips are generated as PDFs.',
+    whoSees: 'Finance prepares, HR Director validates, MD releases. Employees see released payslips only.',
+    summary: 'Controlled monthly payroll workflow with separated preparation, HR validation and final release. Calculations use an accountant-approved, effective-dated statutory rule.',
     steps: [
-      'Click "+ New Payroll Run" and select the month and currency.',
-      'The system pulls salaries, active loans, and deductions automatically.',
-      'Review each line item in the run — edit individual amounts if needed.',
-      'Approve the run to lock it. Send payslips to employees.',
-      'Download CSV for bank transfer instructions.',
-      'Approved runs cannot be edited — cancel and re-create if corrections needed.',
+      'Finance creates a draft for the month after an accountant-approved statutory rule is active.',
+      'Finance reviews compensation, taxable adjustments, reimbursements and loan deductions, then submits.',
+      'The HR Director validates employee eligibility and master-data accuracy.',
+      'The MD releases the run. Only then do payslips, notifications and bank export become available.',
+      'Released runs are immutable; corrections require a reversal or adjustment run.',
     ],
     tips: [
-      'Run payroll only after all attendance and leaves are finalised.',
+      'Attendance and leave do not silently alter pay; enter verified adjustments explicitly.',
       'Loan repayments are deducted automatically if active.',
       'The yearly summary view shows total payroll cost per month.',
     ],
-    access: 'Rank 80+ (Director and above). Full control: MD only.',
+    access: 'Finance Manager: prepare/submit/export. HR Director: validate. MD: release/reject/void. Employee: own released payslips.',
     connections: [
-      'Attendance — actual working days from attendance records determine the pay base.',
+      'Attendance — verified exceptions inform explicit Finance adjustments; there is no automatic deduction.',
       'Finance / Loans — approved loan repayments are automatically deducted per run.',
       'Employee Profiles — bank account details entered on profiles power the bank transfer CSV.',
-      'Holidays — statutory holiday pay rules reference the holiday calendar.',
-      'Leave — unpaid leave days reduce gross pay in that period\'s run.',
+      'Statutory Rules — SSNIT, PAYE, bonus and overtime rules are effective-dated and accountant-approved.',
+      'Leave — unpaid leave requires an explicit, reviewable adjustment.',
     ],
-    example: 'The Finance Director runs May payroll: clicks "+ New Payroll Run", selects May 2026 / GHS. The system pre-fills 14 employees with their base salaries, deducts 2 loan repayments (total GHS 800), applies SSNIT (13%) and PAYE tax. She reviews, adjusts one transport allowance, and approves. Payslip PDFs are generated and a bank transfer CSV is downloaded.',
+    example: 'Finance prepares May payroll and submits it. The HR Director validates staff and compensation data. The MD releases it; the bank CSV and employee payslips then become available. A later correction is recorded in an adjustment run rather than editing May.',
   },
   '/announcements': {
     title: 'Announcements',
     icon: Megaphone,
     color: '#f59e0b',
-    whoSees: 'Directors+ create. All employees receive.',
+    whoSees: 'Marketing, HR and MD create. Targeted employees receive.',
     summary: 'Broadcast organisation-wide or department-specific announcements. Published announcements appear as a banner across the top of every page for all relevant employees.',
     steps: [
       'Click "+ New Announcement" to compose.',
@@ -452,7 +450,7 @@ const PAGE_GUIDES: Record<string, {
       'Use Urgent priority sparingly — overuse dulls the impact.',
       'Always set an expiry date so the banner doesn\'t linger.',
     ],
-    access: 'Create/publish: Rank 80+ (Director and above).',
+    access: 'Create/publish: Marketing Head, authorized HR roles and MD. Read: authenticated employees in scope.',
     connections: [
       'All Pages — published announcements display as a top banner across every page system-wide.',
       'Inbox — employees also receive announcements as inbox notifications.',
@@ -464,20 +462,20 @@ const PAGE_GUIDES: Record<string, {
     title: 'Onboarding',
     icon: Rocket,
     color: '#8b5cf6',
-    whoSees: 'New employees see their checklist. HR/Admins manage all sessions.',
-    summary: 'Structured onboarding checklists for new hires. Each new employee gets an onboarding session with categorised tasks (HR, IT, Admin, Manager). Track completion progress in real time.',
+    whoSees: 'HR, IT, Marketing, the line manager and the new employee see their assigned work.',
+    summary: 'HR creates the preboarding record. IT provisions accounts/equipment, Marketing produces employee and call cards, the manager handles induction, and HR verifies closure.',
     steps: [
-      'New employees see their onboarding session automatically.',
-      'Click on a category to expand its tasks.',
-      'Check off tasks as you complete them.',
-      'HR/Admins: view all active onboarding sessions from the Admin view.',
-      'Sessions track % completion — HR can monitor who\'s behind.',
+      'HR creates the employee; login stays disabled during preboarding.',
+      'IT completes mandatory account, access and equipment tasks, then sends the secure activation link.',
+      'Marketing prepares/issues the employee ID and publishes the call card.',
+      'The line manager completes induction; the employee acknowledges required policies.',
+      'HR verifies required evidence and closes the onboarding session.',
     ],
     tips: [
       'Complete IT tasks on day 1 — you need system access first.',
       'HR tasks include submitting identification documents — don\'t skip them.',
     ],
-    access: 'Own checklist: all roles. Admin view (all sessions): Rank 80+.',
+    access: 'Tasks are limited to the assigned employee or authorized department owner. HR has organization oversight.',
     connections: [
       'Employee Management — adding a new employee automatically creates their onboarding session.',
       'Assets — IT equipment assignment is typically an onboarding step for new starters.',
@@ -521,32 +519,32 @@ const PAGE_GUIDES: Record<string, {
     title: 'IT Admin',
     icon: Shield,
     color: '#06b6d4',
-    whoSees: 'Team Leads and above (Rank 60+)',
-    summary: 'Technical user management tools for IT and system administrators. Create employees directly, reset passwords, view system health, and manage access.',
+    whoSees: 'IT Manager, IT Admin, MD and DEV',
+    summary: 'Technical operations for accounts, equipment, integrations, access credentials and system health. HR creates employee records; Marketing owns card production.',
     steps: [
-      'Create a new user account directly — useful for bulk onboarding.',
-      'Search for existing employees and reset their passwords.',
+      'Receive preboarding handoffs after HR creates an employee.',
+      'Provision accounts and send secure password-reset or activation links.',
       'View system health indicators.',
-      'The admin creation form pre-validates email uniqueness.',
+      'Assign equipment and control physical access activation, suspension or revocation.',
     ],
     tips: [
-      'Prefer using Employee Management for full onboarding workflow.',
-      'IT Admin is for quick account operations, not full HR management.',
+      'IT never sets or sees an employee password.',
+      'ID printing and call-card content belong to Marketing.',
     ],
     access: 'IT Manager, IT Admin, MD and DEV roles only. Not available to general Managers.',
     connections: [
-      'Employee Management — accounts created here also appear in the main employee directory.',
+      'Employee Management — HR-created preboarding records appear here for provisioning.',
       'Assets — IT Admin coordinates with this page for equipment provisioning.',
       'Onboarding — account creation is the first onboarding step for new starters.',
     ],
-    example: 'The IT Manager needs to quickly provision 3 new call-centre agents starting Monday. He opens IT Admin, uses the "Create User" form three times, generating accounts with temporary passwords. The three employees receive their login credentials by email and appear in Employee Management.',
+    example: 'HR adds a new employee. IT assigns a laptop, provisions access, completes mandatory IT tasks, then sends a one-time activation link. Marketing independently prepares the employee card and call card.',
   },
   '/settings': {
     title: 'Platform Settings',
     icon: Settings,
     color: '#6366f1',
-    whoSees: 'Directors and above (Rank 80+)',
-    summary: 'Complete system-level configuration: branding, security, notifications, and billing management.',
+    whoSees: 'IT Manager, IT Admin, MD and DEV',
+    summary: 'System configuration for branding, security, notifications, infrastructure, billing and backups. Marketing card design is managed separately in Card Management.',
     steps: [
       'Update brand identity (logos, colors, themes).',
       'Configure security policies and session timeouts.',
@@ -557,7 +555,7 @@ const PAGE_GUIDES: Record<string, {
       'Changes in branding reflect immediately across all user interfaces.',
       'Keep your security policies up to date for maximum compliance.',
     ],
-    access: 'Rank 80+ (Director and above). Some refined settings require Rank 90+.',
+    access: 'Explicit IT system-administration roles and MD only; high numeric rank alone does not grant access.',
     connections: [
       'All Pages — branding changes (logo, colour) reflect across the entire platform instantly.',
       'Payroll — tax and currency settings here determine payroll calculation defaults.',
@@ -696,19 +694,19 @@ const PAGE_GUIDES: Record<string, {
     icon: BookOpen,
     color: '#6366f1',
     whoSees: 'All employees',
-    summary: 'Raise helpdesk tickets, access the knowledge base, and contact technical or HR support. All requests are tracked through the ticketing system so nothing falls through the cracks.',
+    summary: 'Raise and track requests in departmental queues: IT, HR, Finance, Marketing, Facilities/Operations, or Other. Access is restricted to the requester, assigned agent and owning department.',
     steps: [
       'Click "+ New Ticket" to submit an issue or request.',
-      'Choose a category: Technical, HR, Finance, or General.',
-      'Set priority: Normal or Urgent.',
-      'Track your open tickets and their resolution status here.',
-      'View previously resolved tickets in your history.',
+      'Choose the department queue and set Urgent, High, Normal or Low priority.',
+      'Track My Open Tickets, Waiting on Me, Resolved and Closed.',
+      'Reply when the ticket is Waiting on Requester; SLA time pauses only in that state.',
+      'Department agents triage, assign and resolve tickets in their own queue.',
     ],
     tips: [
       'Be specific in your ticket description to get faster resolution.',
-      'Urgent tickets are escalated to the on-duty admin immediately.',
+      'Urgent tickets target 4 business hours; High 1 day; Normal 3 days; Low 5 days.',
     ],
-    access: 'All roles. Admins (Rank 80+) can view and resolve all tickets.',
+    access: 'Employees see their own tickets. Department agents and heads see only queues granted to their role.',
     connections: [
       'IT Admin — technical tickets may be escalated to the IT Admin for account or device issues.',
       'Inbox — ticket status updates are sent as inbox notifications.',
@@ -869,13 +867,13 @@ export function getNormalizedPath(path: string): string {
 
 // ─── FAQ knowledge base ─────────────────────────────────────────────────────
 const FAQS: Array<{ q: string; a: string; tags: string[] }> = [
-  { q: 'Why can\'t I see the Payroll page?', a: 'Payroll is restricted to Directors and above (rank 80+). If you believe you need access, speak to your Managing Director or the system admin.', tags: ['payroll', 'access', 'permission'] },
+  { q: 'Why can\'t I see the Payroll page?', a: 'Payroll uses explicit permissions: Finance prepares, the HR Director validates, the MD releases, and employees see only their own released payslips. Numeric rank does not grant payroll access.', tags: ['payroll', 'access', 'permission'] },
   { q: 'How do I reset my password?', a: 'Use the "Forgot Password" link on the login page. The system will email you a reset link. If you don\'t receive it, contact your IT Admin — they can also reset it manually from the IT Admin panel.', tags: ['password', 'login', 'reset'] },
   { q: 'My leave request is stuck on "Awaiting Reliever" — what does that mean?', a: 'Leave requests follow a two-step approval: first your designated reliever must acknowledge the request, then your manager approves it. If your reliever is unresponsive, contact your manager to manually advance the request.', tags: ['leave', 'approval', 'reliever'] },
-  { q: 'Why is my salary showing as "—" on the dashboard?', a: 'Salary is hidden for roles below Director rank. This is an intentional privacy control. Directors and above can see full compensation details.', tags: ['salary', 'privacy', 'dashboard'] },
+  { q: 'Why is my salary showing as "—" on the dashboard?', a: 'Compensation is restricted to authorized HR people administrators and the employee\'s released payroll documents. Department-head rank does not expose salary.', tags: ['salary', 'privacy', 'dashboard'] },
   { q: 'What is the difference between KPI sheets and Appraisals?', a: 'KPI sheets are monthly — you update them regularly to track goal progress. Appraisals are formal quarterly/annual reviews where a manager gives you a comprehensive performance rating with narrative feedback. Both feed into compensation decisions.', tags: ['kpi', 'appraisal', 'performance'] },
-  { q: 'How does attendance link to payroll?', a: 'Attendance records are used to calculate actual working days for payroll. Missing clock-outs can create gaps — always ensure your records are complete before payroll runs.', tags: ['attendance', 'payroll', 'hours'] },
-  { q: 'Can I delete an employee?', a: 'Employees are soft-deleted (archived), not permanently removed. Their historical records (payroll, attendance, KPIs) are preserved for compliance. Only managers and above can archive employees.', tags: ['employee', 'delete', 'archive'] },
+  { q: 'How does attendance link to payroll?', a: 'Attendance does not automatically change pay. Finance can enter a verified period adjustment where company policy requires it, preserving an auditable calculation snapshot.', tags: ['attendance', 'payroll', 'hours'] },
+  { q: 'Can I delete an employee?', a: 'Authorized HR roles can archive an employee while preserving records. Hard deletion is restricted to MD/DEV and is not the normal offboarding path.', tags: ['employee', 'delete', 'archive'] },
   { q: 'What does "Impersonation Mode" mean?', a: 'Only DEV accounts can impersonate. This lets the system developer view the system exactly as a specific organisation sees it — useful for debugging. The amber banner at the top of the screen confirms when impersonation is active.', tags: ['dev', 'impersonation', 'admin'] },
   { q: 'How are department KPI scores calculated?', a: 'Each department\'s score is the average of all employees\' latest KPI sheet total scores within that department. Employees without submitted sheets are excluded from the average.', tags: ['department', 'kpi', 'score'] },
   { q: 'Why won\'t the system let me delete a department?', a: 'Departments with active employees cannot be deleted. Reassign or archive all employees first, then delete the department.', tags: ['department', 'delete', 'error'] },
@@ -884,14 +882,15 @@ const FAQS: Array<{ q: string; a: string; tags: string[] }> = [
 // ─── Role summary ────────────────────────────────────────────────────────────
 const ROLE_SUMMARIES: Record<string, { label: string; color: string; desc: string; sees: string[] }> = {
   DEV: { label: 'System Developer', color: '#10b981', desc: 'Full superuser access. Manages all tenants, platform analytics, and system configuration.', sees: ['Everything — including Developer Dashboard and Tenant Control'] },
-  MD: { label: 'Managing Director', color: '#6366f1', desc: 'Full company access. Final approver for all leave, payroll, and HR decisions.', sees: ['All modules', 'Company Settings', 'Audit Logs', 'Full payroll data', 'All employee records with salary', 'Enterprise Suite'] },
-  HR_DIRECTOR: { label: 'HR Director', color: '#a855f7', desc: 'Senior HR leadership. Oversees all HR operations, validates leave, manages appraisal cycles, and approves HR strategy.', sees: ['All employee records', 'Leave validation (HR step)', 'Payroll view', 'Appraisals', 'Recruitment', 'Onboarding', 'Announcements', 'Org Chart', 'Departments'] },
-  DIRECTOR: { label: 'Director', color: '#8b5cf6', desc: 'Senior leadership. Manages departments, approves payroll, runs recruitment, and oversees operations.', sees: ['Departments', 'Payroll', 'Announcements', 'Recruitment', 'Employee records (salary visible)', 'Onboarding Management', 'Org Chart'] },
-  HR_MANAGER: { label: 'HR Manager', color: '#ec4899', desc: 'HR department head. Manages all HR operations, validates leave requests, runs appraisal cycles and recruitment pipelines.', sees: ['Employee Management', 'Leave Validation (HR step)', 'Appraisals', 'Recruitment', 'Onboarding', 'Org Chart', 'Announcements'] },
-  FINANCE_MANAGER: { label: 'Finance Manager', color: '#10b981', desc: 'Finance department head. Full access to payroll, expenses, loans, and financial reporting.', sees: ['Payroll engine', 'Expense approvals', 'Loan approvals', 'Finance Hub', 'Employee records (salary visible)'] },
-  IT_MANAGER: { label: 'IT Manager', color: '#06b6d4', desc: 'Technical system oversight. Provisions accounts, manages assets, hardware nodes, and audit logs.', sees: ['IT Admin tools', 'Asset Management', 'Audit Logs', 'Card Management', 'User Provisioning', 'Attendance Hardware Config'] },
-  HR_OFFICER: { label: 'HR Officer', color: '#f43f5e', desc: 'HR operations. Manages leave, appraisals, and employee records. Validates leave requests at the HR stage.', sees: ['Employee Management', 'Leave Approval (HR validation)', 'Appraisals', 'Org Chart', 'Onboarding', 'Policies'] },
-  MANAGER: { label: 'Manager', color: '#f59e0b', desc: 'Team-level management. Approves leave, runs appraisals, assigns KPIs, and creates training.', sees: ['Team Members', 'Team Targets / KPIs', 'Leave Approvals (Manager step)', 'Appraisals', 'Training creation', 'Expense approvals'] },
+  MD: { label: 'Managing Director', color: '#6366f1', desc: 'Executive oversight with explicit final-approval permissions.', sees: ['Payroll release/reject/void', 'Senior-staff leave sign-off', 'Company settings', 'Enterprise oversight'] },
+  HR_DIRECTOR: { label: 'HR Director', color: '#a855f7', desc: 'Owns employee master data, compensation, HR policy, onboarding verification and leave validation.', sees: ['Employee records and compensation', 'Leave HR approval', 'Payroll validation', 'Recruitment', 'Onboarding', 'HR help desk'] },
+  DIRECTOR: { label: 'Operations Director', color: '#8b5cf6', desc: 'Owns Facilities and Other/Operations help-desk queues and operational leadership.', sees: ['Facilities queue', 'Other queue triage', 'Department operations', 'Own reporting scope'] },
+  HR_MANAGER: { label: 'HR Manager', color: '#ec4899', desc: 'HR people administrator without HR Director-only payroll or leave sign-off.', sees: ['Employee management', 'Recruitment', 'Onboarding', 'HR help desk', 'HR operations'] },
+  FINANCE_MANAGER: { label: 'Finance Manager', color: '#10b981', desc: 'Owns payroll preparation, expenses, loans and Finance help desk.', sees: ['Payroll prepare/submit/export', 'Expense and loan approvals', 'Finance queue'] },
+  MARKETING_HEAD: { label: 'Marketing Head', color: '#f59e0b', desc: 'Owns employee ID production, call cards and the Marketing help desk.', sees: ['Card design and printing', 'Call-card publication', 'Marketing queue'] },
+  IT_MANAGER: { label: 'IT Manager', color: '#06b6d4', desc: 'Owns accounts, equipment, technical access, physical credential activation and IT support.', sees: ['IT Admin', 'Assets', 'Audit logs', 'Physical access status', 'IT queue'] },
+  HR_OFFICER: { label: 'HR Officer', color: '#f43f5e', desc: 'Supports HR operations within specifically assigned routes and records.', sees: ['Employee operations', 'Recruitment', 'Policies', 'Own assigned work'] },
+  MANAGER: { label: 'Manager', color: '#f59e0b', desc: 'Manages direct reports, performance and departmental induction.', sees: ['Direct team', 'Team targets', 'Appraisals', 'Assigned onboarding tasks'] },
   MID_MANAGER: { label: 'Mid Manager', color: '#fb923c', desc: 'Middle management. Team oversight with limited HR access. Can view and manage direct reports.', sees: ['Direct team members', 'Team Targets', 'Basic Appraisals', 'Training enrolment'] },
   SUPERVISOR: { label: 'Supervisor', color: '#06b6d4', desc: 'Operational team oversight. Can see and manage their direct team.', sees: ['Team Members', 'Team Targets', 'Basic Appraisals'] },
   STAFF: { label: 'Staff', color: '#64748b', desc: 'Standard employee access. Personal records, requests, and performance.', sees: ['Dashboard', 'Profile', 'Attendance', 'Leave', 'Training', 'Assets (own)', 'Finance (own)', 'KPI Performance'] },
@@ -914,7 +913,7 @@ function generateResponse(query: string, location: string, companyName: string, 
       const r = ROLE_SUMMARIES[userRole];
       return `**Your role: ${r.label}**\n\n${r.desc}\n\n**You can access:**\n${r.sees.map(s => `• ${s}`).join('\n')}\n\nIf you need additional access, speak to your Managing Director or system admin.`;
     }
-    return `Each role in ${companyName} has a numeric rank:\n\n• DEV (100) — System Developer\n• MD (90) — Managing Director\n• Director (80)\n• Manager (70)\n• Team Lead (60)\n• Staff (50)\n• Casual (40)\n\nHigher rank = more access. Most management features require Rank 60+.`;
+    return `${companyName} uses explicit departmental permissions. Numeric rank is retained for hierarchy and display, but it does not grant cross-department access. HR owns people data and leave policy; Finance prepares payroll; the HR Director validates it; the MD releases it; IT owns accounts, equipment and access; Marketing owns employee cards and call cards; Operations owns Facilities and Other help-desk queues.`;
   }
 
   // FAQ match
@@ -931,7 +930,7 @@ function generateResponse(query: string, location: string, companyName: string, 
   if (q.includes('kpi') || q.includes('performance')) return `**KPI Performance**\n\n${PAGE_GUIDES['/performance'].summary}\n\n${PAGE_GUIDES['/performance'].steps.slice(0, 3).map(s => `• ${s}`).join('\n')}`;
   if (q.includes('password')) return FAQS[1].a;
   if (q.includes('attendance') || q.includes('clock')) return `**Attendance**\n\n${PAGE_GUIDES['/attendance'].summary}\n\n${PAGE_GUIDES['/attendance'].steps.slice(0, 3).map(s => `• ${s}`).join('\n')}`;
-  if (q.includes('payslip') || q.includes('pay slip')) return 'Payslips are generated automatically when payroll is approved by a Director. You\'ll receive an email notification. You can also view/download your payslips from the Payroll section (if you have access) or ask your HR/Admin to share yours.';
+  if (q.includes('payslip') || q.includes('pay slip')) return 'Employees can view and download only their own payslips after the MD releases the payroll run. Draft and HR-pending runs are never visible to employees.';
   if (q.includes('department')) return `**Departments**\n\n${PAGE_GUIDES['/departments'].summary}\n\n**Access:** ${PAGE_GUIDES['/departments'].access}`;
   if (q.includes('train')) return `**Training**\n\n${PAGE_GUIDES['/training'].summary}`;
   if (q.includes('asset') || q.includes('laptop') || q.includes('equipment')) return `**Assets**\n\n${PAGE_GUIDES['/assets'].summary}`;
@@ -1012,14 +1011,13 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
   };
 
   const renderText = (text: string) => {
-    // Simple markdown: **bold**, • bullets, \n newlines
     const lines = text.split('\n');
     return lines.map((line, i) => {
       const parts = line.split(/\*\*(.*?)\*\*/g);
-      const rendered = parts.map((p, j) => j % 2 === 1 ? <strong key={j} className="text-white font-bold">{p}</strong> : <span key={j}>{p}</span>);
-      if (line.startsWith('•')) return <p key={i} className="flex gap-2 text-[12.5px] leading-relaxed text-slate-300 mb-1"><span className="text-primary-light mt-0.5 flex-shrink-0">•</span><span>{rendered.slice(1)}</span></p>;
+      const rendered = parts.map((p, j) => j % 2 === 1 ? <strong key={j} className="text-[var(--text-primary)] font-bold">{p}</strong> : <span key={j}>{p}</span>);
+      if (line.startsWith('•')) return <p key={i} className="flex gap-2 text-[12.5px] leading-relaxed text-[var(--text-secondary)] mb-1"><span className="text-primary-light mt-0.5 flex-shrink-0">•</span><span>{rendered.slice(1)}</span></p>;
       if (line.trim() === '') return <div key={i} className="h-2" />;
-      return <p key={i} className="text-[12.5px] leading-relaxed text-slate-300 mb-0.5">{rendered}</p>;
+      return <p key={i} className="text-[12.5px] leading-relaxed text-[var(--text-secondary)] mb-0.5">{rendered}</p>;
     });
   };
 
@@ -1039,28 +1037,28 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-            className="fixed right-0 top-0 h-full w-full max-w-[420px] bg-[#080c16] border-l border-white/[0.07] z-[120] shadow-2xl flex flex-col font-sans"
+            className="fixed right-0 top-0 h-full w-full max-w-[420px] bg-[var(--bg-card)] border-l border-[var(--border-subtle)] z-[120] shadow-2xl flex flex-col font-sans"
           >
             {/* Header */}
-            <div className="px-6 py-5 border-b border-white/[0.06] flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
+            <div className="px-6 py-5 border-b border-[var(--border-subtle)] flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center">
                   <Bot size={20} className="text-primary-light" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-white tracking-tight uppercase">{companyName} Guide</h2>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                  <h2 className="text-sm font-black text-[var(--text-primary)] tracking-tight uppercase">{companyName} Guide</h2>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">
                     {user.role ? `${user.role} · Rank ${getRoleRankValue(user.role)}` : 'AI Assistant'}
                   </p>
                 </div>
               </div>
-              <button onClick={onClose} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:text-white transition-all">
+              <button onClick={onClose} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">
                 <X size={16} />
               </button>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-white/[0.06] flex-shrink-0">
+            <div className="flex border-b border-[var(--border-subtle)] flex-shrink-0">
               {([
                 { key: 'guide', label: 'This Page', icon: BookOpen },
                 { key: 'chat', label: 'Ask AI', icon: Bot },
@@ -1071,7 +1069,7 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                   onClick={() => setTab(t.key)}
                   className={cn(
                     'flex-1 flex items-center justify-center gap-1.5 py-3.5 text-[11px] font-black uppercase tracking-widest transition-all',
-                    tab === t.key ? 'text-primary-light border-b-2 border-primary' : 'text-slate-600 hover:text-slate-400'
+                    tab === t.key ? 'text-primary-light border-b-2 border-primary' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                   )}
                 >
                   <t.icon size={13} />
@@ -1100,10 +1098,10 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                         'max-w-[85%] rounded-2xl px-4 py-3',
                         m.role === 'user'
                           ? 'bg-primary/20 border border-primary/30 rounded-tr-sm'
-                          : 'bg-white/[0.04] border border-white/[0.07] rounded-tl-sm'
+                          : 'bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-tl-sm'
                       )}>
                         {m.role === 'user'
-                          ? <p className="text-[12.5px] text-white font-medium">{m.text}</p>
+                          ? <p className="text-[12.5px] text-[var(--text-primary)] font-medium">{m.text}</p>
                           : renderText(m.text)
                         }
                       </div>
@@ -1115,7 +1113,7 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                 {/* Quick questions */}
                 {messages.length <= 1 && (
                   <div className="px-5 pb-3 flex-shrink-0">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2">Quick questions</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Quick questions</p>
                     <div className="flex flex-wrap gap-2">
                        {[
                         'What can I do here?',
@@ -1126,7 +1124,7 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                         <button
                           key={q}
                           onClick={() => quickAsk(q)}
-                          className="text-[11px] font-bold text-slate-400 border border-white/10 rounded-xl px-3 py-1.5 hover:border-primary/40 hover:text-white transition-all bg-white/[0.02]"
+                          className="text-[11px] font-bold text-[var(--text-secondary)] border border-[var(--border-subtle)] rounded-xl px-3 py-1.5 hover:border-primary/40 hover:text-[var(--text-primary)] transition-all bg-[var(--bg-elevated)]"
                         >
                           {q}
                         </button>
@@ -1136,15 +1134,15 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                 )}
 
                 {/* Input */}
-                <div className="px-5 py-4 border-t border-white/[0.06] flex-shrink-0">
-                  <div className="flex gap-3 items-center bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3 focus-within:border-primary/40 transition-all">
+                <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex-shrink-0">
+                  <div className="flex gap-3 items-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-4 py-3 focus-within:border-primary/40 transition-all">
                     <input
                       ref={inputRef}
                       value={input}
                       onChange={e => setInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && send()}
                       placeholder={`Ask about ${companyName}…`}
-                      className="flex-1 bg-transparent text-sm text-white placeholder-slate-600 outline-none font-medium"
+                      className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none font-medium"
                     />
                     <button
                       onClick={send}
@@ -1154,7 +1152,7 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                       <Send size={14} className="text-white" />
                     </button>
                   </div>
-                  <p className="text-[9px] text-slate-700 mt-2 text-center font-medium uppercase tracking-tighter">Powered by {companyName} Intelligence</p>
+                  <p className="text-[9px] text-[var(--text-muted)] mt-2 text-center font-medium uppercase tracking-tighter">Powered by {companyName} Intelligence</p>
                 </div>
               </>
             )}
@@ -1165,43 +1163,43 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                 {currentPage ? (
                   <div className="space-y-5">
                     {/* Page identity header */}
-                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
                       <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: `${currentPage.color}18`, border: `1px solid ${currentPage.color}30` }}>
                         <currentPage.icon size={22} style={{ color: currentPage.color }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">You are here</p>
-                        <p className="text-sm font-black text-white uppercase truncate">{currentPage.title}</p>
-                        <p className="text-[10px] text-slate-500 mt-0.5">{currentPage.whoSees}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-0.5">You are here</p>
+                        <p className="text-sm font-black text-[var(--text-primary)] uppercase truncate">{currentPage.title}</p>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{currentPage.whoSees}</p>
                       </div>
                     </div>
 
                     {/* What this page does */}
                     <div>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2">What this page does</p>
-                      <p className="text-[12.5px] text-slate-300 leading-relaxed">{currentPage.summary}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">What this page does</p>
+                      <p className="text-[12.5px] text-[var(--text-secondary)] leading-relaxed">{currentPage.summary}</p>
                     </div>
 
                     {/* How to use it — steps */}
                     <div className="space-y-2">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">How to use it</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">How to use it</p>
                       {currentPage.steps.map((s, i) => (
-                        <div key={i} className="flex gap-3 items-start p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                          <span className="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 text-[9px] font-black" style={{ background: `${currentPage.color}20`, color: currentPage.color }}>{i + 1}</span>
-                          <p className="text-[12px] text-white/80 leading-relaxed">{s}</p>
+                        <div key={i} className="flex gap-3 items-start p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                          <span className="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 text-[9px] font-black text-white" style={{ background: currentPage.color }}>{i + 1}</span>
+                          <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed">{s}</p>
                         </div>
                       ))}
                     </div>
 
                     {/* How it connects */}
                     <div className="space-y-2">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">How it connects to the rest of the system</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">How it connects to the rest of the system</p>
                       {currentPage.connections.map((c, i) => {
                         const [page, ...rest] = c.split(' — ');
                         return (
                           <div key={i} className="flex gap-3 items-start text-[11.5px]">
                             <span className="text-primary-light font-black flex-shrink-0 mt-0.5">→</span>
-                            <p className="text-slate-400 leading-relaxed"><span className="text-white font-bold">{page}</span>{rest.length ? ` — ${rest.join(' — ')}` : ''}</p>
+                            <p className="text-[var(--text-secondary)] leading-relaxed"><span className="text-[var(--text-primary)] font-bold">{page}</span>{rest.length ? ` — ${rest.join(' — ')}` : ''}</p>
                           </div>
                         );
                       })}
@@ -1213,7 +1211,7 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                         <Lightbulb size={13} style={{ color: currentPage.color }} />
                         <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: currentPage.color }}>Real-world example</p>
                       </div>
-                      <p className="text-[12px] text-slate-300 leading-relaxed italic">{currentPage.example}</p>
+                      <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed italic">{currentPage.example}</p>
                     </div>
 
                     {/* Tips */}
@@ -1225,16 +1223,16 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                         </div>
                         <div className="space-y-2">
                           {currentPage.tips.map((t, i) => (
-                            <p key={i} className="text-[11.5px] text-white/60 leading-relaxed border-l-2 border-amber-500/30 pl-3">{t}</p>
+                            <p key={i} className="text-[11.5px] text-[var(--text-secondary)] leading-relaxed border-l-2 border-amber-500/30 pl-3">{t}</p>
                           ))}
                         </div>
                       </div>
                     )}
 
                     {/* Access level */}
-                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Access level</p>
-                      <p className="text-[11.5px] text-slate-400 leading-relaxed">{currentPage.access}</p>
+                    <div className="p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Access level</p>
+                      <p className="text-[11.5px] text-[var(--text-secondary)] leading-relaxed">{currentPage.access}</p>
                     </div>
 
                     {/* Ask AI prompt */}
@@ -1248,9 +1246,9 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <BookOpen size={40} className="text-slate-700 mb-4 opacity-20" />
-                    <p className="text-sm font-bold text-slate-500">Navigate to a page to see its guide here.</p>
-                    <p className="text-[11px] text-slate-600 mt-2">Try going to Attendance, Leave, or Payroll.</p>
+                    <BookOpen size={40} className="text-[var(--text-muted)] mb-4 opacity-20" />
+                    <p className="text-sm font-bold text-[var(--text-muted)]">Navigate to a page to see its guide here.</p>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-2">Try going to Attendance, Leave, or Payroll.</p>
                   </div>
                 )}
               </div>
@@ -1261,22 +1259,22 @@ const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
               <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
                 <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 mb-2">
                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-light mb-2">Hierarchy Protocol</h4>
-                   <p className="text-[11px] text-slate-400 leading-relaxed">System access is governed by numeric rank. Higher ranks inherit all permissions from lower ranks.</p>
+                   <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">System access is governed by explicit departmental permission bundles. Rank is used only for hierarchy and display.</p>
                 </div>
                 {Object.entries(ROLE_SUMMARIES).sort((a,b) => getRoleRankValue(b[0]) - getRoleRankValue(a[0])).map(([id, r]) => (
-                  <div key={id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] group hover:border-white/20 transition-all">
+                  <div key={id} className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group hover:border-[var(--border-strong)] transition-all">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Shield size={14} style={{ color: r.color }} />
-                        <span className="text-[12px] font-black text-white uppercase tracking-tight">{r.label}</span>
+                        <span className="text-[12px] font-black text-[var(--text-primary)] uppercase tracking-tight">{r.label}</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-md bg-white/5 text-[9px] font-black text-slate-500">RANK {getRoleRankValue(id)}</span>
+                      <span className="px-2 py-0.5 rounded-md bg-[var(--bg-input)] text-[9px] font-black text-[var(--text-muted)]">RANK {getRoleRankValue(id)}</span>
                     </div>
-                    <p className="text-[11.5px] text-slate-400 leading-relaxed mb-4">{r.desc}</p>
-                    <div className="space-y-1.5 border-t border-white/[0.05] pt-3">
-                       <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Privileges</p>
+                    <p className="text-[11.5px] text-[var(--text-secondary)] leading-relaxed mb-4">{r.desc}</p>
+                    <div className="space-y-1.5 border-t border-[var(--border-subtle)] pt-3">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Privileges</p>
                        {r.sees.map((s, i) => (
-                         <div key={i} className="flex gap-2 items-center text-[10.5px] text-slate-500">
+                         <div key={i} className="flex gap-2 items-center text-[10.5px] text-[var(--text-muted)]">
                            <Check size={10} className="text-primary-light" />
                            <span>{s}</span>
                          </div>

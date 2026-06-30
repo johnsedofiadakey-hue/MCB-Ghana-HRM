@@ -78,7 +78,7 @@ const MDKpiView = () => {
         setIndividualData(Array.isArray(res.data) ? res.data : []);
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Failed to load KPI data');
+      setError(err?.response?.data?.error || err?.response?.data?.message || 'Failed to load KPI data');
     } finally {
       setLoading(false);
     }

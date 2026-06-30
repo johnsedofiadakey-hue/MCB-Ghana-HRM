@@ -5,6 +5,7 @@ export enum RoleRank {
     DIRECTOR = 90,
     HR_MANAGER = 88,
     FINANCE_MANAGER = 87,
+    MARKETING_HEAD = 86,
     IT_MANAGER = 85,
     HR_OFFICER = 80,
     MANAGER = 75,
@@ -21,6 +22,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     HR_MANAGER: RoleRank.HR_MANAGER,
     DIRECTOR: RoleRank.DIRECTOR,
     FINANCE_MANAGER: RoleRank.FINANCE_MANAGER,
+    MARKETING_HEAD: RoleRank.MARKETING_HEAD,
     IT_MANAGER: RoleRank.IT_MANAGER,
     HR_OFFICER: RoleRank.HR_OFFICER,
     MANAGER: RoleRank.MANAGER,
@@ -44,6 +46,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     'FINANCE MANAGER': RoleRank.FINANCE_MANAGER,
     'FIANANCE MANAGER': RoleRank.FINANCE_MANAGER,
     'IT MANAGER': RoleRank.IT_MANAGER,
+    'MARKETING HEAD': RoleRank.MARKETING_HEAD,
     'IT ADMIN': RoleRank.IT_MANAGER,
     'MID MANAGER': RoleRank.MID_MANAGER,
 };

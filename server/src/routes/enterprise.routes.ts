@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireRole, requireSpecificRole } from '../middleware/auth.middleware';
 import { aiGuard } from '../middleware/ai-guard.middleware';
 import {
   getRoleDashboard,
@@ -41,6 +41,10 @@ import {
 } from '../controllers/enterprise.controller';
 
 const router = Router();
+const hrRoles = ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'MD', 'DEV'];
+const hrItRoles = [...hrRoles, 'IT_MANAGER', 'IT_ADMIN'];
+const payrollRoles = ['FINANCE_MANAGER', 'HR_DIRECTOR', 'MD', 'DEV'];
+const communicationRoles = ['MARKETING_HEAD', 'HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV'];
 
 router.use(authenticate);
 
@@ -59,28 +63,28 @@ router.get('/performance/reviews', requireRole(60), listPerformanceReviews);
 router.post('/performance/reviews', requireRole(50), upsertPerformanceReview);
 
 // ATS
-router.get('/recruitment/jobs', requireRole(60), listJobPositions);
-router.post('/recruitment/jobs', requireRole(80), createJobPosition);
-router.get('/recruitment/candidates', requireRole(60), listCandidates);
-router.post('/recruitment/candidates', requireRole(60), createCandidate);
-router.patch('/recruitment/candidates/:id/status', requireRole(70), updateCandidateStatus);
-router.post('/recruitment/ai-generate-jd', requireRole(80), aiGuard, generateJobDraft);
-router.get('/culture-pulse', requireRole(85), aiGuard, getCulturePulse);
+router.get('/recruitment/jobs', requireSpecificRole(hrRoles), listJobPositions);
+router.post('/recruitment/jobs', requireSpecificRole(hrRoles), createJobPosition);
+router.get('/recruitment/candidates', requireSpecificRole(hrRoles), listCandidates);
+router.post('/recruitment/candidates', requireSpecificRole(hrRoles), createCandidate);
+router.patch('/recruitment/candidates/:id/status', requireSpecificRole(hrRoles), updateCandidateStatus);
+router.post('/recruitment/ai-generate-jd', requireSpecificRole(hrRoles), aiGuard, generateJobDraft);
+router.get('/culture-pulse', requireSpecificRole(hrRoles), aiGuard, getCulturePulse);
 
 // Onboarding / Offboarding
-router.get('/onboarding/checklists', requireRole(60), listOnboardingChecklists);
-router.post('/onboarding/tasks', requireRole(60), addOnboardingTask);
-router.patch('/onboarding/tasks/:id', requireRole(60), updateOnboardingTask);
+router.get('/onboarding/checklists', requireSpecificRole(hrItRoles), listOnboardingChecklists);
+router.post('/onboarding/tasks', requireSpecificRole(hrItRoles), addOnboardingTask);
+router.patch('/onboarding/tasks/:id', requireSpecificRole(hrItRoles), updateOnboardingTask);
 
-router.post('/offboarding/start', requireRole(70), startOffboarding);
-router.post('/offboarding/exit-interview', requireRole(60), completeExitInterview);
-router.post('/offboarding/asset-return', requireRole(60), recordAssetReturn);
+router.post('/offboarding/start', requireSpecificRole(hrRoles), startOffboarding);
+router.post('/offboarding/exit-interview', requireSpecificRole(hrRoles), completeExitInterview);
+router.post('/offboarding/asset-return', requireSpecificRole(hrItRoles), recordAssetReturn);
 
 // Benefits
-router.get('/benefits/plans', requireRole(60), listBenefitPlans);
-router.post('/benefits/plans', requireRole(80), createBenefitPlan);
-router.get('/benefits/enrollments', requireRole(60), listBenefitEnrollments);
-router.post('/benefits/enrollments', requireRole(70), enrollEmployeeBenefit);
+router.get('/benefits/plans', requireSpecificRole(hrRoles), listBenefitPlans);
+router.post('/benefits/plans', requireSpecificRole(hrRoles), createBenefitPlan);
+router.get('/benefits/enrollments', requireSpecificRole(hrRoles), listBenefitEnrollments);
+router.post('/benefits/enrollments', requireSpecificRole(hrRoles), enrollEmployeeBenefit);
 
 // Shift management
 router.get('/shifts', requireRole(50), listShifts);
@@ -90,11 +94,11 @@ router.post('/shifts/assign', requireRole(70), assignShift);
 
 // Announcements
 router.get('/announcements', requireRole(40), listAnnouncements);
-router.post('/announcements', requireRole(70), createAnnouncement);
+router.post('/announcements', requireSpecificRole(communicationRoles), createAnnouncement);
 
 // Payroll tax rule engine
-router.get('/tax/rules', requireRole(60), listTaxRules);
-router.post('/tax/rules', requireRole(80), createTaxRule);
-router.post('/tax/brackets', requireRole(80), createTaxBracket);
+router.get('/tax/rules', requireSpecificRole(payrollRoles), listTaxRules);
+router.post('/tax/rules', requireSpecificRole(payrollRoles), createTaxRule);
+router.post('/tax/brackets', requireSpecificRole(payrollRoles), createTaxBracket);
 
 export default router;

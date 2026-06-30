@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn';
@@ -24,15 +24,36 @@ const PulseModal = ({
   footer,
   maxWidth = "max-w-3xl"
 }: PulseModalProps) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   
   // Close on Escape key
   useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    document.documentElement.classList.add('modal-lock');
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled'));
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+    requestAnimationFrame(() => {
+      const first = dialogRef.current?.querySelector<HTMLElement>('button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])');
+      (first || dialogRef.current)?.focus();
+    });
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+      document.documentElement.classList.remove('modal-lock');
+      previousFocus?.focus();
+    };
+  }, [isOpen, onClose]);
 
   return (
     <AnimatePresence>
@@ -48,6 +69,11 @@ const PulseModal = ({
           
           <div className="modal-content-container">
             <motion.div 
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 30 }}
@@ -64,12 +90,13 @@ const PulseModal = ({
                     <Icon className="text-[var(--primary)]" size={28} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight uppercase tracking-widest">{title}</h2>
+                    <h2 id={titleId} className="text-2xl font-black text-[var(--text-primary)] tracking-tight uppercase tracking-widest">{title}</h2>
                     {subtitle && <p className="text-[13px] font-bold text-[var(--text-muted)] mt-0.5 opacity-60 uppercase tracking-tighter">{subtitle}</p>}
                   </div>
                 </div>
                 <button 
                   onClick={onClose}
+                  aria-label={`Close ${title}`}
                   className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-all"
                 >
                   <X size={24} />

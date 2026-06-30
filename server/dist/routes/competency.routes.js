@@ -9,6 +9,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
+const appraisalAdminRoles = ['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV'];
 const defaults = [
     { id: 'technical-delivery', name: 'Technical Delivery', description: 'Quality and timeliness of assigned work.', weight: 25 },
     { id: 'collaboration', name: 'Collaboration', description: 'Teamwork, communication, and knowledge sharing.', weight: 25 },
@@ -41,7 +42,7 @@ router.get('/', async (req, res) => {
     const competencies = await getCompetencies(getOrgId(req));
     res.json(competencies);
 });
-router.post('/', (0, auth_middleware_1.requireRole)(80), async (req, res) => {
+router.post('/', (0, auth_middleware_1.requireSpecificRole)(appraisalAdminRoles), async (req, res) => {
     const organizationId = getOrgId(req);
     const competencies = await getCompetencies(organizationId);
     const competency = {
@@ -55,7 +56,7 @@ router.post('/', (0, auth_middleware_1.requireRole)(80), async (req, res) => {
     await saveCompetencies(organizationId, [...competencies, competency]);
     res.status(201).json(competency);
 });
-router.put('/:id', (0, auth_middleware_1.requireRole)(80), async (req, res) => {
+router.put('/:id', (0, auth_middleware_1.requireSpecificRole)(appraisalAdminRoles), async (req, res) => {
     const organizationId = getOrgId(req);
     const competencies = await getCompetencies(organizationId);
     const next = competencies.map(c => c.id === req.params.id ? {
@@ -67,7 +68,7 @@ router.put('/:id', (0, auth_middleware_1.requireRole)(80), async (req, res) => {
     await saveCompetencies(organizationId, next);
     res.json(next.find(c => c.id === req.params.id));
 });
-router.delete('/:id', (0, auth_middleware_1.requireRole)(80), async (req, res) => {
+router.delete('/:id', (0, auth_middleware_1.requireSpecificRole)(appraisalAdminRoles), async (req, res) => {
     const organizationId = getOrgId(req);
     const competencies = await getCompetencies(organizationId);
     await saveCompetencies(organizationId, competencies.filter(c => c.id !== req.params.id));

@@ -10,8 +10,10 @@ import api from '../services/api';
 import { getStoredUser } from '../utils/session';
 import CreateExpenseModal from '../components/expenses/CreateExpenseModal';
 import { toast } from '../utils/toast';
+import { useTranslation } from 'react-i18next';
 
 const Expenses = () => {
+  const { t } = useTranslation();
   const [claims, setClaims] = useState<any[]>([]);
   const [approvals, setApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

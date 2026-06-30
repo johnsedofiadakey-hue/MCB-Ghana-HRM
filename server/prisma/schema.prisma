@@ -78,6 +78,8 @@ model Target {
   reviewerId         String?
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
+  quarter            Int?
+  year               Int?
   isArchived         Boolean                 @default(false)
   archivedAt         DateTime?
   assignee           User?                   @relation("TargetAssignee", fields: [assigneeId], references: [id])
@@ -109,7 +111,7 @@ model TargetMetric {
   currency          String?        @default("GHS")
   weight            Decimal        @default(1.0)
   isAutomated       Boolean        @default(false)
-  automationSource  String?        // e.g., "ATTENDANCE_LATE_COUNT", "PAYROLL_COST_RATIO"
+  automationSource  String? // e.g., "ATTENDANCE_LATE_COUNT", "PAYROLL_COST_RATIO"
   qualitativePrompt String?
   target            Target         @relation(fields: [targetId], references: [id], onDelete: Cascade)
   updates           TargetUpdate[]
@@ -251,6 +253,9 @@ model User {
   rank                        Int                     @default(40)
   employeeCode                String?
   status                      String                  @default("ACTIVE")
+  loginEnabled                Boolean                 @default(true)
+  mustChangePassword          Boolean                 @default(false)
+  employeeLifecycleStage      String                  @default("ACTIVE")
   position                    String?
   departmentId                Int?
   subUnitId                   String?
@@ -366,7 +371,7 @@ model User {
   promotionRequestsForMe      PromotionRequest[]      @relation("EmployeePromotionRequests")
   delegationsGranted          Delegation[]            @relation("GrantedDelegations")
   delegationsReceived         Delegation[]            @relation("ReceivedDelegations")
-  permissionBundles          PermissionBundle[]      @relation("UserPermissionBundles")
+  permissionBundles           PermissionBundle[]      @relation("UserPermissionBundles")
   employeeCheckIns            CheckIn[]               @relation("EmployeeCheckIns")
   managerCheckIns             CheckIn[]               @relation("ManagerCheckIns")
   providedFeedback            Feedback360[]           @relation("ProvidedFeedback")
@@ -385,20 +390,20 @@ model User {
 }
 
 model PromotionRequest {
-  id              String   @id @default(uuid())
-  organizationId  String?  @default("mcb-ghana-tenant")
-  employeeId      String
-  managerId       String
-  targetRole      String
-  targetJobTitle  String?
-  proposedSalary  Decimal?
-  reason          String
-  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  hrComment       String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  employee        User     @relation("EmployeePromotionRequests", fields: [employeeId], references: [id], onDelete: Cascade)
-  manager         User     @relation("ManagerPromotionRequests", fields: [managerId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  organizationId String?  @default("mcb-ghana-tenant")
+  employeeId     String
+  managerId      String
+  targetRole     String
+  targetJobTitle String?
+  proposedSalary Decimal?
+  reason         String
+  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  hrComment      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  employee       User     @relation("EmployeePromotionRequests", fields: [employeeId], references: [id], onDelete: Cascade)
+  manager        User     @relation("ManagerPromotionRequests", fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, status])
 }
@@ -521,6 +526,9 @@ model LeaveRequest {
   hrReviewerId               String?
   hrComment                  String?
   status                     String           @default("DRAFT")
+  requiresMedicalCertificate Boolean          @default(false)
+  medicalCertificateUploaded Boolean          @default(false)
+  medicalCertificateUrl      String?
   createdAt                  DateTime         @default(now())
   updatedAt                  DateTime         @updatedAt
   isArchived                 Boolean          @default(false)
@@ -649,23 +657,23 @@ model AppraisalPacket {
 }
 
 model AppraisalReview {
-  id               String          @id @default(uuid())
-  organizationId   String?         @default("mcb-ghana-tenant")
-  packetId         String
-  reviewerId       String
-  reviewStage      String
-  status           String          @default("PENDING")
-  submittedAt      DateTime?
-  overallRating    Decimal?
-  summary          String?
-  strengths        String?
-  weaknesses       String?
-  achievements     String?
-  developmentNeeds String?
+  id                 String          @id @default(uuid())
+  organizationId     String?         @default("mcb-ghana-tenant")
+  packetId           String
+  reviewerId         String
+  reviewStage        String
+  status             String          @default("PENDING")
+  submittedAt        DateTime?
+  overallRating      Decimal?
+  summary            String?
+  strengths          String?
+  weaknesses         String?
+  achievements       String?
+  developmentNeeds   String?
   aiCalibrationScore Int?
-  responses        String?         @default("{}")
-  packet           AppraisalPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
-  reviewer         User            @relation("ReviewerAppraisalReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  responses          String?         @default("{}")
+  packet             AppraisalPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
+  reviewer           User            @relation("ReviewerAppraisalReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
 
   @@unique([packetId, reviewStage])
   @@index([organizationId, packetId])
@@ -673,83 +681,85 @@ model AppraisalReview {
 }
 
 model Organization {
-  id                     String                @id @default(uuid())
-  name                   String
-  logoUrl                String?
-  email                  String?
-  phone                  String?
-  address                String?
-  city                   String?
-  country                String?
-  currency               String                @default("GHS")
-  subscriptionPlan       String                @default("FREE")
-  subscriptionAmount     Decimal               @default(0)
-  billingStatus          String                @default("FREE")
-  isEnterprise           Boolean               @default(false)
-  features               String                @default("{}")
-  isSuspended            Boolean               @default(false)
-  trialStartDate         DateTime              @default(now())
-  trialEndsAt            DateTime?
-  nextBillingDate        DateTime?
-  customDomain           String?               @unique
-  primaryColor           String                @default("#4F46E5")
-  secondaryColor         String                @default("#1E293B")
-  accentColor            String                @default("#F59E0B")
-  textColor              String                @default("#FFFFFF")
-  sidebarColor           String                @default("#080c16")
-  bgMain                 String?               @default("#f8fafc")
-  bgCard                 String?               @default("#ffffff")
-  textPrimary            String?               @default("#0f172a")
-  textSecondary          String?               @default("#475569")
-  textMuted              String?               @default("#94a3b8")
-  sidebarBg              String?               @default("#080c16")
-  sidebarActive          String?               @default("#1e293b")
-  sidebarText            String?               @default("#ffffff")
-  subtitle               String                @default("HRM OS")
-  themePreset            String                @default("premium-monolith")
-  lightMode              Boolean               @default(false)
-  language               String                @default("en")
-  discountPercentage     Decimal?              @default(0)
-  discountFixed          Decimal?              @default(0)
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @updatedAt
-  allowLeaveBorrowing    Boolean               @default(false)
-  allowLeaveCarryForward Boolean               @default(true)
-  allowCallCard          Boolean               @default(false)
-  bgElevated             String?               @default("#f1f5f9")
-  bgInput                String?               @default("#ffffff")
-  borderSubtle           String?               @default("#e2e8f0")
-  borrowingLimit         Decimal               @default(5)
-  carryForwardLimit      Decimal               @default(10)
-  defaultLeaveAllowance  Decimal               @default(30)
-  domainStatus           String                @default("PENDING")
-  errorColor             String?               @default("#ef4444")
-  infoColor              String?               @default("#06b6d4")
-  isAiEnabled            Boolean               @default(false)
-  maintenanceMode        Boolean               @default(false)
-  subdomain              String?               @unique
-  successColor           String?               @default("#10b981")
-  textInverse            String?               @default("#ffffff")
-  warningColor           String?               @default("#f59e0b")
-  employerSsnitRate      Decimal               @default(0.13)
-  payeBands              String?               @default("[{\"rate\": 0, \"limit\": 490}, {\"rate\": 0.05, \"limit\": 110}, {\"rate\": 0.10, \"limit\": 130}, {\"rate\": 0.175, \"limit\": 3166.67}, {\"rate\": 0.25, \"limit\": 16000}, {\"rate\": 0.30, \"limit\": 30520}, {\"rate\": 0.35, \"limit\": 999999999}]")
-  ssnitRate              Decimal               @default(0.055)
-  vatRate                Decimal               @default(0)
-  idCardPrimaryColor     String?               @default("#009EE3")
-  idCardAccentColor      String?               @default("#EE7100")
-  idCardShowLogo         Boolean               @default(true)
-  idCardShowQrCode       Boolean               @default(true)
-  idCardOrientation      String?               @default("VERTICAL")
-  idCardTheme            String?               @default("DARK")
-  idCardBackMessage      String?
-  idCardSecurityText     String?               @default("Terms of Use")
-  attendanceScanningEnabled Boolean           @default(false)
-  attendanceApiKey       String?               @unique
-  apiKeys                ApiKey[]
-  securityEvents         LoginSecurityEvent[]
-  settings               SystemSettings?
-  users                  User[]
-  webhooks               WebhookSubscription[]
+  id                        String                @id @default(uuid())
+  name                      String
+  logoUrl                   String?
+  email                     String?
+  phone                     String?
+  address                   String?
+  city                      String?
+  country                   String?
+  currency                  String                @default("GHS")
+  subscriptionPlan          String                @default("FREE")
+  subscriptionAmount        Decimal               @default(0)
+  billingStatus             String                @default("FREE")
+  isEnterprise              Boolean               @default(false)
+  features                  String                @default("{}")
+  isSuspended               Boolean               @default(false)
+  trialStartDate            DateTime              @default(now())
+  trialEndsAt               DateTime?
+  nextBillingDate           DateTime?
+  customDomain              String?               @unique
+  primaryColor              String                @default("#4F46E5")
+  secondaryColor            String                @default("#1E293B")
+  accentColor               String                @default("#F59E0B")
+  textColor                 String                @default("#FFFFFF")
+  sidebarColor              String                @default("#080c16")
+  bgMain                    String?               @default("#f8fafc")
+  bgCard                    String?               @default("#ffffff")
+  textPrimary               String?               @default("#0f172a")
+  textSecondary             String?               @default("#475569")
+  textMuted                 String?               @default("#94a3b8")
+  sidebarBg                 String?               @default("#080c16")
+  sidebarActive             String?               @default("#1e293b")
+  sidebarText               String?               @default("#ffffff")
+  subtitle                  String                @default("HRM OS")
+  themePreset               String                @default("premium-monolith")
+  lightMode                 Boolean               @default(false)
+  language                  String                @default("en")
+  discountPercentage        Decimal?              @default(0)
+  discountFixed             Decimal?              @default(0)
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  allowLeaveBorrowing       Boolean               @default(false)
+  allowLeaveCarryForward    Boolean               @default(true)
+  allowCallCard             Boolean               @default(false)
+  bgElevated                String?               @default("#f1f5f9")
+  bgInput                   String?               @default("#ffffff")
+  borderSubtle              String?               @default("#e2e8f0")
+  borrowingLimit            Decimal               @default(5)
+  carryForwardLimit         Decimal               @default(10)
+  defaultLeaveAllowance     Decimal               @default(30)
+  domainStatus              String                @default("PENDING")
+  errorColor                String?               @default("#ef4444")
+  infoColor                 String?               @default("#06b6d4")
+  isAiEnabled               Boolean               @default(false)
+  maintenanceMode           Boolean               @default(false)
+  subdomain                 String?               @unique
+  successColor              String?               @default("#10b981")
+  textInverse               String?               @default("#ffffff")
+  warningColor              String?               @default("#f59e0b")
+  employerSsnitRate         Decimal               @default(0.13)
+  payeBands                 String?               @default("[{\"rate\": 0, \"limit\": 490}, {\"rate\": 0.05, \"limit\": 110}, {\"rate\": 0.10, \"limit\": 130}, {\"rate\": 0.175, \"limit\": 3166.67}, {\"rate\": 0.25, \"limit\": 16000}, {\"rate\": 0.30, \"limit\": 30520}, {\"rate\": 0.35, \"limit\": 999999999}]")
+  ssnitRate                 Decimal               @default(0.055)
+  vatRate                   Decimal               @default(0)
+  idCardPrimaryColor        String?               @default("#009EE3")
+  idCardAccentColor         String?               @default("#EE7100")
+  idCardShowLogo            Boolean               @default(true)
+  idCardShowQrCode          Boolean               @default(true)
+  idCardOrientation         String?               @default("VERTICAL")
+  idCardTheme               String?               @default("DARK")
+  idCardBackMessage         String?
+  idCardSecurityText        String?               @default("Terms of Use")
+  attendanceScanningEnabled Boolean               @default(false)
+  attendanceApiKey          String?               @unique
+  tier2PensionEnabled       Boolean               @default(false)
+  tier2PensionRate          Decimal               @default(0.05)
+  apiKeys                   ApiKey[]
+  securityEvents            LoginSecurityEvent[]
+  settings                  SystemSettings?
+  users                     User[]
+  webhooks                  WebhookSubscription[]
 }
 
 model SystemSettings {
@@ -802,50 +812,85 @@ model Notification {
 }
 
 model PayrollRun {
-  id             String        @id @default(uuid())
-  organizationId String?       @default("mcb-ghana-tenant")
-  period         String
-  month          Int
-  year           Int
-  status         String        @default("DRAFT")
-  totalGross     Decimal       @default(0)
-  totalNet       Decimal       @default(0)
-  approvedAt     DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  approvedById   String?
-  mdApprovedAt   DateTime?
-  mdApprovedById String?
-  reviewedAt     DateTime?
-  reviewedById   String?
-  items          PayrollItem[]
+  id                  String        @id @default(uuid())
+  organizationId      String?       @default("mcb-ghana-tenant")
+  period              String
+  month               Int
+  year                Int
+  status              String        @default("DRAFT")
+  totalGross          Decimal       @default(0)
+  totalNet            Decimal       @default(0)
+  approvedAt          DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  approvedById        String?
+  mdApprovedAt        DateTime?
+  mdApprovedById      String?
+  reviewedAt          DateTime?
+  reviewedById        String?
+  releasedAt          DateTime?
+  releasedById        String?
+  rejectedAt          DateTime?
+  rejectedById        String?
+  rejectionReason     String?
+  voidedAt            DateTime?
+  voidedById          String?
+  calculationSnapshot Json?
+  calculationChecksum String?
+  items               PayrollItem[]
 
   @@index([organizationId, year, month, status])
   @@index([period, status])
 }
 
 model PayrollItem {
-  id              String     @id @default(uuid())
-  organizationId  String?    @default("mcb-ghana-tenant")
-  runId           String
-  employeeId      String
-  baseSalary      Decimal
-  currency        String     @default("GHS")
-  overtime        Decimal    @default(0)
-  bonus           Decimal    @default(0)
-  allowances      Decimal    @default(0)
-  tax             Decimal    @default(0)
-  ssnit           Decimal    @default(0)
-  otherDeductions Decimal    @default(0)
-  grossPay        Decimal
-  netPay          Decimal
-  notes           String?
-  createdAt       DateTime   @default(now())
-  employee        User       @relation("EmployeePayroll", fields: [employeeId], references: [id], onDelete: Cascade)
-  run             PayrollRun @relation(fields: [runId], references: [id])
+  id                    String     @id @default(uuid())
+  organizationId        String?    @default("mcb-ghana-tenant")
+  runId                 String
+  employeeId            String
+  baseSalary            Decimal
+  currency              String     @default("GHS")
+  overtime              Decimal    @default(0)
+  bonus                 Decimal    @default(0)
+  allowances            Decimal    @default(0)
+  expenseReimbursements Decimal    @default(0)
+  tax                   Decimal    @default(0)
+  ssnit                 Decimal    @default(0)
+  employerSsnit         Decimal    @default(0)
+  taxableIncome         Decimal    @default(0)
+  tier2Pension          Decimal    @default(0)
+  otherDeductions       Decimal    @default(0)
+  grossPay              Decimal
+  netPay                Decimal
+  notes                 String?
+  createdAt             DateTime   @default(now())
+  employee              User       @relation("EmployeePayroll", fields: [employeeId], references: [id], onDelete: Cascade)
+  run                   PayrollRun @relation(fields: [runId], references: [id])
 
   @@unique([runId, employeeId])
   @@index([organizationId])
+}
+
+model PayrollStatutoryRule {
+  id                 String    @id @default(uuid())
+  organizationId     String
+  name               String
+  effectiveFrom      DateTime
+  effectiveTo        DateTime?
+  employeeSsnitRate  Decimal   @default(0.055)
+  employerSsnitRate  Decimal   @default(0.13)
+  minimumInsurable   Decimal?
+  maximumInsurable   Decimal?
+  payeBands          Json
+  bonusRules         Json?
+  overtimeRules      Json?
+  accountantApproved Boolean   @default(false)
+  approvedBy         String?
+  approvedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([organizationId, effectiveFrom, effectiveTo])
 }
 
 model OnboardingTemplate {
@@ -862,16 +907,19 @@ model OnboardingTemplate {
 }
 
 model OnboardingTask {
-  id             String             @id @default(uuid())
-  organizationId String?            @default("mcb-ghana-tenant")
-  templateId     String
-  title          String
-  description    String?
-  category       String             @default("General")
-  dueAfterDays   Int                @default(1)
-  isRequired     Boolean            @default(true)
-  order          Int                @default(0)
-  template       OnboardingTemplate @relation(fields: [templateId], references: [id])
+  id                String             @id @default(uuid())
+  organizationId    String?            @default("mcb-ghana-tenant")
+  templateId        String
+  title             String
+  description       String?
+  category          String             @default("General")
+  dueAfterDays      Int                @default(1)
+  isRequired        Boolean            @default(true)
+  order             Int                @default(0)
+  ownerRole         String             @default("EMPLOYEE")
+  autoCompleteEvent String?
+  dependsOnTaskId   String?
+  template          OnboardingTemplate @relation(fields: [templateId], references: [id])
 
   @@index([organizationId, templateId])
 }
@@ -884,6 +932,7 @@ model OnboardingSession {
   startDate      DateTime           @default(now())
   completedAt    DateTime?
   progress       Int                @default(0)
+  status         String             @default("IN_PROGRESS")
   createdAt      DateTime           @default(now())
   items          OnboardingItem[]
   employee       User               @relation("EmployeeOnboarding", fields: [employeeId], references: [id], onDelete: Cascade)
@@ -893,18 +942,28 @@ model OnboardingSession {
 }
 
 model OnboardingItem {
-  id             String            @id @default(uuid())
-  organizationId String?           @default("mcb-ghana-tenant")
-  sessionId      String
-  taskId         String
-  title          String
-  category       String
-  dueDate        DateTime?
-  completedAt    DateTime?
-  completedBy    String?
-  notes          String?
-  isRequired     Boolean           @default(true)
-  session        OnboardingSession @relation(fields: [sessionId], references: [id])
+  id                String            @id @default(uuid())
+  organizationId    String?           @default("mcb-ghana-tenant")
+  sessionId         String
+  taskId            String
+  title             String
+  category          String
+  dueDate           DateTime?
+  completedAt       DateTime?
+  completedBy       String?
+  ownerRole         String            @default("EMPLOYEE")
+  assignedToId      String?
+  status            String            @default("PENDING")
+  startedAt         DateTime?
+  blockedReason     String?
+  evidenceUrl       String?
+  verifiedAt        DateTime?
+  verifiedById      String?
+  dependsOnItemId   String?
+  autoCompleteEvent String?
+  notes             String?
+  isRequired        Boolean           @default(true)
+  session           OnboardingSession @relation(fields: [sessionId], references: [id])
 
   @@index([organizationId, sessionId])
 }
@@ -1624,20 +1683,30 @@ model KpiUpdate {
 }
 
 model SupportTicket {
-  id             String          @id @default(uuid())
-  organizationId String?         @default("mcb-ghana-tenant")
-  subject        String
-  description    String
-  category       String
-  priority       String          @default("NORMAL")
-  status         String          @default("OPEN")
-  employeeId     String
-  assignedToId   String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  assignedTo     User?           @relation("AssignedTickets", fields: [assignedToId], references: [id])
-  employee       User            @relation("EmployeeTickets", fields: [employeeId], references: [id], onDelete: Cascade)
-  comments       TicketComment[]
+  id                String           @id @default(uuid())
+  organizationId    String?          @default("mcb-ghana-tenant")
+  subject           String
+  description       String
+  category          String
+  queue             String
+  priority          String           @default("NORMAL")
+  status            String           @default("OPEN")
+  employeeId        String
+  assignedToId      String?
+  assignedAt        DateTime?
+  slaDueAt          DateTime?
+  slaPausedAt       DateTime?
+  slaPausedMinutes  Int              @default(0)
+  firstResponseAt   DateTime?
+  resolvedAt        DateTime?
+  closedAt          DateTime?
+  resolutionSummary String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  assignedTo        User?            @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  employee          User             @relation("EmployeeTickets", fields: [employeeId], references: [id], onDelete: Cascade)
+  comments          TicketComment[]
+  activities        TicketActivity[]
 
   @@index([organizationId, status])
   @@index([employeeId])
@@ -1650,11 +1719,39 @@ model TicketComment {
   userId         String
   content        String
   attachmentUrl  String?
+  isInternal     Boolean       @default(false)
   createdAt      DateTime      @default(now())
   ticket         SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, ticketId])
+}
+
+model TicketActivity {
+  id             String        @id @default(uuid())
+  organizationId String?       @default("mcb-ghana-tenant")
+  ticketId       String
+  actorId        String
+  action         String
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, ticketId, createdAt])
+}
+
+model KnowledgeArticle {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("mcb-ghana-tenant")
+  queue          String
+  title          String
+  content        String
+  status         String   @default("DRAFT")
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, queue, status])
 }
 
 model Lead {
@@ -1792,8 +1889,8 @@ model PermissionBundle {
   organizationId String?  @default("mcb-ghana-tenant")
   name           String
   permissions    String[] // Array of permission strings
-  scope          String   // SELF, DEPT, TEAM, ORG
-  conditions     String?  // JSON predicates
+  scope          String // SELF, DEPT, TEAM, ORG
+  conditions     String? // JSON predicates
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   users          User[]   @relation("UserPermissionBundles")
@@ -1819,64 +1916,88 @@ model Delegation {
 }
 
 model CheckIn {
-  id                 String    @id @default(uuid())
-  organizationId     String?   @default("mcb-ghana-tenant")
-  employeeId         String
-  managerId          String
-  scheduledAt        DateTime
-  completedAt        DateTime?
-  notes              String?
-  createdAt          DateTime  @default(now())
-  
-  employee           User      @relation("EmployeeCheckIns", fields: [employeeId], references: [id], onDelete: Cascade)
-  manager            User      @relation("ManagerCheckIns", fields: [managerId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid())
+  organizationId String?   @default("mcb-ghana-tenant")
+  employeeId     String
+  managerId      String
+  scheduledAt    DateTime
+  completedAt    DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+
+  employee User @relation("EmployeeCheckIns", fields: [employeeId], references: [id], onDelete: Cascade)
+  manager  User @relation("ManagerCheckIns", fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, employeeId])
   @@index([organizationId, managerId])
 }
 
 model Feedback360 {
-  id                 String    @id @default(uuid())
-  organizationId     String?   @default("mcb-ghana-tenant")
-  providerId         String
-  receiverId         String
-  content            String
-  rating             Int?
-  createdAt          DateTime  @default(now())
-  
-  provider           User      @relation("ProvidedFeedback", fields: [providerId], references: [id], onDelete: Cascade)
-  receiver           User      @relation("ReceivedFeedback", fields: [receiverId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  organizationId String?  @default("mcb-ghana-tenant")
+  providerId     String
+  receiverId     String
+  content        String
+  rating         Int?
+  createdAt      DateTime @default(now())
+
+  provider User @relation("ProvidedFeedback", fields: [providerId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedFeedback", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, providerId])
   @@index([organizationId, receiverId])
 }
 
 model Card {
-  id                 String               @id @default(uuid())
-  organizationId     String?              @default("mcb-ghana-tenant")
-  userId             String
-  cardNumber         String               @unique
-  status             String               @default("REQUESTED") // REQUESTED, ACTIVE, SUSPENDED, REVOKED
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  
-  user               User                 @relation("UserCards", fields: [userId], references: [id], onDelete: Cascade)
-  lifecycleEvents    CardLifecycleEvent[]
+  id               String    @id @default(uuid())
+  organizationId   String?   @default("mcb-ghana-tenant")
+  userId           String
+  cardNumber       String    @unique
+  status           String    @default("REQUESTED") // REQUESTED, ACTIVE, SUSPENDED, REVOKED
+  productionStatus String    @default("DRAFT") // DRAFT, READY_TO_PRINT, PRINTED, ISSUED
+  accessStatus     String    @default("NOT_PROVISIONED") // NOT_PROVISIONED, ACTIVE, SUSPENDED, REVOKED
+  printedAt        DateTime?
+  issuedAt         DateTime?
+  activatedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user            User                 @relation("UserCards", fields: [userId], references: [id], onDelete: Cascade)
+  lifecycleEvents CardLifecycleEvent[]
 
   @@index([organizationId, userId])
 }
 
+model CardDesignSetting {
+  id             String   @id @default(uuid())
+  organizationId String   @unique
+  theme          String   @default("DARK")
+  logoUrl        String?
+  primaryColor   String   @default("#0B4F9C")
+  secondaryColor String   @default("#F5A623")
+  showPhone      Boolean  @default(true)
+  showEmail      Boolean  @default(true)
+  orientation    String   @default("VERTICAL")
+  showLogo       Boolean  @default(true)
+  showQrCode     Boolean  @default(true)
+  backMessage    String?
+  securityText   String?  @default("Terms of Use")
+  updatedById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model CardLifecycleEvent {
-  id                 String               @id @default(uuid())
-  organizationId     String?              @default("mcb-ghana-tenant")
-  cardId             String
-  state              String               // REQUESTED, ACTIVE, SUSPENDED, REVOKED
-  reason             String?
-  performedById      String
-  createdAt          DateTime             @default(now())
-  
-  card               Card                 @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  performedBy        User                 @relation("CardEventPerformer", fields: [performedById], references: [id])
+  id             String   @id @default(uuid())
+  organizationId String?  @default("mcb-ghana-tenant")
+  cardId         String
+  state          String // REQUESTED, ACTIVE, SUSPENDED, REVOKED
+  reason         String?
+  performedById  String
+  createdAt      DateTime @default(now())
+
+  card        Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  performedBy User @relation("CardEventPerformer", fields: [performedById], references: [id])
 
   @@index([organizationId, cardId])
 }
@@ -1921,4 +2042,3 @@ model CallCardConnection {
 
   @@index([callCardId])
 }
-

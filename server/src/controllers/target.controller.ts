@@ -8,6 +8,8 @@ import { HierarchyService } from '../services/hierarchy.service';
 
 const getOrgId = (req: Request) => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 const getUser = (req: Request) => (req as any).user;
+const hasOrganizationTargetOversight = (role?: string) =>
+  ['MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR_MANAGER', 'DEV'].includes(String(role || '').toUpperCase());
 
 const sanitizeTarget = (target: any): any => {
   if (!target) return target;
@@ -32,7 +34,7 @@ export const getTargets = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const user = getUser(req);
     const userId = user.id;
-    const { status, level } = req.query;
+    const { status, level, quarter, year } = req.query;
 
     const managedDepts = await prisma.department.findMany({
       where: { organizationId: orgId, managerId: userId },
@@ -54,6 +56,8 @@ export const getTargets = async (req: Request, res: Response) => {
     };
     if (status) where.status = status;
     if (level) where.level = level;
+    if (quarter) where.quarter = parseInt(quarter as string);
+    if (year) where.year = parseInt(year as string);
 
     const targets = await prisma.target.findMany({
       where,
@@ -137,7 +141,13 @@ export const getTeamTargets = async (req: Request, res: Response) => {
 export const getDepartmentTargets = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const { departmentId } = req.query;
+    const user = getUser(req);
+    const { departmentId, quarter, year } = req.query;
+    const managedDepartments = await prisma.department.findMany({
+      where: { organizationId: orgId, managerId: user.id },
+      select: { id: true },
+    });
+    const allowedDepartmentIds = [...new Set([user.departmentId, ...managedDepartments.map((department) => department.id)].filter(Boolean))] as number[];
 
     const where: any = {
       organizationId: orgId,
@@ -145,6 +155,14 @@ export const getDepartmentTargets = async (req: Request, res: Response) => {
       isArchived: false,
     };
     if (departmentId) where.departmentId = Number(departmentId);
+    if (!hasOrganizationTargetOversight(user.role)) {
+      if (departmentId && !allowedDepartmentIds.includes(Number(departmentId))) {
+        return res.status(403).json({ error: 'Not authorised to view that department target portfolio' });
+      }
+      if (!departmentId) where.departmentId = { in: allowedDepartmentIds };
+    }
+    if (quarter) where.quarter = parseInt(quarter as string);
+    if (year) where.year = parseInt(year as string);
 
     const targets = await prisma.target.findMany({
       where,
@@ -208,9 +226,11 @@ export const getTarget = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Target not found' });
     }
 
-    // Access check: must be involved or rank 80+
+    // Access check: must be involved, own the department, or have explicit
+    // organization-level performance oversight.
     const isInvolved = [target.assigneeId, target.lineManagerId, target.originatorId, target.reviewerId].includes(userId);
-    if (!isInvolved && userRank < 80) {
+    const isDepartmentManager = target.departmentId && target.department?.id === getUser(req).departmentId && userRank >= 70;
+    if (!isInvolved && !isDepartmentManager && !hasOrganizationTargetOversight(getUser(req).role)) {
       return res.status(403).json({ error: 'Not authorised to view this target' });
     }
 
@@ -232,8 +252,10 @@ export const updateTarget = async (req: Request, res: Response) => {
     const target = await prisma.target.findUnique({ where: { id } });
     if (!target || target.organizationId !== orgId) return res.status(404).json({ error: 'Target not found' });
 
-    // Only originator or rank 80+ can edit
-    if (target.originatorId !== userId && userRank < 80) {
+    const department = target.departmentId
+      ? await prisma.department.findFirst({ where: { id: target.departmentId, organizationId: orgId }, select: { managerId: true } })
+      : null;
+    if (target.originatorId !== userId && department?.managerId !== userId && !hasOrganizationTargetOversight(getUser(req).role)) {
       return res.status(403).json({ error: 'Not authorised to edit this target' });
     }
 
@@ -256,10 +278,14 @@ export const deleteTarget = async (req: Request, res: Response) => {
     const target = await prisma.target.findUnique({ where: { id }, include: { _count: { select: { childTargets: true } } } });
     if (!target || target.organizationId !== orgId) return res.status(404).json({ error: 'Target not found' });
 
-    // Permission check: Originator, Dept Manager, or Rank 85+ (Director+)
+    // Permission check: Originator, owning department manager, or explicit
+    // organization-level performance oversight.
     const isOriginator = target.originatorId === userId;
-    const isDeptManager = userRank >= 70 && target.departmentId === getUser(req).departmentId;
-    const isHighRank = userRank >= 85;
+    const department = target.departmentId
+      ? await prisma.department.findFirst({ where: { id: target.departmentId, organizationId: orgId }, select: { managerId: true } })
+      : null;
+    const isDeptManager = department?.managerId === userId;
+    const isHighRank = hasOrganizationTargetOversight(getUser(req).role);
 
     if (!isOriginator && !isDeptManager && !isHighRank) {
       return res.status(403).json({ error: 'Not authorised to delete this target' });
@@ -277,6 +303,16 @@ export const deleteTarget = async (req: Request, res: Response) => {
 export const getStrategicRollup = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
+    const user = getUser(req);
+    const target = await prisma.target.findFirst({ where: { id: req.params.id, organizationId: orgId, isArchived: false } });
+    if (!target) return res.status(404).json({ error: 'Target not found' });
+    const department = target.departmentId
+      ? await prisma.department.findFirst({ where: { id: target.departmentId, organizationId: orgId }, select: { managerId: true } })
+      : null;
+    const isInvolved = [target.assigneeId, target.lineManagerId, target.originatorId, target.reviewerId].includes(user.id);
+    if (!isInvolved && department?.managerId !== user.id && !hasOrganizationTargetOversight(user.role)) {
+      return res.status(403).json({ error: 'Not authorised to view this strategic rollup' });
+    }
     const result = await TargetService.getStrategicRollup(req.params.id, orgId);
     if (!result) return res.status(404).json({ error: 'Target not found' });
     res.json(result);
@@ -289,7 +325,20 @@ export const getStrategicRollup = async (req: Request, res: Response) => {
 export const createTarget = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const originatorId = getUser(req).id;
+    const actor = getUser(req);
+    const originatorId = actor.id;
+    const managedEmployeeIds = await HierarchyService.getManagedEmployeeIds(originatorId, orgId);
+    const targetLevel = req.body.level || 'INDIVIDUAL';
+    if (targetLevel === 'INDIVIDUAL' && req.body.assigneeId && req.body.assigneeId !== originatorId && !managedEmployeeIds.includes(req.body.assigneeId) && !hasOrganizationTargetOversight(actor.role)) {
+      return res.status(403).json({ error: 'Individual targets may only be assigned within your reporting scope' });
+    }
+    if (targetLevel === 'DEPARTMENT') {
+      const department = await prisma.department.findFirst({ where: { id: Number(req.body.departmentId), organizationId: orgId }, select: { managerId: true } });
+      if (!department) return res.status(404).json({ error: 'Department not found' });
+      if (department.managerId !== originatorId && !hasOrganizationTargetOversight(actor.role)) {
+        return res.status(403).json({ error: 'Only the department owner may create this departmental target' });
+      }
+    }
     const target = await TargetService.createTarget(req.body, originatorId, orgId);
     return res.status(201).json(sanitizeTarget(target));
 

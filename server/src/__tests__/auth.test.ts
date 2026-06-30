@@ -5,21 +5,7 @@
  * and JWT authentication edge cases.
  */
 import { describe, it, expect } from 'vitest';
-
-// ── Replicate role rank map for isolated testing ─────────────────────────
-
-const ROLE_RANK_MAP: Record<string, number> = {
-  DEV: 100,
-  MD: 95,
-  DIRECTOR: 90,
-  IT_MANAGER: 85,
-  HR_OFFICER: 85,
-  MANAGER: 80,
-  MID_MANAGER: 70,
-  SUPERVISOR: 60,
-  STAFF: 40,
-  CASUAL: 20,
-};
+import { ROLE_RANK_MAP } from '../types/roles';
 
 const getRoleRank = (role?: string): number => {
   if (!role) return 0;
@@ -37,18 +23,20 @@ describe('Role Rank System', () => {
     expect(getRoleRank('MD')).toBe(95);
     expect(getRoleRank('DIRECTOR')).toBe(90);
     expect(getRoleRank('IT_MANAGER')).toBe(85);
-    expect(getRoleRank('HR_OFFICER')).toBe(85);
-    expect(getRoleRank('MANAGER')).toBe(80);
-    expect(getRoleRank('MID_MANAGER')).toBe(70);
-    expect(getRoleRank('SUPERVISOR')).toBe(60);
-    expect(getRoleRank('STAFF')).toBe(40);
-    expect(getRoleRank('CASUAL')).toBe(20);
+    expect(getRoleRank('MARKETING_HEAD')).toBe(86);
+    expect(getRoleRank('FINANCE_MANAGER')).toBe(87);
+    expect(getRoleRank('HR_OFFICER')).toBe(80);
+    expect(getRoleRank('MANAGER')).toBe(75);
+    expect(getRoleRank('MID_MANAGER')).toBe(65);
+    expect(getRoleRank('SUPERVISOR')).toBe(65);
+    expect(getRoleRank('STAFF')).toBe(50);
+    expect(getRoleRank('CASUAL')).toBe(40);
   });
 
   it('should be case-insensitive', () => {
     expect(getRoleRank('md')).toBe(95);
-    expect(getRoleRank('Staff')).toBe(40);
-    expect(getRoleRank('manager')).toBe(80);
+    expect(getRoleRank('Staff')).toBe(50);
+    expect(getRoleRank('manager')).toBe(75);
     expect(getRoleRank('DEV')).toBe(100);
   });
 
@@ -85,20 +73,20 @@ describe('Role Hierarchy Authorization', () => {
   it('STAFF should not access manager-level routes', () => {
     expect(requireRole(80)('STAFF')).toBe(false);
     expect(requireRole(60)('STAFF')).toBe(false);
-    expect(requireRole(40)('STAFF')).toBe(true);
+    expect(requireRole(50)('STAFF')).toBe(true);
     expect(requireRole(20)('STAFF')).toBe(true);
   });
 
   it('CASUAL should have minimum access', () => {
-    expect(requireRole(20)('CASUAL')).toBe(true);
-    expect(requireRole(40)('CASUAL')).toBe(false);
+    expect(requireRole(40)('CASUAL')).toBe(true);
+    expect(requireRole(50)('CASUAL')).toBe(false);
     expect(requireRole(60)('CASUAL')).toBe(false);
   });
 
   it('MANAGER should access supervisor routes but not director routes', () => {
     expect(requireRole(60)('MANAGER')).toBe(true);
-    expect(requireRole(80)('MANAGER')).toBe(true);
-    expect(requireRole(85)('MANAGER')).toBe(false);
+    expect(requireRole(75)('MANAGER')).toBe(true);
+    expect(requireRole(80)('MANAGER')).toBe(false);
     expect(requireRole(90)('MANAGER')).toBe(false);
   });
 

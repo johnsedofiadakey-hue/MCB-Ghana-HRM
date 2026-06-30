@@ -254,11 +254,11 @@ const ITAdmin = () => {
         </motion.div>
 
         <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-2xl border border-[var(--border-subtle)] overflow-x-auto no-scrollbar max-w-full">
-           {(['overview', 'accounts', 'call-cards', 'assets', 'integrations'] as const).map(tab => (
+           {(['overview', 'accounts', 'assets', 'integrations'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                  className={cn("px-4 sm:px-6 py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                  activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'User Accounts' : tab === 'call-cards' ? 'Digital Call Cards' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
+                {tab === 'overview' ? 'Overview' : tab === 'accounts' ? 'User Accounts' : tab === 'assets' ? 'Infrastructure' : 'Integrations'}
               </button>
            ))}
         </div>
@@ -354,7 +354,7 @@ const ITAdmin = () => {
                         <div className="absolute top-0 right-0 p-10 opacity-[0.03] rotate-12"><ShieldCheck size={160} /></div>
                         <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-8">IT Manager Mandate</h3>
                         <p className="text-sm font-medium text-[var(--text-secondary)] leading-relaxed max-w-2xl mb-10">
-                          As the IT Manager, you are responsible for managing user accounts, issuing employee ID cards, and maintaining system security. Use the accounts tab to create or update user profiles and manage access permissions.
+                          IT owns account provisioning, access activation, equipment assignment, and system security. HR creates employee profiles; Marketing produces employee ID and digital call cards.
                         </p>
                         <button onClick={() => setActiveTab('accounts')} className="px-8 h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 hover:scale-[1.02] transition-transform">
                           Manage User Accounts
@@ -455,9 +455,6 @@ const ITAdmin = () => {
                                   <td className="text-[11px] font-bold uppercase text-[var(--text-secondary)]">{u.departmentObj?.name || 'CENTRAL_HUB'}</td>
                                   <td className="px-10 py-6 text-right">
                                      <div className="flex justify-end gap-3">
-                                        {(normalizedRole === 'IT_MANAGER' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'DEV') && (
-                                           <button onClick={() => handlePrintId(u)} title="Print ID Card" className="p-2.5 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white transition-all"><Key size={14} /></button>
-                                        )}
                                         <button onClick={() => handlePasswordReset(u.id, u.fullName)} disabled={resettingId === u.id} title="Force Password Reset" className="p-2.5 rounded-xl bg-amber-500/5 text-amber-500 border border-amber-500/10 hover:bg-amber-500 hover:text-white transition-all disabled:opacity-50">
                                            {resettingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                                         </button>

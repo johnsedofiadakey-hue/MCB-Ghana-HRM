@@ -3,17 +3,33 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LeaveService = void 0;
+exports.LeaveService = exports.determineMdReviewStatus = exports.determineInitialLeaveStatus = exports.determineHrReviewStatus = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const websocket_service_1 = require("./websocket.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const leave_utils_1 = require("../utils/leave.utils");
+const errors_1 = require("../utils/errors");
+const determineHrReviewStatus = (employeeRole, approve) => {
+    if (!approve)
+        return 'HR_REJECTED';
+    return (0, auth_middleware_1.getRoleRank)(employeeRole || '') < 90 ? 'APPROVED' : 'MD_REVIEW';
+};
+exports.determineHrReviewStatus = determineHrReviewStatus;
+const determineInitialLeaveStatus = (employeeRole, hasReliever) => {
+    if (hasReliever)
+        return 'SUBMITTED';
+    return (0, auth_middleware_1.getRoleRank)(employeeRole || '') >= 92 ? 'MD_REVIEW' : 'HR_REVIEW';
+};
+exports.determineInitialLeaveStatus = determineInitialLeaveStatus;
+const determineMdReviewStatus = (approve) => approve ? 'APPROVED' : 'MD_REJECTED';
+exports.determineMdReviewStatus = determineMdReviewStatus;
 /**
- * Leave Statuses (V4 - Ghana Compliance):
+ * Leave Statuses (V5 - Simplified HR Director-Only Approval):
  * DRAFT, SUBMITTED, RELIEVER_ACCEPTED, RELIEVER_DECLINED,
- * MANAGER_REVIEW, MANAGER_APPROVED, MANAGER_REJECTED,
- * HR_REVIEW, HR_REJECTED,
- * MD_REVIEW, APPROVED, MD_REJECTED, CANCELLED
+ * HR_REVIEW (HR Director is the sole approver), HR_REJECTED,
+ * MD_REVIEW (director-level staff rank >= 90), APPROVED, MD_REJECTED, CANCELLED
+ *
+ * MANAGER_REVIEW / MANAGER_REJECTED are legacy statuses (pre-V5 data) — no longer routed to.
  */
 class LeaveService {
     /**
@@ -27,9 +43,9 @@ class LeaveService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (start < today)
-            throw new Error('Cannot request leave for a past date.');
+            throw new errors_1.ValidationError('Cannot request leave for a past date.');
         if (end < start)
-            throw new Error('End date cannot be earlier than start date.');
+            throw new errors_1.ValidationError('End date cannot be earlier than start date.');
         // 1. DUPLICATE CHECK: Prevent overlapping requests for the SAME user
         const userOverlap = await client_1.default.leaveRequest.findFirst({
             where: {
@@ -41,7 +57,7 @@ class LeaveService {
             }
         });
         if (userOverlap) {
-            throw new Error(`You already have a leave request (${userOverlap.status}) that overlaps with these dates (${userOverlap.startDate.toLocaleDateString()} - ${userOverlap.endDate.toLocaleDateString()}).`);
+            throw new errors_1.ConflictError(`You already have a leave request (${userOverlap.status}) that overlaps with these dates (${userOverlap.startDate.toLocaleDateString()} - ${userOverlap.endDate.toLocaleDateString()}).`);
         }
         // 2. CONCURRENCY AUDIT: Check if department exceeds 20% threshold
         const user = await client_1.default.user.findUnique({
@@ -49,7 +65,7 @@ class LeaveService {
             include: { organization: { select: { defaultLeaveAllowance: true } } }
         });
         if (!user)
-            throw new Error('User not found');
+            throw new errors_1.NotFoundError('User');
         // Check for public holidays and weekends — scope recurring holidays by month/day
         const holidays = await client_1.default.publicHoliday.findMany({
             where: {
@@ -78,7 +94,7 @@ class LeaveService {
         if (availableBalance < leaveDays) {
             const allowedToBorrow = (0, leave_utils_1.canBorrowLeave)(user, leaveDays, availableBalance);
             if (!allowedToBorrow) {
-                throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
+                throw new errors_1.ValidationError(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
             }
         }
         // Check capacity and capture any warning to surface to the user
@@ -90,7 +106,9 @@ class LeaveService {
                 console.warn(`[LeaveService] Concurrency Warning: ${audit.message}`);
             }
         }
-        const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
+        // V5: no reliever → directly to HR_REVIEW (HR Director is sole approver)
+        const initialStatus = (0, exports.determineInitialLeaveStatus)(user.role, Boolean(relieverId));
+        const isSickLeaveLong = (leaveType === 'SICK_LEAVE' || leaveType === 'Sick') && leaveDays >= 3;
         const leave = await client_1.default.leaveRequest.create({
             data: {
                 organizationId,
@@ -103,15 +121,24 @@ class LeaveService {
                 relieverId: relieverId || null,
                 handoverNotes: handoverNotes || null,
                 relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
-                status: initialStatus
+                status: initialStatus,
+                requiresMedicalCertificate: isSickLeaveLong,
             }
         });
         if (relieverId) {
             const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}` : '';
             await (0, websocket_service_1.notify)(relieverId, '🤝 Handover Request', `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
         }
-        else if (user.supervisorId) {
-            await (0, websocket_service_1.notify)(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/leave');
+        else {
+            const reviewerRoles = initialStatus === 'MD_REVIEW' ? ['MD'] : ['HR_DIRECTOR'];
+            const reviewers = await client_1.default.user.findMany({
+                where: { organizationId, role: { in: reviewerRoles }, isArchived: false },
+                select: { id: true }
+            });
+            await Promise.all(reviewers.map(reviewer => (0, websocket_service_1.notify)(reviewer.id, '📅 New Leave Request', `${user.fullName} has requested ${leaveDays} day(s) of leave. Pending your review.`, 'INFO', '/leave')));
+        }
+        if (isSickLeaveLong) {
+            await (0, websocket_service_1.notify)(employeeId, '⚕️ Medical Certificate Required', 'Sick leave of 3+ days requires a medical certificate. Please upload it via your leave request before HR review.', 'WARNING', '/leave');
         }
         return { leave, warning: capacityWarning };
     }
@@ -124,15 +151,18 @@ class LeaveService {
             include: { employee: true, reliever: { select: { fullName: true } } }
         });
         if (!leave)
-            throw new Error('Leave request not found');
+            throw new errors_1.NotFoundError('Leave request');
         if (leave.relieverId !== relieverId)
-            throw new Error('Not authorized to respond as reliever');
+            throw new errors_1.ForbiddenError('Not authorized to respond as reliever');
         if (leave.status !== 'SUBMITTED')
-            throw new Error('Leave is not in SUBMITTED state');
+            throw new errors_1.ValidationError('Leave is not in SUBMITTED state');
         if (!accept && (!comment || comment.trim().length < 3)) {
-            throw new Error('A rejection reason is required to decline a handover request.');
+            throw new errors_1.ValidationError('A rejection reason is required to decline a handover request.');
         }
-        const nextStatus = accept ? 'MANAGER_REVIEW' : 'RELIEVER_DECLINED';
+        // V5: reliever accept → HR_REVIEW (not MANAGER_REVIEW)
+        const nextStatus = accept
+            ? ((0, auth_middleware_1.getRoleRank)(leave.employee.role) >= 92 ? 'MD_REVIEW' : 'HR_REVIEW')
+            : 'RELIEVER_DECLINED';
         return client_1.default.$transaction(async (tx) => {
             const updated = await tx.leaveRequest.update({
                 where: { id: leaveId },
@@ -155,9 +185,12 @@ class LeaveService {
                         status: 'ACCEPTED'
                     }
                 });
-                if (leave.employee.supervisorId) {
-                    await (0, websocket_service_1.notify)(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted.`, 'INFO', '/leave');
-                }
+                const reviewerRoles = nextStatus === 'MD_REVIEW' ? ['MD'] : ['HR_DIRECTOR'];
+                const reviewers = await client_1.default.user.findMany({
+                    where: { organizationId: leave.organizationId || 'mcb-ghana-tenant', role: { in: reviewerRoles }, isArchived: false },
+                    select: { id: true }
+                });
+                await Promise.all(reviewers.map(reviewer => (0, websocket_service_1.notify)(reviewer.id, nextStatus === 'MD_REVIEW' ? '📝 Leave Pending MD Review' : '📝 Leave Pending HR Director Review', `${leave.employee.fullName}'s leave is ready for your review. Reliever has accepted.`, 'INFO', '/leave')));
             }
             await (0, websocket_service_1.notify)(leave.employeeId, accept ? '✅ Reliever Accepted' : '❌ Reliever Declined', `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request.`, accept ? 'SUCCESS' : 'WARNING', '/leave');
             return updated;
@@ -173,26 +206,26 @@ class LeaveService {
             include: { employee: true }
         });
         if (!leave)
-            throw new Error('Leave request not found');
+            throw new errors_1.NotFoundError('Leave request');
         if (!['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) {
-            throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
+            throw new errors_1.ValidationError(`Invalid stage: Leave is currently in ${leave.status} status.`);
         }
         // If there is a pending reliever, block approval until they respond regardless of the flag
         if (leave.status === 'SUBMITTED' && leave.relieverId) {
-            throw new Error('Reliever acceptance is still pending. The handover request must be resolved before managerial review.');
+            throw new errors_1.ValidationError('Reliever acceptance is still pending. The handover request must be resolved before managerial review.');
         }
         const actor = await client_1.default.user.findUnique({ where: { id: managerId } });
         if (!actor)
-            throw new Error('Reviewer account not found');
+            throw new errors_1.NotFoundError('Reviewer account');
         const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
         const isPrimaryManager = leave.employee.supervisorId === managerId;
         const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
-        const isHRorHigher = rank >= 80; // HR_OFFICER (80)+ can approve across departments; MANAGER (75) cannot
+        const isHRorHigher = rank >= 80;
         if (!isPrimaryManager && !isDeptManager && !isHRorHigher) {
-            throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a department manager, or HR (rank 80+).');
+            throw new errors_1.ForbiddenError('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a department manager, or HR (rank 80+).');
         }
         if (!approve && (!comment || comment.trim().length < 3)) {
-            throw new Error('Please provide a reason for rejecting this leave request.');
+            throw new errors_1.ValidationError('Please provide a reason for rejecting this leave request.');
         }
         const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED';
         const updated = await client_1.default.leaveRequest.update({
@@ -225,23 +258,27 @@ class LeaveService {
             include: { employee: true }
         });
         if (!leave)
-            throw new Error('Leave request not found');
-        if (leave.status !== 'HR_REVIEW') {
-            throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. It must be in HR_REVIEW.`);
+            throw new errors_1.NotFoundError('Leave request');
+        // Accept legacy MANAGER_REVIEW status for backward compat with pre-V5 data
+        if (!['HR_REVIEW', 'MANAGER_REVIEW'].includes(leave.status)) {
+            throw new errors_1.ValidationError(`Invalid stage: Leave is currently in ${leave.status} status. It must be in HR_REVIEW.`);
         }
-        const actor = await client_1.default.user.findUnique({ where: { id: hrId } });
+        const actor = await client_1.default.user.findFirst({ where: { id: hrId, organizationId: leave.organizationId, isArchived: false } });
         if (!actor)
-            throw new Error('Reviewer account not found');
-        const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
-        if (rank < 80) {
-            throw new Error('Unauthorized for HR Validation. This action is reserved for HR Officers and above (Rank 80+).');
+            throw new errors_1.NotFoundError('Reviewer account');
+        const actorRole = String(actor.role || '').toUpperCase();
+        if (!['HR_DIRECTOR', 'DEV'].includes(actorRole)) {
+            throw new errors_1.ForbiddenError('Unauthorized: Only the HR Director may approve or reject leave requests.');
         }
         if (!approve && (!comment || comment.trim().length < 3)) {
-            throw new Error('A rejection reason is required for the HR audit trail.');
+            throw new errors_1.ValidationError('A rejection reason is required for the HR audit trail.');
         }
-        const employeeRank = (0, auth_middleware_1.getRoleRank)(leave.employee.role);
-        const isTerminalAtHR = employeeRank < 85;
-        const nextStatus = approve ? (isTerminalAtHR ? 'APPROVED' : 'MD_REVIEW') : 'HR_REJECTED';
+        if (approve && leave.requiresMedicalCertificate && !leave.medicalCertificateUploaded) {
+            throw new errors_1.ValidationError('A medical certificate must be uploaded before HR can approve this sick leave request.');
+        }
+        // V5: HR Director is terminal for staff below rank 92; HR Director's own leave goes to MD
+        const nextStatus = (0, exports.determineHrReviewStatus)(leave.employee.role, approve);
+        const isTerminalAtHR = nextStatus === 'APPROVED';
         return client_1.default.$transaction(async (tx) => {
             const updated = await tx.leaveRequest.update({
                 where: { id: leaveId },
@@ -280,23 +317,20 @@ class LeaveService {
             include: { employee: true }
         });
         if (!leave)
-            throw new Error('Leave request not found');
-        // MD can approve if it's in MD_REVIEW, or bypass HR if they are rank 90+
-        const canProcess = leave.status === 'MD_REVIEW' || ((0, auth_middleware_1.getRoleRank)((await client_1.default.user.findUnique({ where: { id: mdId } }))?.role) >= 90);
-        if (!canProcess) {
-            throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
-        }
-        const actor = await client_1.default.user.findUnique({ where: { id: mdId } });
+            throw new errors_1.NotFoundError('Leave request');
+        const actor = await client_1.default.user.findFirst({ where: { id: mdId, organizationId: leave.organizationId, isArchived: false } });
         if (!actor)
-            throw new Error('Reviewer account not found');
-        const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
-        if (rank < 90) {
-            throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director or Director (Rank 90+).');
+            throw new errors_1.NotFoundError('Reviewer account');
+        if (leave.status !== 'MD_REVIEW') {
+            throw new errors_1.ValidationError(`Invalid stage: Leave is currently in ${leave.status} status.`);
+        }
+        if (!['MD', 'DEV'].includes(String(actor.role || '').toUpperCase())) {
+            throw new errors_1.ForbiddenError('Unauthorized for Final Sign-off. This action is reserved for the Managing Director.');
         }
         if (!approve && (!comment || comment.trim().length < 3)) {
-            throw new Error('A final rejection reason is required for the audit trail.');
+            throw new errors_1.ValidationError('A final rejection reason is required for the audit trail.');
         }
-        const nextStatus = approve ? 'APPROVED' : 'MD_REJECTED';
+        const nextStatus = (0, exports.determineMdReviewStatus)(approve);
         return client_1.default.$transaction(async (tx) => {
             const updated = await tx.leaveRequest.update({
                 where: { id: leaveId },

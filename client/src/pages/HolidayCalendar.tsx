@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '../utils/toast';
 import { Plus, X, Loader2, Trash2, Globe } from 'lucide-react';
 import api from '../services/api';
-import { getStoredUser, getRoleRankValue } from '../utils/session';
+import { getStoredUser, hasPermission } from '../utils/session';
 import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
 
@@ -33,7 +33,7 @@ const HolidayCalendar = () => {
   ];
 
   const user = getStoredUser();
-  const isAdmin = getRoleRankValue(user.role) >= 80;
+  const isAdmin = hasPermission(user, 'leave.hr.approve');
 
   const fetchHolidays = async () => {
     setLoading(true);

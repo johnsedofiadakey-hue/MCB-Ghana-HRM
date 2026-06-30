@@ -40,9 +40,9 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
 // Department KPIs (Director+) — both singular and plural for compatibility
 router.post('/dept-kpi', (0, auth_middleware_1.requireRole)(80), controller.createDepartmentKPI);
-router.get('/dept-kpi', (0, auth_middleware_1.requireRole)(80), controller.getDepartmentKPIs);
+router.get('/dept-kpi', (0, auth_middleware_1.requireRole)(70), controller.getDepartmentKPIs);
 router.post('/dept-kpis', (0, auth_middleware_1.requireRole)(80), controller.createDepartmentKPI);
-router.get('/dept-kpis', (0, auth_middleware_1.requireRole)(80), controller.getDepartmentKPIs);
+router.get('/dept-kpis', (0, auth_middleware_1.requireRole)(70), controller.getDepartmentKPIs);
 router.delete('/dept-kpis/:id', (0, auth_middleware_1.requireRole)(80), controller.deleteDepartmentKPI);
 // Team Targets (Manager+)
 router.post('/team-target', (0, auth_middleware_1.requireRole)(70), controller.createTeamTarget);
@@ -58,5 +58,5 @@ router.get('/my-targets', controller.getMyTargets);
 // Performance Reviews
 router.post('/reviews', controller.createReview);
 router.patch('/reviews/:id/manager', (0, auth_middleware_1.requireRole)(70), controller.managerReview);
-router.patch('/reviews/:id/director', (0, auth_middleware_1.requireRole)(80), controller.directorFinalize);
+router.patch('/reviews/:id/director', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), controller.directorFinalize);
 exports.default = router;

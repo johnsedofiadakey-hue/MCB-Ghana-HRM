@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../utils/toast';
@@ -7,7 +7,7 @@ import {
   ShieldCheck, Umbrella, HeartPulse, Baby, 
   UserMinus, HelpingHand, Users, Send,
   ChevronRight, Printer, Trash2, Calendar, X,
-  AlertTriangle, Zap
+  AlertTriangle, Zap, Upload, Loader2, FileCheck
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,9 +21,9 @@ const statusConfig: Record<string, { label: string; badge: string; icon: React.E
   PENDING_RELIEVER: { label: 'leave.status.PENDING_RELIEVER', badge: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10', icon: Clock, color: 'text-[var(--warning)]' },
   RELIEVER_ACCEPTED: { label: 'leave.status.RELIEVER_ACCEPTED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
   RELIEVER_DECLINED: { label: 'leave.status.RELIEVER_DECLINED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
-  MANAGER_REVIEW: { label: 'leave.status.MANAGER_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: Clock, color: 'text-[var(--primary)]' },
+  MANAGER_REVIEW: { label: 'leave.status.HR_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: Clock, color: 'text-[var(--primary)]' },
   MANAGER_APPROVED: { label: 'leave.status.MANAGER_APPROVED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
-  MANAGER_REJECTED: { label: 'leave.status.MANAGER_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
+  MANAGER_REJECTED: { label: 'leave.status.HR_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
   HR_REVIEW: { label: 'leave.status.HR_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
   HR_REJECTED: { label: 'leave.status.HR_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
   MD_REVIEW: { label: 'leave.status.MD_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
@@ -50,21 +50,39 @@ const Leave = () => {
   const [balance, setBalance] = useState<any>({ leaveBalance: 0, leaveAllowance: 0 });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const leaveDialogRef = useRef<HTMLDivElement>(null);
 
-  // 📋 Modal Scroll Lock: Tier 3 Nuclear Implementation
+  // Lock only background scrolling; do not disable touch or pointer input.
   useEffect(() => {
     if (showModal) {
+      const previousFocus = document.activeElement as HTMLElement | null;
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
       document.documentElement.classList.add('modal-lock');
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') setShowModal(false);
+        if (event.key === 'Tab' && leaveDialogRef.current) {
+          const focusable = Array.from(leaveDialogRef.current.querySelectorAll<HTMLElement>('button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled'));
+          if (!focusable.length) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      requestAnimationFrame(() => leaveDialogRef.current?.focus());
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = '';
+        document.documentElement.classList.remove('modal-lock');
+        previousFocus?.focus();
+      };
     } else {
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
       document.documentElement.classList.remove('modal-lock');
     }
     return () => {
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
       document.documentElement.classList.remove('modal-lock');
     };
   }, [showModal]);
@@ -74,17 +92,20 @@ const Leave = () => {
   const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
   const [relieverSearch, setRelieverSearch] = useState('');
   const [showRelieverOptions, setShowRelieverOptions] = useState(false);
-  const [calculatedDays, setCalculatedDays] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'HISTORY' | 'REGISTER' | 'ADMIN'>('MY');
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
   const [holidays, setHolidays] = useState<any[]>([]);
   const [handoverHistory, setHandoverHistory] = useState<any[]>([]);
   const { setContextData } = useAI();
+  const [medCertUploading, setMedCertUploading] = useState<string | null>(null); // holds leave.id being uploaded
+  const medCertInputRef = useRef<HTMLInputElement>(null);
+  const [medCertTargetId, setMedCertTargetId] = useState<string | null>(null);
 
   const user = getStoredUser();
   // BUG L2 FIX: Use getRoleRankValue to prevent stale rank issues
   const userRank = getRoleRankValue(user?.role);
+  const minLeaveDate = format(new Date(), 'yyyy-MM-dd');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -158,8 +179,8 @@ const Leave = () => {
     return () => setContextData(null);
   }, [leaves, teamLeaves, allLeaves, balance, setContextData]);
 
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleApply = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setSaving(true);
     try {
       const res = await api.post('/leave/apply', form);
@@ -175,35 +196,28 @@ const Leave = () => {
         toast.success(t('leave.alerts.initiate_success'));
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || t('leave.alerts.initiate_error'));
+      const apiError = err?.response?.data;
+      const detail = Array.isArray(apiError?.details) ? apiError.details[0]?.message : null;
+      toast.error(detail || apiError?.error || t('leave.alerts.initiate_error'));
     } finally { setSaving(false); }
   };
 
-  useEffect(() => {
-    if (form.startDate && form.endDate) {
-      const start = new Date(form.startDate);
-      const end = new Date(form.endDate);
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
-        let count = 0;
-        const cur = new Date(start);
-        const holidayDates = new Set(holidays.map(h => new Date(h.date).toISOString().split('T')[0]));
-        
-        while (cur <= end) {
-          const day = cur.getDay();
-          const dateStr = cur.toISOString().split('T')[0];
-          const isWeekend = (day === 0 || day === 6);
-          const isHoliday = holidayDates.has(dateStr);
-          
-          if (!isWeekend && !isHoliday) count++;
-          cur.setDate(cur.getDate() + 1);
-        }
-        setCalculatedDays(Math.max(1, count));
-      } else {
-        setCalculatedDays(null);
-      }
-    } else {
-      setCalculatedDays(null);
+  const calculatedDays = useMemo<number | null>(() => {
+    if (!form.startDate || !form.endDate) return null;
+    const start = new Date(`${form.startDate}T00:00:00.000Z`);
+    const end = new Date(`${form.endDate}T00:00:00.000Z`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
+
+    const holidayDates = new Set(holidays.map((holiday) => new Date(holiday.date).toISOString().split('T')[0]));
+    const cursor = new Date(start);
+    let count = 0;
+    while (cursor <= end) {
+      const day = cursor.getUTCDay();
+      const date = cursor.toISOString().split('T')[0];
+      if (day !== 0 && day !== 6 && !holidayDates.has(date)) count++;
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
+    return count;
   }, [form.startDate, form.endDate, holidays]);
 
   const filteredEmployees = employees.filter(e => 
@@ -277,8 +291,8 @@ const Leave = () => {
 
   const handleReviewAction = async (leaveId: string, approve: boolean) => {
     let role = 'MANAGER';
-    if (userRank >= 90) role = 'MD';
-    else if (userRank >= 85) role = 'HR';
+    if (userRank >= 95) role = 'MD';
+    else if (userRank >= 92) role = 'HR';
     
     let comment = approve ? t('leave.system_verification', { role }) : '';
 
@@ -305,6 +319,27 @@ const Leave = () => {
     }
   };
 
+  const handleMedCertUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !medCertTargetId) return;
+    setMedCertUploading(medCertTargetId);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        await api.patch(`/leave/${medCertTargetId}/medical-cert`, { medicalCertificateUrl: reader.result });
+        toast.success('Medical certificate uploaded successfully.');
+        setLeaves(prev => prev.map(l => l.id === medCertTargetId ? { ...l, medicalCertificateUploaded: true } : l));
+      } catch (err: any) {
+        toast.error(err?.response?.data?.error || 'Upload failed. Please try again.');
+      } finally {
+        setMedCertUploading(null);
+        setMedCertTargetId(null);
+        if (medCertInputRef.current) medCertInputRef.current.value = '';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleDownloadPDF = async (id: string, name: string) => {
     try {
       const res = await api.get(`/export/leave/${id}/pdf?lang=${i18n_fe.language}`, { responseType: 'blob' });
@@ -323,6 +358,14 @@ const Leave = () => {
 
   return (
     <div className="space-y-12 pb-32 overflow-x-hidden">
+      {/* Hidden medical certificate file input */}
+      <input
+        type="file"
+        ref={medCertInputRef}
+        className="hidden"
+        accept=".pdf,.jpg,.jpeg,.png"
+        onChange={handleMedCertUpload}
+      />
        <AnimatePresence>
         {saving && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center backdrop-blur-sm">
@@ -435,7 +478,7 @@ const Leave = () => {
                  <div className="relative z-10 mt-8 space-y-2">
                     <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Senior Queue</p>
                     <p className="text-3xl font-black tracking-tighter">
-                       {teamLeaves.filter(l => (getRoleRank(l.employee?.role) >= 85)).length} <span className="text-sm opacity-60 italic">Critical</span>
+                       {teamLeaves.filter(l => (getRoleRankValue(l.employee?.role) >= 85)).length} <span className="text-sm opacity-60 italic">Critical</span>
                     </p>
                  </div>
                </motion.div>
@@ -550,6 +593,23 @@ const Leave = () => {
                                               <span className="opacity-90">{leave.managerComment || leave.hrComment || leave.relieverComment || t('leave.no_reason_provided')}</span>
                                             </div>
                                           )}
+                                          {leave.requiresMedicalCertificate && !leave.medicalCertificateUploaded && (
+                                            <button
+                                              onClick={() => { setMedCertTargetId(leave.id); medCertInputRef.current?.click(); }}
+                                              disabled={medCertUploading === leave.id}
+                                              className="flex items-center gap-2 text-[9px] font-bold text-[var(--warning)] bg-[var(--warning)]/5 px-3 py-1.5 rounded-lg border border-[var(--warning)]/20 w-fit hover:bg-[var(--warning)]/10 transition-all"
+                                              title="Sick leave ≥ 3 days — medical certificate required"
+                                            >
+                                              {medCertUploading === leave.id ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                                              <span>Medical cert required — upload</span>
+                                            </button>
+                                          )}
+                                          {leave.requiresMedicalCertificate && leave.medicalCertificateUploaded && (
+                                            <div className="flex items-center gap-2 text-[9px] font-bold text-[var(--success)] bg-[var(--success)]/5 px-3 py-1.5 rounded-lg border border-[var(--success)]/10 w-fit">
+                                              <FileCheck size={10} />
+                                              <span>Medical certificate uploaded</span>
+                                            </div>
+                                          )}
                                         </div>
                                      </td>
                                     <td className="px-10 py-6 text-right" data-label={t('common.actions')}>
@@ -569,7 +629,7 @@ const Leave = () => {
                                          {(leave.status === 'SUBMITTED' || leave.status === 'PENDING_RELIEVER') && (
                                              <button onClick={() => handleCancel(leave.id)} className="text-[10px] font-black text-[var(--error)] uppercase tracking-widest hover:underline decoration-[var(--error)]/30 underline-offset-8">{t('leave.decommission_btn')}</button>
                                          )}
-                                         {userRank >= 90 && (
+                                         {userRank >= 95 && (
                                            <button 
                                              onClick={() => handleDeleteLeave(leave.id)}
                                              className="p-2 rounded-lg bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all border border-[var(--error)]/10"
@@ -629,7 +689,13 @@ const Leave = () => {
                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border w-fit shadow-sm", (statusConfig[leave.status] || {}).badge)}>
                                            {t(statusConfig[leave.status]?.label || leave.status)}
                                          </span>
-                                         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {(leave.status === 'MD_REVIEW' || leave.status === 'HR_REVIEW') ? t('leave.stage_final_md', 'MD Approval') : t('leave.stage_initial_manager', 'Direct Manager Review')}</span>
+                                         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {leave.status === 'MD_REVIEW' ? t('leave.stage_final_md', 'MD Approval') : leave.status === 'HR_REVIEW' ? 'HR Director Review' : leave.status === 'SUBMITTED' ? 'Awaiting Reliever' : ''}</span>
+                                         {leave.requiresMedicalCertificate && !leave.medicalCertificateUploaded && (
+                                           <div className="flex items-center gap-1.5 text-[7px] font-black text-[var(--warning)] bg-[var(--warning)]/5 px-2.5 py-1 rounded-lg border border-[var(--warning)]/20 w-fit ml-2">
+                                             <AlertTriangle size={8} />
+                                             <span>Med cert pending</span>
+                                           </div>
+                                         )}
                                       </div>
                                   </td>
                                   <td className="px-10 py-6 text-right" data-label={t('leave.verifications')}>
@@ -646,9 +712,8 @@ const Leave = () => {
                                         >
                                            <Printer size={18} />
                                         </button>
-                                         {((userRank >= 90 && ['MD_REVIEW', 'HR_REVIEW', 'MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) || 
-                                            (userRank >= 85 && ['HR_REVIEW', 'MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) ||
-                                            (userRank >= 60 && ['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status))) && 
+                                         {((userRank >= 95 && leave.status === 'MD_REVIEW') ||
+                                            (userRank >= 92 && ['HR_REVIEW', 'MANAGER_REVIEW'].includes(leave.status))) &&
                                             !(leave.relieverAcceptanceRequired && leave.status === 'SUBMITTED') ? (
                                             <>
                                               <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-[var(--success)]/5 text-[var(--success)] border border-[var(--success)]/10 flex items-center justify-center hover:bg-[var(--success)] hover:text-white transition-all shadow-lg active:scale-90" title={t('common.approve')}><CheckCircle size={18} /></button>
@@ -658,15 +723,14 @@ const Leave = () => {
                                             <div className="px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/30 flex items-center gap-2">
                                                <Clock size={12} className="text-[var(--text-muted)] animate-pulse" /> 
                                                <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
-                                                  {leave.status === 'SUBMITTED' ? t('leave.awaiting_handover') : 
-                                                   leave.status === 'MANAGER_REVIEW' ? t('leave.status.MANAGER_REVIEW') :
-                                                   leave.status === 'HR_REVIEW' ? t('leave.status.HR_REVIEW') :
+                                                  {leave.status === 'SUBMITTED' ? t('leave.awaiting_handover') :
+                                                   ['HR_REVIEW', 'MANAGER_REVIEW'].includes(leave.status) ? 'Awaiting HR Director' :
                                                    leave.status === 'MD_REVIEW' ? t('leave.status.MD_REVIEW') :
                                                    t('leave.final_review')}
                                                </span>
                                             </div>
                                           )}
-                                         {userRank >= 90 && (
+                                         {userRank >= 95 && (
                                            <button 
                                              onClick={() => handleDeleteLeave(leave.id)}
                                              className="p-2 rounded-lg bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all border border-[var(--error)]/10 ml-2"
@@ -684,6 +748,32 @@ const Leave = () => {
                              )}
                          </tbody>
                        </table>
+                     ) : activeTab === 'RELIEF' ? (
+                       <div className="p-4 sm:p-8 space-y-4 min-w-0">
+                         {reliefRequests.map((request) => (
+                           <div key={request.id} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center gap-5">
+                             <div className="min-w-0 flex-1">
+                               <p className="text-sm font-black text-[var(--text-primary)] uppercase break-words">{request.employee?.fullName}</p>
+                               <p className="mt-1 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider break-words">{request.employee?.jobTitle || request.employee?.departmentObj?.name}</p>
+                               <p className="mt-3 text-xs font-semibold text-[var(--text-secondary)] break-words">{request.reason}</p>
+                               <p className="mt-2 text-[10px] font-black text-[var(--primary)] uppercase tracking-wider">
+                                 {format(new Date(request.startDate), 'dd MMM')} — {format(new Date(request.endDate), 'dd MMM yyyy')} · {request.leaveDays} {t('leave.days')}
+                               </p>
+                             </div>
+                             <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                               <button type="button" onClick={() => handleRelieverResponse(request.id, true)} className="h-12 px-5 rounded-xl bg-[var(--success)] text-white text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2">
+                                 <CheckCircle size={16} /> {t('leave.accept_protocol')}
+                               </button>
+                               <button type="button" onClick={() => handleRelieverResponse(request.id, false)} className="h-12 px-5 rounded-xl bg-[var(--error)] text-white text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2">
+                                 <XCircle size={16} /> {t('leave.decline_vector')}
+                               </button>
+                             </div>
+                           </div>
+                         ))}
+                         {reliefRequests.length === 0 && (
+                           <div className="py-20 text-center text-[11px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)] opacity-50">{t('leave.no_handover_detected')}</div>
+                         )}
+                       </div>
                      ) : activeTab === 'REGISTER' ? (
                         <table className="nexus-responsive-table w-full">
                           <thead>
@@ -728,7 +818,7 @@ const Leave = () => {
                                             <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center justify-center gap-2", cfg.badge)}>
                                                 {t(cfg.label)}
                                             </span>
-                                            {userRank >= 90 && (
+                                            {userRank >= 95 && (
                                                 <button 
                                                   onClick={() => handleDeleteLeave(leave.id)}
                                                   className="p-2 rounded-lg bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all border border-[var(--error)]/10"
@@ -791,7 +881,7 @@ const Leave = () => {
                                          >
                                            {t('leave.view_protocol')}
                                         </button>
-                                        {userRank >= 90 && (
+                                        {userRank >= 95 && (
                                            <button 
                                              onClick={() => handleDeleteHandover(rec.id)}
                                              className="p-2 rounded-lg bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"
@@ -939,7 +1029,7 @@ const Leave = () => {
       {/* Modal Architecture */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 lg:p-10">
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-6 lg:p-10">
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowModal(false)}
@@ -947,13 +1037,18 @@ const Leave = () => {
             />
             
             <motion.div
+              ref={leaveDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="leave-dialog-title"
+              tabIndex={-1}
               initial={{ opacity: 0, y: 100, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 100, scale: 0.9 }}
-              className="relative w-full max-w-5xl bg-[var(--bg-card)] rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.3)] border border-[var(--border-subtle)] overflow-hidden flex flex-col md:flex-row h-full max-h-[90vh]"
+              className="nx-modal-content relative w-full max-w-5xl bg-[var(--bg-card)] rounded-2xl sm:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.3)] border border-[var(--border-subtle)] overflow-hidden flex flex-col md:flex-row h-full max-h-[96vh] sm:max-h-[90vh]"
             >
                 {/* Left Panel: Visual Summary */}
-                <div className="w-full md:w-[320px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-12 text-white flex flex-col justify-between relative overflow-hidden shrink-0">
+                <div className="hidden md:flex w-[320px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-12 text-white flex-col justify-between relative overflow-hidden shrink-0">
                    <Umbrella className="absolute -top-20 -left-20 opacity-10" size={300} />
                    
                    <div className="relative z-10 space-y-6">
@@ -961,7 +1056,7 @@ const Leave = () => {
                          <Calendar size={32} />
                       </div>
                       <div>
-                         <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">{t('leave.modal_title')}</h2>
+                         <h2 id="leave-dialog-title" className="text-3xl font-black uppercase tracking-tighter leading-none">{t('leave.modal_title')}</h2>
                          <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mt-4">{t('leave.secure_vector')}</p>
                       </div>
                    </div>
@@ -980,19 +1075,24 @@ const Leave = () => {
                 </div>
 
                 {/* Right Panel: Form Intelligence */}
-                <div className="flex-1 p-8 sm:p-14 overflow-y-auto custom-scrollbar relative bg-[var(--bg-card)]">
-                   <button onClick={() => setShowModal(false)} className="absolute top-8 right-8 p-3 rounded-full hover:bg-[var(--bg-elevated)] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                <div className="flex-1 min-w-0 p-5 pt-16 sm:p-10 md:p-14 overflow-y-auto custom-scrollbar relative bg-[var(--bg-card)]">
+                   <button type="button" aria-label={t('common.close')} onClick={() => setShowModal(false)} className="absolute top-3 right-3 sm:top-6 sm:right-6 p-3 rounded-full hover:bg-[var(--bg-elevated)] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                       <X size={24} />
                    </button>
 
-                   <form onSubmit={handleApply} className="space-y-12">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                   <div className="md:hidden mb-8 pr-12">
+                     <h2 className="text-2xl font-black uppercase tracking-tight text-[var(--text-primary)]">{t('leave.modal_title')}</h2>
+                     <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('leave.secure_vector')}</p>
+                   </div>
+
+                   <form onSubmit={handleApply} className="space-y-8 sm:space-y-12">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
                          <div className="space-y-4">
                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.type_label')}</label>
                             <select 
                                className="nx-input" 
                                value={form.leaveType}
-                               onChange={e => setForm({...form, leaveType: e.target.value})}
+                               onChange={e => setForm((current) => ({...current, leaveType: e.target.value}))}
                                required
                             >
                                <option value="Annual">{t('leave.types.Annual')}</option>
@@ -1030,7 +1130,7 @@ const Leave = () => {
                                             <button 
                                                key={emp.id} type="button"
                                                onClick={() => {
-                                                  setForm({...form, relieverId: emp.id});
+                                                  setForm((current) => ({...current, relieverId: emp.id}));
                                                   setRelieverSearch(emp.fullName);
                                                   setShowRelieverOptions(false);
                                                }}
@@ -1055,13 +1155,13 @@ const Leave = () => {
                          </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
                          <div className="space-y-4">
                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.start_point')}</label>
                             <input 
-                               type="date" className="nx-input" 
+                               type="date" className="nx-input" min={minLeaveDate}
                                value={form.startDate}
-                               onChange={e => setForm({...form, startDate: e.target.value})}
+                               onChange={e => setForm((current) => ({...current, startDate: e.target.value}))}
                                required
                             />
                          </div>
@@ -1069,21 +1169,21 @@ const Leave = () => {
                          <div className="space-y-4">
                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.end_point')}</label>
                             <input 
-                               type="date" className="nx-input" 
+                               type="date" className="nx-input" min={form.startDate || minLeaveDate}
                                value={form.endDate}
-                               onChange={e => setForm({...form, endDate: e.target.value})}
+                               onChange={e => setForm((current) => ({...current, endDate: e.target.value}))}
                                required
                             />
                          </div>
                       </div>
 
                       {calculatedDays !== null && (
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-8 rounded-[2rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-between">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 sm:p-8 rounded-2xl sm:rounded-[2rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
                            <div>
                               <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-1">{t('leave.calculated_span')}</p>
                               <h4 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight">{calculatedDays} {t('leave.business_days')}</h4>
                            </div>
-                           <div className="text-right">
+                           <div className="sm:text-right">
                               <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">{t('leave.estimated_debt')}</p>
                               <h4 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">{(Number(balance.leaveBalance) - calculatedDays).toFixed(1)} <span className="text-xs opacity-50">{t('leave.remaining')}</span></h4>
                            </div>
@@ -1096,7 +1196,7 @@ const Leave = () => {
                             className="nx-input min-h-[120px] py-6" 
                             placeholder={t('leave.reason_placeholder')}
                             value={form.reason}
-                            onChange={e => setForm({...form, reason: e.target.value})}
+                            onChange={e => setForm((current) => ({...current, reason: e.target.value}))}
                             required
                          />
                       </div>
@@ -1116,7 +1216,7 @@ const Leave = () => {
                                   className="nx-input min-h-[100px] py-4" 
                                   placeholder={t('leave.handover_placeholder')}
                                   value={form.handoverNotes}
-                                  onChange={e => setForm({...form, handoverNotes: e.target.value})}
+                                  onChange={e => setForm((current) => ({...current, handoverNotes: e.target.value}))}
                                />
                             </div>
 
@@ -1125,7 +1225,7 @@ const Leave = () => {
                                   <input 
                                      type="checkbox" className="sr-only peer" 
                                      checked={form.relieverAcceptanceRequired}
-                                     onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
+                                     onChange={e => setForm((current) => ({...current, relieverAcceptanceRequired: e.target.checked}))}
                                   />
                                   <div className="w-full h-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full peer-checked:bg-[var(--primary)] peer-checked:border-[var(--primary)] transition-all" />
                                   <div className="absolute left-1 top-1 w-4 h-4 bg-[var(--text-muted)] peer-checked:bg-white rounded-full transition-all peer-checked:translate-x-6" />
@@ -1137,9 +1237,10 @@ const Leave = () => {
 
                       <div className="pt-6">
                          <button 
-                            type="submit" 
-                            disabled={saving}
-                            className="w-full h-18 rounded-[2rem] bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-0.98 transition-all disabled:opacity-50"
+                            type="button"
+                            onClick={() => handleApply()}
+                            disabled={saving || calculatedDays === null || calculatedDays < 1 || !form.reason.trim()}
+                            className="w-full min-h-14 px-4 py-4 rounded-2xl sm:rounded-[2rem] bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                          >
                             {t('leave.initiate_vector_btn')}
                          </button>

@@ -10,7 +10,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRoleRankValue } from '../utils/session';
+import { getStoredUser } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 
 const statusTheme: Record<string, string> = {
@@ -37,7 +37,7 @@ const Training = () => {
   const [enrollForm, setEnrollForm] = useState({ employeeId: '' });
 
   const user = getStoredUser();
-  const isAdmin = getRoleRankValue(user.role) >= 80;
+  const isAdmin = ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'MD', 'DEV'].includes(String(user.role || '').toUpperCase());
 
   const fetchData = useCallback(async () => {
     setLoading(true);

@@ -1,9 +1,11 @@
 import { Router } from 'express';
-import { authenticate, requireRole, requireSpecificRole } from '../middleware/auth.middleware';
+import { authenticate, requirePermission, requireAnyPermission } from '../middleware/auth.middleware';
+import { Permission } from '../types/permissions';
 import {
-  createRun, approveRun, voidRun, deleteRun, updateItem,
+  createRun, submitRun, hrApproveRun, hrRejectRun, releaseRun, mdRejectRun, voidRun, deleteRun, updateItem,
   getRuns, getRunDetail, getMyPayslips,
-  downloadPayslipPDF, exportPayrollCSV, exportBankCSV, getYearlySummary
+  downloadPayslipPDF, exportPayrollCSV, exportBankCSV, getYearlySummary,
+  getStatutoryRules, createStatutoryRule, approveStatutoryRule
 } from '../controllers/payroll.controller';
 import { validate, PayrollRunSchema, PayrollItemUpdateSchema } from '../middleware/validate.middleware';
 import { YearEndSummaryService } from '../services/year-end-summary.service';
@@ -33,22 +35,30 @@ router.get('/my-tax-summary/:year', async (req, res) => {
 });
 
 // Admin — payroll management
-const financeRoles = ['FINANCE_MANAGER', 'MD'];
-const financeAdminRoles = ['MD'];
+// HR_DIRECTOR added: needs full payroll visibility per client requirements
+const payrollViewPermissions = [Permission.PAYROLL_PREPARE, Permission.PAYROLL_HR_APPROVE, Permission.PAYROLL_RELEASE];
 
-router.get('/summary', requireSpecificRole(financeRoles), getYearlySummary);
-router.get('/', requireSpecificRole(financeRoles), getRuns);
-router.post('/run', requireSpecificRole(financeRoles), validate(PayrollRunSchema), createRun);
-router.get('/:id', requireSpecificRole(financeRoles), getRunDetail);
-router.post('/:id/approve', requireSpecificRole(financeAdminRoles), approveRun);
-router.post('/:id/void', requireSpecificRole(financeAdminRoles), voidRun);
-router.delete('/:id', requireSpecificRole(financeAdminRoles), deleteRun);
-router.patch('/items/:itemId', requireSpecificRole(financeRoles), validate(PayrollItemUpdateSchema), updateItem);
-router.get('/:id/export/csv', requireSpecificRole(financeRoles), exportPayrollCSV);
-router.get('/:id/bank-export/csv', requireSpecificRole(financeRoles), exportBankCSV);
+router.get('/summary', requireAnyPermission(payrollViewPermissions), getYearlySummary);
+router.get('/', requireAnyPermission(payrollViewPermissions), getRuns);
+router.get('/statutory-rules', requireAnyPermission(payrollViewPermissions), getStatutoryRules);
+router.post('/statutory-rules', requirePermission(Permission.PAYROLL_PREPARE), createStatutoryRule);
+router.post('/statutory-rules/:id/approve', requirePermission(Permission.PAYROLL_PREPARE), approveStatutoryRule);
+router.post('/runs', requirePermission(Permission.PAYROLL_PREPARE), validate(PayrollRunSchema), createRun);
+router.post('/run', requirePermission(Permission.PAYROLL_PREPARE), validate(PayrollRunSchema), createRun); // compatibility
+router.get('/:id', requireAnyPermission(payrollViewPermissions), getRunDetail);
+router.post('/runs/:id/submit', requirePermission(Permission.PAYROLL_SUBMIT), submitRun);
+router.post('/runs/:id/hr-approve', requirePermission(Permission.PAYROLL_HR_APPROVE), hrApproveRun);
+router.post('/runs/:id/hr-reject', requirePermission(Permission.PAYROLL_HR_APPROVE), hrRejectRun);
+router.post('/runs/:id/release', requirePermission(Permission.PAYROLL_RELEASE), releaseRun);
+router.post('/runs/:id/md-reject', requirePermission(Permission.PAYROLL_RELEASE), mdRejectRun);
+router.post('/runs/:id/void', requirePermission(Permission.PAYROLL_RELEASE), voidRun);
+router.delete('/:id', requirePermission(Permission.PAYROLL_PREPARE), deleteRun);
+router.patch('/items/:itemId', requirePermission(Permission.PAYROLL_PREPARE), validate(PayrollItemUpdateSchema), updateItem);
+router.get('/:id/export/csv', requireAnyPermission(payrollViewPermissions), exportPayrollCSV);
+router.get('/:id/bank-export/csv', requirePermission(Permission.PAYROLL_EXPORT), exportBankCSV);
 
 // Admin year-end summary for all employees
-router.get('/tax-summary/org/:year', requireSpecificRole(financeRoles), async (req, res) => {
+router.get('/tax-summary/org/:year', requireAnyPermission(payrollViewPermissions), async (req, res) => {
   try {
     const orgId = getOrgId(req) || 'mcb-ghana-tenant';
     const year = parseInt(req.params.year);

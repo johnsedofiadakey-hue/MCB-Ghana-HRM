@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import prisma from '../prisma/client';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireSpecificRole } from '../middleware/auth.middleware';
 
 const router = Router();
 router.use(authenticate);
+const appraisalAdminRoles = ['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV'];
 
 type Competency = {
   id: string;
@@ -50,7 +51,7 @@ router.get('/', async (req, res) => {
   res.json(competencies);
 });
 
-router.post('/', requireRole(80), async (req, res) => {
+router.post('/', requireSpecificRole(appraisalAdminRoles), async (req, res) => {
   const organizationId = getOrgId(req);
   const competencies = await getCompetencies(organizationId);
   const competency: Competency = {
@@ -65,7 +66,7 @@ router.post('/', requireRole(80), async (req, res) => {
   res.status(201).json(competency);
 });
 
-router.put('/:id', requireRole(80), async (req, res) => {
+router.put('/:id', requireSpecificRole(appraisalAdminRoles), async (req, res) => {
   const organizationId = getOrgId(req);
   const competencies = await getCompetencies(organizationId);
   const next = competencies.map(c => c.id === req.params.id ? {
@@ -79,7 +80,7 @@ router.put('/:id', requireRole(80), async (req, res) => {
   res.json(next.find(c => c.id === req.params.id));
 });
 
-router.delete('/:id', requireRole(80), async (req, res) => {
+router.delete('/:id', requireSpecificRole(appraisalAdminRoles), async (req, res) => {
   const organizationId = getOrgId(req);
   const competencies = await getCompetencies(organizationId);
   await saveCompetencies(organizationId, competencies.filter(c => c.id !== req.params.id));

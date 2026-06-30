@@ -40,8 +40,8 @@ const router = (0, express_1.Router)();
 // Only Super Admin or maybe MD can trigger backups? 
 // User said "automatic back up... quick fix".
 // Let's allow MD and SUPER_ADMIN.
-router.post('/backup', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), maintenanceController.triggerBackup);
-router.get('/health', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), maintenanceController.checkHealth);
-router.get('/backups', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), maintenanceController.getBackups);
-router.get('/backups/:filename', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), maintenanceController.downloadBackup);
+router.post('/backup', auth_middleware_1.authenticate, (0, auth_middleware_1.requireSpecificRole)(['IT_MANAGER', 'MD', 'DEV']), maintenanceController.triggerBackup);
+router.get('/health', auth_middleware_1.authenticate, (0, auth_middleware_1.requireSpecificRole)(['IT_MANAGER', 'MD', 'DEV']), maintenanceController.checkHealth);
+router.get('/backups', auth_middleware_1.authenticate, (0, auth_middleware_1.requireSpecificRole)(['IT_MANAGER', 'MD', 'DEV']), maintenanceController.getBackups);
+router.get('/backups/:filename', auth_middleware_1.authenticate, (0, auth_middleware_1.requireSpecificRole)(['IT_MANAGER', 'MD', 'DEV']), maintenanceController.downloadBackup);
 exports.default = router;

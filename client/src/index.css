@@ -92,11 +92,6 @@ html.modal-lock {
 
 html.modal-lock body {
   overflow: hidden !important;
-  pointer-events: none; /* Disable interaction with background */
-}
-
-html.modal-lock .nx-modal-content {
-  pointer-events: auto; /* Re-enable for modal content */
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -466,6 +461,37 @@ body {
   --shadow-md: 0 4px 12px rgba(0, 40, 70, 0.08), 0 1px 3px rgba(0, 40, 70, 0.04);
   --shadow-lg: 0 16px 32px rgba(0, 40, 70, 0.10), 0 4px 8px rgba(0, 40, 70, 0.05);
 }
+
+/* ── Semantic status tints — rgba-based so they work on dark AND light themes ── */
+/* These must be defined AFTER the theme blocks so they inherit --success/--warning/etc. */
+:root, [data-theme] {
+  --status-success-bg:     rgba(34, 197, 94, 0.10);
+  --status-success-border: rgba(34, 197, 94, 0.25);
+  --status-success-text:   #22c55e;
+
+  --status-warning-bg:     rgba(238, 113, 0, 0.10);
+  --status-warning-border: rgba(238, 113, 0, 0.25);
+  --status-warning-text:   #EE7100;
+
+  --status-error-bg:       rgba(239, 68, 68, 0.10);
+  --status-error-border:   rgba(239, 68, 68, 0.25);
+  --status-error-text:     #ef4444;
+
+  --status-info-bg:        rgba(var(--primary-rgb), 0.08);
+  --status-info-border:    rgba(var(--primary-rgb), 0.20);
+  --status-info-text:      var(--primary);
+
+  --status-neutral-bg:     rgba(var(--bg-card-rgb, 255,255,255), 0.06);
+  --status-neutral-border: var(--border-subtle);
+  --status-neutral-text:   var(--text-muted);
+}
+
+/* Utility badge classes — use these instead of hardcoded bg-amber-50 etc. */
+.badge-success { background: var(--status-success-bg); border: 1px solid var(--status-success-border); color: var(--status-success-text); }
+.badge-warning { background: var(--status-warning-bg); border: 1px solid var(--status-warning-border); color: var(--status-warning-text); }
+.badge-error   { background: var(--status-error-bg);   border: 1px solid var(--status-error-border);   color: var(--status-error-text); }
+.badge-info    { background: var(--status-info-bg);    border: 1px solid var(--status-info-border);    color: var(--status-info-text); }
+.badge-neutral { background: var(--status-neutral-bg); border: 1px solid var(--status-neutral-border); color: var(--status-neutral-text); }
 
 /* COMPONENTS */
 
@@ -1067,4 +1093,3 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
 .card-flip-back {
   transform: rotateY(180deg);
 }
-

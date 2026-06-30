@@ -13,14 +13,17 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   packet: any;
-  onFinalized: () => void;
+  onFinalized?: () => void;
+  onFinalize?: (data: { finalScore: number; finalVerdict: string; assignedTargets: any[] }) => Promise<void>;
+  loading?: boolean;
 }
 
-const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, packet, onFinalized }) => {
+const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, packet, onFinalized, onFinalize, loading: externalLoading }) => {
   const [suggestion, setSuggestion] = useState<number>(0);
   const [finalScore, setFinalScore] = useState<number>(0);
   const [verdict, setVerdict] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  const loading = externalLoading ?? localLoading;
 
   // Growth targets state
   const [targets, setTargets] = useState<any[]>([]);
@@ -48,21 +51,25 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
       return;
     }
 
-    setLoading(true);
+    setLocalLoading(true);
     try {
-      await api.post('/appraisals/final-sign-off', {
-        packetId: packet.id,
+      const payload = {
         finalScore,
         finalVerdict: verdict,
         assignedTargets: targets
-      });
+      };
+      if (onFinalize) {
+        await onFinalize(payload);
+      } else {
+        await api.post('/appraisals/final-sign-off', { packetId: packet.id, ...payload });
+      }
       toast.success('Performance review finalized and closed.');
-      onFinalized();
+      onFinalized?.();
       onClose();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to finalize review.');
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
   };
 

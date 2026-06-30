@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { getRoleRank } from '../middleware/auth.middleware';
 import { HierarchyService } from '../services/hierarchy.service';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
 
 const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 const getUser = (req: Request) => (req as any).user;
@@ -12,11 +14,14 @@ export const getEmployeeReportingLines = async (req: Request, res: Response) => 
     const orgId = getOrgId(req);
     const { employeeId } = req.params;
     const me = getUser(req);
-    const myRank = getRoleRank(me.role);
-
-    // Access check: self, own managers, or rank 60+
-    if (me.id !== employeeId && myRank < 60) {
-      return res.status(403).json({ error: 'Not authorised' });
+    if (me.id !== employeeId) {
+      const [managedIds, peopleAccess] = await Promise.all([
+        HierarchyService.getManagedEmployeeIds(me.id, orgId),
+        PolicyService.evaluatePolicy(me.id, Permission.EMPLOYEE_READ, { targetUserId: employeeId }),
+      ]);
+      if (!peopleAccess.allowed && !managedIds.includes(employeeId)) {
+        return res.status(403).json({ error: 'Not authorised to view this reporting line' });
+      }
     }
 
     const lines = await (prisma as any).employeeReporting.findMany({

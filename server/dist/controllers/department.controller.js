@@ -31,18 +31,6 @@ const getDepartments = async (req, res) => {
             },
             orderBy: { name: 'asc' }
         });
-        // Fallback: If no departments for current tenant, try to find mcb-ghana-tenant ones
-        if (departments.length === 0 && orgId && orgId !== 'mcb-ghana-tenant') {
-            departments = await client_1.default.department.findMany({
-                where: { organizationId: 'mcb-ghana-tenant' },
-                include: {
-                    manager: { select: { fullName: true, avatarUrl: true, jobTitle: true } },
-                    employees: { select: { id: true } },
-                    subUnits: { select: { id: true, name: true, manager: { select: { fullName: true } } } }
-                },
-                orderBy: { name: 'asc' }
-            });
-        }
         const employeeIds = departments.flatMap((dept) => dept.employees.map((emp) => emp.id));
         const sheets = await client_1.default.kpiSheet.findMany({
             where: {
@@ -92,6 +80,11 @@ const createDepartment = async (req, res) => {
         const { name, managerId } = req.body;
         if (!name?.trim())
             return res.status(400).json({ error: 'Department name is required' });
+        if (managerId) {
+            const manager = await client_1.default.user.findFirst({ where: { id: managerId, organizationId }, select: { id: true } });
+            if (!manager)
+                return res.status(404).json({ error: 'Manager not found in this organization' });
+        }
         const existing = await client_1.default.department.findFirst({ where: { name: name.trim(), organizationId } });
         if (existing)
             return res.status(409).json({ error: 'Department already exists' });
@@ -110,6 +103,11 @@ const updateDepartment = async (req, res) => {
         const { name, managerId } = req.body;
         if (!name?.trim())
             return res.status(400).json({ error: 'Department name is required' });
+        if (managerId) {
+            const manager = await client_1.default.user.findFirst({ where: { id: managerId, ...whereOrg }, select: { id: true } });
+            if (!manager)
+                return res.status(404).json({ error: 'Manager not found in this organization' });
+        }
         const dept = await client_1.default.department.update({
             where: { id: Number(req.params.id), ...whereOrg },
             data: { name: name.trim(), ...(managerId !== undefined ? { managerId: managerId || null } : {}) }

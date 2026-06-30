@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "ts-node src/seed.ts",
+    "db:seed": "ts-node src/scripts/setup.ts",
     "setup": "ts-node src/scripts/setup.ts",
     "db:migrate:dev": "prisma migrate dev",
     "db: studio": "prisma studio",
@@ -19,7 +19,7 @@
     "demo:reset": "ts-node -r dotenv/config src/scripts/reset-demo-tenant.ts"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node src/scripts/setup.ts"
   },
   "dependencies": {
     "@google/genai": "^1.50.1",
@@ -41,6 +41,7 @@
     "@types/ws": "^8.5.10",
     "axios": "^1.13.6",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^5.79.1",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "csv-writer": "^1.6.0",
@@ -62,6 +63,7 @@
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.14.0",
     "prisma": "^5.22.0",
+    "redis": "^6.0.1",
     "sharp": "^0.33.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",

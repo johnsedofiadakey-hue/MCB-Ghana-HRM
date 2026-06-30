@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireSpecificRole } from '../middleware/auth.middleware';
 import { 
     listApiKeys, createApiKey, revokeApiKey,
     listWebhooks, createWebhook, deleteWebhook
@@ -9,7 +9,7 @@ const router = Router();
 
 // Only top level tenant admins (Rank 90+) can manage integrations
 router.use(authenticate);
-router.use(requireRole(90));
+router.use(requireSpecificRole(['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']));
 
 // API Keys
 router.get('/keys', listApiKeys);

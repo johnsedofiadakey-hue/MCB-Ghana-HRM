@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const permissions_1 = require("../types/permissions");
 const sub_unit_controller_1 = require("../controllers/sub-unit.controller");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
 router.get('/', sub_unit_controller_1.getSubUnits);
-router.post('/', (0, auth_middleware_1.requireRole)(75), sub_unit_controller_1.createSubUnit);
-router.patch('/:id', (0, auth_middleware_1.requireRole)(75), sub_unit_controller_1.updateSubUnit);
-router.delete('/:id', (0, auth_middleware_1.requireRole)(75), sub_unit_controller_1.deleteSubUnit);
+router.post('/', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.EMPLOYEE_WRITE), sub_unit_controller_1.createSubUnit);
+router.patch('/:id', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.EMPLOYEE_WRITE), sub_unit_controller_1.updateSubUnit);
+router.delete('/:id', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.EMPLOYEE_WRITE), sub_unit_controller_1.deleteSubUnit);
 exports.default = router;

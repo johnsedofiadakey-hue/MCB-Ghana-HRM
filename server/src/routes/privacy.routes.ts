@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireSpecificRole } from '../middleware/auth.middleware';
 import { exportMyData, anonymiseEmployee, getDataRetentionReport } from '../controllers/privacy.controller';
 
 const router = Router();
@@ -9,7 +9,7 @@ router.use(authenticate);
 router.get('/my-data-export', exportMyData);
 
 // Admin only
-router.post('/anonymise/:employeeId', requireRole(80), anonymiseEmployee);
-router.get('/retention-report', requireRole(80), getDataRetentionReport);
+router.post('/anonymise/:employeeId', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), anonymiseEmployee);
+router.get('/retention-report', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), getDataRetentionReport);
 
 export default router;

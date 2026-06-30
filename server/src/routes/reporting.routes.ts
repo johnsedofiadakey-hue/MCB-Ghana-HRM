@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requirePermission } from '../middleware/auth.middleware';
 import * as ctrl from '../controllers/reporting.controller';
+import { Permission } from '../types/permissions';
 
 const router = Router();
 router.use(authenticate);
@@ -12,12 +13,12 @@ router.get('/employee/:employeeId', ctrl.getEmployeeReportingLines);
 router.get('/my-reports', ctrl.getMyDirectReports);
 
 // Add a reporting line (Manager+ can do this)
-router.post('/', requireRole(60), ctrl.addReportingLine);
+router.post('/', requirePermission(Permission.EMPLOYEE_WRITE), ctrl.addReportingLine);
 
 // Update a reporting line
-router.patch('/:id', requireRole(60), ctrl.updateReportingLine);
+router.patch('/:id', requirePermission(Permission.EMPLOYEE_WRITE), ctrl.updateReportingLine);
 
 // Remove a reporting line
-router.delete('/:id', requireRole(60), ctrl.removeReportingLine);
+router.delete('/:id', requirePermission(Permission.EMPLOYEE_WRITE), ctrl.removeReportingLine);
 
 export default router;

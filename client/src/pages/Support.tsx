@@ -3,35 +3,65 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LifeBuoy, Search, Plus, 
   User,
-  Send, Paperclip, MoreVertical, ChevronLeft,
-  CheckCircle2
+  Send, Paperclip, ChevronLeft,
+  CheckCircle2, BarChart3, BookOpen, Clock, UserPlus, Lock
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import api from '../services/api';
 import { getStoredUser } from '../utils/session';
 import CreateTicketModal from '../components/support/CreateTicketModal';
 import { toast } from '../utils/toast';
+import { useParams } from 'react-router-dom';
 
 const Support = () => {
+  const { ticketId } = useParams();
   const [tickets, setTickets] = useState<any[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('open');
+  const [dashboard, setDashboard] = useState<any>(null);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [isInternalNote, setIsInternalNote] = useState(false);
+  const [showArticleForm, setShowArticleForm] = useState(false);
+  const [articleForm, setArticleForm] = useState({ queue: 'IT', title: '', content: '', status: 'DRAFT' });
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const user = getStoredUser();
-  const isAdmin = (user?.rank || 0) >= 80;
+  const queuePermissions = ['helpdesk.it.manage', 'helpdesk.hr.manage', 'helpdesk.finance.manage', 'helpdesk.marketing.manage', 'helpdesk.facilities.manage', 'helpdesk.other.manage'];
+  const isAdmin = Boolean(user.permissions?.includes('*') || user.permissions?.some(permission => queuePermissions.includes(permission)));
+  const permissionQueueMap: Record<string, string> = {
+    'helpdesk.it.manage': 'IT', 'helpdesk.hr.manage': 'HR', 'helpdesk.finance.manage': 'FINANCE',
+    'helpdesk.marketing.manage': 'MARKETING', 'helpdesk.facilities.manage': 'FACILITIES', 'helpdesk.other.manage': 'OTHER',
+  };
+  const managedQueueNames = user.permissions?.includes('*')
+    ? ['IT', 'HR', 'FINANCE', 'MARKETING', 'FACILITIES', 'OTHER']
+    : Object.entries(permissionQueueMap).filter(([permission]) => user.permissions?.includes(permission)).map(([, queue]) => queue);
+  const tabs = isAdmin
+    ? [['dashboard', 'Queue Dashboard'], ['unassigned', 'Unassigned'], ['mine', 'Assigned to Me'], ['team', 'Team Queue'], ['waiting-requester', 'Waiting on Requester'], ['sla-breaches', 'SLA Breaches'], ['resolved', 'Resolved'], ['knowledge', 'Knowledge Base']]
+    : [['open', 'My Open Tickets'], ['waiting', 'Waiting on Me'], ['resolved', 'Resolved'], ['closed', 'Closed'], ['knowledge', 'Knowledge Base']];
+  const isWorkspaceTab = activeTab === 'dashboard' || activeTab === 'knowledge';
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'open') setActiveTab('dashboard');
+  }, [isAdmin, activeTab]);
 
   useEffect(() => {
     fetchTickets();
-  }, [filterCategory, filterStatus]);
+  }, [filterCategory, filterStatus, activeTab]);
 
   useEffect(() => {
     scrollToBottom();
   }, [selectedTicket?.comments]);
+
+  useEffect(() => {
+    if (ticketId) fetchTicketDetails(ticketId);
+  }, [ticketId]);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -40,8 +70,18 @@ const Support = () => {
   const fetchTickets = async () => {
     try {
       setLoading(true);
+      if (activeTab === 'dashboard') {
+        const res = await api.get('/support/dashboard');
+        setDashboard(res.data);
+        return;
+      }
+      if (activeTab === 'knowledge') {
+        const res = await api.get('/support/knowledge');
+        setArticles(res.data || []);
+        return;
+      }
       const res = await api.get(isAdmin ? '/support/all' : '/support/my', {
-        params: { category: filterCategory, status: filterStatus }
+        params: { category: filterCategory, status: filterStatus, tab: activeTab }
       });
       setTickets(res.data);
     } catch (err) {
@@ -64,18 +104,59 @@ const Support = () => {
   const handleSendComment = async () => {
     if (!comment.trim() || !selectedTicket) return;
     try {
-      await api.post(`/support/tickets/${selectedTicket.id}/comments`, { content: comment });
+      await api.post(`/support/tickets/${selectedTicket.id}/comments`, { content: comment, attachmentUrl: attachmentUrl || undefined, isInternal: isAdmin && isInternalNote });
       setComment('');
+      setAttachmentUrl('');
+      setIsInternalNote(false);
       fetchTicketDetails(selectedTicket.id);
     } catch (err) {
       toast.error('Uplink failed');
     }
   };
 
+  const handleAssignToMe = async () => {
+    if (!selectedTicket) return;
+    try {
+      await api.patch(`/support/tickets/${selectedTicket.id}/status`, { assignedToId: user.id });
+      await fetchTicketDetails(selectedTicket.id);
+      await fetchTickets();
+      toast.success('Ticket assigned to you');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Assignment failed');
+    }
+  };
+
+  const handleReopen = async () => {
+    if (!selectedTicket) return;
+    try {
+      await api.post(`/support/tickets/${selectedTicket.id}/reopen`);
+      await fetchTicketDetails(selectedTicket.id);
+      await fetchTickets();
+      toast.success('Ticket reopened');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not reopen ticket');
+    }
+  };
+
+  const handleCreateArticle = async () => {
+    if (!articleForm.title.trim() || !articleForm.content.trim()) return toast.error('Title and content are required');
+    try {
+      await api.post('/support/knowledge', articleForm);
+      setArticleForm({ queue: managedQueueNames[0] || 'IT', title: '', content: '', status: 'DRAFT' });
+      setShowArticleForm(false);
+      await fetchTickets();
+      toast.success('Knowledge article saved');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not save article');
+    }
+  };
+
   const handleUpdateStatus = async (status: string) => {
     if (!selectedTicket) return;
     try {
-      await api.patch(`/support/tickets/${selectedTicket.id}/status`, { status });
+      const resolutionSummary = status === 'RESOLVED' ? window.prompt('Enter the resolution summary:') : undefined;
+      if (status === 'RESOLVED' && !resolutionSummary?.trim()) return;
+      await api.patch(`/support/tickets/${selectedTicket.id}/status`, { status, resolutionSummary });
       toast.success(`Ticket marked as ${status}`);
       fetchTicketDetails(selectedTicket.id);
       fetchTickets();
@@ -114,14 +195,24 @@ const Support = () => {
       <div className="flex-1 flex gap-8 min-h-0">
         {/* Ticket List Sidebar */}
         <div className={cn(
-          "w-full lg:w-[420px] flex flex-col gap-4 min-h-0",
+          "w-full flex flex-col gap-4 min-h-0",
+          isWorkspaceTab ? "lg:w-full" : "lg:w-[420px]",
           selectedTicket ? "hidden lg:flex" : "flex"
         )}>
-           <div className="p-2 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl space-y-2">
+           <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+             {tabs.map(([value, label]) => (
+               <button key={value} onClick={() => { setActiveTab(value); setSelectedTicket(null); }} className={cn('shrink-0 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border', activeTab === value ? 'bg-[var(--primary)] text-white border-[var(--primary)]' : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>
+                 {label}
+               </button>
+             ))}
+           </div>
+           {!isWorkspaceTab && <div className="p-2 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl space-y-2">
               <div className="relative group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" size={18} />
                 <input 
                   type="text" 
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
                   placeholder="Filter transmissions..." 
                   className="w-full pl-14 pr-6 py-4 rounded-[2rem] bg-transparent border-none outline-none text-sm font-bold text-[var(--text-primary)]"
                 />
@@ -131,16 +222,21 @@ const Support = () => {
                     <option value="">All Areas</option>
                     <option value="IT">IT Infrastructure</option>
                     <option value="HR">HR Policies</option>
-                    <option value="FACILITY">Facilities</option>
+                    <option value="FINANCE">Finance</option>
+                    <option value="MARKETING">Marketing</option>
+                    <option value="FACILITIES">Facilities</option>
+                    <option value="OTHER">Other</option>
                 </select>
                 <select className="flex-1 bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-xl py-2 px-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] outline-none" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                     <option value="">Any Status</option>
                     <option value="OPEN">Open</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="WAITING_REQUESTER">Waiting on Requester</option>
                     <option value="RESOLVED">Resolved</option>
                     <option value="CLOSED">Closed</option>
                 </select>
               </div>
-           </div>
+           </div>}
 
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
             {loading ? (
@@ -148,12 +244,45 @@ const Support = () => {
                 <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Syncing Queue</p>
               </div>
+            ) : activeTab === 'dashboard' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                {[
+                  ['Open workload', Object.entries(dashboard?.byStatus || {}).filter(([status]) => !['RESOLVED', 'CLOSED'].includes(status)).reduce((sum, [, count]) => sum + Number(count), 0)],
+                  ['SLA breaches', dashboard?.slaBreaches || 0],
+                  ['Average resolution', dashboard?.averageResolutionMinutes ? `${Math.round(dashboard.averageResolutionMinutes / 60)}h` : '—'],
+                  ['Queues owned', dashboard?.queues?.length || 0],
+                ].map(([label, value]) => (
+                  <div key={String(label)} className="nx-card p-6 border-[var(--border-subtle)]">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</p>
+                    <p className="mt-3 text-3xl font-black text-[var(--text-primary)]">{value}</p>
+                  </div>
+                ))}
+                <div className="sm:col-span-2 xl:col-span-4 nx-card p-6 border-[var(--border-subtle)]">
+                  <div className="flex items-center gap-2 mb-5"><BarChart3 size={18} className="text-[var(--primary)]" /><h3 className="font-black text-[var(--text-primary)]">Active workload</h3></div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(dashboard?.workload || []).map((item: any) => <div key={item.assignedToId || 'unassigned'} className="rounded-2xl bg-[var(--bg-elevated)] p-4 flex justify-between gap-4"><span className="text-sm font-bold text-[var(--text-secondary)]">{item.name}</span><span className="font-black text-[var(--primary)]">{item.count}</span></div>)}
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === 'knowledge' ? (
+              <div className="space-y-4">
+                {isAdmin && <div className="flex justify-end"><button onClick={() => { setArticleForm(form => ({ ...form, queue: managedQueueNames[0] || 'IT' })); setShowArticleForm(!showArticleForm); }} className="btn-primary w-full sm:w-auto"><Plus size={16} /> New Article</button></div>}
+                {showArticleForm && <div className="nx-card p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select value={articleForm.queue} onChange={e => setArticleForm({ ...articleForm, queue: e.target.value })} className="nx-input"><option value="" disabled>Queue</option>{managedQueueNames.map(queue => <option key={queue}>{queue}</option>)}</select>
+                  <select value={articleForm.status} onChange={e => setArticleForm({ ...articleForm, status: e.target.value })} className="nx-input"><option value="DRAFT">Draft</option><option value="PUBLISHED">Published</option></select>
+                  <input value={articleForm.title} onChange={e => setArticleForm({ ...articleForm, title: e.target.value })} placeholder="Article title" className="nx-input sm:col-span-2" />
+                  <textarea value={articleForm.content} onChange={e => setArticleForm({ ...articleForm, content: e.target.value })} placeholder="Resolution steps and guidance" className="nx-input sm:col-span-2 min-h-32" />
+                  <button onClick={handleCreateArticle} className="btn-primary sm:col-span-2">Save Article</button>
+                </div>}
+                {articles.length === 0 ? <div className="p-16 text-center nx-card"><BookOpen className="mx-auto mb-4 text-[var(--text-muted)]" /><p className="text-sm text-[var(--text-muted)]">No knowledge articles are available.</p></div> :
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{articles.map(article => <article key={article.id} className="nx-card p-6"><div className="flex items-center justify-between gap-4 mb-3"><span className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)]">{article.queue}</span><span className="text-[9px] text-[var(--text-muted)]">{article.status}</span></div><h3 className="font-black text-[var(--text-primary)]">{article.title}</h3><p className="mt-3 text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{article.content}</p></article>)}</div>}
+              </div>
             ) : tickets.length === 0 ? (
               <div className="p-16 text-center bg-[var(--bg-card)] rounded-[2.5rem] border border-dashed border-[var(--border-subtle)]/50 opacity-40">
                 <LifeBuoy size={40} className="mx-auto mb-4" />
                 <p className="text-[var(--text-muted)] text-xs font-black uppercase tracking-widest">No active tickets</p>
               </div>
-            ) : tickets.map((t) => (
+            ) : tickets.filter(t => !search || `${t.subject} ${t.description}`.toLowerCase().includes(search.toLowerCase())).map((t) => (
               <motion.div
                 key={t.id}
                 onClick={() => fetchTicketDetails(t.id)}
@@ -194,7 +323,8 @@ const Support = () => {
         {/* Messaging Container */}
         <div className={cn(
           "flex-1 flex flex-col min-w-0 min-h-0 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] overflow-hidden shadow-2xl relative",
-          !selectedTicket && "hidden lg:flex items-center justify-center p-20 text-center"
+          (!selectedTicket || isWorkspaceTab) && "hidden lg:flex items-center justify-center p-20 text-center",
+          isWorkspaceTab && "lg:hidden"
         )}>
           {!selectedTicket ? (
             <div className="space-y-8 max-w-sm">
@@ -229,6 +359,7 @@ const Support = () => {
                       <span className="flex items-center gap-1.5 opacity-60"><User size={12} className="text-[var(--primary)]" /> {selectedTicket.employee?.fullName}</span>
                       <span className="opacity-20">•</span>
                       <span className="bg-[var(--bg-elevated)] px-2 py-0.5 rounded-md text-[9px] uppercase tracking-widest">{selectedTicket.category} System</span>
+                      {selectedTicket.slaDueAt && <span className="flex items-center gap-1 text-[9px] uppercase tracking-widest"><Clock size={11} /> SLA {new Date(selectedTicket.slaDueAt).toLocaleString()}</span>}
                     </div>
                   </div>
                 </div>
@@ -236,17 +367,25 @@ const Support = () => {
                 <div className="flex items-center gap-3">
                     {isAdmin && (
                         <div className="flex gap-2">
-                             {selectedTicket.status !== 'RESOLVED' && (
+                             {!selectedTicket.assignedToId && <button onClick={handleAssignToMe} className="px-4 py-2 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 text-[9px] font-black uppercase tracking-widest flex items-center gap-2"><UserPlus size={13} /> Assign to me</button>}
+                             {selectedTicket.status === 'OPEN' && (
+                                <button onClick={() => handleUpdateStatus('TRIAGED')} className="px-4 py-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[9px] font-black uppercase tracking-widest">Triage</button>
+                             )}
+                             {selectedTicket.status === 'TRIAGED' && (
+                                <button onClick={() => handleUpdateStatus('IN_PROGRESS')} className="px-4 py-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[9px] font-black uppercase tracking-widest">Start Work</button>
+                             )}
+                             {selectedTicket.status === 'IN_PROGRESS' && (
+                                <button onClick={() => handleUpdateStatus('WAITING_REQUESTER')} className="px-4 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] font-black uppercase tracking-widest">Wait for Requester</button>
+                             )}
+                             {['IN_PROGRESS', 'WAITING_REQUESTER', 'REOPENED'].includes(selectedTicket.status) && (
                                 <button onClick={() => handleUpdateStatus('RESOLVED')} className="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all">Resolve</button>
                              )}
-                             {selectedTicket.status !== 'CLOSED' && (
+                             {selectedTicket.status === 'RESOLVED' && (
                                 <button onClick={() => handleUpdateStatus('CLOSED')} className="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Close</button>
                              )}
                         </div>
                     )}
-                    <button className="w-12 h-12 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
-                      <MoreVertical size={20} />
-                    </button>
+                    {selectedTicket.employeeId === user.id && ['RESOLVED', 'CLOSED'].includes(selectedTicket.status) && <button onClick={handleReopen} className="px-4 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] font-black uppercase tracking-widest">Reopen</button>}
                 </div>
               </div>
 
@@ -268,6 +407,8 @@ const Support = () => {
                     </div>
                   </div>
                 </div>
+
+                {selectedTicket.resolutionSummary && <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5"><p className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Resolution summary</p><p className="mt-2 text-sm text-[var(--text-primary)]">{selectedTicket.resolutionSummary}</p></div>}
 
                 <AnimatePresence>
                   {selectedTicket.comments?.map((c: any) => (
@@ -298,14 +439,16 @@ const Support = () => {
                             ? "bg-[var(--primary)]/5 border-[var(--primary)]/20 text-[var(--text-primary)] rounded-tr-none" 
                             : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-tl-none"
                         )}>
+                          {c.isInternal && <div className="mb-2 flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-amber-500"><Lock size={10} /> Internal note</div>}
                           {c.content}
+                          {c.attachmentUrl && <a href={c.attachmentUrl} target="_blank" rel="noreferrer" className="mt-3 block text-xs font-bold text-[var(--primary)] underline break-all">View attachment</a>}
                         </div>
                         <div className={cn(
                             "mt-3 flex items-center gap-2 px-2",
                             c.userId === user.id ? "justify-end" : "justify-start"
                         )}>
                             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-40">
-                                {['IT_ADMIN', 'IT_MANAGER'].includes(c.user?.role) ? 'Tech Support' : 'Personnel'}
+                                {c.isInternal ? 'Department note' : c.user?.role?.replaceAll('_', ' ') || 'Personnel'}
                             </span>
                             <span className="w-1 h-1 rounded-full bg-slate-300" />
                             <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-30">{new Date(c.createdAt).toLocaleString()}</span>
@@ -319,6 +462,7 @@ const Support = () => {
 
               {/* Uplink Area */}
               <div className="p-6 md:p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                {isAdmin && <label className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]"><input type="checkbox" checked={isInternalNote} onChange={e => setIsInternalNote(e.target.checked)} /> Internal note (hidden from requester)</label>}
                 <div className="flex items-center gap-4 p-2 pl-6 pr-2 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] focus-within:border-[var(--primary)] focus-within:bg-[var(--bg-card)] focus-within:shadow-[0_0_20px_rgba(var(--primary-rgb),0.05)] transition-all">
                   <input 
                     type="text" 
@@ -329,7 +473,7 @@ const Support = () => {
                     className="flex-1 bg-transparent border-none outline-none text-sm font-bold py-4 text-[var(--text-primary)]"
                   />
                   <div className="flex items-center gap-2">
-                    <button className="w-12 h-12 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors rounded-2xl hover:bg-[var(--bg-card)]"><Paperclip size={20} /></button>
+                    <button onClick={() => setAttachmentUrl(window.prompt('Paste a secure attachment URL:') || '')} className={cn('w-12 h-12 flex items-center justify-center hover:text-[var(--primary)] transition-colors rounded-2xl hover:bg-[var(--bg-card)]', attachmentUrl ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]')} title={attachmentUrl || 'Attach a secure URL'}><Paperclip size={20} /></button>
                     <button 
                       onClick={handleSendComment}
                       className="w-14 h-14 bg-[var(--primary)] text-white rounded-2xl hover:shadow-[0_10px_30px_rgba(var(--primary-rgb),0.3)] hover:scale-105 transition-all flex items-center justify-center"

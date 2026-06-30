@@ -12,7 +12,12 @@ export type SessionUser = {
   organizationId?: string;
   departmentId?: number;
   isImpersonating?: boolean;
+  permissions?: string[];
+  mustChangePassword?: boolean;
 };
+
+export const hasPermission = (user: SessionUser, permission: string): boolean =>
+  Boolean(user.permissions?.includes('*') || user.permissions?.includes(permission));
 
 export { ROLE_LABELS, ROLE_RANK_MAP as ROLE_RANKS };
 

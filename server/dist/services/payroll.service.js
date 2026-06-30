@@ -36,10 +36,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPayrollSummaryByYear = exports.getMyPayslips = exports.getPayrollRunDetail = exports.getPayrollRuns = exports.updatePayrollItem = exports.deletePayrollRun = exports.voidPayrollRun = exports.approvePayrollRun = exports.createPayrollRun = exports.calculateGhanaPayroll = exports.calculateGhanaSSNIT = exports.calculateGhanaPAYE = void 0;
+exports.getPayrollSummaryByYear = exports.getMyPayslips = exports.getPayrollRunDetail = exports.getPayrollRuns = exports.updatePayrollItem = exports.deletePayrollRun = exports.voidPayrollRun = exports.approvePayrollRun = exports.transitionPayrollRun = exports.createPayrollRun = exports.calculateGhanaPayroll = exports.calculateGhanaSSNIT = exports.calculateGhanaPAYE = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const email_service_1 = require("./email.service");
 const websocket_service_1 = require("./websocket.service");
+const crypto_1 = __importDefault(require("crypto"));
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const DEFAULT_CURRENCY = 'GHS';
 const SSNIT_EMPLOYEE_RATE = 0.055; // 5.5%
@@ -74,39 +75,65 @@ const calculateGhanaPAYE = (taxableIncome, customBands) => {
 };
 exports.calculateGhanaPAYE = calculateGhanaPAYE;
 // ── GHANA SSNIT ─────────────────────────────────────────────────────────────────
-const calculateGhanaSSNIT = (grossSalary, employeeRate = 0.055, employerRate = 0.13) => {
-    const employeeSSNIT = Math.round(grossSalary * employeeRate * 100) / 100;
-    const employerSSNIT = Math.round(grossSalary * employerRate * 100) / 100;
+const calculateGhanaSSNIT = (basicSalary, employeeRate = 0.055, employerRate = 0.13, minimum, maximum) => {
+    const insurableEarnings = Math.min(Math.max(basicSalary, minimum || 0), maximum || Number.POSITIVE_INFINITY);
+    const employeeSSNIT = Math.round(insurableEarnings * employeeRate * 100) / 100;
+    const employerSSNIT = Math.round(insurableEarnings * employerRate * 100) / 100;
     return { employeeSSNIT, employerSSNIT };
 };
 exports.calculateGhanaSSNIT = calculateGhanaSSNIT;
 // ── MASTER CALCULATION (call this per employee per payroll run) ────────────────
 const calculateGhanaPayroll = (params) => {
-    const { grossSalary, bonus = 0, allowances = 0, overtime = 0, loanDeductions = 0, otherDeductions = 0, ssnitRate, employerSsnitRate, payeBands } = params;
+    const { grossSalary, bonus = 0, allowances = 0, overtime = 0, loanDeductions = 0, otherDeductions = 0, expenseReimbursements = 0, ssnitRate, employerSsnitRate, payeBands, minimumInsurable, maximumInsurable, bonusYtd = 0, bonusAnnualThresholdRate = 0.15, bonusFlatRate = 0.05, overtimeFlatRate, tier2PensionEnabled = false, tier2PensionRate = 0.05 } = params;
     const totalGross = grossSalary + bonus + allowances + overtime;
-    const { employeeSSNIT, employerSSNIT } = (0, exports.calculateGhanaSSNIT)(totalGross, ssnitRate, employerSsnitRate);
-    const taxableIncome = Math.max(0, totalGross - employeeSSNIT);
-    const payeTax = (0, exports.calculateGhanaPAYE)(taxableIncome, payeBands);
-    const totalDeductions = employeeSSNIT + payeTax + loanDeductions + otherDeductions;
-    const netPay = Math.max(0, Math.round((totalGross - totalDeductions) * 100) / 100);
+    const { employeeSSNIT, employerSSNIT } = (0, exports.calculateGhanaSSNIT)(grossSalary, ssnitRate, employerSsnitRate, minimumInsurable, maximumInsurable);
+    // Tier 2 occupational pension (optional, deducted from basic salary before PAYE)
+    const tier2Pension = tier2PensionEnabled
+        ? Math.round(grossSalary * tier2PensionRate * 100) / 100
+        : 0;
+    const annualBonusThreshold = grossSalary * 12 * bonusAnnualThresholdRate;
+    const remainingFlatBonus = Math.max(0, annualBonusThreshold - bonusYtd);
+    const flatRateBonus = Math.min(bonus, remainingFlatBonus);
+    const graduatedBonus = Math.max(0, bonus - flatRateBonus);
+    const graduatedOvertime = overtimeFlatRate == null ? overtime : 0;
+    const taxableIncome = Math.max(0, grossSalary + allowances + graduatedBonus + graduatedOvertime - employeeSSNIT - tier2Pension);
+    const payeTax = Math.round(((0, exports.calculateGhanaPAYE)(taxableIncome, payeBands) + flatRateBonus * bonusFlatRate + (overtimeFlatRate == null ? 0 : overtime * overtimeFlatRate)) * 100) / 100;
+    const totalDeductions = employeeSSNIT + tier2Pension + payeTax + loanDeductions + otherDeductions;
+    const netPay = Math.max(0, Math.round((totalGross - totalDeductions + expenseReimbursements) * 100) / 100);
     return { grossPay: Math.round(totalGross * 100) / 100, employeeSSNIT,
         employerSSNIT, taxableIncome: Math.round(taxableIncome * 100) / 100,
-        payeTax, loanDeductions, otherDeductions, netPay,
+        tier2Pension, payeTax, loanDeductions, otherDeductions, netPay,
         currency: DEFAULT_CURRENCY };
 };
 exports.calculateGhanaPayroll = calculateGhanaPayroll;
+const getStatutoryRule = async (organizationId, periodDate) => {
+    const rule = await client_1.default.payrollStatutoryRule.findFirst({
+        where: {
+            organizationId,
+            accountantApproved: true,
+            effectiveFrom: { lte: periodDate },
+            OR: [{ effectiveTo: null }, { effectiveTo: { gte: periodDate } }],
+        },
+        orderBy: { effectiveFrom: 'desc' },
+    });
+    if (!rule)
+        throw new Error('No accountant-approved statutory payroll rule is configured for this period.');
+    return rule;
+};
 const createPayrollRun = async (organizationId, month, year, employeeIds, adjustments) => {
     const period = `${year}-${String(month).padStart(2, '0')}`;
     const existing = await client_1.default.payrollRun.findFirst({ where: { period, organizationId } });
     if (existing)
         throw new Error(`Payroll run for ${period} already exists. Delete or void it first.`);
-    const org = await client_1.default.organization.findUnique({
-        where: { id: organizationId },
-        select: { ssnitRate: true, employerSsnitRate: true, payeBands: true }
-    });
-    const ssnitRate = Number(org?.ssnitRate ?? 0.055);
-    const employerSsnitRate = Number(org?.employerSsnitRate ?? 0.13);
-    const payeBands = typeof org?.payeBands === 'string' ? JSON.parse(org.payeBands) : (org?.payeBands || []);
+    const [org, statutoryRule] = await Promise.all([
+        client_1.default.organization.findUnique({ where: { id: organizationId }, select: { tier2PensionEnabled: true, tier2PensionRate: true } }),
+        getStatutoryRule(organizationId, new Date(Date.UTC(year, month - 1, 1))),
+    ]);
+    const ssnitRate = Number(statutoryRule.employeeSsnitRate);
+    const employerSsnitRate = Number(statutoryRule.employerSsnitRate);
+    const payeBands = statutoryRule.payeBands;
+    const tier2PensionEnabled = org?.tier2PensionEnabled ?? false;
+    const tier2PensionRate = Number(org?.tier2PensionRate ?? 0.05);
     const employees = await client_1.default.user.findMany({
         where: {
             organizationId,
@@ -137,6 +164,12 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
         },
         include: { loan: { select: { employeeId: true } } }
     });
+    const priorBonuses = await client_1.default.payrollItem.groupBy({
+        by: ['employeeId'],
+        where: { organizationId, run: { year, status: 'RELEASED' } },
+        _sum: { bonus: true },
+    });
+    const bonusYtdMap = new Map(priorBonuses.map((entry) => [entry.employeeId, Number(entry._sum.bonus || 0)]));
     const installmentMap = new Map();
     pendingInstallments.forEach(i => {
         if (employeeIds?.length && !employeeIds.includes(i.loan.employeeId))
@@ -158,31 +191,41 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
         // Aggregate manual adjustments with automatic module deductions
         const autoExpense = expenseMap.get(emp.id) || 0;
         const autoInstallment = installmentMap.get(emp.id) || 0;
-        const allowances = (adj?.allowances ?? 0) + autoExpense;
+        const allowances = adj?.allowances ?? 0;
         const otherDeductions = (adj?.otherDeductions ?? 0) + autoInstallment;
-        const { employeeSSNIT, payeTax, netPay, grossPay: totalGrossPay } = (0, exports.calculateGhanaPayroll)({
+        const calc = (0, exports.calculateGhanaPayroll)({
             grossSalary: base,
-            bonus: bonus,
-            allowances: allowances,
-            overtime: overtime,
+            bonus,
+            allowances,
+            overtime,
+            expenseReimbursements: autoExpense,
             loanDeductions: autoInstallment,
             otherDeductions: adj?.otherDeductions ?? 0,
             ssnitRate,
             employerSsnitRate,
-            payeBands
+            payeBands,
+            minimumInsurable: statutoryRule.minimumInsurable == null ? undefined : Number(statutoryRule.minimumInsurable),
+            maximumInsurable: statutoryRule.maximumInsurable == null ? undefined : Number(statutoryRule.maximumInsurable),
+            bonusYtd: bonusYtdMap.get(emp.id) || 0,
+            bonusAnnualThresholdRate: Number(statutoryRule.bonusRules?.annualThresholdRate ?? 0.15),
+            bonusFlatRate: Number(statutoryRule.bonusRules?.flatRate ?? 0.05),
+            overtimeFlatRate: statutoryRule.overtimeRules?.flatRate == null ? undefined : Number(statutoryRule.overtimeRules.flatRate),
+            tier2PensionEnabled,
+            tier2PensionRate,
         });
         const item = await client_1.default.payrollItem.create({
             data: {
                 organizationId,
                 runId: run.id, employeeId: emp.id,
-                baseSalary: base, currency: DEFAULT_CURRENCY, overtime, bonus, allowances, otherDeductions,
-                tax: payeTax, ssnit: employeeSSNIT, grossPay: totalGrossPay, netPay,
+                baseSalary: base, currency: DEFAULT_CURRENCY, overtime, bonus, allowances, expenseReimbursements: autoExpense, otherDeductions,
+                tax: calc.payeTax, ssnit: calc.employeeSSNIT, employerSsnit: calc.employerSSNIT, taxableIncome: calc.taxableIncome, tier2Pension: calc.tier2Pension,
+                grossPay: calc.grossPay, netPay: calc.netPay,
                 notes: adj?.notes
             }
         });
         items.push({ ...item, employee: emp });
-        totalGross += totalGrossPay;
-        totalNet += netPay;
+        totalGross += calc.grossPay;
+        totalNet += calc.netPay;
     }
     await client_1.default.payrollRun.updateMany({
         where: { id: run.id, organizationId },
@@ -206,49 +249,43 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
     return { run, items };
 };
 exports.createPayrollRun = createPayrollRun;
-const approvePayrollRun = async (organizationId, runId, approverId) => {
+const transitionPayrollRun = async (organizationId, runId, actorId, action, reason) => {
     const run = await client_1.default.payrollRun.findFirst({
         where: { id: runId, organizationId },
         include: { items: { include: { employee: true } } }
     });
     if (!run)
         throw new Error('Payroll run not found');
-    if (run.status !== 'DRAFT' && run.status !== 'PENDING_HR' && run.status !== 'PENDING_MD') {
-        throw new Error('Run is not in an approvable state');
-    }
-    // Multi-stage transitions with specific field tracking
-    let nextStatus = 'APPROVED';
-    let updateData = { status: '' };
-    if (run.status === 'DRAFT') {
-        nextStatus = 'PENDING_HR';
-        updateData = {
-            status: nextStatus,
-            reviewedById: approverId,
-            reviewedAt: new Date()
-        };
-    }
-    else if (run.status === 'PENDING_HR') {
-        nextStatus = 'PENDING_MD';
-        updateData = {
-            status: nextStatus,
-            approvedById: approverId,
-            approvedAt: new Date()
-        };
-    }
-    else if (run.status === 'PENDING_MD') {
-        nextStatus = 'APPROVED';
-        updateData = {
-            status: nextStatus,
-            mdApprovedById: approverId,
-            mdApprovedAt: new Date()
-        };
-    }
+    const transitions = {
+        SUBMIT: { from: ['DRAFT', 'REJECTED'], status: 'PENDING_HR', data: { reviewedById: actorId, reviewedAt: new Date(), rejectionReason: null } },
+        HR_APPROVE: { from: ['PENDING_HR'], status: 'PENDING_MD', data: { approvedById: actorId, approvedAt: new Date() } },
+        HR_REJECT: { from: ['PENDING_HR'], status: 'REJECTED', data: { rejectedById: actorId, rejectedAt: new Date(), rejectionReason: reason || 'Rejected by HR' } },
+        MD_REJECT: { from: ['PENDING_MD'], status: 'REJECTED', data: { rejectedById: actorId, rejectedAt: new Date(), rejectionReason: reason || 'Rejected by MD' } },
+        RELEASE: { from: ['PENDING_MD'], status: 'RELEASED', data: { mdApprovedById: actorId, mdApprovedAt: new Date(), releasedById: actorId, releasedAt: new Date() } },
+        VOID: { from: ['DRAFT', 'PENDING_HR', 'PENDING_MD', 'REJECTED'], status: 'VOIDED', data: { voidedById: actorId, voidedAt: new Date(), rejectionReason: reason || null } },
+    };
+    const transition = transitions[action];
+    if (!transition.from.includes(run.status))
+        throw new Error(`Cannot ${action} a payroll run in ${run.status} status`);
+    const nextStatus = transition.status;
+    const snapshot = action === 'RELEASE' ? {
+        period: run.period,
+        totals: { gross: run.totalGross.toString(), net: run.totalNet.toString() },
+        items: run.items.map((item) => ({
+            employeeId: item.employeeId, baseSalary: item.baseSalary.toString(), overtime: item.overtime.toString(),
+            bonus: item.bonus.toString(), allowances: item.allowances.toString(), expenseReimbursements: item.expenseReimbursements.toString(),
+            tax: item.tax.toString(), ssnit: item.ssnit.toString(), employerSsnit: item.employerSsnit.toString(),
+            grossPay: item.grossPay.toString(), netPay: item.netPay.toString(),
+        })),
+    } : null;
+    const checksum = snapshot ? crypto_1.default.createHash('sha256').update(JSON.stringify(snapshot)).digest('hex') : null;
+    const updateData = { status: nextStatus, ...transition.data, ...(snapshot ? { calculationSnapshot: snapshot, calculationChecksum: checksum } : {}) };
     await client_1.default.payrollRun.updateMany({
         where: { id: runId, organizationId },
         data: updateData
     });
-    // Only finalize deductions and send emails if moving to APPROVED
-    if (nextStatus !== 'APPROVED') {
+    // Only finalize deductions and release payslips after MD release.
+    if (nextStatus !== 'RELEASED') {
         return client_1.default.payrollRun.findFirst({ where: { id: runId, organizationId } });
     }
     // Finalize auto-deductions
@@ -259,7 +296,7 @@ const approvePayrollRun = async (organizationId, runId, approverId) => {
     // Trigger Enterprise Webhook
     try {
         const { triggerWebhook } = await Promise.resolve().then(() => __importStar(require('./webhook.service')));
-        await triggerWebhook(organizationId, 'PAYROLL_RUN_COMPLETED', run);
+        await triggerWebhook(organizationId, 'PAYROLL_RUN_RELEASED', run);
     }
     catch (err) {
         console.error('Failed to trigger webhook:', err);
@@ -281,15 +318,24 @@ const approvePayrollRun = async (organizationId, runId, approverId) => {
     });
     return finalRun;
 };
+exports.transitionPayrollRun = transitionPayrollRun;
+/** @deprecated use transitionPayrollRun with an explicit action */
+const approvePayrollRun = async (organizationId, runId, approverId) => {
+    const run = await client_1.default.payrollRun.findFirst({ where: { id: runId, organizationId } });
+    if (!run)
+        throw new Error('Payroll run not found');
+    const action = run.status === 'DRAFT' ? 'SUBMIT' : run.status === 'PENDING_HR' ? 'HR_APPROVE' : 'RELEASE';
+    return (0, exports.transitionPayrollRun)(organizationId, runId, approverId, action);
+};
 exports.approvePayrollRun = approvePayrollRun;
-const voidPayrollRun = async (organizationId, runId) => {
+const voidPayrollRun = async (organizationId, runId, actorId = '') => {
     const run = await client_1.default.payrollRun.findFirst({
         where: { id: runId, organizationId }
     });
     if (!run)
         throw new Error('Not found');
-    if (run.status === 'PAID')
-        throw new Error('Cannot void a PAID run');
+    if (run.status === 'RELEASED')
+        throw new Error('Released payroll is immutable; create a reversal or adjustment run.');
     // Unlink expenses and installments so they can be picked up by the next run
     await client_1.default.expenseClaim.updateMany({
         where: { paidInRunId: runId, organizationId },
@@ -299,11 +345,7 @@ const voidPayrollRun = async (organizationId, runId) => {
         where: { deductedRunId: runId, organizationId },
         data: { deductedRunId: null }
     });
-    await client_1.default.payrollRun.updateMany({
-        where: { id: runId, organizationId },
-        data: { status: 'CANCELLED' }
-    });
-    return client_1.default.payrollRun.findFirst({ where: { id: runId, organizationId } });
+    return (0, exports.transitionPayrollRun)(organizationId, runId, actorId, 'VOID');
 };
 exports.voidPayrollRun = voidPayrollRun;
 const deletePayrollRun = async (organizationId, runId) => {
@@ -313,8 +355,8 @@ const deletePayrollRun = async (organizationId, runId) => {
     if (!run)
         throw new Error('Payroll run not found');
     // Restricted deletion: Only allow if not paid
-    if (run.status === 'PAID')
-        throw new Error('Cannot delete a finalized (PAID) payroll cycle');
+    if (run.status !== 'DRAFT')
+        throw new Error('Only DRAFT payroll runs can be deleted. Released runs are immutable.');
     // Unlink expenses and installments so they can be picked up by the next run
     await client_1.default.expenseClaim.updateMany({
         where: { paidInRunId: runId, organizationId },
@@ -346,32 +388,45 @@ const updatePayrollItem = async (organizationId, itemId, data) => {
     if (run?.status !== 'DRAFT') {
         throw new Error('Can only edit items in a DRAFT run');
     }
-    const org = await client_1.default.organization.findUnique({
-        where: { id: organizationId },
-        select: { ssnitRate: true, employerSsnitRate: true, payeBands: true }
-    });
-    const ssnitRate = Number(org?.ssnitRate ?? 0.055);
-    const employerSsnitRate = Number(org?.employerSsnitRate ?? 0.13);
-    const payeBands = typeof org?.payeBands === 'string' ? JSON.parse(org.payeBands) : (org?.payeBands || []);
+    const [org, statutoryRule] = await Promise.all([
+        client_1.default.organization.findUnique({ where: { id: organizationId }, select: { tier2PensionEnabled: true, tier2PensionRate: true } }),
+        getStatutoryRule(organizationId, new Date()),
+    ]);
+    const ssnitRate = Number(statutoryRule.employeeSsnitRate);
+    const employerSsnitRate = Number(statutoryRule.employerSsnitRate);
+    const payeBands = statutoryRule.payeBands;
+    const tier2PensionEnabled = org?.tier2PensionEnabled ?? false;
+    const tier2PensionRate = Number(org?.tier2PensionRate ?? 0.05);
     const base = Number(item.baseSalary);
     const overtime = data.overtime ?? Number(item.overtime);
     const bonus = data.bonus ?? Number(item.bonus);
     const allowances = data.allowances ?? Number(item.allowances);
     const otherDeductions = data.otherDeductions ?? Number(item.otherDeductions);
-    const { employeeSSNIT, payeTax, netPay, grossPay: totalGrossPay } = (0, exports.calculateGhanaPayroll)({
+    const calc = (0, exports.calculateGhanaPayroll)({
         grossSalary: base,
         bonus,
         allowances,
         overtime,
-        loanDeductions: otherDeductions, // Assuming otherDeductions here includes loan installments as in createPayrollRun
+        expenseReimbursements: Number(item.expenseReimbursements),
+        loanDeductions: otherDeductions,
         otherDeductions: 0,
         ssnitRate,
         employerSsnitRate,
-        payeBands
+        payeBands,
+        minimumInsurable: statutoryRule.minimumInsurable == null ? undefined : Number(statutoryRule.minimumInsurable),
+        maximumInsurable: statutoryRule.maximumInsurable == null ? undefined : Number(statutoryRule.maximumInsurable),
+        tier2PensionEnabled,
+        tier2PensionRate,
     });
     await client_1.default.payrollItem.updateMany({
         where: { id: itemId, organizationId },
-        data: { overtime, bonus, allowances, otherDeductions, grossPay: totalGrossPay, tax: payeTax, ssnit: employeeSSNIT, netPay, notes: data.notes ?? item.notes }
+        data: {
+            overtime, bonus, allowances, otherDeductions,
+            grossPay: calc.grossPay, tax: calc.payeTax,
+            ssnit: calc.employeeSSNIT, tier2Pension: calc.tier2Pension,
+            employerSsnit: calc.employerSSNIT, taxableIncome: calc.taxableIncome,
+            netPay: calc.netPay, notes: data.notes ?? item.notes
+        }
     });
     const updated = await client_1.default.payrollItem.findFirst({ where: { id: itemId, organizationId } });
     // Recalculate run totals
@@ -421,7 +476,7 @@ const getPayrollRunDetail = async (organizationId, runId) => {
 exports.getPayrollRunDetail = getPayrollRunDetail;
 const getMyPayslips = async (organizationId, employeeId) => {
     return client_1.default.payrollItem.findMany({
-        where: { employeeId, organizationId },
+        where: { employeeId, organizationId, run: { status: 'RELEASED' } },
         include: { run: { select: { period: true, status: true, approvedAt: true } } },
         orderBy: { run: { year: 'desc' } }
     });
@@ -432,18 +487,19 @@ const getPayrollSummaryByYear = async (organizationId, year) => {
     const items = await client_1.default.payrollItem.findMany({
         where: {
             organizationId,
-            run: { year, status: { in: ['APPROVED', 'PAID'] } }
+            run: { year, status: 'RELEASED' }
         },
-        select: { currency: true, grossPay: true, netPay: true, tax: true, ssnit: true }
+        select: { currency: true, grossPay: true, netPay: true, tax: true, ssnit: true, tier2Pension: true }
     });
     const byCurrency = {};
     for (const i of items) {
         if (!byCurrency[i.currency])
-            byCurrency[i.currency] = { gross: 0, net: 0, tax: 0, ssnit: 0, count: 0 };
+            byCurrency[i.currency] = { gross: 0, net: 0, tax: 0, ssnit: 0, tier2Pension: 0, count: 0 };
         byCurrency[i.currency].gross += Number(i.grossPay);
         byCurrency[i.currency].net += Number(i.netPay);
         byCurrency[i.currency].tax += Number(i.tax);
         byCurrency[i.currency].ssnit += Number(i.ssnit);
+        byCurrency[i.currency].tier2Pension += Number(i.tier2Pension ?? 0);
         byCurrency[i.currency].count++;
     }
     return byCurrency;

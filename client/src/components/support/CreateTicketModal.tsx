@@ -3,6 +3,7 @@ import PulseModal from '../common/PulseModal';
 import { LifeBuoy, FileQuestion, Layers, AlertTriangle, Send } from 'lucide-react';
 import api from '../../services/api';
 import { motion } from 'framer-motion';
+import { toast } from '../../utils/toast';
 
 interface CreateTicketModalProps {
   isOpen: boolean;
@@ -24,10 +25,12 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProp
     setLoading(true);
     try {
       await api.post('/support/tickets', form);
+      setForm({ subject: '', category: 'IT', priority: 'NORMAL', description: '' });
+      toast.success('Support ticket created');
       onSuccess();
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not create support ticket');
     } finally {
       setLoading(false);
     }
@@ -66,7 +69,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProp
                  value={form.category}
                  onChange={e => setForm({...form, category: e.target.value})}
                >
-                 {['IT', 'HR', 'FINANCE', 'MAINTENANCE', 'OTHER'].map(cat => (
+                 {['IT', 'HR', 'FINANCE', 'MARKETING', 'FACILITIES', 'OTHER'].map(cat => (
                    <option key={cat} value={cat} className="bg-[var(--bg-card)]">{cat} SUPPORT</option>
                  ))}
                </select>
@@ -93,6 +96,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProp
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Elaborate on the issue</label>
           <textarea 
+            required
             rows={4}
             placeholder="Please provide specifics (e.g., error codes, screenshots URL, specific dates) to help us resolve the issue faster..."
             className="nx-input min-h-[140px] py-4"

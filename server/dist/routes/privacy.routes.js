@@ -8,6 +8,6 @@ router.use(auth_middleware_1.authenticate);
 // Any employee can export their own data
 router.get('/my-data-export', privacy_controller_1.exportMyData);
 // Admin only
-router.post('/anonymise/:employeeId', (0, auth_middleware_1.requireRole)(80), privacy_controller_1.anonymiseEmployee);
-router.get('/retention-report', (0, auth_middleware_1.requireRole)(80), privacy_controller_1.getDataRetentionReport);
+router.post('/anonymise/:employeeId', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), privacy_controller_1.anonymiseEmployee);
+router.get('/retention-report', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), privacy_controller_1.getDataRetentionReport);
 exports.default = router;

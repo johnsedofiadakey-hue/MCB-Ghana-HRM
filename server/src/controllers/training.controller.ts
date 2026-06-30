@@ -4,6 +4,9 @@ import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
 import { getOrgId } from './enterprise.controller';
 
+const isHrTrainingAdmin = (role?: string) =>
+  ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'MD', 'DEV'].includes(String(role || '').toUpperCase());
+
 export const getPrograms = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
@@ -48,12 +51,20 @@ export const enroll = async (req: Request, res: Response) => {
     const actorId = user.id;
     const { programId, employeeId } = req.body;
     const targetEmpId = employeeId || actorId;
+    if (targetEmpId !== actorId && !isHrTrainingAdmin(user.role)) {
+      return res.status(403).json({ error: 'Only HR may enroll another employee' });
+    }
+    const [program, employee] = await Promise.all([
+      prisma.trainingProgram.findFirst({ where: { id: programId, organizationId }, select: { id: true, title: true } }),
+      prisma.user.findFirst({ where: { id: targetEmpId, organizationId, status: { not: 'TERMINATED' } }, select: { id: true } }),
+    ]);
+    if (!program) return res.status(404).json({ error: 'Training program not found' });
+    if (!employee) return res.status(404).json({ error: 'Employee not found in this organization' });
 
     const enrollment = await prisma.trainingEnrollment.create({
       data: { programId, employeeId: targetEmpId, organizationId }
     });
-    const program = await prisma.trainingProgram.findUnique({ where: { id: programId } });
-    await notify(targetEmpId, 'Training Enrollment', `You have been enrolled in "${program?.title}"`, 'INFO', '/training');
+    await notify(targetEmpId, 'Training Enrollment', `You have been enrolled in "${program.title}"`, 'INFO', '/training');
     await logAction(actorId, 'TRAINING_ENROLLED', 'TrainingEnrollment', enrollment.id, { programId, employeeId: targetEmpId }, req.ip);
     res.status(201).json(enrollment);
   } catch (e: any) { res.status(400).json({ error: e.message }); }
@@ -64,10 +75,22 @@ export const markComplete = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const { enrollmentId, score, certificate } = req.body;
     const whereOrg = orgId ? { organizationId: orgId } : {};
-    
-    const enrollment = await prisma.trainingEnrollment.update({
+    const actor = (req as any).user;
+    const existing = await prisma.trainingEnrollment.findFirst({
       where: { id: enrollmentId, ...whereOrg },
-      data: { status: 'COMPLETED', completedAt: new Date(), score, certificate },
+      select: { id: true, employeeId: true }
+    });
+    if (!existing) return res.status(404).json({ error: 'Training enrollment not found' });
+    if (existing.employeeId !== actor.id && !isHrTrainingAdmin(actor.role)) {
+      return res.status(403).json({ error: 'You may only complete your own training enrollment' });
+    }
+    const normalizedScore = score === undefined ? undefined : Math.min(100, Math.max(0, Number(score)));
+    if (normalizedScore !== undefined && !Number.isFinite(normalizedScore)) {
+      return res.status(400).json({ error: 'Score must be a number from 0 to 100' });
+    }
+    const enrollment = await prisma.trainingEnrollment.update({
+      where: { id: existing.id },
+      data: { status: 'COMPLETED', completedAt: new Date(), score: normalizedScore, certificate },
       include: { program: true }
     });
 

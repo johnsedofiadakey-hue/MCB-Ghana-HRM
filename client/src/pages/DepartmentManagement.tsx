@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Building2, Plus, X, Loader2, Users, Edit2, ShieldCheck, Trash2, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRoleRankValue, getStoredUser } from '../utils/session';
+import { getRoleRankValue, getStoredUser, hasPermission } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 import { toast } from '../utils/toast';
@@ -26,8 +26,8 @@ const DepartmentManagement = () => {
 
   const currentUser = getStoredUser();
   const rank = getRoleRankValue(currentUser.role);
-  const canDelete = rank >= 80;
-  const canManageDept = rank >= 75;
+  const canManageDept = hasPermission(currentUser, 'employee.write');
+  const canDelete = canManageDept;
 
   const fetchData = async () => {
     setLoading(true);
@@ -91,7 +91,7 @@ const DepartmentManagement = () => {
       }
       setShowModal(false); fetchData();
     } catch (err: any) {
-      setError(err?.response?.data?.message || t('common.error'));
+      setError(err?.response?.data?.error || err?.response?.data?.message || t('common.error'));
     } finally { setSaving(false); }
   };
 
@@ -204,7 +204,7 @@ const DepartmentManagement = () => {
                       <Users size={14} className="text-[var(--primary)] shrink-0" />
                       <span className="truncate">{dept.memberCount || 0} {t('department_details.members', t('DEPARTMENTS.MEMBERS', 'Staff'))}</span>
                     </div>
-                    {rank >= 70 && (
+                    {canManageDept && (
                       <div className="flex gap-4 shrink-0">
                         <button
                           onClick={() => setManagingSubUnits(dept)}

@@ -5,7 +5,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PolicyService = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
+const permissions_1 = require("../types/permissions");
 class PolicyService {
+    static async getEffectivePermissions(userId) {
+        const user = await client_1.default.user.findUnique({
+            where: { id: userId },
+            select: { role: true, organizationId: true, permissionBundles: { select: { organizationId: true, permissions: true } } },
+        });
+        if (!user)
+            return [];
+        if (String(user.role).toUpperCase() === 'DEV')
+            return ['*'];
+        const bundlePermissions = user.permissionBundles
+            .filter((bundle) => bundle.organizationId === user.organizationId)
+            .flatMap((bundle) => bundle.permissions);
+        return [...new Set([...(0, permissions_1.getRoleDefaultPermissions)(user.role), ...bundlePermissions])].sort();
+    }
     /**
      * Evaluates if a user has permission to perform an action on a target.
      * @param userId The ID of the user performing the action.
@@ -20,12 +35,18 @@ class PolicyService {
         });
         if (!user)
             return { allowed: false, reason: 'User not found' };
-        // Super admin override (assuming rank >= 90 or role 'ADMIN')
-        if (user.role === 'ADMIN' || user.rank >= 90) {
-            return { allowed: true, reason: `Super admin override (Role: ${user.role}, Rank: ${user.rank})` };
+        // Only the platform developer has an unrestricted system override. Business
+        // roles, including MD and Directors, receive explicit permissions.
+        if (String(user.role).toUpperCase() === 'DEV') {
+            return { allowed: true, reason: 'System developer override' };
+        }
+        if ((0, permissions_1.getRoleDefaultPermissions)(user.role).includes(permission)) {
+            return { allowed: true, reason: `Granted by default role bundle for ${user.role}` };
         }
         // 2. Check direct permissions from bundles
         for (const bundle of user.permissionBundles) {
+            if (bundle.organizationId !== user.organizationId)
+                continue;
             const hasPerm = bundle.permissions.includes(permission);
             if (hasPerm) {
                 const scopeAllowed = this.evaluateScope(user, bundle.scope, context);
@@ -38,6 +59,7 @@ class PolicyService {
         const activeDelegations = await client_1.default.delegation.findMany({
             where: {
                 delegateId: userId,
+                organizationId: user.organizationId,
                 status: 'ACTIVE',
                 startTime: { lte: new Date() },
                 endTime: { gte: new Date() },

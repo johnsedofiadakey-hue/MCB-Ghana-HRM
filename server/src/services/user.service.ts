@@ -3,6 +3,7 @@ type User = any;
 import bcrypt from 'bcryptjs';
 import { maybeEncrypt } from '../utils/encryption';
 import { ROLE_RANK_MAP } from '../types/roles';
+import crypto from 'crypto';
 
 const getRankFromRole = (role: string): number => {
     if (!role) return 40;
@@ -74,8 +75,9 @@ export const createUser = async (organizationId: string, data: {
         if (existingCode) throw new Error('User with this Employee Code already exists');
     }
 
-    // Default password generation
-    const plainPassword = data.password || 'SecureInit!';
+    // Preboarding accounts receive an unguessable placeholder. IT activates the
+    // account later and the employee chooses a password through an invitation.
+    const plainPassword = crypto.randomBytes(48).toString('base64url');
     const passwordHash = await bcrypt.hash(plainPassword, 12);
     // 🛡️ Strict Requirement Validation
     if (!data.email?.trim()) throw new Error('Employee validation failed: Email Address is required.');
@@ -104,6 +106,9 @@ export const createUser = async (organizationId: string, data: {
             passwordHash,
             employeeCode: safeData.employeeCode,
             status: safeData.status || 'ACTIVE',
+            loginEnabled: false,
+            mustChangePassword: true,
+            employeeLifecycleStage: 'PREBOARDING',
             rank: getRankFromRole(safeData.role || 'STAFF'),
             position: safeData.position || safeData.jobTitle.trim(),
             joinDate: (safeData.joinDate && safeData.joinDate !== null) ? new Date(safeData.joinDate) : null,

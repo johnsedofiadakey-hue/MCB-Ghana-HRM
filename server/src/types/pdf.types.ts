@@ -82,8 +82,10 @@ export interface PdfPayslipContent {
   overtime: number | any;
   bonus: number | any;
   allowances: number | any;
+  expenseReimbursements?: number | any;
   tax: number | any;
   ssnit: number | any;
+  tier2Pension?: number | any;
   otherDeductions: number | any;
   grossPay: number | any;
   netPay: number | any;

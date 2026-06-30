@@ -6,7 +6,7 @@ import { openApiUrl } from '../utils/apiUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
-import { getStoredUser, getRoleRankValue } from '../utils/session';
+import { getStoredUser, hasPermission } from '../utils/session';
 import { useTheme } from '../context/ThemeContext';
 
 const fmt = (n: number | string, currency = '', lang = 'en') =>
@@ -29,7 +29,9 @@ const FinanceHub = () => {
     const [error, setError] = useState('');
 
     const user = getStoredUser();
-    const isAdmin = getRoleRankValue(user.role) >= 70;
+    const canManageLoans = hasPermission(user, 'finance.loan.manage');
+    const canManageExpenses = hasPermission(user, 'finance.expense.manage');
+    const isAdmin = activeTab === 'loans' ? canManageLoans : canManageExpenses;
 
     const fetchData = async () => {
         setLoading(true);
@@ -51,15 +53,18 @@ const FinanceHub = () => {
 
     useEffect(() => {
         fetchData();
-    }, [activeTab, viewScope]);
+    }, [activeTab, viewScope, isAdmin]);
+
+    useEffect(() => {
+        if (!isAdmin && viewScope === 'all') setViewScope('my');
+    }, [isAdmin, viewScope]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setActionLoading('submit');
         setError('');
         try {
-            const payload = { ...formData, employeeId: user.id };
-            await api.post(`/finance/${activeTab}`, payload);
+            await api.post(`/finance/${activeTab}`, formData);
             setShowModal(false);
             setFormData({});
             fetchData();

@@ -471,7 +471,21 @@ class PdfExportService {
             currentY += 22;
         };
         drawRow('Basic Salary', Number(item.baseSalary));
+        if (Number(item.overtime))
+            drawRow('Overtime', Number(item.overtime));
+        if (Number(item.bonus))
+            drawRow('Bonus', Number(item.bonus));
+        if (Number(item.allowances))
+            drawRow('Taxable Allowances', Number(item.allowances));
+        drawRow('Gross Pay', Number(item.grossPay));
+        if (Number(item.expenseReimbursements))
+            drawRow('Expense Reimbursement (Non-taxable)', Number(item.expenseReimbursements));
+        drawRow('SSNIT Employee Contribution', Number(item.ssnit), true);
+        if (Number(item.tier2Pension))
+            drawRow('Tier 2 Pension', Number(item.tier2Pension), true);
         drawRow('Income Tax (PAYE)', Number(item.tax), true);
+        if (Number(item.otherDeductions))
+            drawRow('Other Deductions', Number(item.otherDeductions), true);
         drawRow('Net Payout', Number(item.netPay));
         doc.y = currentY + 30;
         const summaryTop = doc.y;

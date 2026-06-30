@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate, requireRole, authorize, requireSpecificRole } from '../middleware/auth.middleware';
+import { authenticate, requireRole, authorize, requireSpecificRole, requirePermission } from '../middleware/auth.middleware';
+import { Permission } from '../types/permissions';
 import { upload } from '../middleware/upload.middleware';
 import { validate, CreateUserSchema, UpdateUserSchema } from '../middleware/validate.middleware';
 import {
@@ -7,7 +8,7 @@ import {
   updateEmployee, deleteEmployee, hardDeleteEmployee,
   restoreEmployee,
   uploadImage, uploadSignature, getMyTeam, getSupervisors,
-  assignRole, getUserRiskProfile, resetEmployeePassword
+  assignRole, getUserRiskProfile, resetEmployeePassword, activateEmployeeLogin
 } from '../controllers/user.controller';
 
 const router = Router();
@@ -18,14 +19,15 @@ router.get('/me/team', getMyTeam);
 router.get('/supervisors', getSupervisors);
 router.get('/', requireRole(50), getAllEmployees);
 router.get('/:id', getEmployee);
-router.get('/:id/risk', requireRole(80), getUserRiskProfile);
-router.get('/:id/risk-profile', requireRole(80), getUserRiskProfile); // alias
+router.get('/:id/risk', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), getUserRiskProfile);
+router.get('/:id/risk-profile', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), getUserRiskProfile); // alias
 
 const hrAdminRoles = ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'MD', 'SUPER_ADMIN', 'DEV'];
 const hrSeniorRoles = ['HR_DIRECTOR', 'HR_MANAGER', 'HR_ADMIN', 'MD', 'SUPER_ADMIN', 'DEV'];
 
 // Create (HR / IT Manager / MD only)
-router.post('/', authorize(['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'SUPER_ADMIN', 'DEV']), validate(CreateUserSchema), createEmployee);
+router.post('/', requirePermission(Permission.EMPLOYEE_WRITE), validate(CreateUserSchema), createEmployee);
+router.post('/:id/activate-login', requirePermission(Permission.ACCOUNT_ACTIVATE), activateEmployeeLogin);
 
 // Update
 // Allow self-edit; require rank 70+ to edit others
@@ -46,7 +48,7 @@ router.delete('/:id/hard', requireSpecificRole(hrSeniorRoles), hardDeleteEmploye
 router.post('/:id/restore', requireSpecificRole(hrAdminRoles), restoreEmployee);
 
 // Role assignment (Only HR and MD)
-router.post('/assign-role', requireSpecificRole(hrSeniorRoles), assignRole);
+router.post('/assign-role', requireSpecificRole(['HR_DIRECTOR', 'MD', 'SUPER_ADMIN', 'DEV']), assignRole);
 
 router.post('/:id/upload-image', upload.single('avatar'), uploadImage);
 router.post('/:id/avatar', uploadImage); // base64 path
@@ -54,6 +56,6 @@ router.post('/signature', uploadSignature);
 router.post('/:id/signature', uploadSignature);
 
 // Administrative reset (IT_MANAGER or MD >= 85)
-router.post('/:id/reset-password', requireRole(85), resetEmployeePassword);
+router.post('/:id/reset-password', requireSpecificRole(['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), resetEmployeePassword);
 
 export default router;

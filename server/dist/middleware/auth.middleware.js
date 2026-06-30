@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkBilling = exports.requirePermission = exports.authorizeMinimumRole = exports.requireSpecificRole = exports.requireRole = exports.authorize = exports.authenticate = exports.invalidateUserCache = exports.getRoleRank = void 0;
+exports.checkBilling = exports.requireAnyPermission = exports.requirePermission = exports.authorizeMinimumRole = exports.requireSpecificRole = exports.requireRole = exports.authorize = exports.authenticate = exports.invalidateUserCache = exports.getRoleRank = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = __importDefault(require("../prisma/client"));
 const policy_service_1 = require("../services/policy.service");
@@ -77,7 +77,7 @@ const authenticate = async (req, res, next) => {
         if (decoded.organizationId === 'sandbox-org-001') {
             const sandboxUser = await client_1.default.user.findFirst({
                 where: { id: decoded.id, organizationId: 'sandbox-org-001' },
-                select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true }
+                select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true, loginEnabled: true }
             });
             if (!sandboxUser) {
                 console.warn(`[Auth Middleware] Sandbox Account not found for ID: ${decoded.id}`);
@@ -102,7 +102,7 @@ const authenticate = async (req, res, next) => {
         if (!user) {
             user = await client_1.default.user.findUnique({
                 where: { id: decoded.id },
-                select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true },
+                select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true, loginEnabled: true },
             }).catch(err => {
                 console.error('[Auth Middleware] Database Error:', err.message);
                 throw err;
@@ -117,6 +117,9 @@ const authenticate = async (req, res, next) => {
         if (user.status === 'TERMINATED') {
             console.warn(`[Auth Middleware] Terminated user attempting access: ${user.id}`);
             return res.status(403).json({ error: 'Your account has been deactivated. Contact HR.' });
+        }
+        if (!user.loginEnabled) {
+            return res.status(403).json({ error: 'Login is not active yet. Contact IT.' });
         }
         if (user.role !== 'DEV' && !user.organizationId) {
             console.error(`[Auth Middleware] Misconfigured user (no organizationId): ${user.id}`);
@@ -230,6 +233,21 @@ const requirePermission = (permission, getContext) => {
     };
 };
 exports.requirePermission = requirePermission;
+const requireAnyPermission = (permissions, getContext) => {
+    return async (req, res, next) => {
+        const user = req.user;
+        if (!user)
+            return res.status(401).json({ error: 'Unauthorized' });
+        const context = getContext ? getContext(req) : {};
+        for (const permission of permissions) {
+            const result = await policy_service_1.PolicyService.evaluatePolicy(user.id, permission, context);
+            if (result.allowed)
+                return next();
+        }
+        return res.status(403).json({ error: 'Forbidden: none of the required permissions were granted' });
+    };
+};
+exports.requireAnyPermission = requireAnyPermission;
 const checkBilling = async (req, res, next) => {
     const user = req.user;
     if (!user || user.role === 'DEV')

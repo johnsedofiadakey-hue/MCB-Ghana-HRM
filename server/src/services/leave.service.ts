@@ -3,13 +3,27 @@ import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 import { getRoleRank } from '../middleware/auth.middleware';
 import { getEffectiveLeaveMetrics, canBorrowLeave } from '../utils/leave.utils';
+import { ValidationError, NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
+
+export const determineHrReviewStatus = (employeeRole: string | null | undefined, approve: boolean) => {
+  if (!approve) return 'HR_REJECTED';
+  return getRoleRank(employeeRole || '') < 90 ? 'APPROVED' : 'MD_REVIEW';
+};
+
+export const determineInitialLeaveStatus = (employeeRole: string | null | undefined, hasReliever: boolean) => {
+  if (hasReliever) return 'SUBMITTED';
+  return getRoleRank(employeeRole || '') >= 92 ? 'MD_REVIEW' : 'HR_REVIEW';
+};
+
+export const determineMdReviewStatus = (approve: boolean) => approve ? 'APPROVED' : 'MD_REJECTED';
 
 /**
- * Leave Statuses (V4 - Ghana Compliance):
- * DRAFT, SUBMITTED, RELIEVER_ACCEPTED, RELIEVER_DECLINED, 
- * MANAGER_REVIEW, MANAGER_APPROVED, MANAGER_REJECTED, 
- * HR_REVIEW, HR_REJECTED,
- * MD_REVIEW, APPROVED, MD_REJECTED, CANCELLED
+ * Leave Statuses (V5 - Simplified HR Director-Only Approval):
+ * DRAFT, SUBMITTED, RELIEVER_ACCEPTED, RELIEVER_DECLINED,
+ * HR_REVIEW (HR Director is the sole approver), HR_REJECTED,
+ * MD_REVIEW (director-level staff rank >= 90), APPROVED, MD_REJECTED, CANCELLED
+ *
+ * MANAGER_REVIEW / MANAGER_REJECTED are legacy statuses (pre-V5 data) — no longer routed to.
  */
 
 export class LeaveService {
@@ -25,8 +39,8 @@ export class LeaveService {
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    if (start < today) throw new Error('Cannot request leave for a past date.');
-    if (end < start) throw new Error('End date cannot be earlier than start date.');
+    if (start < today) throw new ValidationError('Cannot request leave for a past date.');
+    if (end < start) throw new ValidationError('End date cannot be earlier than start date.');
 
     // 1. DUPLICATE CHECK: Prevent overlapping requests for the SAME user
     const userOverlap = await prisma.leaveRequest.findFirst({
@@ -39,7 +53,7 @@ export class LeaveService {
       }
     });
     if (userOverlap) {
-      throw new Error(`You already have a leave request (${userOverlap.status}) that overlaps with these dates (${userOverlap.startDate.toLocaleDateString()} - ${userOverlap.endDate.toLocaleDateString()}).`);
+      throw new ConflictError(`You already have a leave request (${userOverlap.status}) that overlaps with these dates (${userOverlap.startDate.toLocaleDateString()} - ${userOverlap.endDate.toLocaleDateString()}).`);
     }
 
     // 2. CONCURRENCY AUDIT: Check if department exceeds 20% threshold
@@ -47,7 +61,7 @@ export class LeaveService {
       where: { id: employeeId },
       include: { organization: { select: { defaultLeaveAllowance: true } } }
     });
-    if (!user) throw new Error('User not found');
+    if (!user) throw new NotFoundError('User');
 
     // Check for public holidays and weekends — scope recurring holidays by month/day
     const holidays = await prisma.publicHoliday.findMany({
@@ -82,7 +96,7 @@ export class LeaveService {
     if (availableBalance < leaveDays) {
       const allowedToBorrow = canBorrowLeave(user, leaveDays, availableBalance);
       if (!allowedToBorrow) {
-        throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
+        throw new ValidationError(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
       }
     }
 
@@ -96,7 +110,10 @@ export class LeaveService {
       }
     }
 
-    const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
+    // V5: no reliever → directly to HR_REVIEW (HR Director is sole approver)
+    const initialStatus = determineInitialLeaveStatus(user.role, Boolean(relieverId));
+
+    const isSickLeaveLong = (leaveType === 'SICK_LEAVE' || leaveType === 'Sick') && leaveDays >= 3;
 
     const leave = await prisma.leaveRequest.create({
       data: {
@@ -110,7 +127,8 @@ export class LeaveService {
         relieverId: relieverId || null,
         handoverNotes: handoverNotes || null,
         relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
-        status: initialStatus
+        status: initialStatus,
+        requiresMedicalCertificate: isSickLeaveLong,
       }
     });
 
@@ -118,8 +136,22 @@ export class LeaveService {
       const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}` : '';
       await notify(relieverId, '🤝 Handover Request',
         `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
-    } else if (user.supervisorId) {
-      await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/leave');
+    } else {
+      const reviewerRoles = initialStatus === 'MD_REVIEW' ? ['MD'] : ['HR_DIRECTOR'];
+      const reviewers = await prisma.user.findMany({
+        where: { organizationId, role: { in: reviewerRoles }, isArchived: false },
+        select: { id: true }
+      });
+      await Promise.all(
+        reviewers.map(reviewer => notify(reviewer.id, '📅 New Leave Request',
+          `${user.fullName} has requested ${leaveDays} day(s) of leave. Pending your review.`, 'INFO', '/leave'))
+      );
+    }
+
+    if (isSickLeaveLong) {
+      await notify(employeeId, '⚕️ Medical Certificate Required',
+        'Sick leave of 3+ days requires a medical certificate. Please upload it via your leave request before HR review.',
+        'WARNING', '/leave');
     }
 
     return { leave, warning: capacityWarning };
@@ -134,16 +166,19 @@ export class LeaveService {
       include: { employee: true, reliever: { select: { fullName: true } } }
     });
 
-    if (!leave) throw new Error('Leave request not found');
-    if (leave.relieverId !== relieverId) throw new Error('Not authorized to respond as reliever');
-    if (leave.status !== 'SUBMITTED') throw new Error('Leave is not in SUBMITTED state');
+    if (!leave) throw new NotFoundError('Leave request');
+    if (leave.relieverId !== relieverId) throw new ForbiddenError('Not authorized to respond as reliever');
+    if (leave.status !== 'SUBMITTED') throw new ValidationError('Leave is not in SUBMITTED state');
 
     if (!accept && (!comment || comment.trim().length < 3)) {
-      throw new Error('A rejection reason is required to decline a handover request.');
+      throw new ValidationError('A rejection reason is required to decline a handover request.');
     }
 
-    const nextStatus = accept ? 'MANAGER_REVIEW' : 'RELIEVER_DECLINED';
-    
+    // V5: reliever accept → HR_REVIEW (not MANAGER_REVIEW)
+    const nextStatus = accept
+      ? (getRoleRank(leave.employee.role) >= 92 ? 'MD_REVIEW' : 'HR_REVIEW')
+      : 'RELIEVER_DECLINED';
+
     return prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({
         where: { id: leaveId },
@@ -168,10 +203,15 @@ export class LeaveService {
           }
         });
 
-        if (leave.employee.supervisorId) {
-          await notify(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', 
-            `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted.`, 'INFO', '/leave');
-        }
+        const reviewerRoles = nextStatus === 'MD_REVIEW' ? ['MD'] : ['HR_DIRECTOR'];
+        const reviewers = await prisma.user.findMany({
+          where: { organizationId: leave.organizationId || 'mcb-ghana-tenant', role: { in: reviewerRoles }, isArchived: false },
+          select: { id: true }
+        });
+        await Promise.all(
+          reviewers.map(reviewer => notify(reviewer.id, nextStatus === 'MD_REVIEW' ? '📝 Leave Pending MD Review' : '📝 Leave Pending HR Director Review',
+            `${leave.employee.fullName}'s leave is ready for your review. Reliever has accepted.`, 'INFO', '/leave'))
+        );
       }
 
       await notify(leave.employeeId, 
@@ -195,30 +235,30 @@ export class LeaveService {
       include: { employee: true }
     });
 
-    if (!leave) throw new Error('Leave request not found');
+    if (!leave) throw new NotFoundError('Leave request');
     if (!['MANAGER_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'].includes(leave.status)) {
-      throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
+      throw new ValidationError(`Invalid stage: Leave is currently in ${leave.status} status.`);
     }
 
     // If there is a pending reliever, block approval until they respond regardless of the flag
     if (leave.status === 'SUBMITTED' && leave.relieverId) {
-      throw new Error('Reliever acceptance is still pending. The handover request must be resolved before managerial review.');
+      throw new ValidationError('Reliever acceptance is still pending. The handover request must be resolved before managerial review.');
     }
 
     const actor = await prisma.user.findUnique({ where: { id: managerId } });
-    if (!actor) throw new Error('Reviewer account not found');
+    if (!actor) throw new NotFoundError('Reviewer account');
 
     const rank = getRoleRank(actor.role);
     const isPrimaryManager = leave.employee.supervisorId === managerId;
     const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
-    const isHRorHigher = rank >= 80; // HR_OFFICER (80)+ can approve across departments; MANAGER (75) cannot
+    const isHRorHigher = rank >= 80;
 
     if (!isPrimaryManager && !isDeptManager && !isHRorHigher) {
-      throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a department manager, or HR (rank 80+).');
+      throw new ForbiddenError('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a department manager, or HR (rank 80+).');
     }
 
     if (!approve && (!comment || comment.trim().length < 3)) {
-      throw new Error('Please provide a reason for rejecting this leave request.');
+      throw new ValidationError('Please provide a reason for rejecting this leave request.');
     }
 
     const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED'; 
@@ -264,26 +304,31 @@ export class LeaveService {
       include: { employee: true }
     });
 
-    if (!leave) throw new Error('Leave request not found');
-    if (leave.status !== 'HR_REVIEW') {
-      throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. It must be in HR_REVIEW.`);
+    if (!leave) throw new NotFoundError('Leave request');
+    // Accept legacy MANAGER_REVIEW status for backward compat with pre-V5 data
+    if (!['HR_REVIEW', 'MANAGER_REVIEW'].includes(leave.status)) {
+      throw new ValidationError(`Invalid stage: Leave is currently in ${leave.status} status. It must be in HR_REVIEW.`);
     }
 
-    const actor = await prisma.user.findUnique({ where: { id: hrId } });
-    if (!actor) throw new Error('Reviewer account not found');
+    const actor = await prisma.user.findFirst({ where: { id: hrId, organizationId: leave.organizationId, isArchived: false } });
+    if (!actor) throw new NotFoundError('Reviewer account');
 
-    const rank = getRoleRank(actor.role);
-    if (rank < 80) {
-      throw new Error('Unauthorized for HR Validation. This action is reserved for HR Officers and above (Rank 80+).');
+    const actorRole = String(actor.role || '').toUpperCase();
+    if (!['HR_DIRECTOR', 'DEV'].includes(actorRole)) {
+      throw new ForbiddenError('Unauthorized: Only the HR Director may approve or reject leave requests.');
     }
 
     if (!approve && (!comment || comment.trim().length < 3)) {
-      throw new Error('A rejection reason is required for the HR audit trail.');
+      throw new ValidationError('A rejection reason is required for the HR audit trail.');
     }
 
-    const employeeRank = getRoleRank(leave.employee.role);
-    const isTerminalAtHR = employeeRank < 85;
-    const nextStatus = approve ? (isTerminalAtHR ? 'APPROVED' : 'MD_REVIEW') : 'HR_REJECTED';
+    if (approve && leave.requiresMedicalCertificate && !leave.medicalCertificateUploaded) {
+      throw new ValidationError('A medical certificate must be uploaded before HR can approve this sick leave request.');
+    }
+
+    // V5: HR Director is terminal for staff below rank 92; HR Director's own leave goes to MD
+    const nextStatus = determineHrReviewStatus(leave.employee.role, approve);
+    const isTerminalAtHR = nextStatus === 'APPROVED';
 
     return prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({
@@ -332,28 +377,24 @@ export class LeaveService {
       include: { employee: true }
     });
 
-    if (!leave) throw new Error('Leave request not found');
-    
-    // MD can approve if it's in MD_REVIEW, or bypass HR if they are rank 90+
-    const canProcess = leave.status === 'MD_REVIEW' || (getRoleRank((await prisma.user.findUnique({ where: { id: mdId } }))?.role) >= 90);
-    
-    if (!canProcess) {
-        throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
+    if (!leave) throw new NotFoundError('Leave request');
+
+    const actor = await prisma.user.findFirst({ where: { id: mdId, organizationId: leave.organizationId, isArchived: false } });
+    if (!actor) throw new NotFoundError('Reviewer account');
+
+    if (leave.status !== 'MD_REVIEW') {
+      throw new ValidationError(`Invalid stage: Leave is currently in ${leave.status} status.`);
     }
 
-    const actor = await prisma.user.findUnique({ where: { id: mdId } });
-    if (!actor) throw new Error('Reviewer account not found');
-
-    const rank = getRoleRank(actor.role);
-    if (rank < 90) {
-       throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director or Director (Rank 90+).');
+    if (!['MD', 'DEV'].includes(String(actor.role || '').toUpperCase())) {
+      throw new ForbiddenError('Unauthorized for Final Sign-off. This action is reserved for the Managing Director.');
     }
 
     if (!approve && (!comment || comment.trim().length < 3)) {
-      throw new Error('A final rejection reason is required for the audit trail.');
+      throw new ValidationError('A final rejection reason is required for the audit trail.');
     }
 
-    const nextStatus = approve ? 'APPROVED' : 'MD_REJECTED';
+    const nextStatus = determineMdReviewStatus(approve);
 
     return prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({

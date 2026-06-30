@@ -1,13 +1,14 @@
 import { Router } from 'express';
-import { authenticate, authorize, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requirePermission } from '../middleware/auth.middleware';
 import { getHolidays, addHoliday, deleteHoliday, seedGhanaHolidays } from '../controllers/holiday.controller';
+import { Permission } from '../types/permissions';
 
 const router = Router();
 router.use(authenticate);
 
 router.get('/', getHolidays);
-router.post('/', requireRole(80), addHoliday);
-router.delete('/:id', requireRole(80), deleteHoliday);
-router.post('/seed-ghana', requireRole(80), seedGhanaHolidays);
+router.post('/', requirePermission(Permission.LEAVE_HR_APPROVE), addHoliday);
+router.delete('/:id', requirePermission(Permission.LEAVE_HR_APPROVE), deleteHoliday);
+router.post('/seed-ghana', requirePermission(Permission.LEAVE_HR_APPROVE), seedGhanaHolidays);
 
 export default router;

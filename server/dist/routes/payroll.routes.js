@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const permissions_1 = require("../types/permissions");
 const payroll_controller_1 = require("../controllers/payroll.controller");
 const validate_middleware_1 = require("../middleware/validate.middleware");
 const year_end_summary_service_1 = require("../services/year-end-summary.service");
@@ -28,20 +29,28 @@ router.get('/my-tax-summary/:year', async (req, res) => {
     }
 });
 // Admin — payroll management
-const financeRoles = ['FINANCE_MANAGER', 'MD'];
-const financeAdminRoles = ['MD'];
-router.get('/summary', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.getYearlySummary);
-router.get('/', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.getRuns);
-router.post('/run', (0, auth_middleware_1.requireSpecificRole)(financeRoles), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollRunSchema), payroll_controller_1.createRun);
-router.get('/:id', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.getRunDetail);
-router.post('/:id/approve', (0, auth_middleware_1.requireSpecificRole)(financeAdminRoles), payroll_controller_1.approveRun);
-router.post('/:id/void', (0, auth_middleware_1.requireSpecificRole)(financeAdminRoles), payroll_controller_1.voidRun);
-router.delete('/:id', (0, auth_middleware_1.requireSpecificRole)(financeAdminRoles), payroll_controller_1.deleteRun);
-router.patch('/items/:itemId', (0, auth_middleware_1.requireSpecificRole)(financeRoles), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollItemUpdateSchema), payroll_controller_1.updateItem);
-router.get('/:id/export/csv', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.exportPayrollCSV);
-router.get('/:id/bank-export/csv', (0, auth_middleware_1.requireSpecificRole)(financeRoles), payroll_controller_1.exportBankCSV);
+// HR_DIRECTOR added: needs full payroll visibility per client requirements
+const payrollViewPermissions = [permissions_1.Permission.PAYROLL_PREPARE, permissions_1.Permission.PAYROLL_HR_APPROVE, permissions_1.Permission.PAYROLL_RELEASE];
+router.get('/summary', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.getYearlySummary);
+router.get('/', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.getRuns);
+router.get('/statutory-rules', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.getStatutoryRules);
+router.post('/statutory-rules', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), payroll_controller_1.createStatutoryRule);
+router.post('/statutory-rules/:id/approve', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), payroll_controller_1.approveStatutoryRule);
+router.post('/runs', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollRunSchema), payroll_controller_1.createRun);
+router.post('/run', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollRunSchema), payroll_controller_1.createRun); // compatibility
+router.get('/:id', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.getRunDetail);
+router.post('/runs/:id/submit', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_SUBMIT), payroll_controller_1.submitRun);
+router.post('/runs/:id/hr-approve', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_HR_APPROVE), payroll_controller_1.hrApproveRun);
+router.post('/runs/:id/hr-reject', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_HR_APPROVE), payroll_controller_1.hrRejectRun);
+router.post('/runs/:id/release', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_RELEASE), payroll_controller_1.releaseRun);
+router.post('/runs/:id/md-reject', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_RELEASE), payroll_controller_1.mdRejectRun);
+router.post('/runs/:id/void', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_RELEASE), payroll_controller_1.voidRun);
+router.delete('/:id', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), payroll_controller_1.deleteRun);
+router.patch('/items/:itemId', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollItemUpdateSchema), payroll_controller_1.updateItem);
+router.get('/:id/export/csv', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.exportPayrollCSV);
+router.get('/:id/bank-export/csv', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_EXPORT), payroll_controller_1.exportBankCSV);
 // Admin year-end summary for all employees
-router.get('/tax-summary/org/:year', (0, auth_middleware_1.requireSpecificRole)(financeRoles), async (req, res) => {
+router.get('/tax-summary/org/:year', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
         const year = parseInt(req.params.year);

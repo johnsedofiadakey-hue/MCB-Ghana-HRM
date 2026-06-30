@@ -65,5 +65,5 @@ router.post('/:id/cascade', (0, auth_middleware_1.requireRole)(60), TargetContro
 router.post('/', (0, auth_middleware_1.requireRole)(60), TargetController.createTarget);
 // ── AI & INSIGHTS ─────────────────────────────────────────────────────────────
 router.post('/generate-smart-draft', (0, auth_middleware_1.requireRole)(60), ai_guard_middleware_1.aiGuard, TargetController.generateSmartDraft);
-router.get('/pulse/risk', (0, auth_middleware_1.requireRole)(85), ai_guard_middleware_1.aiGuard, TargetController.getRiskPulse);
+router.get('/pulse/risk', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), ai_guard_middleware_1.aiGuard, TargetController.getRiskPulse);
 exports.default = router;

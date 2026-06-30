@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as TargetController from '../controllers/target.controller';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireRole, requireSpecificRole } from '../middleware/auth.middleware';
 import { aiGuard } from '../middleware/ai-guard.middleware';
 
 const router = Router();
@@ -42,6 +42,6 @@ router.post('/', requireRole(60), TargetController.createTarget);
 
 // ── AI & INSIGHTS ─────────────────────────────────────────────────────────────
 router.post('/generate-smart-draft', requireRole(60), aiGuard, TargetController.generateSmartDraft);
-router.get('/pulse/risk', requireRole(85), aiGuard, TargetController.getRiskPulse);
+router.get('/pulse/risk', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), aiGuard, TargetController.getRiskPulse);
 
 export default router;

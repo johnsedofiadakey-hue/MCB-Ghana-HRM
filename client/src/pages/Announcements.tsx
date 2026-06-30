@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
-import { getStoredUser, getRoleRankValue } from '../utils/session';
+import { getStoredUser } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { toast } from 'react-hot-toast';
@@ -37,9 +37,8 @@ const Announcements = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   
   const user = getStoredUser();
-  const rank = getRoleRankValue(user.role);
   const normalizedRole = (user?.role || '').toUpperCase().replace(/ /g, '_');
-  const canPost = rank >= 85 || normalizedRole === 'MD' || normalizedRole === 'MANAGING_DIRECTOR';
+  const canPost = ['MARKETING_HEAD', 'HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'MD', 'DEV'].includes(normalizedRole);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -100,48 +99,48 @@ const Announcements = () => {
 
   const getPriorityStyle = (p: string) => {
     switch(p) {
-      case 'URGENT': return 'text-rose-600 bg-rose-50 border-rose-200';
-      case 'HIGH': return 'text-amber-600 bg-amber-50 border-amber-200';
-      case 'NORMAL': return 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/20';
-      default: return 'text-emerald-600 bg-emerald-50 border-emerald-200';
+      case 'URGENT': return 'badge-error';
+      case 'HIGH': return 'badge-warning';
+      case 'NORMAL': return 'badge-info';
+      default: return 'badge-success';
     }
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[var(--bg-main)]">
-      {/* Header Architecture */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10 mb-16">
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen bg-[var(--bg-main)] pb-24 lg:pb-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-8 sm:mb-12">
         <div>
-           <div className="flex items-center gap-3 mb-4">
-              <div className="w-1.5 h-8 bg-[var(--primary)] rounded-full" />
-              <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">
+           <div className="flex items-center gap-3 mb-2">
+              <div className="w-1.5 h-7 bg-[var(--primary)] rounded-full" />
+              <h1 className="text-2xl sm:text-4xl font-black text-[var(--text-primary)] tracking-tight">
                 {t('common.announcements', 'Announcements')}
               </h1>
            </div>
-          <p className="text-[var(--text-secondary)] font-medium max-w-xl opacity-80">
+          <p className="text-[var(--text-secondary)] font-medium max-w-xl opacity-80 text-sm">
             MCB Bulletin System: Official organization-wide updates and critical dispatches.
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" size={20} />
-            <input 
-              type="text" 
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" size={18} />
+            <input
+              type="text"
               placeholder="Filter Bulletin..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-14 pr-8 py-4 bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] rounded-2xl w-full md:w-96 focus:border-[var(--primary)] focus:bg-white outline-none transition-all shadow-sm font-bold text-sm"
+              className="pl-12 pr-4 py-3 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl w-full sm:w-72 focus:border-[var(--primary)] outline-none transition-all font-bold text-sm text-[var(--text-primary)]"
             />
           </div>
-          
+
           {canPost && (
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-3 px-8 h-14 bg-[var(--primary)] text-white rounded-2xl transition-all font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-[var(--primary)] text-white rounded-2xl transition-all font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/20"
             >
-              <Plus size={20} />
+              <Plus size={18} />
               <span>{t('announcements.post', 'Create Dispatch')}</span>
             </motion.button>
           )}
@@ -166,50 +165,49 @@ const Announcements = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => handleOpenDetail(anno)}
-              className="bg-white rounded-[2.5rem] p-8 border-2 border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all shadow-xl shadow-black/[0.02] hover:shadow-2xl hover:shadow-black/[0.05] relative overflow-hidden group cursor-pointer flex flex-col h-full"
+              className="bg-[var(--bg-card)] rounded-3xl p-6 sm:p-8 border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all shadow-sm hover:shadow-md relative overflow-hidden group cursor-pointer flex flex-col h-full"
             >
-              <div className="flex justify-between items-center mb-6">
-                <span className={cn("px-4 py-1.5 rounded-xl text-[9px] font-black tracking-[0.15em] uppercase border shadow-sm", getPriorityStyle(anno.priority))}>
+              <div className="flex justify-between items-center mb-5">
+                <span className={cn("px-3 py-1 rounded-xl text-[9px] font-black tracking-[0.15em] uppercase border", getPriorityStyle(anno.priority))}>
                   {anno.priority} Bulletin
                 </span>
-                
+
                 {canPost && (
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(anno.id); }}
-                    className="p-3 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl opacity-0 group-hover:opacity-100 transition-all border border-rose-100"
+                    className="p-2.5 text-[var(--status-error-text)] bg-[var(--status-error-bg)] hover:opacity-80 rounded-xl opacity-0 group-hover:opacity-100 transition-all border border-[var(--status-error-border)]"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={15} />
                   </button>
                 )}
               </div>
 
-              <h2 className="text-xl font-black text-slate-900 mb-4 leading-tight tracking-tight uppercase group-hover:text-[var(--primary)] transition-colors">
+              <h2 className="text-lg sm:text-xl font-black text-[var(--text-primary)] mb-3 leading-tight tracking-tight uppercase group-hover:text-[var(--primary)] transition-colors">
                 {anno.title}
               </h2>
-              
-              <div className="text-slate-500 leading-relaxed mb-8 text-[13px] font-medium line-clamp-3 overflow-hidden">
+
+              <div className="text-[var(--text-secondary)] leading-relaxed mb-6 text-[13px] font-medium line-clamp-3 overflow-hidden">
                 {anno.content}
               </div>
 
-              <div className="mt-auto pt-8 border-t border-slate-50 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-black text-xs">
+              <div className="mt-auto pt-5 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-black text-xs flex-shrink-0">
                     {anno.createdBy.fullName.charAt(0)}
                   </div>
-                  <div>
-                    <p className="text-[12px] font-black text-slate-800 uppercase tracking-tight">{anno.createdBy.fullName}</p>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">{anno.createdBy.role}</p>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-black text-[var(--text-primary)] uppercase tracking-tight truncate">{anno.createdBy.fullName}</p>
+                    <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{anno.createdBy.role}</p>
                   </div>
                 </div>
-                
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">REFERENCE</p>
-                  <p className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">ID-{anno.id.slice(0, 5).toUpperCase()}</p>
+
+                <div className="text-right flex-shrink-0">
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.1em] mb-1">REFERENCE</p>
+                  <p className="text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded-md border border-[var(--border-subtle)]">ID-{anno.id.slice(0, 5).toUpperCase()}</p>
                 </div>
               </div>
 
-              {/* Decorative Accent */}
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-slate-50 to-transparent rounded-bl-full pointer-events-none" />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-[var(--bg-elevated)] to-transparent rounded-bl-full pointer-events-none" />
             </motion.div>
           ))}
         </div>
@@ -225,15 +223,15 @@ const Announcements = () => {
       {/* Post Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
+            <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-[var(--bg-card)] rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden border border-[var(--border-subtle)]"
+            <motion.div
+              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+              className="relative bg-[var(--bg-card)] rounded-t-3xl sm:rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden border border-[var(--border-subtle)] max-h-[92dvh] flex flex-col"
             >
               <div className="p-8">
                 <div className="flex items-center gap-4 mb-8">

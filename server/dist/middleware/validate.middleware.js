@@ -103,7 +103,7 @@ exports.DevPinSchema = zod_1.z.object({
     pin: zod_1.z.string().min(4).max(20),
 });
 // ── User / Employee ──────────────────────────────────────────────────────
-const ROLES = ['DEV', 'MD', 'HR_DIRECTOR', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'];
+const ROLES = ['DEV', 'MD', 'HR_DIRECTOR', 'DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'MARKETING_HEAD', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'];
 const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
 const USER_STATUSES = ['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED', 'SUSPENDED'];
 const CURRENCIES = ['GHS', 'USD', 'EUR', 'GBP', 'GNF', 'NGN', 'KES', 'XOF'];
@@ -140,10 +140,14 @@ exports.LeaveRequestSchema = zod_1.z.object({
     reason: str(500),
     leaveType: zod_1.z.enum(LEAVE_TYPES).optional().default('Annual'),
     relieverId: optUuid,
+    handoverNotes: optStr(2000),
+    relieverAcceptanceRequired: zod_1.z.boolean().optional().default(false),
 });
 exports.LeaveActionSchema = zod_1.z.object({
-    status: zod_1.z.enum(['APPROVED', 'REJECTED']),
-    managerComment: optStr(500),
+    id: uuid,
+    action: zod_1.z.enum(['APPROVE', 'REJECT', 'APPROVED', 'REJECTED']).transform((value) => value === 'APPROVED' ? 'APPROVE' : value === 'REJECTED' ? 'REJECT' : value),
+    role: zod_1.z.enum(['RELIEVER', 'MANAGER', 'HR', 'MD']).optional(),
+    comment: optStr(500),
 });
 // ── Payroll ───────────────────────────────────────────────────────────────
 exports.PayrollRunSchema = zod_1.z.object({
@@ -177,9 +181,10 @@ exports.DepartmentSchema = zod_1.z.object({
 exports.AnnouncementSchema = zod_1.z.object({
     title: str(200),
     content: str(5000),
-    priority: zod_1.z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('MEDIUM'),
-    targetRoles: zod_1.z.array(zod_1.z.string()).optional(),
-    expiresAt: optDateStr,
+    priority: zod_1.z.enum(['LOW', 'NORMAL', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('NORMAL'),
+    targetAudience: zod_1.z.enum(['ALL', 'DEPARTMENT', 'MANAGERS', 'EXECUTIVES']).optional().default('ALL'),
+    departmentId: zod_1.z.coerce.number().int().positive().optional().nullable().or(zod_1.z.literal('')),
+    expirationDate: optDateStr,
 });
 // ── Appraisals ────────────────────────────────────────────────────────────
 exports.AppraisalReviewSchema = zod_1.z.object({
@@ -199,29 +204,31 @@ exports.AppraisalCycleSchema = zod_1.z.object({
 // ── Assets ────────────────────────────────────────────────────────────────
 exports.AssetSchema = zod_1.z.object({
     name: str(200),
-    assetTag: optStr(50),
-    category: optStr(100),
-    serialNumber: optStr(100),
+    serialNumber: str(100),
+    type: str(100),
+    make: optStr(100),
+    model: optStr(100),
+    description: optStr(500),
+    isCompanyProperty: zod_1.z.boolean().optional().default(true),
     purchaseDate: optDateStr,
-    purchasePrice: nonNegativeNum.optional(),
-    condition: zod_1.z.enum(['NEW', 'GOOD', 'FAIR', 'POOR', 'DAMAGED']).optional().default('NEW'),
-    notes: optStr(500),
+    warrantyExpiry: optDateStr,
 });
 exports.AssetAssignSchema = zod_1.z.object({
-    employeeId: zod_1.z.string().uuid(),
-    assignedDate: optDateStr,
-    notes: optStr(500),
+    assetId: uuid,
+    userId: uuid,
+    condition: optStr(100),
+    signature: optStr(2000000),
 });
 // ── Training ──────────────────────────────────────────────────────────────
 exports.TrainingProgramSchema = zod_1.z.object({
     title: str(200),
     description: optStr(2000),
+    provider: optStr(200),
     startDate: optDateStr,
     endDate: optDateStr,
-    capacity: zod_1.z.coerce.number().int().min(1).max(10000).optional(),
-    location: optStr(200),
-    trainer: optStr(100),
-    type: zod_1.z.enum(['INTERNAL', 'EXTERNAL', 'ONLINE', 'WORKSHOP']).optional().default('INTERNAL'),
+    durationHours: zod_1.z.preprocess((value) => value === '' ? undefined : value, zod_1.z.coerce.number().int().min(0).max(10000).optional()),
+    maxSeats: zod_1.z.preprocess((value) => value === '' ? undefined : value, zod_1.z.coerce.number().int().min(1).max(10000).optional()),
+    cost: zod_1.z.preprocess((value) => value === '' ? undefined : value, nonNegativeNum.optional()),
 });
 // ── Recruitment ───────────────────────────────────────────────────────────
 exports.JobPositionSchema = zod_1.z.object({
@@ -248,11 +255,12 @@ exports.InterviewScheduleSchema = zod_1.z.object({
 });
 // ── Expenses ──────────────────────────────────────────────────────────────
 exports.ExpenseClaimSchema = zod_1.z.object({
+    title: str(200),
     description: str(500),
     amount: zod_1.z.coerce.number().min(0.01, 'Amount must be greater than zero'),
     category: optStr(100),
+    currency: zod_1.z.enum(CURRENCIES).optional().default('GHS'),
     receiptUrl: optStr(500),
-    date: optDateStr,
 });
 // ── Onboarding ────────────────────────────────────────────────────────────
 exports.OnboardingTemplateSchema = zod_1.z.object({

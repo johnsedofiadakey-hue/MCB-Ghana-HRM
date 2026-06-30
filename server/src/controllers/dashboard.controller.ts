@@ -14,6 +14,10 @@ const monthLabel = (year: number, month: number) => {
   const date = new Date(year, month - 1, 1);
   return date.toLocaleString('en-US', { month: 'short' });
 };
+
+export const canViewOrganizationDashboard = (role?: string) =>
+  ['DEV', 'MD', 'HR_DIRECTOR', 'HR_MANAGER'].includes(String(role || '').toUpperCase());
+
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
@@ -21,22 +25,18 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const userRank = user?.rank || 0;
     const userDeptId = user?.departmentId;
 
-    // 1. Resolve scoping logic based on rank
+    // 1. Resolve scope through explicit organizational oversight. Department
+    // heads do not inherit company-wide people analytics from numeric rank.
     let departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
-    
-    // Strict Scoping:
-    // - Rank >= 85 (Director/MD/HR): See everything (default or selected dept)
-    // - Rank 70-84 (Manager): See ONLY their own department
-    // - Rank < 70 (Staff): See ONLY their own personal data (where applicable)
-    
-    if (userRank < 85) {
+    const organizationOversight = canViewOrganizationDashboard(user?.role);
+    if (!organizationOversight) {
       departmentId = userDeptId; // Force department scoping for Managers and below
     }
 
     const isStaff = userRank < 70;
 
     // Filter for models where we join through the employee/user relation
-    const deptFilter = departmentId ? { employee: { departmentId } } : {};
+    const deptFilter = isStaff ? { employeeId: user.id } : (departmentId ? { employee: { departmentId } } : {});
     // Filter for models where departmentId is a direct field
     const directDeptFilter = departmentId ? { departmentId } : {};
 
@@ -189,9 +189,13 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
 export const getDashboardPerformance = async (req: Request, res: Response) => {
   try {
-    const orgId = ((req as any).user?.organizationId) || 'mcb-ghana-tenant';
-    const departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
-    const deptFilter = departmentId ? { employee: { departmentId } } : {};
+    const user = (req as any).user;
+    const orgId = user?.organizationId || 'mcb-ghana-tenant';
+    const requestedDepartmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
+    const departmentId = canViewOrganizationDashboard(user?.role) ? requestedDepartmentId : user?.departmentId;
+    const deptFilter = (user?.rank || 0) < 70
+      ? { employeeId: user.id }
+      : (departmentId ? { employee: { departmentId } } : {});
 
     // Fetch last 6 completed cycles for the trend line
     const cycles = await prisma.appraisalCycle.findMany({

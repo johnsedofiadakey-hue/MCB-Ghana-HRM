@@ -7,6 +7,8 @@ exports.removeReportingLine = exports.updateReportingLine = exports.addReporting
 const client_1 = __importDefault(require("../prisma/client"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const hierarchy_service_1 = require("../services/hierarchy.service");
+const policy_service_1 = require("../services/policy.service");
+const permissions_1 = require("../types/permissions");
 const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 const getUser = (req) => req.user;
 // GET /reporting/employee/:employeeId — all reporting lines for an employee
@@ -15,10 +17,14 @@ const getEmployeeReportingLines = async (req, res) => {
         const orgId = getOrgId(req);
         const { employeeId } = req.params;
         const me = getUser(req);
-        const myRank = (0, auth_middleware_1.getRoleRank)(me.role);
-        // Access check: self, own managers, or rank 60+
-        if (me.id !== employeeId && myRank < 60) {
-            return res.status(403).json({ error: 'Not authorised' });
+        if (me.id !== employeeId) {
+            const [managedIds, peopleAccess] = await Promise.all([
+                hierarchy_service_1.HierarchyService.getManagedEmployeeIds(me.id, orgId),
+                policy_service_1.PolicyService.evaluatePolicy(me.id, permissions_1.Permission.EMPLOYEE_READ, { targetUserId: employeeId }),
+            ]);
+            if (!peopleAccess.allowed && !managedIds.includes(employeeId)) {
+                return res.status(403).json({ error: 'Not authorised to view this reporting line' });
+            }
         }
         const lines = await client_1.default.employeeReporting.findMany({
             where: { organizationId: orgId, employeeId, effectiveTo: null },

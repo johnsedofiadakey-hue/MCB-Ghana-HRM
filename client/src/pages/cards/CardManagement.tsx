@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Shield, User, Clock, CheckCircle, XCircle, Plus, Palette, ShieldCheck, AlertTriangle, Building2, Globe } from 'lucide-react';
+import { CreditCard, Clock, Plus, Palette, ShieldCheck, Building2, Printer, Save, UserRound } from 'lucide-react';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { useTranslation } from 'react-i18next';
 import EmployeeIDCard from '../../components/it/EmployeeIDCard';
 import toast from 'react-hot-toast';
+import { getStoredUser } from '../../utils/session';
 
 interface Card {
   id: string;
+  userId: string;
   employeeId: string;
   cardNumber: string;
   status: 'REQUESTED' | 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
+  productionStatus: 'DRAFT' | 'READY_TO_PRINT' | 'PRINTED' | 'ISSUED';
+  accessStatus: 'NOT_PROVISIONED' | 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
   issuedAt: string | null;
   employee?: { fullName: string };
 }
@@ -44,14 +48,26 @@ const ColorPicker = ({ id, label, value, onChange }: { id: string; label: string
 
 const CardManagement: React.FC = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'issuance' | 'design'>('issuance');
+  const [activeTab, setActiveTab] = useState<'issuance' | 'call-cards' | 'design'>('issuance');
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const user = getStoredUser();
+  const canProduce = Boolean(user.permissions?.includes('*') || user.permissions?.includes('card.production'));
+  const canControlAccess = Boolean(user.permissions?.includes('*') || user.permissions?.includes('card.access'));
+  const canDesign = Boolean(user.permissions?.includes('*') || user.permissions?.includes('card.design'));
+  const canManageCallCards = Boolean(user.permissions?.includes('*') || user.permissions?.includes('callcard.manage'));
   
   // Issuance Form state
   const [employeeId, setEmployeeId] = useState('');
   const [cardNumber, setCardNumber] = useState('');
+  const [directory, setDirectory] = useState<any[]>([]);
+  const [selectedCallCardEmployeeId, setSelectedCallCardEmployeeId] = useState('');
+  const [callCardLoading, setCallCardLoading] = useState(false);
+  const [callCardData, setCallCardData] = useState<any>({
+    fullName: '', jobTitle: '', department: '', bio: '', email: '', phone: '', whatsapp: '',
+    linkedin: '', github: '', website: '', theme: 'horizontal', isActive: true, enableContactCollection: false
+  });
 
   // Design state (Settings)
   const [settings, setSettings] = useState<any>({});
@@ -75,10 +91,8 @@ const CardManagement: React.FC = () => {
       setCards(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to fetch cards');
-      setCards([
-        { id: '1', employeeId: 'EMP001', cardNumber: 'MCB-99281', status: 'ACTIVE', issuedAt: new Date().toISOString(), employee: { fullName: 'John Doe' } },
-        { id: '2', employeeId: 'EMP002', cardNumber: 'MCB-99282', status: 'REQUESTED', issuedAt: null, employee: { fullName: 'Jane Smith' } }
-      ]);
+      setCards([]);
+      toast.error('Could not load card inventory');
     } finally {
       setLoading(false);
     }
@@ -86,20 +100,21 @@ const CardManagement: React.FC = () => {
 
   const fetchSettings = async () => {
     try {
-      const res = await api.get('/settings');
+      if (!canDesign) return;
+      const res = await api.get('/card-design-settings');
       const data = res.data;
       setSettings(data);
       setFormData({
-        idCardPrimaryColor: data.idCardPrimaryColor || '#009EE3',
-        idCardAccentColor: data.idCardAccentColor || '#EE7100',
-        idCardOrientation: data.idCardOrientation || 'VERTICAL',
-        idCardTheme: data.idCardTheme || 'DARK',
-        idCardShowLogo: data.idCardShowLogo ?? true,
-        idCardShowQrCode: data.idCardShowQrCode ?? true,
-        idCardSecurityText: data.idCardSecurityText || 'Terms of Use',
-        idCardBackMessage: data.idCardBackMessage || 'This card belongs to...',
+        idCardPrimaryColor: data.primaryColor || '#009EE3',
+        idCardAccentColor: data.secondaryColor || '#EE7100',
+        idCardOrientation: data.orientation || 'VERTICAL',
+        idCardTheme: data.theme || 'DARK',
+        idCardShowLogo: data.showLogo ?? true,
+        idCardShowQrCode: data.showQrCode ?? true,
+        idCardSecurityText: data.securityText || 'Terms of Use',
+        idCardBackMessage: data.backMessage || 'This card belongs to...',
         companyName: data.name || 'MCB Ghana',
-        companyLogoUrl: data.companyLogoUrl || ''
+        companyLogoUrl: data.logoUrl || ''
       });
     } catch (err) {
       console.error('Failed to fetch settings');
@@ -109,7 +124,39 @@ const CardManagement: React.FC = () => {
   useEffect(() => {
     fetchCards();
     fetchSettings();
+    if (canManageCallCards) {
+      api.get('/users?take=250').then((res) => setDirectory(Array.isArray(res.data) ? res.data : [])).catch(() => setDirectory([]));
+    }
   }, []);
+
+  const loadCallCard = async (targetEmployeeId: string) => {
+    setSelectedCallCardEmployeeId(targetEmployeeId);
+    if (!targetEmployeeId) return;
+    setCallCardLoading(true);
+    try {
+      const res = await api.get(`/call-cards/employee/${targetEmployeeId}`);
+      setCallCardData(res.data);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Could not load the employee call card');
+    } finally {
+      setCallCardLoading(false);
+    }
+  };
+
+  const saveCallCard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCallCardEmployeeId) return;
+    setCallCardLoading(true);
+    try {
+      const res = await api.post('/call-cards/upsert', { ...callCardData, employeeId: selectedCallCardEmployeeId });
+      setCallCardData(res.data);
+      toast.success('Digital call card published');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Could not publish the call card');
+    } finally {
+      setCallCardLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +177,7 @@ const CardManagement: React.FC = () => {
     }
   };
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateAccessStatus = async (id: string, status: string) => {
     try {
       if (status === 'ACTIVE') {
         await api.patch(`/cards/${id}/activate`);
@@ -139,7 +186,7 @@ const CardManagement: React.FC = () => {
       } else if (status === 'REVOKED') {
         await api.patch(`/cards/${id}/revoke`);
       } else {
-        await api.put(`/cards/${id}`, { status });
+        throw new Error('Unsupported access status');
       }
       fetchCards();
       toast.success(`Card status updated to ${status}`);
@@ -149,9 +196,29 @@ const CardManagement: React.FC = () => {
     }
   };
 
+  const updateProductionStatus = async (id: string, productionStatus: string) => {
+    try {
+      await api.put(`/cards/${id}`, { productionStatus });
+      fetchCards();
+      toast.success(`Production status updated to ${productionStatus}`);
+    } catch {
+      toast.error('Failed to update production status');
+    }
+  };
+
   const handleSaveDesign = async () => {
     try {
-      await api.put('/settings', formData);
+      await api.put('/card-design-settings', {
+        theme: formData.idCardTheme,
+        primaryColor: formData.idCardPrimaryColor,
+        secondaryColor: formData.idCardAccentColor,
+        logoUrl: formData.companyLogoUrl,
+        orientation: formData.idCardOrientation,
+        showLogo: formData.idCardShowLogo,
+        showQrCode: formData.idCardShowQrCode,
+        securityText: formData.idCardSecurityText,
+        backMessage: formData.idCardBackMessage,
+      });
       toast.success('Card design saved successfully');
       fetchSettings();
     } catch (err) {
@@ -170,36 +237,45 @@ const CardManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-10 pb-20 max-w-[1600px] mx-auto page-enter p-6">
+    <div className="space-y-8 sm:space-y-10 pb-20 max-w-[1600px] mx-auto page-enter p-0 sm:p-6">
       <div className="flex flex-col lg:flex-row justify-between items-end gap-6">
         <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[var(--text-primary)] tracking-tight leading-none">
-            Card Management <span className="text-[var(--text-muted)] font-thin block xs:inline lg:ml-2">/ IT Hub</span>
+            Card Management <span className="text-[var(--text-muted)] font-thin block xs:inline lg:ml-2">/ Marketing & IT</span>
           </h1>
           <p className="text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
             Manage physical access cards, design templates, and security features in one place.
           </p>
         </motion.div>
         
-        <div className="flex gap-4">
-          <button
+        <div className="flex gap-3 sm:gap-4 w-full lg:w-auto overflow-x-auto no-scrollbar pb-1">
+          {(canProduce || canControlAccess) && <button
             onClick={() => setActiveTab('issuance')}
             className={cn(
-              "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+              "shrink-0 px-5 sm:px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
               activeTab === 'issuance' ? "bg-[var(--primary)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
             )}
           >
             Issuance & Inventory
-          </button>
-          <button
+          </button>}
+          {canManageCallCards && <button
+            onClick={() => setActiveTab('call-cards')}
+            className={cn(
+              "shrink-0 px-5 sm:px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+              activeTab === 'call-cards' ? "bg-[var(--primary)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
+            )}
+          >
+            Digital Call Cards
+          </button>}
+          {canDesign && <button
             onClick={() => setActiveTab('design')}
             className={cn(
-              "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+              "shrink-0 px-5 sm:px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
               activeTab === 'design' ? "bg-[var(--primary)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
             )}
           >
             Design & Security
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -214,12 +290,12 @@ const CardManagement: React.FC = () => {
           >
             {/* Form Area */}
             <div className="lg:col-span-4 space-y-6">
-              <button
+              {canProduce && <button
                 onClick={() => setShowForm(!showForm)}
                 className="w-full px-6 py-4 rounded-xl bg-[var(--bg-elevated)] text-[var(--text-primary)] text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/50 transition-all"
               >
                 <Plus size={18} /> {showForm ? 'Cancel Request' : 'New Card Request'}
-              </button>
+              </button>}
 
               {showForm && (
                 <motion.div 
@@ -296,8 +372,8 @@ const CardManagement: React.FC = () => {
                           </div>
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className={cn("px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border", getStatusColor(card.status))}>
-                                {card.status}
+                              <span className={cn("px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border", getStatusColor(card.accessStatus))}>
+                                {card.productionStatus} / {card.accessStatus}
                               </span>
                               <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50 flex items-center gap-1">
                                 <Clock size={10} /> {card.issuedAt ? new Date(card.issuedAt).toLocaleDateString() : 'Pending'}
@@ -313,25 +389,42 @@ const CardManagement: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {card.status === 'REQUESTED' && (
+                          {canProduce && card.productionStatus === 'DRAFT' && (
                             <button 
-                              onClick={() => updateStatus(card.id, 'ACTIVE')}
+                              onClick={() => updateProductionStatus(card.id, 'READY_TO_PRINT')}
                               className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all"
                             >
-                              Approve
+                              Ready to Print
                             </button>
                           )}
-                          {card.status === 'ACTIVE' && (
+                          {canProduce && card.productionStatus === 'READY_TO_PRINT' && (
+                            <>
+                              <button
+                                onClick={() => window.open(`/print/ids?ids=${encodeURIComponent(card.userId)}`, '_blank', 'noopener,noreferrer')}
+                                className="px-4 py-2 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                              >
+                                <Printer size={13} /> Print Card
+                              </button>
+                              <button onClick={() => updateProductionStatus(card.id, 'PRINTED')} className="px-4 py-2 rounded-lg bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[10px] font-black uppercase tracking-widest">Mark Printed</button>
+                            </>
+                          )}
+                          {canProduce && card.productionStatus === 'PRINTED' && (
+                            <button onClick={() => updateProductionStatus(card.id, 'ISSUED')} className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">Issue Card</button>
+                          )}
+                          {canControlAccess && card.accessStatus === 'NOT_PROVISIONED' && (
+                            <button onClick={() => updateAccessStatus(card.id, 'ACTIVE')} className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">Activate Access</button>
+                          )}
+                          {canControlAccess && card.accessStatus === 'ACTIVE' && (
                             <button 
-                              onClick={() => updateStatus(card.id, 'SUSPENDED')}
+                              onClick={() => updateAccessStatus(card.id, 'SUSPENDED')}
                               className="px-4 py-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all"
                             >
                               Suspend
                             </button>
                           )}
-                          {card.status === 'SUSPENDED' && (
+                          {canControlAccess && card.accessStatus === 'SUSPENDED' && (
                             <button 
-                              onClick={() => updateStatus(card.id, 'ACTIVE')}
+                              onClick={() => updateAccessStatus(card.id, 'ACTIVE')}
                               className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all"
                             >
                               Reactivate
@@ -347,7 +440,97 @@ const CardManagement: React.FC = () => {
           </motion.div>
         )}
 
-        {activeTab === 'design' && (
+        {activeTab === 'call-cards' && canManageCallCards && (
+          <motion.div
+            key="call-cards"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="grid grid-cols-1 xl:grid-cols-12 gap-8"
+          >
+            <section className="xl:col-span-4 nx-card p-6 sm:p-8 h-fit">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center mb-5">
+                <UserRound size={22} />
+              </div>
+              <h2 className="text-xl font-black text-[var(--text-primary)]">Employee directory</h2>
+              <p className="text-sm text-[var(--text-muted)] mt-2 mb-6">Select an employee to prepare or correct their published business card.</p>
+              <select
+                className="nx-input w-full"
+                value={selectedCallCardEmployeeId}
+                onChange={(e) => loadCallCard(e.target.value)}
+              >
+                <option value="">Select employee</option>
+                {directory.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.fullName} — {employee.jobTitle || employee.employeeCode || 'Employee'}
+                  </option>
+                ))}
+              </select>
+            </section>
+
+            <section className="xl:col-span-8 nx-card p-6 sm:p-8">
+              {!selectedCallCardEmployeeId ? (
+                <div className="min-h-[360px] flex flex-col items-center justify-center text-center text-[var(--text-muted)]">
+                  <CreditCard size={48} className="opacity-20 mb-5" />
+                  <p className="font-black uppercase tracking-widest text-xs">Choose an employee to begin</p>
+                </div>
+              ) : (
+                <form onSubmit={saveCallCard} className="space-y-7">
+                  <div>
+                    <h2 className="text-2xl font-black text-[var(--text-primary)]">Digital call card</h2>
+                    <p className="text-sm text-[var(--text-muted)] mt-1">Marketing owns content, presentation, publishing and contact collection.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {[
+                      ['fullName', 'Full name', 'text'], ['jobTitle', 'Job title', 'text'],
+                      ['department', 'Department', 'text'], ['email', 'Work email', 'email'],
+                      ['phone', 'Phone', 'tel'], ['whatsapp', 'WhatsApp', 'tel'],
+                      ['linkedin', 'LinkedIn URL', 'url'], ['website', 'Website URL', 'url'],
+                    ].map(([key, label, type]) => (
+                      <label key={key} className="space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
+                        <input
+                          type={type}
+                          required={['fullName', 'jobTitle', 'email'].includes(key)}
+                          className="nx-input w-full"
+                          value={callCardData[key] || ''}
+                          onChange={(e) => setCallCardData({ ...callCardData, [key]: e.target.value })}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <label className="space-y-2 block">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Professional bio</span>
+                    <textarea className="nx-input w-full min-h-28" value={callCardData.bio || ''} onChange={(e) => setCallCardData({ ...callCardData, bio: e.target.value })} />
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <label className="space-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Layout</span>
+                      <select className="nx-input w-full" value={callCardData.theme || 'horizontal'} onChange={(e) => setCallCardData({ ...callCardData, theme: e.target.value })}>
+                        <option value="horizontal">Horizontal</option>
+                        <option value="vertical">Vertical</option>
+                        <option value="MCB_GOLD">MCB Gold</option>
+                      </select>
+                    </label>
+                    <label className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] self-end">
+                      <input type="checkbox" checked={callCardData.isActive ?? true} onChange={(e) => setCallCardData({ ...callCardData, isActive: e.target.checked })} />
+                      <span className="text-xs font-bold text-[var(--text-primary)]">Published</span>
+                    </label>
+                    <label className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] self-end">
+                      <input type="checkbox" checked={callCardData.enableContactCollection ?? false} onChange={(e) => setCallCardData({ ...callCardData, enableContactCollection: e.target.checked })} />
+                      <span className="text-xs font-bold text-[var(--text-primary)]">Collect contacts</span>
+                    </label>
+                  </div>
+                  <button disabled={callCardLoading} type="submit" className="btn-primary w-full sm:w-auto px-8 py-4">
+                    <Save size={17} /> {callCardLoading ? 'Saving…' : 'Publish Call Card'}
+                  </button>
+                </form>
+              )}
+            </section>
+          </motion.div>
+        )}
+
+        {activeTab === 'design' && canDesign && (
           <motion.div
             key="design"
             initial={{ opacity: 0, y: 10 }}
@@ -358,7 +541,7 @@ const CardManagement: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               {/* Controls */}
               <div className="space-y-8">
-                <section className="space-y-6 p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-left relative overflow-hidden group/card">
+                <section className="space-y-6 p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-[0_20px_50px_rgba(0,0,0,0.04)] text-left relative overflow-hidden group/card">
                    <div className="flex items-center gap-4 relative z-10">
                       <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
                           <Palette size={22} />
@@ -524,10 +707,10 @@ const CardManagement: React.FC = () => {
                     </p>
                  </div>
 
-                 <div className="p-10 bg-[var(--bg-elevated)]/30 rounded-[4rem] border-2 border-[var(--border-subtle)] border-dashed flex justify-center items-center min-h-[450px] relative overflow-hidden group/preview">
+                 <div className="p-3 sm:p-10 bg-[var(--bg-elevated)]/30 rounded-3xl sm:rounded-[4rem] border-2 border-[var(--border-subtle)] border-dashed flex justify-center items-center min-h-[360px] sm:min-h-[450px] relative overflow-hidden group/preview">
                      <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/10 via-transparent to-[var(--accent)]/5 opacity-30 group-hover/preview:opacity-50 transition-opacity duration-1000 pointer-events-none" />
                      
-                     <div className="relative z-10 transition-all duration-1000 transform scale-[0.75] lg:scale-[0.8] cursor-zoom-in">
+                     <div className="relative z-10 transition-all duration-1000 transform scale-[0.52] sm:scale-[0.7] lg:scale-[0.8] cursor-zoom-in">
                        <EmployeeIDCard 
                          employee={{ 
                            fullName: 'Sample Employee', 

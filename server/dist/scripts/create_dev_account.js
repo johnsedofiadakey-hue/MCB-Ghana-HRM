@@ -8,7 +8,9 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma = new client_1.PrismaClient();
 async function main() {
     const email = 'dev@nexus.com';
-    const password = 'unlockme';
+    const password = process.env.RECOVERY_ACCOUNT_PASSWORD;
+    if (!password || password.length < 16)
+        throw new Error('RECOVERY_ACCOUNT_PASSWORD must be at least 16 characters.');
     const fullName = 'System Developer';
     console.log(`Creating dev account: ${email}...`);
     const passwordHash = await bcryptjs_1.default.hash(password, 12);
@@ -18,7 +20,8 @@ async function main() {
             passwordHash,
             role: 'DEV',
             organizationId: 'mcb-ghana-tenant',
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            mustChangePassword: true,
         },
         create: {
             email,
@@ -27,10 +30,11 @@ async function main() {
             role: 'DEV',
             organizationId: 'mcb-ghana-tenant',
             status: 'ACTIVE',
+            mustChangePassword: true,
             jobTitle: 'Lead Developer'
         }
     });
-    console.log(`Success! Dev account ${email} is ready with password: ${password}`);
+    console.log(`Success! Dev account ${email} is ready and requires a password change.`);
 }
 main()
     .catch((e) => {

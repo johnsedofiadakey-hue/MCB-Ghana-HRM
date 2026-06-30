@@ -7,10 +7,5 @@ import { Request, Response, NextFunction } from 'express';
 export const asyncHandler = (
   fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
 ) => (req: Request, res: Response, next: NextFunction) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => {
-    console.error('[Unhandled]', err.message || err);
-    if (!res.headersSent) {
-      res.status(500).json({ error: err.message || 'Internal server error' });
-    }
-  });
+  Promise.resolve(fn(req, res, next)).catch(next);
 };

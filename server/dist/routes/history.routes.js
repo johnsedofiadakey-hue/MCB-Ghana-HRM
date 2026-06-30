@@ -36,12 +36,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const historyController = __importStar(require("../controllers/history.controller"));
+const permissions_1 = require("../types/permissions");
 const router = (0, express_1.Router)();
-// Create Record: Admin, MD, Supervisors (for their team - logic to be added in controller or service? For now allow role)
-router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(70), historyController.createRecord);
-// Get Records: Admin can see all? Or specific employee?
-// Route: /api/history/:employeeId
-router.get('/:employeeId', auth_middleware_1.authenticate, historyController.getEmployeeRecords); // Add logic to ensure only authorized people can view
-// Update Status (e.g. resolve query)
-router.put('/:id/status', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), historyController.updateStatus);
+router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requirePermission)(permissions_1.Permission.EMPLOYEE_HISTORY_WRITE), historyController.createRecord);
+// Employees may read the safe subset of their own record. Broader access is
+// enforced against the employee-history permission in the controller.
+router.get('/:employeeId', auth_middleware_1.authenticate, historyController.getEmployeeRecords);
+router.put('/:id/status', auth_middleware_1.authenticate, (0, auth_middleware_1.requirePermission)(permissions_1.Permission.EMPLOYEE_HISTORY_WRITE), historyController.updateStatus);
 exports.default = router;

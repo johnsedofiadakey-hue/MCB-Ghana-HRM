@@ -56,6 +56,24 @@ export const approveRun = async (req: Request, res: Response) => {
   }
 };
 
+const transitionRun = (action: 'SUBMIT' | 'HR_APPROVE' | 'HR_REJECT' | 'RELEASE' | 'MD_REJECT') => async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const run = await payrollService.transitionPayrollRun(organizationId, req.params.id, user.id, action, req.body?.reason);
+    await logAction(user.id, `PAYROLL_${action}`, 'PayrollRun', run.id, { period: run.period, reason: req.body?.reason }, req.ip);
+    return res.json(run);
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+export const submitRun = transitionRun('SUBMIT');
+export const hrApproveRun = transitionRun('HR_APPROVE');
+export const hrRejectRun = transitionRun('HR_REJECT');
+export const releaseRun = transitionRun('RELEASE');
+export const mdRejectRun = transitionRun('MD_REJECT');
+
 export const voidRun = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
@@ -65,7 +83,7 @@ export const voidRun = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const organizationId = orgId || 'mcb-ghana-tenant';
     const actorId = userReq.id;
-    const run = await payrollService.voidPayrollRun(organizationId, req.params.id);
+    const run = await payrollService.voidPayrollRun(organizationId, req.params.id, actorId);
     if (!run) return res.status(404).json({ error: 'Payroll run not found' });
     await logAction(actorId, 'PAYROLL_VOIDED', 'PayrollRun', run.id, {}, req.ip);
     res.json(run);
@@ -77,9 +95,6 @@ export const voidRun = async (req: Request, res: Response) => {
 export const deleteRun = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    if (getRoleRank(userReq.role) < 90) {
-      return res.status(403).json({ error: 'Only MD can delete payroll runs' });
-    }
     const orgId = getOrgId(req);
     const organizationId = orgId || 'mcb-ghana-tenant';
     const actorId = userReq.id;
@@ -169,13 +184,11 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
     const requesterId = userReq.id;
     const requesterRole = userReq.role;
 
-    if (getRoleRank(requesterRole) < 80 && requesterId !== employeeId) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
+    const isSelf = requesterId === employeeId;
 
     const [item, org] = await Promise.all([
       prisma.payrollItem.findFirst({
-        where: { runId, employeeId, organizationId },
+        where: { runId, employeeId, organizationId, run: { status: 'RELEASED' } },
         include: {
           run: true,
           employee: {
@@ -198,6 +211,9 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
     ]);
 
     if (!item) return res.status(404).json({ error: 'Payslip not found' });
+    if (!isSelf && !['FINANCE_MANAGER', 'HR_DIRECTOR', 'MD', 'DEV'].includes(requesterRole)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
     
     const pdfBuffer = await PdfExportService.generateBrandedPdf(
       organizationId, 
@@ -259,6 +275,7 @@ export const exportBankCSV = async (req: Request, res: Response) => {
     });
 
     if (!run) return res.status(404).json({ error: 'Payroll run not found' });
+    if (run.status !== 'RELEASED') return res.status(409).json({ error: 'Bank export is available only after MD release.' });
 
     const csvStringifier = createObjectCsvStringifier({
       header: [
@@ -290,4 +307,73 @@ export const exportBankCSV = async (req: Request, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
+};
+
+export const getStatutoryRules = async (req: Request, res: Response) => {
+  const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+  const rules = await prisma.payrollStatutoryRule.findMany({ where: { organizationId }, orderBy: { effectiveFrom: 'desc' } });
+  return res.json(rules);
+};
+
+export const createStatutoryRule = async (req: Request, res: Response) => {
+  try {
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const { name, effectiveFrom, effectiveTo, employeeSsnitRate, employerSsnitRate, minimumInsurable, maximumInsurable, payeBands, bonusRules, overtimeRules } = req.body;
+    if (!name || !effectiveFrom || !Array.isArray(payeBands) || !payeBands.length) {
+      return res.status(400).json({ error: 'name, effectiveFrom and payeBands are required.' });
+    }
+    const from = new Date(effectiveFrom);
+    const to = effectiveTo ? new Date(effectiveTo) : null;
+    if (Number.isNaN(from.getTime()) || (to && Number.isNaN(to.getTime())) || (to && to < from)) {
+      return res.status(400).json({ error: 'The statutory-rule effective date range is invalid.' });
+    }
+    const employeeRate = Number(employeeSsnitRate);
+    const employerRate = Number(employerSsnitRate);
+    if (![employeeRate, employerRate].every(rate => Number.isFinite(rate) && rate >= 0 && rate <= 1)) {
+      return res.status(400).json({ error: 'SSNIT rates must be decimal values between 0 and 1.' });
+    }
+    if (!payeBands.every((band: any) => Number.isFinite(Number(band.limit)) && Number(band.limit) > 0 && Number.isFinite(Number(band.rate)) && Number(band.rate) >= 0 && Number(band.rate) <= 1)) {
+      return res.status(400).json({ error: 'Every PAYE band requires a positive limit and a decimal rate between 0 and 1.' });
+    }
+    if (Number(minimumInsurable) > Number(maximumInsurable)) {
+      return res.status(400).json({ error: 'Minimum insurable earnings cannot exceed the maximum.' });
+    }
+    const rule = await prisma.payrollStatutoryRule.create({
+      data: {
+        organizationId, name, effectiveFrom: from, effectiveTo: to,
+        employeeSsnitRate: employeeRate, employerSsnitRate: employerRate, minimumInsurable, maximumInsurable, payeBands, bonusRules, overtimeRules,
+        accountantApproved: false,
+      },
+    });
+    return res.status(201).json(rule);
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+export const approveStatutoryRule = async (req: Request, res: Response) => {
+  const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+  const user = (req as any).user;
+  if (req.body?.accountantConfirmation !== true) {
+    return res.status(400).json({ error: 'Explicit accountant confirmation is required.' });
+  }
+  const rule = await prisma.payrollStatutoryRule.findFirst({ where: { id: req.params.id, organizationId } });
+  if (!rule) return res.status(404).json({ error: 'Statutory rule not found' });
+  const overlap = await prisma.payrollStatutoryRule.findFirst({
+    where: {
+      organizationId,
+      id: { not: rule.id },
+      accountantApproved: true,
+      effectiveFrom: { lte: rule.effectiveTo || new Date('9999-12-31T00:00:00.000Z') },
+      OR: [{ effectiveTo: null }, { effectiveTo: { gte: rule.effectiveFrom } }],
+    },
+    select: { id: true, name: true },
+  });
+  if (overlap) return res.status(409).json({ error: `This period overlaps approved rule "${overlap.name}".` });
+  const result = await prisma.payrollStatutoryRule.updateMany({
+    where: { id: rule.id, organizationId, accountantApproved: false },
+    data: { accountantApproved: true, approvedBy: user.id, approvedAt: new Date() },
+  });
+  if (!result.count) return res.status(409).json({ error: 'Statutory rule is already approved' });
+  return res.json({ success: true });
 };

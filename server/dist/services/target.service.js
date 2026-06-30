@@ -7,32 +7,55 @@ exports.TargetService = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const generative_ai_1 = require("@google/generative-ai");
 const websocket_service_1 = require("./websocket.service");
+const hierarchy_service_1 = require("./hierarchy.service");
 class TargetService {
     /**
      * Create a new target (Department or Individual)
      */
     static async createTarget(data, originatorId, organizationId) {
-        const { title, description, level, metrics, dueDate, departmentId, assigneeId, lineManagerId, reviewerId, type, weight, parentTargetId, contributionWeight } = data;
+        const { title, description, level, metrics, dueDate, departmentId, assigneeId, lineManagerId, reviewerId, type, weight, parentTargetId, contributionWeight, quarter, year } = data;
+        const targetLevel = level || 'INDIVIDUAL';
         if (!title)
             throw new Error('Target title is required');
-        if (level === 'INDIVIDUAL' && !assigneeId)
+        if (targetLevel === 'INDIVIDUAL' && !assigneeId)
             throw new Error('Individual targets require an assignee');
+        const referencedUsers = [originatorId, assigneeId, lineManagerId, reviewerId].filter((id) => Boolean(id && id !== 'null'));
+        const users = await client_1.default.user.findMany({ where: { organizationId, id: { in: referencedUsers } }, select: { id: true } });
+        if (new Set(users.map(user => user.id)).size !== new Set(referencedUsers).size)
+            throw new Error('One or more target participants are outside this organization');
+        if (departmentId) {
+            const department = await client_1.default.department.findFirst({ where: { id: Number(departmentId), organizationId }, select: { id: true } });
+            if (!department)
+                throw new Error('Target department is outside this organization');
+        }
+        if (parentTargetId) {
+            const parent = await client_1.default.target.findFirst({ where: { id: parentTargetId, organizationId }, select: { id: true } });
+            if (!parent)
+                throw new Error('Parent target is outside this organization');
+        }
         // Auto-assign lineManager if missing and level is INDIVIDUAL
         let finalLineManagerId = lineManagerId;
-        if (level === 'INDIVIDUAL' && assigneeId && (!finalLineManagerId || finalLineManagerId === 'null')) {
-            const assigneeUser = await client_1.default.user.findUnique({ where: { id: assigneeId } });
+        if (targetLevel === 'INDIVIDUAL' && assigneeId && (!finalLineManagerId || finalLineManagerId === 'null')) {
+            const assigneeUser = await client_1.default.user.findFirst({ where: { id: assigneeId, organizationId } });
             if (assigneeUser?.supervisorId) {
                 finalLineManagerId = assigneeUser.supervisorId;
             }
+        }
+        if (finalLineManagerId && !users.some(user => user.id === finalLineManagerId)) {
+            const manager = await client_1.default.user.findFirst({ where: { id: finalLineManagerId, organizationId }, select: { id: true } });
+            if (!manager)
+                throw new Error('Target line manager is outside this organization');
         }
         const target = await client_1.default.target.create({
             data: {
                 organizationId,
                 title,
                 description,
-                level: level || 'INDIVIDUAL',
+                level: targetLevel,
                 type: type || 'SINGLE',
                 dueDate: dueDate ? new Date(dueDate) : null,
+                quarter: quarter ? parseInt(String(quarter)) : null,
+                year: year ? parseInt(String(year)) : null,
                 originator: { connect: { id: originatorId } },
                 assignee: (assigneeId && assigneeId !== '' && assigneeId !== 'null') ? { connect: { id: assigneeId } } : undefined,
                 department: (departmentId && String(departmentId) !== '') ? { connect: { id: parseInt(String(departmentId)) } } : undefined,
@@ -80,6 +103,18 @@ class TargetService {
             throw new Error('Parent target not found');
         if (parentTarget.level !== 'DEPARTMENT')
             throw new Error('Only Department targets can be cascaded');
+        const department = parentTarget.departmentId
+            ? await client_1.default.department.findFirst({ where: { id: parentTarget.departmentId, organizationId }, select: { managerId: true } })
+            : null;
+        const canCascade = [parentTarget.originatorId, parentTarget.lineManagerId, parentTarget.reviewerId].includes(managerId) || department?.managerId === managerId;
+        if (!canCascade)
+            throw new Error('Only the owning manager may cascade this target');
+        const managedEmployeeIds = await hierarchy_service_1.HierarchyService.getManagedEmployeeIds(managerId, organizationId);
+        const assignmentIds = [...new Set((staffAssignments || []).map((assignment) => assignment.staffId).filter(Boolean))];
+        const employees = await client_1.default.user.findMany({ where: { organizationId, id: { in: assignmentIds }, isArchived: false }, select: { id: true } });
+        if (employees.length !== assignmentIds.length || assignmentIds.some(id => !managedEmployeeIds.includes(id))) {
+            throw new Error('Targets may only be cascaded to employees in your reporting scope');
+        }
         const createdTargets = [];
         const autoWeight = staffAssignments.length > 0 ? (100 / staffAssignments.length) : 0;
         for (const assignment of staffAssignments) {
@@ -206,7 +241,7 @@ class TargetService {
      * Update an existing target and its metrics
      */
     static async updateTarget(targetId, orgId, data) {
-        const { title, description, dueDate, weight, contributionWeight, status, metrics } = data;
+        const { title, description, dueDate, weight, contributionWeight, status, metrics, quarter, year } = data;
         const target = await client_1.default.target.findUnique({
             where: { id: targetId },
             include: { metrics: true }
@@ -221,6 +256,8 @@ class TargetService {
                     ...(title !== undefined && { title }),
                     ...(description !== undefined && { description }),
                     ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
+                    ...(quarter !== undefined && { quarter: quarter !== null ? parseInt(String(quarter)) : null }),
+                    ...(year !== undefined && { year: year !== null ? parseInt(String(year)) : null }),
                     ...(weight !== undefined && { weight: parseFloat(String(weight)) }),
                     ...(contributionWeight !== undefined && { contributionWeight: parseFloat(String(contributionWeight)) }),
                     ...(status !== undefined && { status }),
@@ -341,10 +378,8 @@ class TargetService {
         });
         if (!target || target.organizationId !== organizationId)
             throw new Error('Goal not found');
-        // MD (90), Director (80), DEV (100) or explicit reviewer
         const isExplicitReviewer = target.reviewerId === reviewerId || target.lineManagerId === reviewerId;
-        const isAuthority = reviewerRank >= 80;
-        if (!isExplicitReviewer && !isAuthority) {
+        if (!isExplicitReviewer) {
             throw new Error('You do not have permission to review this goal');
         }
         if (target.status !== 'UNDER_REVIEW')

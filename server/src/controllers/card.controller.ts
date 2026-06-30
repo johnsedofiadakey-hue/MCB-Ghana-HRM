@@ -3,6 +3,9 @@ import prisma from '../prisma/client';
 import { CardService } from '../services/card.service';
 import { getOrgId } from './enterprise.controller';
 import { notify } from '../services/websocket.service';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
+import { completeOnboardingTasksForEvent } from '../services/onboarding-events.service';
 
 export class CardController {
   static async requestCard(req: Request, res: Response) {
@@ -45,6 +48,8 @@ export class CardController {
           userId: targetUser.id,
           cardNumber: finalCardNumber,
           status: 'REQUESTED',
+          productionStatus: 'DRAFT',
+          accessStatus: 'NOT_PROVISIONED',
         },
       });
 
@@ -72,10 +77,11 @@ export class CardController {
       const orgId = getOrgId(req);
       const organizationId = orgId || 'mcb-ghana-tenant';
 
-      const card = await CardService.transitionState(id, 'ACTIVE', reason || 'Activated by admin', user.id, organizationId);
+      const card = await CardService.transitionAccessState(id, 'ACTIVE', reason || 'Activated by IT', user.id, organizationId);
       
-      const cardRecord = await prisma.card.findUnique({ where: { id }, select: { userId: true } });
+      const cardRecord = await prisma.card.findFirst({ where: { id, organizationId }, select: { userId: true } });
       if (cardRecord?.userId) {
+        await completeOnboardingTasksForEvent({ organizationId, employeeId: cardRecord.userId, event: 'CARD_ACCESS_ACTIVATED', actorId: user.id });
         await notify(cardRecord.userId, '💳 Card Activated', `Your access card has been activated.`, 'SUCCESS', '/profile');
       }
 
@@ -93,9 +99,9 @@ export class CardController {
       const orgId = getOrgId(req);
       const organizationId = orgId || 'mcb-ghana-tenant';
 
-      const card = await CardService.transitionState(id, 'SUSPENDED', reason || 'Suspended by admin', user.id, organizationId);
+      const card = await CardService.transitionAccessState(id, 'SUSPENDED', reason || 'Suspended by IT', user.id, organizationId);
       
-      const cardRecord = await prisma.card.findUnique({ where: { id }, select: { userId: true } });
+      const cardRecord = await prisma.card.findFirst({ where: { id, organizationId }, select: { userId: true } });
       if (cardRecord?.userId) {
         await notify(cardRecord.userId, '⚠️ Card Suspended', `Your access card has been suspended.`, 'WARNING', '/profile');
       }
@@ -114,9 +120,9 @@ export class CardController {
       const orgId = getOrgId(req);
       const organizationId = orgId || 'mcb-ghana-tenant';
 
-      const card = await CardService.transitionState(id, 'REVOKED', reason || 'Revoked by admin', user.id, organizationId);
+      const card = await CardService.transitionAccessState(id, 'REVOKED', reason || 'Revoked by IT', user.id, organizationId);
       
-      const cardRecord = await prisma.card.findUnique({ where: { id }, select: { userId: true } });
+      const cardRecord = await prisma.card.findFirst({ where: { id, organizationId }, select: { userId: true } });
       if (cardRecord?.userId) {
         await notify(cardRecord.userId, '🚫 Card Revoked', `Your access card has been revoked.`, 'ERROR', '/profile');
       }
@@ -131,12 +137,14 @@ export class CardController {
     try {
       const user = (req as any).user;
       const orgId = getOrgId(req);
-      const whereOrg = orgId ? { organizationId: orgId } : {};
+      const organizationId = orgId || 'mcb-ghana-tenant';
+      const canManageProduction = (await PolicyService.evaluatePolicy(user.id, Permission.CARD_PRODUCTION)).allowed;
+      const canManageAccess = (await PolicyService.evaluatePolicy(user.id, Permission.CARD_ACCESS)).allowed;
 
       const cards = await prisma.card.findMany({
         where: {
-          ...whereOrg,
-          ...(user.rank < 80 ? { userId: user.id } : {}), // Staff see only their cards, admins see all
+          organizationId,
+          ...(!canManageProduction && !canManageAccess ? { userId: user.id } : {}),
         },
         include: {
           user: { select: { fullName: true, employeeCode: true } },
@@ -147,9 +155,12 @@ export class CardController {
       // Format for frontend mapping compatibility
       const formattedCards = cards.map(c => ({
         id: c.id,
+        userId: c.userId,
         employeeId: c.user?.employeeCode || c.userId,
         cardNumber: c.cardNumber,
         status: c.status,
+        productionStatus: c.productionStatus,
+        accessStatus: c.accessStatus,
         issuedAt: c.status !== 'REQUESTED' ? c.updatedAt : null,
         employee: c.user ? { fullName: c.user.fullName } : undefined,
         createdAt: c.createdAt,
@@ -166,13 +177,16 @@ export class CardController {
   static async updateCard(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { status, reason } = req.body;
+      const { productionStatus } = req.body;
       const user = (req as any).user;
       const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
 
-      if (!status) return res.status(400).json({ error: 'status is required' });
+      if (!productionStatus) return res.status(400).json({ error: 'productionStatus is required' });
 
-      const card = await CardService.transitionState(id, status, reason || `Status changed to ${status}`, user.id, organizationId);
+      const card = await CardService.transitionProductionState(id, productionStatus, user.id, organizationId);
+      if (productionStatus === 'ISSUED') {
+        await completeOnboardingTasksForEvent({ organizationId, employeeId: card.userId, event: 'ID_CARD_ISSUED', actorId: user.id });
+      }
       return res.json(card);
     } catch (error: any) {
       return res.status(400).json({ error: error.message });
@@ -197,5 +211,36 @@ export class CardController {
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
     }
+  }
+
+  static async getDesignSettings(req: Request, res: Response) {
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const settings = await prisma.cardDesignSetting.findUnique({ where: { organizationId } });
+    return res.json(settings || {
+      organizationId,
+      theme: 'DARK',
+      primaryColor: '#0B4F9C',
+      secondaryColor: '#F5A623',
+      showPhone: true,
+      showEmail: true,
+      orientation: 'VERTICAL',
+      showLogo: true,
+      showQrCode: true,
+      securityText: 'Terms of Use',
+      backMessage: 'This card belongs to MCB Ghana. If found, please return it to the company.'
+    });
+  }
+
+  static async updateDesignSettings(req: Request, res: Response) {
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const user = (req as any).user;
+    const allowed = ['theme', 'logoUrl', 'primaryColor', 'secondaryColor', 'showPhone', 'showEmail', 'orientation', 'showLogo', 'showQrCode', 'backMessage', 'securityText'];
+    const data = Object.fromEntries(Object.entries(req.body || {}).filter(([key]) => allowed.includes(key)));
+    const settings = await prisma.cardDesignSetting.upsert({
+      where: { organizationId },
+      create: { organizationId, ...data, updatedById: user.id },
+      update: { ...data, updatedById: user.id },
+    });
+    return res.json(settings);
   }
 }

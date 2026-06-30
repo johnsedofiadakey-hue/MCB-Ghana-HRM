@@ -268,6 +268,33 @@ node_cron_1.default.schedule('0 9 * * *', async () => {
         console.error('[Cron] Renewal check failed:', e);
     }
 });
+// OKR weekly check-in nudge — every Monday at 8:30am
+node_cron_1.default.schedule('30 8 * * 1', async () => {
+    try {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const staleObjectives = await client_1.default.target.findMany({
+            where: {
+                status: 'IN_PROGRESS',
+                isArchived: false,
+                updatedAt: { lt: sevenDaysAgo }
+            },
+            select: { id: true, title: true, assigneeId: true }
+        });
+        const { notify } = await Promise.resolve().then(() => __importStar(require('./services/websocket.service')));
+        let count = 0;
+        for (const obj of staleObjectives) {
+            if (!obj.assigneeId)
+                continue;
+            await notify(obj.assigneeId, '📊 OKR Weekly Check-in', `Update your Key Results for: "${obj.title}"`, 'INFO', '/kpi/my-targets').catch(() => { });
+            count++;
+        }
+        if (count)
+            console.log(`[CRON] OKR check-in nudges sent: ${count}`);
+    }
+    catch (e) {
+        console.error('[Cron] OKR check-in failed:', e);
+    }
+});
 /*
 cron.schedule('0 2 * * *', async () => {
   try {
@@ -404,12 +431,21 @@ app.use((req, res) => {
 });
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
 const error_log_service_1 = require("./services/error-log.service");
+const errors_1 = require("./utils/errors");
 app.use((err, req, res, next) => {
-    error_log_service_1.errorLogger.log('GlobalErrorHandler', err);
-    res.status(500).json({
+    if (!(err instanceof errors_1.AppError)) {
+        error_log_service_1.errorLogger.log('GlobalErrorHandler', err);
+    }
+    const statusCode = err.statusCode ?? 500;
+    const code = err.code;
+    if (statusCode >= 500) {
+        console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+    }
+    res.status(statusCode).json({
         success: false,
-        message: err.message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        error: err.message,
+        ...(code && { code }),
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
     });
 });
 // ─── START ──────────────────────────────────────────────────────────────────

@@ -10,6 +10,9 @@ const enterprise_controller_1 = require("./enterprise.controller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 // Local helper
 const audit_service_1 = require("../services/audit.service");
+const policy_service_1 = require("../services/policy.service");
+const permissions_1 = require("../types/permissions");
+const hierarchy_service_1 = require("../services/hierarchy.service");
 const initAppraisalCycle = async (req, res) => {
     try {
         const userRole = req.user.role;
@@ -49,13 +52,14 @@ const getPacketDetail = async (req, res) => {
         const userId = req.user.id;
         const userRole = req.user.role;
         const userRank = (0, auth_middleware_1.getRoleRank)(userRole);
-        const packet = await appraisal_service_1.AppraisalService.getPacketDetail(packetId, userId, organizationId, userRank);
+        const canViewAll = (await policy_service_1.PolicyService.evaluatePolicy(userId, permissions_1.Permission.EMPLOYEE_HISTORY_READ)).allowed;
+        const packet = await appraisal_service_1.AppraisalService.getPacketDetail(packetId, userId, organizationId, userRank, canViewAll);
         if (!packet)
             return res.status(404).json({ error: 'Appraisal packet not found' });
         return res.json(packet);
     }
     catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.status(error.statusCode || 500).json({ error: error.message });
     }
 };
 exports.getPacketDetail = getPacketDetail;
@@ -76,8 +80,9 @@ const getTeamPackets = async (req, res) => {
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
         const userId = req.user.id;
         const userRank = (0, auth_middleware_1.getRoleRank)(req.user.role);
+        const canViewAll = (await policy_service_1.PolicyService.evaluatePolicy(userId, permissions_1.Permission.EMPLOYEE_HISTORY_READ)).allowed;
         console.log(`[AppraisalController] Fetching team packets: User=${userId}, Rank=${userRank}, Org=${organizationId}`);
-        const packets = await appraisal_service_1.AppraisalService.getReviewerPackets(userId, organizationId, userRank);
+        const packets = await appraisal_service_1.AppraisalService.getReviewerPackets(userId, organizationId, userRank, canViewAll);
         return res.json(packets);
     }
     catch (error) {
@@ -199,7 +204,7 @@ const updateAppraisalPacket = async (req, res) => {
 exports.updateAppraisalPacket = updateAppraisalPacket;
 const deleteAppraisalPacket = async (req, res) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id || req.params.packetId;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
         const userRole = req.user.role;
         if ((0, auth_middleware_1.getRoleRank)(userRole) < 80) {
@@ -305,10 +310,14 @@ const getPerformanceTrend = async (req, res) => {
         const { employeeId } = req.params;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
         const user = req.user;
-        const userRank = (0, auth_middleware_1.getRoleRank)(user.role);
-        // Guard: Only self, Manager+, HR, or MD can view trends
-        if (user.id !== employeeId && userRank < 60) {
-            return res.status(403).json({ error: 'Not authorised to view performance trends for other employees' });
+        if (user.id !== employeeId) {
+            const [peopleAccess, managedIds] = await Promise.all([
+                policy_service_1.PolicyService.evaluatePolicy(user.id, permissions_1.Permission.EMPLOYEE_READ, { targetUserId: employeeId }),
+                hierarchy_service_1.HierarchyService.getManagedEmployeeIds(user.id, organizationId),
+            ]);
+            if (!peopleAccess.allowed && !managedIds.includes(employeeId)) {
+                return res.status(403).json({ error: 'Not authorised to view performance trends for this employee' });
+            }
         }
         const trend = await appraisal_service_1.AppraisalService.getEmployeePerformanceTrend(employeeId, organizationId);
         return res.json(trend);

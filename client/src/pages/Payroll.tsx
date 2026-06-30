@@ -10,16 +10,16 @@ import api from '../services/api';
 import { openApiUrl } from '../utils/apiUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRoleRankValue } from '../utils/session';
+import { getStoredUser } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 
 const statusColors: Record<string, { badge: string; dot: string }> = {
   DRAFT: { badge: 'bg-slate-500/10 text-slate-600 border-slate-500/20', dot: 'bg-slate-500' },
   PENDING_HR: { badge: 'bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20', dot: 'bg-[var(--warning)]' },
   PENDING_MD: { badge: 'bg-[var(--info)]/10 text-[var(--info)] border-[var(--info)]/20', dot: 'bg-[var(--info)]' },
-  APPROVED: { badge: 'bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20', dot: 'bg-[var(--success)]' },
-  PAID: { badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20', dot: 'bg-[var(--primary)]' },
-  CANCELLED: { badge: 'bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20', dot: 'bg-[var(--error)]' },
+  RELEASED: { badge: 'bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20', dot: 'bg-[var(--success)]' },
+  REJECTED: { badge: 'bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20', dot: 'bg-[var(--error)]' },
+  VOIDED: { badge: 'bg-slate-500/10 text-slate-600 border-slate-500/20', dot: 'bg-slate-500' },
 };
 
 const currencyGradients: Record<string, string> = {
@@ -47,17 +47,26 @@ const Payroll = () => {
   const [error, setError] = useState('');
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [savingItem, setSavingItem] = useState(false);
-  const [activeView, setActiveView] = useState<'runs' | 'payslips' | 'summary'>('runs');
+  const [activeView, setActiveView] = useState<'runs' | 'payslips' | 'summary' | 'rules'>('runs');
+  const [statutoryRules, setStatutoryRules] = useState<any[]>([]);
+  const [showRuleForm, setShowRuleForm] = useState(false);
+  const [ruleForm, setRuleForm] = useState({
+    name: `Ghana statutory rules ${new Date().getFullYear()}`,
+    effectiveFrom: `${new Date().getFullYear()}-01-01`, effectiveTo: '',
+    employeeSsnitRate: '5.5', employerSsnitRate: '13', minimumInsurable: '587.80', maximumInsurable: '69000',
+    payeBands: JSON.stringify([{ limit: 490, rate: 0 }, { limit: 110, rate: 0.05 }, { limit: 130, rate: 0.1 }, { limit: 3166.67, rate: 0.175 }, { limit: 16000, rate: 0.25 }, { limit: 30520, rate: 0.3 }, { limit: 999999999, rate: 0.35 }], null, 2),
+  });
 
   const currentYear = new Date().getFullYear();
   const [form, setForm] = useState({ month: String(new Date().getMonth() + 1), year: String(currentYear) });
 
   const user = getStoredUser();
-  const rank = getRoleRankValue(user.role);
-  const isAdmin = rank >= 87; // Finance Manager or above
-  const isFinance = rank >= 87;
-  const isHR = rank >= 88;
-  const isMD = rank >= 95;
+  const permissions = user.permissions || [];
+  const has = (permission: string) => permissions.includes('*') || permissions.includes(permission);
+  const isFinance = has('payroll.prepare');
+  const isHR = has('payroll.hr.approve');
+  const isMD = has('payroll.release');
+  const isAdmin = isFinance || isHR || isMD;
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -66,12 +75,14 @@ const Payroll = () => {
       setMyPayslips(Array.isArray(slipRes.data) ? slipRes.data : []);
 
       if (isAdmin) {
-        const [runRes, summaryRes] = await Promise.all([
+        const [runRes, summaryRes, rulesRes] = await Promise.all([
           api.get('/payroll'),
-          api.get(`/payroll/summary?year=${currentYear}`)
+          api.get(`/payroll/summary?year=${currentYear}`),
+          api.get('/payroll/statutory-rules')
         ]);
         setRuns(Array.isArray(runRes.data?.runs) ? runRes.data.runs : []);
         setYearlySummary(summaryRes.data && typeof summaryRes.data === 'object' ? summaryRes.data : {});
+        setStatutoryRules(Array.isArray(rulesRes.data) ? rulesRes.data : []);
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -87,24 +98,70 @@ const Payroll = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError('');
     try {
-      await api.post('/payroll/run', form);
+      await api.post('/payroll/runs', form);
       setShowCreate(false); fetchData();
       toast.success('Payroll cycle initialized');
     } catch (err: any) { setError(err?.response?.data?.error || t('payroll.initiation_failure')); }
     finally { setSaving(false); }
   };
 
-  const handleApprove = async (runId: string) => {
+  const handleApprove = async (runId: string, status: string) => {
     try {
-      await api.post(`/payroll/${runId}/approve`);
+      const action = status === 'DRAFT' || status === 'REJECTED' ? 'submit'
+        : status === 'PENDING_HR' ? 'hr-approve'
+        : 'release';
+      await api.post(`/payroll/runs/${runId}/${action}`);
       fetchData(); if (selectedRun?.id === runId) loadRunDetail(runId);
       toast.success('Payroll cycle authorized');
     } catch (err: any) { toast.error(err?.response?.data?.error || t('common.error')); }
   };
 
-  const handleVoid = async (runId: string) => {
+  const handleReject = async (runId: string, stage: 'HR' | 'MD') => {
+    const reason = window.prompt(`Enter the ${stage} rejection reason:`)?.trim();
+    if (!reason) return;
     try {
-      await api.post(`/payroll/${runId}/void`);
+      await api.post(`/payroll/runs/${runId}/${stage === 'HR' ? 'hr-reject' : 'md-reject'}`, { reason });
+      await fetchData();
+      if (selectedRun?.id === runId) await loadRunDetail(runId);
+      toast.success('Payroll returned to Finance with an audit reason');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not reject payroll');
+    }
+  };
+
+  const handleCreateRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payeBands = JSON.parse(ruleForm.payeBands);
+      await api.post('/payroll/statutory-rules', {
+        name: ruleForm.name, effectiveFrom: ruleForm.effectiveFrom, effectiveTo: ruleForm.effectiveTo || null,
+        employeeSsnitRate: Number(ruleForm.employeeSsnitRate) / 100,
+        employerSsnitRate: Number(ruleForm.employerSsnitRate) / 100,
+        minimumInsurable: Number(ruleForm.minimumInsurable), maximumInsurable: Number(ruleForm.maximumInsurable), payeBands,
+      });
+      setShowRuleForm(false);
+      await fetchData();
+      toast.success('Draft statutory rule created');
+    } catch (err: any) {
+      toast.error(err instanceof SyntaxError ? 'PAYE bands must be valid JSON' : err.response?.data?.error || 'Could not create rule');
+    }
+  };
+
+  const handleApproveRule = async (rule: any) => {
+    if (!window.confirm(`Confirm that the company accountant has reviewed and approved "${rule.name}". This makes it eligible for payroll calculation.`)) return;
+    try {
+      await api.post(`/payroll/statutory-rules/${rule.id}/approve`, { accountantConfirmation: true });
+      await fetchData();
+      toast.success('Statutory rule approved');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not approve rule');
+    }
+  };
+
+  const handleVoid = async (runId: string) => {
+    if (!window.confirm('Void this unreleased payroll run? The audit record will be retained.')) return;
+    try {
+      await api.post(`/payroll/runs/${runId}/void`);
       fetchData(); setSelectedRun(null);
       toast.success('Payroll cycle voided');
     } catch (err: any) { toast.error(err?.response?.data?.error || t('common.error')); }
@@ -188,21 +245,21 @@ const Payroll = () => {
               <Download size={18} />
               <div className="text-[10px] font-black uppercase">Export Full Ledger</div>
             </button>
-            <motion.button
+            {isFinance && <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="flex items-center gap-4 px-10 h-16 bg-[var(--primary)] text-white rounded-2xl transition-all font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30"
               onClick={() => setShowCreate(true)}
             >
               <Plus size={18} /> {t('payroll.run_payroll')}
-            </motion.button>
+            </motion.button>}
           </div>
         )}
       </div>
 
       {isAdmin && (
         <div className="flex bg-[var(--bg-elevated)] p-1.5 rounded-xl w-full sm:w-fit border border-[var(--border-subtle)] overflow-x-auto whitespace-nowrap px-2">
-          {([['runs', t('payroll.cycles', 'Payroll Cycles')], ['payslips', t('payroll.my_payslips', 'My Payslips')], ['summary', t('payroll.summary', 'Payroll Summary')]] as const).map(([v, label]) => (
+          {([['runs', t('payroll.cycles', 'Payroll Cycles')], ['payslips', t('payroll.my_payslips', 'My Payslips')], ['summary', t('payroll.summary', 'Payroll Summary')], ['rules', 'Statutory Rules']] as const).map(([v, label]) => (
             <button key={v} onClick={() => setActiveView(v)}
               className={cn(
                 "px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
@@ -271,7 +328,14 @@ const Payroll = () => {
                             </td>
                             <td className="text-[13px] font-medium text-[var(--text-secondary)]" data-label={t('payroll.headers.gross')}>{fmt(slip.grossPay, slip.currency, i18n.language)}</td>
                              <td className="text-[13px] font-bold text-[var(--error)]" data-label={t('payroll.headers.tax')}>-{fmt(slip.tax, slip.currency, i18n.language)}</td>
-                            <td className="text-[13px] font-bold text-[var(--warning)]" data-label={t('payroll.headers.ss')}>-{fmt(slip.ssnit, slip.currency, i18n.language)}</td>
+                            <td data-label={t('payroll.headers.ss')}>
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-[13px] font-bold text-[var(--warning)]">-{fmt(Number(slip.ssnit) + Number(slip.tier2Pension || 0), slip.currency, i18n.language)}</span>
+                                {Number(slip.tier2Pension || 0) > 0 && (
+                                  <span className="text-[8px] font-bold text-[var(--text-muted)] opacity-60">Tier1: {fmt(Number(slip.ssnit), '', i18n.language)} · Tier2: {fmt(Number(slip.tier2Pension), '', i18n.language)}</span>
+                                )}
+                              </div>
+                            </td>
                             <td className="py-6" data-label={t('payroll.headers.net')}>
                               <div className="px-4 py-2 rounded-xl bg-[var(--success)]/5 border border-[var(--success)]/10 text-[var(--success)] font-black text-[15px] w-fit">
                                 {fmt(slip.netPay, slip.currency, i18n.language)}
@@ -337,7 +401,8 @@ const Payroll = () => {
                            {[
                              { label: t('payroll.gross_reserve'), value: s.gross, icon: TrendingUp, color: 'text-[var(--text-primary)]' },
                              { label: t('payroll.fiscal_tax'), value: s.tax, icon: TrendingDown, color: 'text-rose-500' },
-                             { label: t('payroll.ss_commitment'), value: s.ssnit, icon: ShieldCheck, color: 'text-amber-500' },
+                             { label: 'SSNIT Tier 1', value: s.ssnit, icon: ShieldCheck, color: 'text-amber-500' },
+                             ...(s.tier2Pension > 0 ? [{ label: 'SSNIT Tier 2', value: s.tier2Pension, icon: ShieldCheck, color: 'text-orange-500' }] : []),
                              { label: t('payroll.net_total', 'Net Total Paid'), value: s.net, icon: DollarSign, color: 'text-emerald-600' },
                            ].map(row => (
                              <div key={row.label} className="flex items-center justify-between">
@@ -360,6 +425,40 @@ const Payroll = () => {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Effective-dated statutory rules */}
+            {isAdmin && activeView === 'rules' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-black text-[var(--text-primary)]">Ghana Statutory Rules</h2>
+                    <p className="mt-2 text-sm text-[var(--text-muted)]">Payroll is blocked until an effective rule is explicitly approved after accountant review.</p>
+                  </div>
+                  {isFinance && <button onClick={() => setShowRuleForm(!showRuleForm)} className="btn-primary w-full sm:w-auto"><Plus size={16} /> New Draft Rule</button>}
+                </div>
+
+                {showRuleForm && isFinance && <form onSubmit={handleCreateRule} className="nx-card p-5 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <label className="space-y-2 sm:col-span-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Rule name</span><input required className="nx-input" value={ruleForm.name} onChange={e => setRuleForm({ ...ruleForm, name: e.target.value })} /></label>
+                  <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Effective from</span><input required type="date" className="nx-input" value={ruleForm.effectiveFrom} onChange={e => setRuleForm({ ...ruleForm, effectiveFrom: e.target.value })} /></label>
+                  <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Effective to (optional)</span><input type="date" className="nx-input" value={ruleForm.effectiveTo} onChange={e => setRuleForm({ ...ruleForm, effectiveTo: e.target.value })} /></label>
+                  <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Employee SSNIT %</span><input required type="number" min="0" max="100" step="0.001" className="nx-input" value={ruleForm.employeeSsnitRate} onChange={e => setRuleForm({ ...ruleForm, employeeSsnitRate: e.target.value })} /></label>
+                  <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Employer SSNIT %</span><input required type="number" min="0" max="100" step="0.001" className="nx-input" value={ruleForm.employerSsnitRate} onChange={e => setRuleForm({ ...ruleForm, employerSsnitRate: e.target.value })} /></label>
+                  <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Minimum insurable GHS</span><input required type="number" min="0" step="0.01" className="nx-input" value={ruleForm.minimumInsurable} onChange={e => setRuleForm({ ...ruleForm, minimumInsurable: e.target.value })} /></label>
+                  <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Maximum insurable GHS</span><input required type="number" min="0" step="0.01" className="nx-input" value={ruleForm.maximumInsurable} onChange={e => setRuleForm({ ...ruleForm, maximumInsurable: e.target.value })} /></label>
+                  <label className="space-y-2 sm:col-span-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Monthly PAYE bands (JSON)</span><textarea required className="nx-input min-h-64 font-mono text-xs" value={ruleForm.payeBands} onChange={e => setRuleForm({ ...ruleForm, payeBands: e.target.value })} /></label>
+                  <div className="sm:col-span-2 flex flex-col sm:flex-row justify-end gap-3"><button type="button" onClick={() => setShowRuleForm(false)} className="btn-secondary">Cancel</button><button type="submit" className="btn-primary">Save Draft Rule</button></div>
+                </form>}
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {statutoryRules.map(rule => <div key={rule.id} className="nx-card p-6 border-[var(--border-subtle)]">
+                    <div className="flex items-start justify-between gap-4"><div><h3 className="font-black text-[var(--text-primary)]">{rule.name}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">{new Date(rule.effectiveFrom).toLocaleDateString()} – {rule.effectiveTo ? new Date(rule.effectiveTo).toLocaleDateString() : 'Open ended'}</p></div><span className={cn('px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border', rule.accountantApproved ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-500 bg-amber-500/10 border-amber-500/20')}>{rule.accountantApproved ? 'Approved' : 'Draft'}</span></div>
+                    <div className="mt-5 grid grid-cols-2 gap-3 text-xs"><div className="rounded-xl bg-[var(--bg-elevated)] p-3"><span className="text-[var(--text-muted)]">Employee SSNIT</span><strong className="block mt-1 text-[var(--text-primary)]">{Number(rule.employeeSsnitRate) * 100}%</strong></div><div className="rounded-xl bg-[var(--bg-elevated)] p-3"><span className="text-[var(--text-muted)]">Employer SSNIT</span><strong className="block mt-1 text-[var(--text-primary)]">{Number(rule.employerSsnitRate) * 100}%</strong></div></div>
+                    {!rule.accountantApproved && isFinance && <button onClick={() => handleApproveRule(rule)} className="mt-5 btn-primary w-full">Confirm Accountant Approval</button>}
+                  </div>)}
+                  {statutoryRules.length === 0 && <div className="lg:col-span-2 nx-card p-12 text-center border-dashed"><AlertCircle className="mx-auto text-amber-500 mb-4" /><p className="font-bold text-[var(--text-primary)]">No statutory rule configured. Finance cannot create a payroll run yet.</p></div>}
+                </div>
               </div>
             )}
 
@@ -456,13 +555,16 @@ const Payroll = () => {
                                <p className="text-[11px] font-medium text-emerald-600/80 max-w-lg">
                                   Review the departmental cost centers and statutory obligations below. Once authorized, the bank batch will be generated and funds released to the associate accounts.
                                </p>
-                               <button 
-                                onClick={() => handleApprove(selectedRun.id)}
-                                className="px-12 py-5 rounded-2xl bg-emerald-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-emerald-600/30 hover:scale-[1.05] active:scale-95 transition-all flex items-center gap-3"
-                               >
-                                 <ShieldCheck size={20} />
-                                 Authorize Disbursement
-                               </button>
+                               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                                 <button onClick={() => handleReject(selectedRun.id, 'MD')} className="px-8 py-5 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 font-black text-xs uppercase tracking-widest">Reject</button>
+                                 <button
+                                  onClick={() => handleApprove(selectedRun.id, selectedRun.status)}
+                                  className="px-8 sm:px-12 py-5 rounded-2xl bg-emerald-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-emerald-600/30 hover:scale-[1.05] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                 >
+                                   <ShieldCheck size={20} />
+                                   Authorize Disbursement
+                                 </button>
+                               </div>
                             </div>
                           </div>
                         </motion.div>
@@ -484,30 +586,33 @@ const Payroll = () => {
                             >
                               <Download size={20} className="group-hover:scale-110 transition-transform" />
                             </button>
-                            <button 
+                            {selectedRun.status === 'RELEASED' && isFinance && <button
                              onClick={() => downloadBankCSV(selectedRun.id)}
                              className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all text-amber-600 flex items-center gap-2 group"
                              title={t('payroll.export_bank_csv')}
                             >
                               <CreditCard size={20} className="group-hover:scale-110 transition-transform" />
                               <span className="text-[10px] font-black uppercase tracking-widest">{t('payroll.bank_transfer', 'Bank Batch')}</span>
-                            </button>
+                            </button>}
                            <div className="flex items-center gap-3">
-                               {selectedRun.status === 'DRAFT' && isFinance && (
+                               {['DRAFT', 'REJECTED'].includes(selectedRun.status) && isFinance && (
                                  <button 
-                                  onClick={() => handleApprove(selectedRun.id)}
+                                  onClick={() => handleApprove(selectedRun.id, selectedRun.status)}
                                   className="px-8 h-[52px] rounded-2xl bg-amber-600 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-amber-600/20 hover:scale-[1.02] active:scale-95 transition-all"
                                  >
-                                   Request HR Review
+                                   {selectedRun.status === 'REJECTED' ? 'Resubmit to HR' : 'Request HR Review'}
                                  </button>
                                )}
                                {selectedRun.status === 'PENDING_HR' && isHR && (
-                                 <button 
-                                  onClick={() => handleApprove(selectedRun.id)}
-                                  className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95 transition-all"
-                                 >
-                                   Approve & Send to MD
-                                 </button>
+                                 <>
+                                   <button onClick={() => handleReject(selectedRun.id, 'HR')} className="px-6 h-[52px] rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 font-black text-[10px] uppercase tracking-widest">Reject</button>
+                                   <button
+                                    onClick={() => handleApprove(selectedRun.id, selectedRun.status)}
+                                    className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                   >
+                                     Approve & Send to MD
+                                   </button>
+                                 </>
                                )}
                                {selectedRun.status === 'PENDING_MD' && isMD && (
                                  <button 
@@ -518,7 +623,7 @@ const Payroll = () => {
                                  </button>
                                )}
 
-                               {selectedRun.status !== 'PAID' && (
+                               {selectedRun.status === 'DRAFT' && isFinance && (
                                  <button 
                                   onClick={() => handleDelete(selectedRun.id)}
                                   className="w-[52px] h-[52px] rounded-2xl bg-rose-500/5 text-rose-500 border border-rose-500/20 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
@@ -527,6 +632,7 @@ const Payroll = () => {
                                    <Trash2 size={20} />
                                  </button>
                                )}
+                               {isMD && ['DRAFT', 'PENDING_HR', 'PENDING_MD', 'REJECTED'].includes(selectedRun.status) && <button onClick={() => handleVoid(selectedRun.id)} className="px-5 h-[52px] rounded-2xl bg-slate-500/10 text-slate-500 border border-slate-500/20 font-black text-[10px] uppercase tracking-widest">Void</button>}
                              </div>
                         </div>
                       </div>
@@ -588,11 +694,20 @@ const Payroll = () => {
                                             </div>
                                          ) : <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase opacity-30">—</span>}
                                        </td>
-                                       <td className="text-[10px] font-bold text-rose-500" data-label={t('payroll.headers.fiscal_withholding')}>-{fmt(Number(item.tax) + Number(item.ssnit), '', i18n.language)}</td>
+                                       <td data-label={t('payroll.headers.fiscal_withholding')}>
+                                         <div className="flex flex-col gap-0.5">
+                                           <span className="text-[10px] font-bold text-rose-500">-{fmt(Number(item.tax) + Number(item.ssnit) + Number(item.tier2Pension || 0), '', i18n.language)}</span>
+                                           {Number(item.tier2Pension || 0) > 0 && (
+                                             <span className="text-[8px] font-bold text-[var(--text-muted)] opacity-60 leading-tight">
+                                               PAYE: {fmt(Number(item.tax), '', i18n.language)} · Tier1: {fmt(Number(item.ssnit), '', i18n.language)} · Tier2: {fmt(Number(item.tier2Pension), '', i18n.language)}
+                                             </span>
+                                           )}
+                                         </div>
+                                       </td>
                                        <td className="text-[14px] font-black text-[var(--text-primary)]" data-label={t('payroll.headers.net_payout')}>{fmt(item.netPay, item.currency, i18n.language)}</td>
                                        <td className="text-right px-8" data-label={t('payroll.headers.action')}>
                                           <div className="flex justify-end gap-2 pr-2">
-                                            {selectedRun.status === 'DRAFT' && (isFinance || isHR || isMD) && (
+                                            {selectedRun.status === 'DRAFT' && isFinance && (
                                               !isEditing ? (
                                                 <button onClick={() => startEditItem(item)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all"><Edit2 size={13} /></button>
                                               ) : (
@@ -602,7 +717,7 @@ const Payroll = () => {
                                                 </div>
                                               )
                                             )}
-                                            <button onClick={() => downloadPayslip(selectedRun.id, item.employeeId)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all"><FileText size={13} /></button>
+                                            {selectedRun.status === 'RELEASED' && <button onClick={() => downloadPayslip(selectedRun.id, item.employeeId)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all"><FileText size={13} /></button>}
                                           </div>
                                        </td>
                                      </tr>
@@ -630,7 +745,7 @@ const Payroll = () => {
                                 {(['overtime', 'bonus', 'allowances', 'otherDeductions'] as const).map(field => (
                                   <div key={field} className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
-                                      {field === 'otherDeductions' ? t('payroll.labels.net_deductions') : field}
+                                      {field === 'otherDeductions' ? t('payroll.labels.net_deductions') : field === 'overtime' ? 'Overtime Pay (GHC)' : field === 'bonus' ? 'Annual Bonus (GHC)' : field}
                                     </label>
                                     <input type="number" className="w-full bg-white/50 rounded-xl border-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none py-4 px-5 text-[16px] font-black transition-all"
                                       value={editingItem[field]}

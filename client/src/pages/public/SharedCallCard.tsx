@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   Phone, Mail, Globe, Linkedin, Github, Award, 
-  UserCheck, ShieldAlert, Download, MessageSquare, Briefcase, Building2
+  UserCheck, ShieldAlert, Download, MessageSquare, Briefcase, Building2, QrCode
 } from 'lucide-react';
 import api from '../../services/api';
 import { motion } from 'framer-motion';

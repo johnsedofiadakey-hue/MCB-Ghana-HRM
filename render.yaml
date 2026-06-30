@@ -1,6 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # MCB-HRM Ghana — Render Deployment Configuration
-# Last Sync: Identity & Branding Finalized (Nationality Shift)
+# Last Sync: Architectural Upgrades + Redis + Full Env Audit (2026-06-27)
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -9,7 +9,7 @@ services:
     name: mcb-ghana-hrm-api
     env: node
     plan: starter          # Production baseline; avoid free-tier cold starts
-    region: oregon         # Changed to match database region
+    region: oregon         # Match database region
     buildCommand: >
       cd server &&
       npm install --no-audit --no-fund &&
@@ -18,32 +18,121 @@ services:
     startCommand: cd server && npx prisma migrate deploy && node --max-old-space-size=1024 dist/app.js
     healthCheckPath: /api/health
     envVars:
+      # ── Core ────────────────────────────────────────────────────────────────
       - key: DATABASE_URL
         sync: false
       - key: PORT
-        value: 10000         # Render injects PORT=10000
+        value: "10000"
       - key: NODE_ENV
         value: production
+
+      # ── JWT Auth ────────────────────────────────────────────────────────────
       - key: JWT_SECRET
         sync: false
       - key: JWT_REFRESH_SECRET
         sync: false
+      - key: PURGE_RECOVERY_SECRET
+        sync: false
+
+      # ── CORS / URLs ─────────────────────────────────────────────────────────
       - key: FRONTEND_URL
-        sync: false          # Set to your deployed frontend URL
+        sync: false
+      - key: CLIENT_URL
+        sync: false          # Alias used in some CORS paths — set same as FRONTEND_URL
       - key: CORS_ORIGINS
-        sync: false          # Optional comma-separated frontend/admin origins
+        sync: false          # Comma-separated extra origins if needed
+      - key: API_BASE_URL
+        sync: false          # e.g. https://mcb-ghana-hrm-api.onrender.com
+
+      # ── Redis (WebSocket Pub/Sub + BullMQ job queues) ────────────────────────
+      - key: REDIS_URL
+        fromService:
+          name: mcb-ghana-hrm-redis
+          type: redis
+          property: connectionString
+
+      # ── Firebase Admin SDK ──────────────────────────────────────────────────
+      # Option A (recommended): paste the entire service-account JSON as one env var
+      - key: FIREBASE_ADMIN_SERVICE_ACCOUNT
+        sync: false
+      # Option B: individual fields (only used if FIREBASE_ADMIN_SERVICE_ACCOUNT not set)
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false          # Paste the full -----BEGIN RSA PRIVATE KEY----- block
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false          # e.g. mcb-hrm-ghana.appspot.com
+
+      # ── Email (SMTP) ────────────────────────────────────────────────────────
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+
+      # ── Paystack (payment processing) ───────────────────────────────────────
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+
+      # ── Gemini AI (chatbot / HR assistant) ──────────────────────────────────
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # ── Hubtel SMS ──────────────────────────────────────────────────────────
+      - key: HUBTEL_CLIENT_ID
+        sync: false
+      - key: HUBTEL_CLIENT_SECRET
+        sync: false
+      - key: HUBTEL_SENDER_ID
+        sync: false
+
+      # ── Document Vault Encryption ───────────────────────────────────────────
+      # Falls back to JWT_SECRET if not set — set this separately for stronger isolation
+      - key: DATA_ENCRYPTION_KEY
+        sync: false
+
+      # ── Google Drive Backup ─────────────────────────────────────────────────
+      # Paste the service-account JSON as a single-line string
+      - key: GOOGLE_DRIVE_KEY_JSON
+        sync: false
+
+      # ── Biometric / Attendance Hardware ─────────────────────────────────────
+      - key: BIOMETRIC_SYNC_KEY
+        sync: false
+
+      # ── Dev Portal ──────────────────────────────────────────────────────────
       - key: DEV_MASTER_KEY
         generateValue: true
       - key: DEV_WHITELIST_EMAILS
         sync: false
-      - key: BIOMETRIC_SYNC_KEY
+      - key: DEV_CONSOLE_PIN
         sync: false
       - key: ENABLE_DEV_ROUTES
         value: "false"
       - key: ENABLE_PRODUCTION_DEV_ROUTES
         value: "false"
+
+      # ── Feature Flags ───────────────────────────────────────────────────────
       - key: ALLOW_PUBLIC_SIGNUP
         value: "false"
+
+      # ── Optional Integrations ───────────────────────────────────────────────
+      - key: SLACK_WEBHOOK_URL
+        sync: false
+
+  # ── Redis (Pub/Sub for WebSocket + BullMQ job queues) ───────────────────────
+  - type: redis
+    name: mcb-ghana-hrm-redis
+    plan: starter
+    region: oregon           # Must match API region for low latency
+    maxmemoryPolicy: allkeys-lru
 
   # ── Frontend (Static Site) ──────────────────────────────────────────────────
   - type: web
@@ -58,7 +147,9 @@ services:
     routes:
       - type: rewrite
         source: /*
-        destination: /index.html   # SPA fallback for React Router
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         value: https://mcb-ghana-hrm-api.onrender.com/api
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false

@@ -56,6 +56,14 @@ const createSubUnit = async (req, res) => {
         if (isNaN(deptId)) {
             return res.status(400).json({ error: 'Invalid Department ID format' });
         }
+        const [department, manager] = await Promise.all([
+            client_1.default.department.findFirst({ where: { id: deptId, organizationId }, select: { id: true } }),
+            managerId ? client_1.default.user.findFirst({ where: { id: managerId, organizationId }, select: { id: true } }) : Promise.resolve(null),
+        ]);
+        if (!department)
+            return res.status(404).json({ error: 'Department not found in this organization' });
+        if (managerId && !manager)
+            return res.status(404).json({ error: 'Manager not found in this organization' });
         console.log(`[SubUnit] Creating unit "${name}" for Department ${deptId} in Org ${organizationId}`);
         const subUnit = await client_1.default.subUnit.create({
             data: {
@@ -76,11 +84,17 @@ exports.createSubUnit = createSubUnit;
 const updateSubUnit = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const organizationId = orgId || 'mcb-ghana-tenant';
         const { name, managerId } = req.body;
+        if (managerId) {
+            const manager = await client_1.default.user.findFirst({ where: { id: managerId, organizationId }, select: { id: true } });
+            if (!manager)
+                return res.status(404).json({ error: 'Manager not found in this organization' });
+        }
         const subUnit = await client_1.default.subUnit.update({
             where: {
                 id: req.params.id,
-                organizationId: orgId || 'mcb-ghana-tenant'
+                organizationId
             },
             data: {
                 ...(name?.trim() ? { name: name.trim() } : {}),

@@ -8,6 +8,9 @@ const analytics_service_1 = require("../services/analytics.service");
 const enterprise_controller_1 = require("./enterprise.controller");
 const client_1 = __importDefault(require("../prisma/client"));
 const pdf_service_1 = require("../services/pdf.service");
+const hierarchy_service_1 = require("../services/hierarchy.service");
+const policy_service_1 = require("../services/policy.service");
+const permissions_1 = require("../types/permissions");
 class AnalyticsController {
     static async getDashboardMetrics(req, res) {
         try {
@@ -44,19 +47,26 @@ class AnalyticsController {
         try {
             const user = req.user;
             const organizationId = user.organizationId || 'mcb-ghana-tenant';
-            const rank = user.rank || 50;
             const userId = user.id;
-            const isExecutive = rank >= 80;
+            const role = String(user.role || '').toUpperCase();
+            const isExecutive = ['MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR_MANAGER', 'DEV'].includes(role);
+            const payrollAccessResults = await Promise.all([
+                policy_service_1.PolicyService.evaluatePolicy(userId, permissions_1.Permission.PAYROLL_PREPARE),
+                policy_service_1.PolicyService.evaluatePolicy(userId, permissions_1.Permission.PAYROLL_HR_APPROVE),
+                policy_service_1.PolicyService.evaluatePolicy(userId, permissions_1.Permission.PAYROLL_RELEASE),
+            ]);
+            const canViewPayrollTotal = payrollAccessResults.some(result => result.allowed);
+            const managedEmployeeIds = isExecutive ? [] : await hierarchy_service_1.HierarchyService.getManagedEmployeeIds(userId, organizationId);
             // Scope queries based on executive vs manager
             const userWhere = { organizationId, status: 'ACTIVE', role: { not: 'DEV' } };
             if (!isExecutive)
-                userWhere.supervisorId = userId;
+                userWhere.id = { in: managedEmployeeIds };
             // Phase 1: employee scope (IDs needed to build subsequent where clauses)
             const [totalEmployees, scopedUsers] = await Promise.all([
                 client_1.default.user.count({ where: userWhere }),
                 isExecutive
-                    ? Promise.resolve([])
-                    : client_1.default.user.findMany({ where: userWhere, select: { id: true } }),
+                    ? client_1.default.user.findMany({ where: userWhere, select: { id: true } })
+                    : Promise.resolve(managedEmployeeIds.map(id => ({ id }))),
             ]);
             const employeeIds = scopedUsers.map(u => u.id);
             const leaveWhere = { organizationId };
@@ -72,17 +82,17 @@ class AnalyticsController {
                 client_1.default.leaveRequest.count({ where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } } }),
                 client_1.default.kpiSheet.count({ where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } } }),
                 client_1.default.appraisalPacket.count({ where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] } }),
-                isExecutive
-                    ? client_1.default.payrollRun.findFirst({ where: { organizationId, status: { in: ['APPROVED', 'PAID'] } }, orderBy: { createdAt: 'desc' }, select: { totalNet: true } })
+                canViewPayrollTotal
+                    ? client_1.default.payrollRun.findFirst({ where: { organizationId, status: { in: ['RELEASED', 'PAID'] } }, orderBy: { createdAt: 'desc' }, select: { totalNet: true } })
                     : Promise.resolve(null),
                 client_1.default.attendanceLog.count({ where: { organizationId, clockIn: { gte: thirtyDaysAgo }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) } }),
-                client_1.default.leaveRequest.findMany({ where: { organizationId, status: 'APPROVED', startDate: { gte: thirtyDaysAgo } }, select: { leaveDays: true }, take: 500 }),
-                client_1.default.publicHoliday.count({ where: { date: { gte: thirtyDaysAgo } } }),
+                client_1.default.leaveRequest.findMany({ where: { organizationId, status: 'APPROVED', startDate: { gte: thirtyDaysAgo }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) }, select: { leaveDays: true }, take: 500 }),
+                client_1.default.publicHoliday.count({ where: { organizationId, date: { gte: thirtyDaysAgo } } }),
                 client_1.default.kpiSheet.groupBy({ by: ['employeeId'], where: { organizationId, status: { in: ['LOCKED', 'SUBMITTED'] }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) }, _avg: { totalScore: true } }),
                 client_1.default.appraisalCycle.findFirst({ where: { organizationId, status: { in: ['ACTIVE', 'OPEN'] } } }),
-                client_1.default.kpiSheet.count({ where: { organizationId, status: 'ACTIVE' } }),
-                client_1.default.appraisalPacket.count({ where: { organizationId, status: 'OPEN' } }),
-                client_1.default.appraisalPacket.groupBy({ by: ['currentStage'], where: { organizationId, status: 'OPEN' }, _count: true }),
+                client_1.default.kpiSheet.count({ where: { organizationId, status: 'ACTIVE', ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) } }),
+                client_1.default.appraisalPacket.count({ where: { organizationId, status: 'OPEN', ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) } }),
+                client_1.default.appraisalPacket.groupBy({ by: ['currentStage'], where: { organizationId, status: 'OPEN', ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) }, _count: true }),
                 client_1.default.user.findMany({ where: userWhere, orderBy: { rank: 'desc' }, take: 5, select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true } }),
                 client_1.default.user.findMany({ where: { organizationId, supervisorId: userId, status: 'ACTIVE' }, orderBy: { rank: 'desc' }, select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true } }),
                 isExecutive
@@ -158,8 +168,13 @@ class AnalyticsController {
         try {
             const user = req.user;
             const organizationId = user.organizationId || 'mcb-ghana-tenant';
+            const role = String(user.role || '').toUpperCase();
+            const hasOrgOversight = ['MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR_MANAGER', 'DEV'].includes(role);
             const departments = await client_1.default.department.findMany({
-                where: { organizationId },
+                where: {
+                    organizationId,
+                    ...(hasOrgOversight ? {} : { OR: [{ managerId: user.id }, ...(user.departmentId ? [{ id: user.departmentId }] : [])] })
+                },
                 include: { _count: { select: { employees: true } } }
             });
             const performance = departments.map(d => ({

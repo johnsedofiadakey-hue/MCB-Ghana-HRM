@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import prisma from '../prisma/client';
 import { sendEmail } from '../services/email.service';
 import { ROLE_RANK_MAP } from '../types/roles';
+import { PolicyService } from '../services/policy.service';
 
 const getRoleRank = (role?: string): number => {
   if (!role) return 0;
@@ -91,7 +92,7 @@ export const login = async (req: Request, res: Response) => {
       where: { email: normalizedEmail },
       select: { id: true, email: true, fullName: true, role: true, status: true, 
                 passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true,
-                departmentId: true, rank: true }
+                departmentId: true, rank: true, loginEnabled: true, mustChangePassword: true }
     });
 
     if (!user) {
@@ -102,6 +103,11 @@ export const login = async (req: Request, res: Response) => {
     if (user.status === 'TERMINATED') {
       await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'ACCOUNT_TERMINATED', req });
       return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
+    }
+
+    if (!user.loginEnabled) {
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'LOGIN_NOT_PROVISIONED', req });
+      return res.status(403).json({ error: 'Login is not active yet. IT must complete account provisioning.' });
     }
 
     const orgId = user.organizationId || 'mcb-ghana-tenant';
@@ -132,6 +138,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     await safeLogSecurityEvent({ email: normalizedEmail, success: true, organizationId: orgId, reason: 'LOGIN_OK', req });
+    const permissions = await PolicyService.getEffectivePermissions(user.id);
 
     return res.status(200).json({
       token,
@@ -146,6 +153,8 @@ export const login = async (req: Request, res: Response) => {
         organizationId: orgId,
         avatar: user.avatarUrl,
         departmentId: user.departmentId,
+        permissions,
+        mustChangePassword: user.mustChangePassword,
       },
       tokenMeta: {
         accessExpiresIn: ACCESS_TOKEN_TTL,
@@ -190,7 +199,7 @@ export const ssoLogin = async (req: Request, res: Response) => {
       where: { email: normalizedEmail },
       select: { id: true, email: true, fullName: true, role: true, status: true, 
                 avatarUrl: true, organizationId: true, jobTitle: true,
-                departmentId: true }
+                departmentId: true, loginEnabled: true, mustChangePassword: true }
     });
 
     if (!user) {
@@ -201,6 +210,10 @@ export const ssoLogin = async (req: Request, res: Response) => {
     if (user.status === 'TERMINATED') {
       await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'SSO_ACCOUNT_TERMINATED', req });
       return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
+    }
+
+    if (!user.loginEnabled) {
+      return res.status(403).json({ error: 'Login is not active yet. IT must complete account provisioning.' });
     }
 
     const orgId = user.organizationId || 'mcb-ghana-tenant';
@@ -218,6 +231,7 @@ export const ssoLogin = async (req: Request, res: Response) => {
     const refreshToken = await issueRefreshToken(user.id, orgId, req);
 
     await safeLogSecurityEvent({ email: normalizedEmail, success: true, organizationId: orgId, reason: `LOGIN_OK_${provider?.toUpperCase() || 'SSO'}`, req });
+    const permissions = await PolicyService.getEffectivePermissions(user.id);
 
     return res.status(200).json({
       token,
@@ -232,6 +246,8 @@ export const ssoLogin = async (req: Request, res: Response) => {
         organizationId: orgId,
         avatar: user.avatarUrl,
         departmentId: user.departmentId,
+        permissions,
+        mustChangePassword: user.mustChangePassword,
       },
       tokenMeta: {
         accessExpiresIn: ACCESS_TOKEN_TTL,
@@ -261,10 +277,10 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { id: found.userId },
-      select: { id: true, fullName: true, role: true, status: true, email: true, avatarUrl: true, organizationId: true, jobTitle: true },
+      select: { id: true, fullName: true, role: true, status: true, email: true, avatarUrl: true, organizationId: true, jobTitle: true, loginEnabled: true, mustChangePassword: true },
     });
 
-    if (!user || user.status === 'TERMINATED') {
+    if (!user || user.status === 'TERMINATED' || !user.loginEnabled) {
       return res.status(403).json({ error: 'Account unavailable' });
     }
 
@@ -281,6 +297,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       organizationId: orgId,
       rank: (user as any).rank || getRoleRank(user.role)
     });
+    const permissions = await PolicyService.getEffectivePermissions(user.id);
 
     return res.json({
       token,
@@ -294,6 +311,8 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
         rank: getRoleRank(user.role),
         organizationId: orgId,
         avatar: user.avatarUrl,
+        permissions,
+        mustChangePassword: user.mustChangePassword,
       },
       tokenMeta: {
         accessExpiresIn: ACCESS_TOKEN_TTL,
@@ -337,13 +356,13 @@ export const getMe = async (req: Request, res: Response) => {
     const today = new Date();
 
     // Single query: fetch user + active leave in one round trip
-    const [user, activeLeave] = await Promise.all([
+    const [user, activeLeave, permissions] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true, fullName: true, email: true, role: true,
           status: true, avatarUrl: true, jobTitle: true,
-          organizationId: true,
+          organizationId: true, loginEnabled: true, mustChangePassword: true, employeeLifecycleStage: true,
           departmentObj: { select: { name: true } },
         },
       }),
@@ -356,12 +375,14 @@ export const getMe = async (req: Request, res: Response) => {
         },
         select: { id: true },
       }),
+      PolicyService.getEffectivePermissions(userId || ''),
     ]);
 
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (user.status === 'TERMINATED') return res.status(403).json({ error: 'Account deactivated' });
 
-    return res.json({ ...user, isOnLeave: !!activeLeave });
+    if (!user.loginEnabled) return res.status(403).json({ error: 'Login is not active yet. Contact IT.' });
+    return res.json({ ...user, permissions, isOnLeave: !!activeLeave });
   } catch {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
@@ -389,7 +410,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
     const newHash = await bcrypt.hash(newPassword, 12);
     await prisma.$transaction([
-      prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } }),
+      prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash, mustChangePassword: false } }),
       prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } }),
     ]);
 
@@ -482,7 +503,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     const newHash = await bcrypt.hash(newPassword, 12);
 
     await prisma.$transaction([
-      prisma.user.update({ where: { id: resetRecord.userId }, data: { passwordHash: newHash } }),
+      prisma.user.update({ where: { id: resetRecord.userId }, data: { passwordHash: newHash, mustChangePassword: false } }),
       prisma.passwordResetToken.update({ where: { id: resetRecord.id }, data: { usedAt: new Date() } }),
       prisma.refreshToken.updateMany({ where: { userId: resetRecord.userId, revokedAt: null }, data: { revokedAt: new Date() } }),
     ]);

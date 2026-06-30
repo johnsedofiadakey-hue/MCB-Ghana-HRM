@@ -56,6 +56,12 @@ export const createSubUnit = async (req: Request, res: Response) => {
     if (isNaN(deptId)) {
       return res.status(400).json({ error: 'Invalid Department ID format' });
     }
+    const [department, manager] = await Promise.all([
+      prisma.department.findFirst({ where: { id: deptId, organizationId }, select: { id: true } }),
+      managerId ? prisma.user.findFirst({ where: { id: managerId, organizationId }, select: { id: true } }) : Promise.resolve(null),
+    ]);
+    if (!department) return res.status(404).json({ error: 'Department not found in this organization' });
+    if (managerId && !manager) return res.status(404).json({ error: 'Manager not found in this organization' });
 
     console.log(`[SubUnit] Creating unit "${name}" for Department ${deptId} in Org ${organizationId}`);
 
@@ -78,12 +84,17 @@ export const createSubUnit = async (req: Request, res: Response) => {
 export const updateSubUnit = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
+    const organizationId = orgId || 'mcb-ghana-tenant';
     const { name, managerId } = req.body;
+    if (managerId) {
+      const manager = await prisma.user.findFirst({ where: { id: managerId, organizationId }, select: { id: true } });
+      if (!manager) return res.status(404).json({ error: 'Manager not found in this organization' });
+    }
     
     const subUnit = await prisma.subUnit.update({
       where: { 
         id: req.params.id,
-        organizationId: orgId || 'mcb-ghana-tenant'
+        organizationId
       },
       data: {
         ...(name?.trim() ? { name: name.trim() } : {}),

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
-import * as userService from '../services/user.service';
-import { sendWelcomeEmail } from '../services/email.service';
+import { sendEmail } from '../services/email.service';
+import crypto from 'crypto';
 import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
 import { GoogleWorkspaceService } from '../services/workspace.service';
@@ -18,61 +18,47 @@ import { GoogleWorkspaceService } from '../services/workspace.service';
 
 // Create employee account (IT Admin version — no salary fields exposed)
 export const itCreateEmployee = async (req: Request, res: Response) => {
-  try {
-    // Strip salary/compensation fields — IT Admin should not set these
-    const { salary, currency, ...safeData } = req.body;
-
-    const tempPassword = safeData.password || 'SecureInit!';
-    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
-    const user = await userService.createUser(organizationId, { ...safeData, password: tempPassword });
-    const { passwordHash, ...safeUser } = user;
-
-    // Send welcome email asynchronously
-    const settings = await prisma.systemSettings.findFirst();
-    sendWelcomeEmail(user.email, user.fullName, tempPassword, (settings as any)?.companyName || 'HRM Engine').catch(console.error);
-
-    // Audit log
-    // @ts-ignore
-    await logAction(req.user?.id, 'IT_ADMIN_CREATE_ACCOUNT', 'User', user.id, { email: user.email, role: user.role }, req.ip);
-
-    // Notify HR and IT leadership
-    const leadership = await prisma.user.findMany({ 
-      where: { role: { in: ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER'] } }, 
-      select: { id: true } 
-    });
-    for (const admin of leadership) {
-      await notify(admin.id, 'New Account Created', `IT Admin created account for ${user.fullName} (${user.email})`, 'INFO', '/employees');
-    }
-
-    res.status(201).json({ ...safeUser, message: `Account created. Welcome email sent to ${user.email}.` });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
+  return res.status(405).json({
+    error: 'HR must create the preboarding employee record. IT provisions and activates the resulting account.',
+  });
 };
 
-// Force password reset — sends a new temp password to the user's email
+// Force password reset — sends a one-time link to the user's email.
 export const itResetPassword = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     // @ts-ignore
     const actorId = req.user?.id;
 
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, fullName: true } });
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+    const user = await prisma.user.findFirst({ where: { id: userId, organizationId }, select: { id: true, email: true, fullName: true } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const bcrypt = await import('bcryptjs');
-    const tempPassword = `MCB${Math.random().toString(36).slice(-6).toUpperCase()}!`;
-    const passwordHash = await bcrypt.default.hash(tempPassword, 12);
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const token = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await prisma.$transaction([
+      prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+      prisma.passwordResetToken.create({ data: { userId: user.id, token, expiresAt: new Date(Date.now() + 60 * 60 * 1000) } }),
+    ]);
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
+    const sent = await sendEmail({
+      to: user.email,
+      subject: 'MCB HRM password reset invitation',
+      html: `<p>Hello ${user.fullName},</p><p>IT initiated a secure password reset. This link expires in one hour.</p><p><a href="${resetUrl}">Choose a new password</a></p>`,
+    });
+    if (!sent) {
+      return res.status(503).json({ error: 'Password-reset email could not be delivered. Verify SMTP settings and retry.' });
+    }
 
-    await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    await prisma.$transaction([
+      prisma.refreshToken.updateMany({ where: { userId: user.id, organizationId, revokedAt: null }, data: { revokedAt: new Date() } }),
+      prisma.user.update({ where: { id: user.id }, data: { mustChangePassword: true } }),
+    ]);
 
-    const settings = await prisma.systemSettings.findFirst();
-    sendWelcomeEmail(user.email, user.fullName, tempPassword, (settings as any)?.companyName || 'MCB-HRM Ghana').catch(console.error);
+    await notify(user.id, 'Password Reset Requested', 'IT sent a secure password-reset link to your email.', 'WARNING');
+    await logAction(actorId, 'IT_PASSWORD_RESET_INVITED', 'User', userId, { email: user.email }, req.ip);
 
-    await notify(user.id, 'Password Reset', 'Your password has been reset by IT. Check your email for the temporary password.', 'WARNING');
-    await logAction(actorId, 'IT_PASSWORD_RESET', 'User', userId, { email: user.email }, req.ip);
-
-    res.json({ success: true, message: `Temporary password sent to ${user.email}` });
+    res.json({ success: true, message: `Password-reset invitation sent to ${user.email}` });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

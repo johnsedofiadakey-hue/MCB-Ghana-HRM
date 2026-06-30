@@ -20,8 +20,9 @@ const GHANA_HOLIDAYS_2026 = [
 
 export const getHolidays = async (req: Request, res: Response) => {
   try {  const year = parseInt(req.query.year as string) || new Date().getFullYear();
+  const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
   const holidays = await prisma.publicHoliday.findMany({
-    where: { OR: [{ year }, { isRecurring: true }] },
+    where: { organizationId, OR: [{ year }, { isRecurring: true }] },
     orderBy: { date: 'asc' }
   });
   res.json(holidays);
@@ -33,15 +34,19 @@ export const getHolidays = async (req: Request, res: Response) => {
 
 export const addHoliday = async (req: Request, res: Response) => {
   try {
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const holiday = await prisma.publicHoliday.create({
-      data: { ...req.body, date: new Date(req.body.date) }
+      data: { ...req.body, organizationId, date: new Date(req.body.date) }
     });
     res.status(201).json(holiday);
   } catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
 export const deleteHoliday = async (req: Request, res: Response) => {
-  try {  await prisma.publicHoliday.delete({ where: { id: req.params.id } });
+  try {
+  const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+  const deleted = await prisma.publicHoliday.deleteMany({ where: { id: req.params.id, organizationId } });
+  if (!deleted.count) return res.status(404).json({ error: 'Holiday not found' });
   res.status(204).send();
   } catch (err: any) {
     console.error('[holiday.controller.ts]', err.message);
@@ -51,8 +56,10 @@ export const deleteHoliday = async (req: Request, res: Response) => {
 
 export const seedGhanaHolidays = async (req: Request, res: Response) => {
   try {
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const created = await prisma.publicHoliday.createMany({
       data: GHANA_HOLIDAYS_2026.map(h => ({
+        organizationId,
         name: h.name,
         date: new Date(h.date),
         country: 'GH',

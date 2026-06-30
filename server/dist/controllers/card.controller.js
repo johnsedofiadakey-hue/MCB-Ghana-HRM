@@ -8,6 +8,9 @@ const client_1 = __importDefault(require("../prisma/client"));
 const card_service_1 = require("../services/card.service");
 const enterprise_controller_1 = require("./enterprise.controller");
 const websocket_service_1 = require("../services/websocket.service");
+const policy_service_1 = require("../services/policy.service");
+const permissions_1 = require("../types/permissions");
+const onboarding_events_service_1 = require("../services/onboarding-events.service");
 class CardController {
     static async requestCard(req, res) {
         try {
@@ -44,6 +47,8 @@ class CardController {
                     userId: targetUser.id,
                     cardNumber: finalCardNumber,
                     status: 'REQUESTED',
+                    productionStatus: 'DRAFT',
+                    accessStatus: 'NOT_PROVISIONED',
                 },
             });
             await client_1.default.cardLifecycleEvent.create({
@@ -68,9 +73,10 @@ class CardController {
             const user = req.user;
             const orgId = (0, enterprise_controller_1.getOrgId)(req);
             const organizationId = orgId || 'mcb-ghana-tenant';
-            const card = await card_service_1.CardService.transitionState(id, 'ACTIVE', reason || 'Activated by admin', user.id, organizationId);
-            const cardRecord = await client_1.default.card.findUnique({ where: { id }, select: { userId: true } });
+            const card = await card_service_1.CardService.transitionAccessState(id, 'ACTIVE', reason || 'Activated by IT', user.id, organizationId);
+            const cardRecord = await client_1.default.card.findFirst({ where: { id, organizationId }, select: { userId: true } });
             if (cardRecord?.userId) {
+                await (0, onboarding_events_service_1.completeOnboardingTasksForEvent)({ organizationId, employeeId: cardRecord.userId, event: 'CARD_ACCESS_ACTIVATED', actorId: user.id });
                 await (0, websocket_service_1.notify)(cardRecord.userId, '💳 Card Activated', `Your access card has been activated.`, 'SUCCESS', '/profile');
             }
             return res.json(card);
@@ -86,8 +92,8 @@ class CardController {
             const user = req.user;
             const orgId = (0, enterprise_controller_1.getOrgId)(req);
             const organizationId = orgId || 'mcb-ghana-tenant';
-            const card = await card_service_1.CardService.transitionState(id, 'SUSPENDED', reason || 'Suspended by admin', user.id, organizationId);
-            const cardRecord = await client_1.default.card.findUnique({ where: { id }, select: { userId: true } });
+            const card = await card_service_1.CardService.transitionAccessState(id, 'SUSPENDED', reason || 'Suspended by IT', user.id, organizationId);
+            const cardRecord = await client_1.default.card.findFirst({ where: { id, organizationId }, select: { userId: true } });
             if (cardRecord?.userId) {
                 await (0, websocket_service_1.notify)(cardRecord.userId, '⚠️ Card Suspended', `Your access card has been suspended.`, 'WARNING', '/profile');
             }
@@ -104,8 +110,8 @@ class CardController {
             const user = req.user;
             const orgId = (0, enterprise_controller_1.getOrgId)(req);
             const organizationId = orgId || 'mcb-ghana-tenant';
-            const card = await card_service_1.CardService.transitionState(id, 'REVOKED', reason || 'Revoked by admin', user.id, organizationId);
-            const cardRecord = await client_1.default.card.findUnique({ where: { id }, select: { userId: true } });
+            const card = await card_service_1.CardService.transitionAccessState(id, 'REVOKED', reason || 'Revoked by IT', user.id, organizationId);
+            const cardRecord = await client_1.default.card.findFirst({ where: { id, organizationId }, select: { userId: true } });
             if (cardRecord?.userId) {
                 await (0, websocket_service_1.notify)(cardRecord.userId, '🚫 Card Revoked', `Your access card has been revoked.`, 'ERROR', '/profile');
             }
@@ -119,11 +125,13 @@ class CardController {
         try {
             const user = req.user;
             const orgId = (0, enterprise_controller_1.getOrgId)(req);
-            const whereOrg = orgId ? { organizationId: orgId } : {};
+            const organizationId = orgId || 'mcb-ghana-tenant';
+            const canManageProduction = (await policy_service_1.PolicyService.evaluatePolicy(user.id, permissions_1.Permission.CARD_PRODUCTION)).allowed;
+            const canManageAccess = (await policy_service_1.PolicyService.evaluatePolicy(user.id, permissions_1.Permission.CARD_ACCESS)).allowed;
             const cards = await client_1.default.card.findMany({
                 where: {
-                    ...whereOrg,
-                    ...(user.rank < 80 ? { userId: user.id } : {}), // Staff see only their cards, admins see all
+                    organizationId,
+                    ...(!canManageProduction && !canManageAccess ? { userId: user.id } : {}),
                 },
                 include: {
                     user: { select: { fullName: true, employeeCode: true } },
@@ -133,9 +141,12 @@ class CardController {
             // Format for frontend mapping compatibility
             const formattedCards = cards.map(c => ({
                 id: c.id,
+                userId: c.userId,
                 employeeId: c.user?.employeeCode || c.userId,
                 cardNumber: c.cardNumber,
                 status: c.status,
+                productionStatus: c.productionStatus,
+                accessStatus: c.accessStatus,
                 issuedAt: c.status !== 'REQUESTED' ? c.updatedAt : null,
                 employee: c.user ? { fullName: c.user.fullName } : undefined,
                 createdAt: c.createdAt,
@@ -151,12 +162,15 @@ class CardController {
     static async updateCard(req, res) {
         try {
             const { id } = req.params;
-            const { status, reason } = req.body;
+            const { productionStatus } = req.body;
             const user = req.user;
             const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
-            if (!status)
-                return res.status(400).json({ error: 'status is required' });
-            const card = await card_service_1.CardService.transitionState(id, status, reason || `Status changed to ${status}`, user.id, organizationId);
+            if (!productionStatus)
+                return res.status(400).json({ error: 'productionStatus is required' });
+            const card = await card_service_1.CardService.transitionProductionState(id, productionStatus, user.id, organizationId);
+            if (productionStatus === 'ISSUED') {
+                await (0, onboarding_events_service_1.completeOnboardingTasksForEvent)({ organizationId, employeeId: card.userId, event: 'ID_CARD_ISSUED', actorId: user.id });
+            }
             return res.json(card);
         }
         catch (error) {
@@ -180,6 +194,35 @@ class CardController {
         catch (error) {
             return res.status(500).json({ error: error.message });
         }
+    }
+    static async getDesignSettings(req, res) {
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+        const settings = await client_1.default.cardDesignSetting.findUnique({ where: { organizationId } });
+        return res.json(settings || {
+            organizationId,
+            theme: 'DARK',
+            primaryColor: '#0B4F9C',
+            secondaryColor: '#F5A623',
+            showPhone: true,
+            showEmail: true,
+            orientation: 'VERTICAL',
+            showLogo: true,
+            showQrCode: true,
+            securityText: 'Terms of Use',
+            backMessage: 'This card belongs to MCB Ghana. If found, please return it to the company.'
+        });
+    }
+    static async updateDesignSettings(req, res) {
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+        const user = req.user;
+        const allowed = ['theme', 'logoUrl', 'primaryColor', 'secondaryColor', 'showPhone', 'showEmail', 'orientation', 'showLogo', 'showQrCode', 'backMessage', 'securityText'];
+        const data = Object.fromEntries(Object.entries(req.body || {}).filter(([key]) => allowed.includes(key)));
+        const settings = await client_1.default.cardDesignSetting.upsert({
+            where: { organizationId },
+            create: { organizationId, ...data, updatedById: user.id },
+            update: { ...data, updatedById: user.id },
+        });
+        return res.json(settings);
     }
 }
 exports.CardController = CardController;

@@ -6,11 +6,6 @@ exports.asyncHandler = void 0;
  * Prevents unhandled promise rejections from crashing the server.
  */
 const asyncHandler = (fn) => (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch((err) => {
-        console.error('[Unhandled]', err.message || err);
-        if (!res.headersSent) {
-            res.status(500).json({ error: err.message || 'Internal server error' });
-        }
-    });
+    Promise.resolve(fn(req, res, next)).catch(next);
 };
 exports.asyncHandler = asyncHandler;

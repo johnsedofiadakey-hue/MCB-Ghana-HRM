@@ -27,6 +27,7 @@ const ROLE_THEMES: Record<string, string> = {
   DIRECTOR: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
   HR_MANAGER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
   FINANCE_MANAGER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
+  MARKETING_HEAD: 'text-pink-500 bg-pink-500/5 border-pink-500/10',
   HR_OFFICER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
   IT_MANAGER: 'text-[var(--info)] bg-[var(--info)]/5 border-[var(--info)]/10',
   IT_ADMIN: 'text-[var(--info)] bg-[var(--info)]/5 border-[var(--info)]/10',
@@ -311,7 +312,7 @@ export default function EmployeeManagement() {
       setModal(null); fetchAll();
 
     } catch (err: any) { 
-        const msg = err?.response?.data?.message || 'Protocol failure during sync';
+        const msg = err?.response?.data?.error || err?.response?.data?.message || 'Protocol failure during sync';
         setError(msg); 
         toast.error(msg);
     } finally { setSaving(false); }
@@ -344,7 +345,7 @@ export default function EmployeeManagement() {
       toast.success(t('employees.alerts.purge_success'));
       setModal(null); fetchAll();
     } catch (err: any) { 
-        const msg = err?.response?.data?.message || t('employees.alerts.purge_error');
+        const msg = err?.response?.data?.error || err?.response?.data?.message || t('employees.alerts.purge_error');
         toast.error(msg); 
     }
     finally { setSaving(false); }

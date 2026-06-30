@@ -9,7 +9,7 @@ import { toast } from '../../utils/toast';
 import PageHeader from '../../components/common/PageHeader';
 import TargetCard from '../../components/performance/TargetCard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getStoredUser, getRoleRankValue } from '../../utils/session';
+import { getStoredUser, getRoleRankValue, hasPermission } from '../../utils/session';
 import EmptyState from '../../components/common/EmptyState';
 import TargetCascadeModal from '../../components/performance/TargetCascadeModal';
 import { cn } from '../../utils/cn';
@@ -57,6 +57,7 @@ const CreateTargetModal: React.FC<{
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
+  const currentYear = new Date().getFullYear();
   const [form, setForm] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -68,6 +69,8 @@ const CreateTargetModal: React.FC<{
     status: initialData?.status || 'ASSIGNED',
     confidenceLevel: initialData?.confidenceLevel || 'ON_TRACK',
     blockers: initialData?.blockers || '',
+    quarter: initialData?.quarter?.toString() || '',
+    year: initialData?.year?.toString() || String(currentYear),
   });
   
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -288,6 +291,24 @@ const CreateTargetModal: React.FC<{
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">OKR Quarter</label>
+                <select className="nx-input" value={form.quarter} onChange={e => setForm({ ...form, quarter: e.target.value })}>
+                  <option value="">No specific quarter</option>
+                  <option value="1">Q1 (Jan – Mar)</option>
+                  <option value="2">Q2 (Apr – Jun)</option>
+                  <option value="3">Q3 (Jul – Sep)</option>
+                  <option value="4">Q4 (Oct – Dec)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Year</label>
+                <input type="number" min="2020" max="2030" className="nx-input"
+                  value={form.year} onChange={e => setForm({ ...form, year: e.target.value })} />
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.success_metrics_label')}</label>
@@ -368,11 +389,14 @@ const TargetDashboard: React.FC = () => {
   const { isEnabled: aiEnabled } = useAI();
   const user = getStoredUser();
   const rank = getRoleRankValue(user.role);
+  const canViewRiskPulse = hasPermission(user, 'employee.history.read');
   const [myTargets, setMyTargets] = useState<any[]>([]);
   const [teamTargets, setTeamTargets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'MY' | 'TEAM'>(rank >= 60 ? 'TEAM' : 'MY');
   const [filter, setFilter] = useState<string>('ALL');
+  const [quarterFilter, setQuarterFilter] = useState<string>('');
+  const [yearFilter, setYearFilter] = useState<string>('');
   const [cascadeTarget, setCascadeTarget] = useState<any | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editingTarget, setEditingTarget] = useState<any | null>(null);
@@ -380,16 +404,21 @@ const TargetDashboard: React.FC = () => {
   const [riskPulse, setRiskPulse] = useState<any>(null);
 
   useEffect(() => {
-     if (rank >= 85 && aiEnabled) {
+     if (canViewRiskPulse && aiEnabled) {
         api.get('/targets/pulse/risk').then(res => setRiskPulse(res.data)).catch(() => {});
      }
-  }, [rank, aiEnabled]);
+  }, [canViewRiskPulse, aiEnabled]);
 
   const fetchTargets = useCallback(async () => {
     try {
       setLoading(true);
-      const promises: Promise<any>[] = [api.get('/targets')];
-      if (rank >= 60) promises.push(api.get('/targets/team'));
+      const params = new URLSearchParams();
+      if (quarterFilter) params.set('quarter', quarterFilter);
+      if (yearFilter) params.set('year', yearFilter);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+
+      const promises: Promise<any>[] = [api.get(`/targets${qs}`)];
+      if (rank >= 60) promises.push(api.get(`/targets/team${qs}`));
 
       const [myRes, teamRes] = await Promise.all(promises);
       setMyTargets(Array.isArray(myRes.data) ? myRes.data : []);
@@ -399,7 +428,7 @@ const TargetDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [rank]);
+  }, [rank, quarterFilter, yearFilter]);
 
   useEffect(() => { fetchTargets(); }, [fetchTargets]);
 
@@ -534,7 +563,7 @@ const TargetDashboard: React.FC = () => {
       </div>
 
       {/* RISK PULSE WIDGET */}
-      {rank >= 85 && aiEnabled && riskPulse && riskPulse.endangeredCount > 0 && (
+      {canViewRiskPulse && aiEnabled && riskPulse && riskPulse.endangeredCount > 0 && (
          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
             className="nx-card p-10 bg-gradient-to-br from-rose-500/10 to-transparent border-rose-500/20 relative overflow-hidden shadow-2xl">
             <div className="absolute top-0 right-0 p-3 bg-rose-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg flex items-center gap-2">
@@ -584,7 +613,7 @@ const TargetDashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           {['ALL', 'ASSIGNED', 'IN_PROGRESS', 'UNDER_REVIEW', 'COMPLETED', 'OVERDUE'].map(s => (
             <button key={s} onClick={() => setFilter(s)}
               className={cn('px-4 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest border transition-all',
@@ -593,6 +622,27 @@ const TargetDashboard: React.FC = () => {
               {s === 'ALL' ? `${t('common.all') || 'All'} (${(activeTab === 'TEAM' ? teamTargets : myTargets).length})` : `${getStatusConfig(t)[s]?.label || s} (${statusCounts[s] || 0})`}
             </button>
           ))}
+          <div className="flex items-center gap-2 ml-2 pl-2 border-l border-[var(--border-subtle)]">
+            <select
+              value={quarterFilter}
+              onChange={e => setQuarterFilter(e.target.value)}
+              className="text-[9px] font-bold uppercase tracking-widest border border-[var(--border-subtle)] rounded-xl px-3 py-1.5 bg-[var(--bg-card)] text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary)]/40 cursor-pointer"
+            >
+              <option value="">All Quarters</option>
+              <option value="1">Q1</option>
+              <option value="2">Q2</option>
+              <option value="3">Q3</option>
+              <option value="4">Q4</option>
+            </select>
+            <select
+              value={yearFilter}
+              onChange={e => setYearFilter(e.target.value)}
+              className="text-[9px] font-bold uppercase tracking-widest border border-[var(--border-subtle)] rounded-xl px-3 py-1.5 bg-[var(--bg-card)] text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary)]/40 cursor-pointer"
+            >
+              <option value="">All Years</option>
+              {[2024, 2025, 2026, 2027].map(y => <option key={y} value={String(y)}>{y}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 

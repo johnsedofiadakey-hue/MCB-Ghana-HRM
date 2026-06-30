@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireRole, requireSpecificRole } from '../middleware/auth.middleware';
 import * as controller from '../controllers/performance-v2.controller';
 
 const router = Router();
@@ -7,9 +7,9 @@ router.use(authenticate);
 
 // Department KPIs (Director+) — both singular and plural for compatibility
 router.post('/dept-kpi', requireRole(80), controller.createDepartmentKPI);
-router.get('/dept-kpi', requireRole(80), controller.getDepartmentKPIs);
+router.get('/dept-kpi', requireRole(70), controller.getDepartmentKPIs);
 router.post('/dept-kpis', requireRole(80), controller.createDepartmentKPI);
-router.get('/dept-kpis', requireRole(80), controller.getDepartmentKPIs);
+router.get('/dept-kpis', requireRole(70), controller.getDepartmentKPIs);
 router.delete('/dept-kpis/:id', requireRole(80), controller.deleteDepartmentKPI);
 
 // Team Targets (Manager+)
@@ -28,6 +28,6 @@ router.get('/my-targets', controller.getMyTargets);
 // Performance Reviews
 router.post('/reviews', controller.createReview);
 router.patch('/reviews/:id/manager', requireRole(70), controller.managerReview);
-router.patch('/reviews/:id/director', requireRole(80), controller.directorFinalize);
+router.patch('/reviews/:id/director', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), controller.directorFinalize);
 
 export default router;

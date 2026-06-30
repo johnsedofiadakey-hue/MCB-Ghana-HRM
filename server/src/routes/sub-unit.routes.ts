@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requirePermission } from '../middleware/auth.middleware';
+import { Permission } from '../types/permissions';
 import { 
   getSubUnits, 
   createSubUnit, 
@@ -12,8 +13,8 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', getSubUnits);
-router.post('/', requireRole(75), createSubUnit);
-router.patch('/:id', requireRole(75), updateSubUnit);
-router.delete('/:id', requireRole(75), deleteSubUnit);
+router.post('/', requirePermission(Permission.EMPLOYEE_WRITE), createSubUnit);
+router.patch('/:id', requirePermission(Permission.EMPLOYEE_WRITE), updateSubUnit);
+router.delete('/:id', requirePermission(Permission.EMPLOYEE_WRITE), deleteSubUnit);
 
 export default router;

@@ -11,18 +11,24 @@
 
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendEmail } from '../services/email.service';
+import { PERMISSION_BUNDLES } from '../types/permissions';
 
 const prisma = new PrismaClient();
 
 const SALT_ROUNDS = 12;
 
 const DEFAULT_ACCOUNTS = [
-  { email: 'johnsedofiadakey@gmail.com', password: 'unlockme',      role: 'DEV',         fullName: 'John Sedofiadakey',   jobTitle: 'System Architect' },
-  { email: 'md@mcbauchemie.com', password: 'unlockme',      role: 'MD',          fullName: 'Regional Director',  jobTitle: 'Managing Director' },
-  { email: 'director@mc-bauchemie.com.gh', password: 'Director@MCB2026!', role: 'DIRECTOR', fullName: 'Operations Director', jobTitle: 'Director of Operations' },
-  { email: 'hr@mc-bauchemie.com.gh', password: 'HR@MCB2026!',      role: 'HR_OFFICER',  fullName: 'Head of Human Resources', jobTitle: 'HR Manager' },
-  { email: 'it@mc-bauchemie.com.gh', password: 'IT@MCB2026!',      role: 'IT_MANAGER',  fullName: 'System IT Manager',      jobTitle: 'IT Manager' },
+  { email: 'md@mcbauchemie.com', role: 'MD', fullName: 'Regional Director', jobTitle: 'Managing Director', rank: 95, bundle: 'MD_FINAL_APPROVER' },
+  { email: 'director@mc-bauchemie.com.gh', role: 'DIRECTOR', fullName: 'Operations Director', jobTitle: 'Director of Operations', rank: 90, bundle: 'OPERATIONS_FACILITIES_ADMIN' },
+  { email: 'hr@mc-bauchemie.com.gh', role: 'HR_DIRECTOR', fullName: 'Head of Human Resources', jobTitle: 'HR Director', rank: 92, bundle: 'HR_PEOPLE_ADMIN' },
+  { email: 'it@mc-bauchemie.com.gh', role: 'IT_MANAGER', fullName: 'System IT Manager', jobTitle: 'IT Manager', rank: 85, bundle: 'IT_OPERATIONS_ADMIN' },
+  { email: 'finance@mc-bauchemie.com.gh', role: 'FINANCE_MANAGER', fullName: 'Finance Manager', jobTitle: 'Finance Manager', rank: 87, bundle: 'FINANCE_PAYROLL_ADMIN' },
+  { email: 'marketing@mc-bauchemie.com.gh', role: 'MARKETING_HEAD', fullName: 'Marketing Head', jobTitle: 'Marketing Head', rank: 86, bundle: 'MARKETING_CARD_ADMIN' },
 ];
+
+const hashToken = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
 async function setup() {
   console.log('\n🚀 MCB-HRM Ghana — Production Setup\n');
@@ -34,7 +40,7 @@ async function setup() {
     create: {
       id: 'mcb-ghana-tenant',
       name: 'MC Bauchemie Ghana',
-      email: 'admin@nexus.com',
+      email: 'hr@mc-bauchemie.com.gh',
       currency: 'GHS',
       subscriptionPlan: 'PRO',
       billingStatus: 'ACTIVE',
@@ -64,14 +70,32 @@ async function setup() {
   // ── 3. User Accounts ─────────────────────────────────────────────────────
   console.log('\n👥 Creating accounts...');
   const createdUsers: any[] = [];
+  const invitationFailures: string[] = [];
+
+  const bundles = new Map<string, any>();
+  for (const [name, permissions] of Object.entries(PERMISSION_BUNDLES)) {
+    const existing = await prisma.permissionBundle.findFirst({ where: { organizationId: org.id, name } });
+    const bundle = existing
+      ? await prisma.permissionBundle.update({ where: { id: existing.id }, data: { permissions: [...permissions], scope: 'ORG' } })
+      : await prisma.permissionBundle.create({ data: { organizationId: org.id, name, permissions: [...permissions], scope: 'ORG' } });
+    bundles.set(name, bundle);
+  }
+  console.log(`✅ ${bundles.size} permission bundles synchronized`);
 
   for (const acc of DEFAULT_ACCOUNTS) {
-    const passwordHash = await bcrypt.hash(acc.password, SALT_ROUNDS);
-    const orgId = acc.role === 'DEV' ? null : 'mcb-ghana-tenant';
+    const existing = await prisma.user.findUnique({ where: { email: acc.email } });
+    const passwordHash = await bcrypt.hash(crypto.randomBytes(48).toString('base64url'), SALT_ROUNDS);
 
     const user = await prisma.user.upsert({
       where: { email: acc.email },
-      update: {},
+      update: {
+        role: acc.role,
+        rank: acc.rank,
+        fullName: acc.fullName,
+        jobTitle: acc.jobTitle,
+        organizationId: org.id,
+        permissionBundles: { set: [{ id: bundles.get(acc.bundle).id }] },
+      },
       create: {
         email: acc.email,
         passwordHash,
@@ -81,61 +105,73 @@ async function setup() {
         status: 'ACTIVE',
         leaveBalance: 24,
         leaveAllowance: 24,
-        organizationId: orgId,
+        organizationId: org.id,
+        rank: acc.rank,
+        loginEnabled: true,
+        mustChangePassword: true,
+        permissionBundles: { connect: [{ id: bundles.get(acc.bundle).id }] },
         joinDate: new Date(),
       },
     });
 
     createdUsers.push(user);
-    console.log(`  ✅ ${acc.role.padEnd(12)} ${acc.email} (${acc.password})`);
+    console.log(`  ✅ ${acc.role.padEnd(18)} ${acc.email}`);
+
+    if (!existing || user.mustChangePassword) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      await prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
+      await prisma.passwordResetToken.create({
+        data: { userId: user.id, token: hashToken(rawToken), expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+      });
+      const inviteUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
+      const sent = await sendEmail({
+        to: user.email,
+        subject: 'Your MCB HRM account invitation',
+        html: `<p>Hello ${user.fullName},</p><p>Your MCB HRM account is ready. Use the secure link below within 24 hours to choose your password.</p><p><a href="${inviteUrl}">Set my password</a></p>`,
+      });
+      if (!sent) invitationFailures.push(user.email);
+    }
   }
 
   // ── 4. Set up reporting hierarchy ────────────────────────────────────────
   const md       = createdUsers.find(u => u.role === 'MD');
-  const hr       = createdUsers.find(u => u.role === 'HR_OFFICER');
+  const hr       = createdUsers.find(u => u.role === 'HR_DIRECTOR');
   const it       = createdUsers.find(u => u.role === 'IT_MANAGER');
+  const finance  = createdUsers.find(u => u.role === 'FINANCE_MANAGER');
+  const marketing = createdUsers.find(u => u.role === 'MARKETING_HEAD');
   const director = createdUsers.find(u => u.role === 'DIRECTOR');
-  const manager  = createdUsers.find(u => u.role === 'MANAGER');
-  const midMgr   = createdUsers.find(u => u.role === 'SUPERVISOR');
-  const staff    = createdUsers.find(u => u.role === 'STAFF');
-  const casual   = createdUsers.find(u => u.role === 'CASUAL');
 
   if (md && hr) await prisma.user.update({ where: { id: hr.id }, data: { supervisorId: md.id } });
   if (md && it) await prisma.user.update({ where: { id: it.id }, data: { supervisorId: md.id } });
+  if (md && finance) await prisma.user.update({ where: { id: finance.id }, data: { supervisorId: md.id } });
+  if (md && marketing) await prisma.user.update({ where: { id: marketing.id }, data: { supervisorId: md.id } });
   if (md && director) await prisma.user.update({ where: { id: director.id }, data: { supervisorId: md.id } });
-  if (director && manager) await prisma.user.update({ where: { id: manager.id }, data: { supervisorId: director.id } });
-  if (manager && midMgr) await prisma.user.update({ where: { id: midMgr.id }, data: { supervisorId: manager.id } });
-  if (midMgr && staff) await prisma.user.update({ where: { id: staff.id }, data: { supervisorId: midMgr.id } });
-  if (midMgr && casual) await prisma.user.update({ where: { id: casual.id }, data: { supervisorId: midMgr.id } });
   console.log('\n✅ Reporting hierarchy configured');
 
   // ── 5. Departments ───────────────────────────────────────────────────────
   const depts = [
-    { name: 'Human Resources',   managerId: hr?.id || director?.id },
-    { name: 'Technology',        managerId: manager?.id },
-    { name: 'Finance',           managerId: director?.id },
-    { name: 'Operations',        managerId: manager?.id },
-    { name: 'Sales & Marketing', managerId: manager?.id },
+    { name: 'Human Resources',   managerId: hr?.id, memberIds: [hr?.id] },
+    { name: 'Technology',        managerId: it?.id, memberIds: [it?.id] },
+    { name: 'Finance',           managerId: finance?.id, memberIds: [finance?.id] },
+    { name: 'Operations',        managerId: director?.id, memberIds: [director?.id, md?.id] },
+    { name: 'Sales & Marketing', managerId: marketing?.id, memberIds: [marketing?.id] },
   ];
 
-  let firstDeptId: number | null = null;
   for (const dept of depts) {
     const d = await prisma.department.upsert({
       where: { name_organizationId: { name: dept.name, organizationId: 'mcb-ghana-tenant' } },
-      update: {},
+      update: { managerId: dept.managerId || null },
       create: { name: dept.name, organizationId: 'mcb-ghana-tenant', managerId: dept.managerId },
     });
-    if (!firstDeptId) firstDeptId = d.id;
+    const memberIds = dept.memberIds.filter((id): id is string => Boolean(id));
+    if (memberIds.length) {
+      await prisma.user.updateMany({
+        where: { id: { in: memberIds }, organizationId: org.id },
+        data: { departmentId: d.id },
+      });
+    }
   }
   console.log(`✅ ${depts.length} departments created`);
-
-  // ── 6. Assign staff to first department ──────────────────────────────────
-  if (firstDeptId && staff) {
-    await prisma.user.update({ where: { id: staff.id }, data: { departmentId: firstDeptId } });
-  }
-  if (firstDeptId && casual) {
-    await prisma.user.update({ where: { id: casual.id }, data: { departmentId: firstDeptId } });
-  }
 
   // ── 7. Ghana Public Holidays 2026 ───────────────────────────────────────
   const holidays2026 = [
@@ -172,37 +208,59 @@ async function setup() {
   }
   console.log('✅ Ghana national holidays 2026 seeded');
 
-  // ── 8. Sample Target for demonstration ───────────────────────────────────
-  if (md && staff) {
-    await prisma.target.upsert({
-      where: { id: 'demo-target-001' },
-      update: {},
-      create: {
-        id: 'demo-target-001',
-        organizationId: 'mcb-ghana-tenant',
-        title: 'Q2 2026 Performance Goal — Sample',
-        description: 'Demonstrate how individual targets work. Update your progress and submit for review.',
-        level: 'INDIVIDUAL',
-        type: 'SINGLE',
-        status: 'ASSIGNED',
-        dueDate: new Date('2026-06-30'),
-        assigneeId: staff.id,
-        originatorId: md.id,
-        lineManagerId: midMgr?.id || md.id,
-        reviewerId: manager?.id || md.id,
-        weight: 1.0,
-        metrics: {
+  // ── Default cross-department onboarding workflow ───────────────────────
+  let onboardingTemplate = await prisma.onboardingTemplate.findFirst({ where: { organizationId: org.id, isDefault: true } });
+  if (!onboardingTemplate) {
+    onboardingTemplate = await prisma.onboardingTemplate.create({
+      data: {
+        organizationId: org.id,
+        name: 'MCB Standard Employee Onboarding',
+        description: 'HR preboarding with IT, Marketing and line-manager handoffs.',
+        isDefault: true,
+        tasks: {
           create: [
-            { organizationId: 'mcb-ghana-tenant', title: 'Tasks Completed', metricType: 'NUMERICAL', targetValue: 50, unit: 'tasks', weight: 0.5 },
-            { organizationId: 'mcb-ghana-tenant', title: 'Customer Satisfaction', metricType: 'PERCENTAGE', targetValue: 90, unit: '%', weight: 0.5 },
+            { organizationId: org.id, title: 'Verify employee master data', category: 'HR', ownerRole: 'HR', dueAfterDays: 1, order: 0 },
+            { organizationId: org.id, title: 'Provision company email and system account', category: 'IT', ownerRole: 'IT', autoCompleteEvent: 'ACCOUNT_PROVISIONED', dueAfterDays: 2, order: 1 },
+            { organizationId: org.id, title: 'Assign required equipment', category: 'IT', ownerRole: 'IT', autoCompleteEvent: 'ASSET_ASSIGNED', dueAfterDays: 2, order: 2 },
+            { organizationId: org.id, title: 'Configure physical access credential', category: 'IT', ownerRole: 'IT', autoCompleteEvent: 'CARD_ACCESS_ACTIVATED', dueAfterDays: 2, order: 3 },
+            { organizationId: org.id, title: 'Prepare and issue employee ID card', category: 'MARKETING', ownerRole: 'MARKETING', autoCompleteEvent: 'ID_CARD_ISSUED', dueAfterDays: 3, order: 4 },
+            { organizationId: org.id, title: 'Publish digital call card', category: 'MARKETING', ownerRole: 'MARKETING', autoCompleteEvent: 'CALL_CARD_PUBLISHED', dueAfterDays: 3, order: 5 },
+            { organizationId: org.id, title: 'Complete departmental induction', category: 'MANAGER', ownerRole: 'MANAGER', dueAfterDays: 5, order: 6 },
+            { organizationId: org.id, title: 'Acknowledge policies and employee handbook', category: 'EMPLOYEE', ownerRole: 'EMPLOYEE', dueAfterDays: 7, order: 7 },
           ],
         },
       },
-    }).catch(() => {});
+    });
   }
-  console.log('✅ Sample target created');
+  console.log(`✅ Default onboarding workflow: ${onboardingTemplate.name}`);
 
-  // ── 9. Default Offboarding Templates ─────────────────────────────────────
+  const statutoryExisting = await prisma.payrollStatutoryRule.findFirst({
+    where: { organizationId: org.id, name: 'Ghana statutory rules 2026' },
+  });
+  if (!statutoryExisting) {
+    await prisma.payrollStatutoryRule.create({
+      data: {
+        organizationId: org.id,
+        name: 'Ghana statutory rules 2026',
+        effectiveFrom: new Date('2026-01-01T00:00:00.000Z'),
+        employeeSsnitRate: 0.055,
+        employerSsnitRate: 0.13,
+        minimumInsurable: 587.80,
+        maximumInsurable: 69000,
+        payeBands: [
+          { limit: 490, rate: 0 }, { limit: 110, rate: 0.05 }, { limit: 130, rate: 0.10 },
+          { limit: 3166.67, rate: 0.175 }, { limit: 16000, rate: 0.25 },
+          { limit: 30520, rate: 0.30 }, { limit: 999999999, rate: 0.35 },
+        ],
+        bonusRules: { annualThresholdRate: 0.15, flatRate: 0.05 },
+        overtimeRules: { mode: 'GRADUATED' },
+        accountantApproved: false,
+      },
+    });
+  }
+  console.log('✅ 2026 statutory rule staged for accountant approval');
+
+  // ── 8. Default Offboarding Templates ─────────────────────────────────────
   console.log('\n📄 Creating offboarding templates...');
   const offboardingTemplates = [
     {
@@ -212,7 +270,8 @@ async function setup() {
         { title: 'Asset Return (Laptop, Keys, Access Card)', category: 'IT', isRequired: true },
         { title: 'Knowledge Transfer & Handover', category: 'Manager', isRequired: true },
         { title: 'Revoke Email & System Access', category: 'IT', isRequired: true },
-        { title: 'Final Payroll Settlement', category: 'HR', isRequired: true },
+        { title: 'Final Payroll Settlement', category: 'Finance', isRequired: true },
+        { title: 'Recover employee ID and withdraw call card', category: 'Marketing', isRequired: true },
         { title: 'Exit Interview', category: 'HR', isRequired: false }
       ]
     },
@@ -259,8 +318,11 @@ async function setup() {
     }
   }
 
-  console.log('\n🎉 Setup complete! You can now log in with any of the accounts above.');
-  console.log('   Change passwords immediately after first login.\n');
+  if (invitationFailures.length) {
+    throw new Error(`Setup completed, but invitation email delivery failed for: ${invitationFailures.join(', ')}. Check Render SMTP settings and rerun setup to issue fresh links.`);
+  }
+
+  console.log('\n🎉 Setup complete. Secure invitations are active for accounts awaiting first login.\n');
 }
 
 setup()

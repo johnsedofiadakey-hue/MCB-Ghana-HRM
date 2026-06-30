@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const supportController = __importStar(require("../controllers/support.controller"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const permissions_1 = require("../types/permissions");
 const router = (0, express_1.Router)();
 // Employee endpoints
 router.post('/tickets', auth_middleware_1.authenticate, supportController.createTicket);
@@ -43,11 +44,16 @@ router.get('/my', auth_middleware_1.authenticate, supportController.getMyTickets
 router.get('/my-tickets', auth_middleware_1.authenticate, supportController.getMyTickets);
 router.get('/tickets/:id', auth_middleware_1.authenticate, supportController.getTicketDetails);
 router.post('/tickets/:ticketId/comments', auth_middleware_1.authenticate, supportController.addComment); // Param alignment
+router.post('/tickets/:id/reopen', auth_middleware_1.authenticate, supportController.reopenTicket);
+router.get('/knowledge', auth_middleware_1.authenticate, supportController.listKnowledgeArticles);
 // Admin / IT endpoints (Rank 85+ for IT Admin, MD, HR Manager)
-router.get('/all', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.getAllTickets);
-router.get('/all-tickets', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.getAllTickets);
-router.patch('/tickets/:id/status', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.updateTicketStatus); // Alias for frontend
-router.patch('/tickets/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.updateTicketStatus);
+const queuePermissions = [permissions_1.Permission.HELPDESK_IT, permissions_1.Permission.HELPDESK_HR, permissions_1.Permission.HELPDESK_FINANCE, permissions_1.Permission.HELPDESK_MARKETING, permissions_1.Permission.HELPDESK_FACILITIES, permissions_1.Permission.HELPDESK_OTHER];
+router.get('/all', auth_middleware_1.authenticate, (0, auth_middleware_1.requireAnyPermission)(queuePermissions), supportController.getAllTickets);
+router.get('/all-tickets', auth_middleware_1.authenticate, (0, auth_middleware_1.requireAnyPermission)(queuePermissions), supportController.getAllTickets);
+router.get('/dashboard', auth_middleware_1.authenticate, (0, auth_middleware_1.requireAnyPermission)(queuePermissions), supportController.getQueueDashboard);
+router.post('/knowledge', auth_middleware_1.authenticate, (0, auth_middleware_1.requireAnyPermission)(queuePermissions), supportController.createKnowledgeArticle);
+router.patch('/tickets/:id/status', auth_middleware_1.authenticate, (0, auth_middleware_1.requireAnyPermission)(queuePermissions), supportController.updateTicketStatus);
+router.patch('/tickets/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireAnyPermission)(queuePermissions), supportController.updateTicketStatus);
 // Lead Management (NOC & Public)
 router.post('/leads', supportController.createLead);
 router.get('/leads', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), supportController.getLeads);

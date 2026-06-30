@@ -34,9 +34,11 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteAsset = exports.returnAsset = exports.assignAsset = exports.getInventory = exports.createAsset = void 0;
-const auth_middleware_1 = require("../middleware/auth.middleware");
 const assetService = __importStar(require("../services/asset.service"));
 const audit_service_1 = require("../services/audit.service");
+const onboarding_events_service_1 = require("../services/onboarding-events.service");
+const policy_service_1 = require("../services/policy.service");
+const permissions_1 = require("../types/permissions");
 const createAsset = async (req, res) => {
     try {
         const user = req.user;
@@ -55,14 +57,12 @@ const getInventory = async (req, res) => {
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorRole = userReq.role;
-        const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const actorId = userReq.id;
         let assets = await assetService.getAllAssets(organizationId);
         // 🛡️ ASSET GOVERNANCE (Strict Role-Based Isolation):
         // - MD / IT_MANAGER / DEV can see all inventory.
         // - All other roles see only assets assigned to THEM personally.
-        const authorizedRoles = ['MD', 'IT_MANAGER', 'DEV'];
-        const isFullAccess = authorizedRoles.includes(actorRole?.toUpperCase() || '');
+        const isFullAccess = (await policy_service_1.PolicyService.evaluatePolicy(actorId, permissions_1.Permission.ASSET_MANAGE)).allowed;
         if (!isFullAccess) {
             assets = assets.filter(asset => asset.assignments.some(a => a.userId === actorId));
         }
@@ -79,6 +79,7 @@ const assignAsset = async (req, res) => {
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { assetId, userId, condition, signature } = req.body;
         const assignment = await assetService.assignAsset(organizationId, assetId, userId, condition, signature);
+        await (0, onboarding_events_service_1.completeOnboardingTasksForEvent)({ organizationId, employeeId: userId, event: 'ASSET_ASSIGNED', actorId: userReq.id });
         await (0, audit_service_1.logAction)(userReq.id, 'ASSIGN_ASSET', 'Asset', assetId, { assignedTo: userId, signed: !!signature }, req.ip);
         res.json(assignment);
     }

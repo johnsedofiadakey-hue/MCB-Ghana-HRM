@@ -1,83 +1,37 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { determineHrReviewStatus, determineInitialLeaveStatus, determineMdReviewStatus } from '../services/leave.service';
+import { getRoleDefaultPermissions, Permission } from '../types/permissions';
 
-// ── Mocking Data Structures ─────────────────────────
-
-const ROLE_RANK_MAP: Record<string, number> = {
-  DEV: 100,
-  MD: 90,
-  DIRECTOR: 85,
-  HR_OFFICER: 85,
-  MANAGER: 70,
-  MID_MANAGER: 75,
-  SUPERVISOR: 60,
-  STAFF: 50,
-};
-
-const getRoleRank = (role?: string): number => {
-  if (!role) return 0;
-  const normalized = String(role).toUpperCase();
-  return ROLE_RANK_MAP[normalized] ?? 0;
-};
-
-// ── Replicating Leave Logic for Unit Testing ────────
-
-describe('Leave Approval Logic (Resilience Layer)', () => {
-
-  const determineNextStatus = (leave: any, actorRole: string, approve: boolean): string => {
-    const rank = getRoleRank(actorRole);
-    const employeeRank = getRoleRank(leave.employeeRole);
-    const isManager = employeeRank >= 70;
-
-    if (!approve) {
-        if (rank >= 80) return 'MD_REJECTED';
-        return 'MANAGER_REJECTED';
-    }
-
-    // Role-based Terminal Approval Logic (Refactored)
-    if (rank >= 85) {
-        return 'APPROVED'; // Directors and above can terminal-approve
-    }
-
-    if (isManager) {
-        return 'APPROVED'; // Manager's leave only needs one level
-    }
-
-    return 'MD_REVIEW'; // Staff leave needs MD sign-off
-  };
-
-  it('should allow Director (85) to terminal-approve Staff leave', () => {
-    const leave = { employeeRole: 'STAFF', status: 'MANAGER_REVIEW' };
-    const nextStatus = determineNextStatus(leave, 'DIRECTOR', true);
-    expect(nextStatus).toBe('APPROVED');
+describe('leave approval contract', () => {
+  it('routes ordinary employees and non-director department heads to terminal HR approval', () => {
+    ['CASUAL', 'STAFF', 'MANAGER', 'IT_MANAGER', 'FINANCE_MANAGER', 'MARKETING_HEAD'].forEach((role) => {
+      expect(determineHrReviewStatus(role, true)).toBe('APPROVED');
+    });
   });
 
-  it('should allow MD (90) to terminal-approve Staff leave', () => {
-    const leave = { employeeRole: 'STAFF', status: 'MANAGER_REVIEW' };
-    const nextStatus = determineNextStatus(leave, 'MD', true);
-    expect(nextStatus).toBe('APPROVED');
+  it('routes directors, the HR Director and MD through MD final review', () => {
+    expect(determineHrReviewStatus('DIRECTOR', true)).toBe('MD_REVIEW');
+    expect(determineHrReviewStatus('HR_DIRECTOR', true)).toBe('MD_REVIEW');
+    expect(determineHrReviewStatus('MD', true)).toBe('MD_REVIEW');
   });
 
-  it('should move Staff (50) leave to MD_REVIEW if approved by Manager (70)', () => {
-    const leave = { employeeRole: 'STAFF', status: 'MANAGER_REVIEW' };
-    const nextStatus = determineNextStatus(leave, 'MANAGER', true);
-    expect(nextStatus).toBe('MD_REVIEW');
+  it('sends the HR Director own request directly to MD when no reliever is required', () => {
+    expect(determineInitialLeaveStatus('HR_DIRECTOR', false)).toBe('MD_REVIEW');
+    expect(determineInitialLeaveStatus('STAFF', false)).toBe('HR_REVIEW');
+    expect(determineInitialLeaveStatus('HR_DIRECTOR', true)).toBe('SUBMITTED');
   });
 
-  it('should terminal-approve Manager (70) leave if approved by Director (85)', () => {
-    const leave = { employeeRole: 'MANAGER', status: 'MANAGER_REVIEW' };
-    const nextStatus = determineNextStatus(leave, 'DIRECTOR', true);
-    expect(nextStatus).toBe('APPROVED');
+  it('uses explicit HR and MD permissions rather than numeric rank inheritance', () => {
+    expect(getRoleDefaultPermissions('HR_DIRECTOR')).toContain(Permission.LEAVE_HR_APPROVE);
+    expect(getRoleDefaultPermissions('MARKETING_HEAD')).not.toContain(Permission.LEAVE_HR_APPROVE);
+    expect(getRoleDefaultPermissions('FINANCE_MANAGER')).not.toContain(Permission.LEAVE_HR_APPROVE);
+    expect(getRoleDefaultPermissions('IT_MANAGER')).not.toContain(Permission.LEAVE_HR_APPROVE);
+    expect(getRoleDefaultPermissions('MD')).toContain(Permission.LEAVE_MD_APPROVE);
   });
 
-  it('should correctly reject leave at MD level', () => {
-    const leave = { employeeRole: 'STAFF', status: 'MD_REVIEW' };
-    const nextStatus = determineNextStatus(leave, 'MD', false);
-    expect(nextStatus).toBe('MD_REJECTED');
-  });
-
-  it('should correctly reject leave at Manager level', () => {
-    const leave = { employeeRole: 'STAFF', status: 'MANAGER_REVIEW' };
-    const nextStatus = determineNextStatus(leave, 'MANAGER', false);
-    expect(nextStatus).toBe('MANAGER_REJECTED');
+  it('records rejections at the stage that performed them', () => {
+    expect(determineHrReviewStatus('STAFF', false)).toBe('HR_REJECTED');
+    expect(determineMdReviewStatus(false)).toBe('MD_REJECTED');
+    expect(determineMdReviewStatus(true)).toBe('APPROVED');
   });
 });

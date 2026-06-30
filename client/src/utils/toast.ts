@@ -1,15 +1,16 @@
 /**
  * Lightweight toast notification utility — no external dependency.
- * Usage: toast.success('Done!') | toast.error('Failed!') | toast.info('Note')
+ * Colors are read from CSS variables at show-time so toasts follow the active theme.
+ * Usage: toast.success('Done!') | toast.error('Failed!') | toast.warning('Note') | toast.info('Note')
  */
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
-const COLORS: Record<ToastType, string> = {
-  success: '#10b981',
-  error:   '#f43f5e',
-  info:    '#6366f1',
-  warning: '#f59e0b',
+const STATUS_VARS: Record<ToastType, string> = {
+  success: '--status-success-text',
+  error:   '--status-error-text',
+  info:    '--status-info-text',
+  warning: '--status-warning-text',
 };
 
 const ICONS: Record<ToastType, string> = {
@@ -19,6 +20,10 @@ const ICONS: Record<ToastType, string> = {
   warning: '⚠',
 };
 
+function getCSSVar(name: string, fallback: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
 let container: HTMLDivElement | null = null;
 
 function getContainer(): HTMLDivElement {
@@ -26,8 +31,13 @@ function getContainer(): HTMLDivElement {
     container = document.createElement('div');
     container.id = 'nexus-toast-root';
     Object.assign(container.style, {
-      position: 'fixed', top: '24px', right: '24px',
-      zIndex: '99999', display: 'flex', flexDirection: 'column', gap: '8px',
+      position: 'fixed',
+      top: '24px',
+      right: '24px',
+      zIndex: '99999',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
       pointerEvents: 'none',
     });
     document.body.appendChild(container);
@@ -35,14 +45,21 @@ function getContainer(): HTMLDivElement {
   return container;
 }
 
-function show(message: string, type: ToastType = 'info', duration = 3500) {
+function show(message: string, type: ToastType = 'info', duration = 3500): string {
   const c = getContainer();
   const el = document.createElement('div');
-  const color = COLORS[type];
-  const icon = ICONS[type];
+  const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  el.dataset.toastId = id;
+
+  // Read theme-aware colors at show time
+  const color = getCSSVar(STATUS_VARS[type], '#6366f1');
+  const bg    = getCSSVar('--bg-card', '#0D1E2E');
+  const text  = getCSSVar('--text-primary', '#EDF5FB');
+  const muted = getCSSVar('--text-muted', '#3E6880');
+  const icon  = ICONS[type];
 
   Object.assign(el.style, {
-    background: '#0f172a',
+    background: bg,
     border: `1px solid ${color}40`,
     borderLeft: `3px solid ${color}`,
     borderRadius: '12px',
@@ -51,38 +68,49 @@ function show(message: string, type: ToastType = 'info', duration = 3500) {
     alignItems: 'center',
     gap: '10px',
     minWidth: '260px',
-    maxWidth: '400px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+    maxWidth: '380px',
+    boxShadow: getCSSVar('--shadow-md', '0 8px 32px rgba(0,0,0,0.4)'),
     pointerEvents: 'all',
     cursor: 'pointer',
     transition: 'all 0.25s ease',
     opacity: '0',
     transform: 'translateX(20px)',
-    fontFamily: 'system-ui, sans-serif',
+    fontFamily: 'Inter, system-ui, sans-serif',
   });
 
   el.innerHTML = `
     <span style="color:${color};font-weight:900;font-size:14px;flex-shrink:0">${icon}</span>
-    <span style="color:#e2e8f0;font-size:13px;font-weight:600;line-height:1.4">${message}</span>
-    <span style="margin-left:auto;color:#475569;font-size:18px;cursor:pointer;flex-shrink:0" onclick="this.parentElement.remove()">×</span>
+    <span style="color:${text};font-size:13px;font-weight:600;line-height:1.4">${message}</span>
+    <span style="margin-left:auto;color:${muted};font-size:18px;cursor:pointer;flex-shrink:0" onclick="this.parentElement.remove()">×</span>
   `;
 
   c.appendChild(el);
 
-  // Animate in
   requestAnimationFrame(() => {
     el.style.opacity = '1';
     el.style.transform = 'translateX(0)';
   });
 
-  // Auto-dismiss
-  const timer = setTimeout(() => {
+  const timer = duration > 0 ? window.setTimeout(() => {
     el.style.opacity = '0';
     el.style.transform = 'translateX(20px)';
-    setTimeout(() => el.remove(), 250);
-  }, duration);
+    window.setTimeout(() => el.remove(), 250);
+  }, duration) : null;
 
-  el.onclick = () => { clearTimeout(timer); el.remove(); };
+  el.onclick = () => {
+    if (timer !== null) window.clearTimeout(timer);
+    el.remove();
+  };
+  return id;
+}
+
+function dismiss(id?: string) {
+  if (!container) return;
+  if (!id) {
+    container.replaceChildren();
+    return;
+  }
+  Array.from(container.children).find((node) => (node as HTMLElement).dataset.toastId === id)?.remove();
 }
 
 export const toast = {
@@ -90,4 +118,6 @@ export const toast = {
   error:   (msg: string, duration?: number) => show(msg, 'error', duration),
   info:    (msg: string, duration?: number) => show(msg, 'info', duration),
   warning: (msg: string, duration?: number) => show(msg, 'warning', duration),
+  loading: (msg: string) => show(msg, 'info', 0),
+  dismiss,
 };

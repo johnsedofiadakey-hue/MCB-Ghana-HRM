@@ -4,7 +4,7 @@ import {
   Mail, Phone, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
   Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe, Clock, Umbrella,
-  UserCheck, Award
+  UserCheck, Award, QrCode
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -158,7 +158,6 @@ const EmployeeProfile = () => {
     const [nfcWriting, setNfcWriting] = useState(false);
     const [nfcSuccess, setNfcSuccess] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
-    const [newPassword, setNewPassword] = useState('');
     const [resetting, setResetting] = useState(false);
     const [showLeaveModal, setShowLeaveModal] = useState(false);
     const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', reason: '' });
@@ -324,19 +323,13 @@ const EmployeeProfile = () => {
     };
 
     const handleResetPassword = async () => {
-        if (!newPassword || newPassword.length < 8) {
-            toast.error('Password must be at least 8 characters');
-            return;
-        }
-
         setResetting(true);
         try {
-            await api.post(`/employees/${id}/reset-password`, { newPassword });
-            toast.success('Password successfully reset');
+            await api.post(`/employees/${id}/reset-password`);
+            toast.success('Secure password-reset invitation sent');
             setShowResetModal(false);
-            setNewPassword('');
         } catch (err: any) {
-            toast.error(err.response?.data?.error || 'Failed to reset password');
+            toast.error(err.response?.data?.error || 'Failed to send password-reset invitation');
         } finally {
             setResetting(false);
         }
@@ -1092,7 +1085,7 @@ const EmployeeProfile = () => {
                                  })() : (
                                     <div className="p-10 border border-dashed border-[var(--border-subtle)] rounded-3xl text-center space-y-4">
                                         <p className="text-xs text-[var(--text-muted)] font-medium italic">
-                                            An IT administrator has not generated your digital call card yet. Please reach out to your IT department to activate your networking card.
+                                            Marketing has not published your digital call card yet. Submit a request to the Marketing help-desk queue if your details need to be created or corrected.
                                         </p>
                                     </div>
                                 )}
@@ -1200,31 +1193,23 @@ const EmployeeProfile = () => {
                                 <Lock size={28} />
                             </div>
                             <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Reset Password</h2>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Set new password for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Send a secure reset link to <span className="text-[var(--primary)]">{employee.fullName}</span></p>
 
                             <div className="space-y-6">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">New Password</label>
-                                    <input 
-                                        type="text"
-                                        placeholder="Min 8 characters..."
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        className="nx-input py-4 border-[var(--border-subtle)] bg-[var(--bg-main)] focus:ring-2 focus:ring-[var(--primary)]/20 font-bold"
-                                    />
-                                    <p className="text-[9px] text-[var(--text-muted)] font-medium italic">* All active sessions for this account will be revoked immediately.</p>
+                                <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-main)] p-5">
+                                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed">The employee will receive a one-time link valid for one hour. Administrators never see or set the employee's password. Sending the link revokes active sessions.</p>
                                 </div>
 
                                 <div className="flex flex-col gap-3 pt-4">
                                     <button 
                                         onClick={handleResetPassword}
-                                        disabled={resetting || newPassword.length < 8}
+                                        disabled={resetting}
                                         className="btn-primary w-full py-4 text-xs font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-50"
                                     >
-                                        {resetting ? 'Resetting Password...' : 'Reset Password'}
+                                        {resetting ? 'Sending Link...' : 'Send Secure Reset Link'}
                                     </button>
                                     <button 
-                                        onClick={() => { setShowResetModal(false); setNewPassword(''); }}
+                                        onClick={() => setShowResetModal(false)}
                                         className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
                                     >
                                         Cancel

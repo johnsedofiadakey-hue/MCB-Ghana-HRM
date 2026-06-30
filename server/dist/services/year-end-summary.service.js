@@ -20,7 +20,7 @@ class YearEndSummaryService {
             where: {
                 organizationId,
                 employeeId,
-                run: { year, status: { in: ['APPROVED', 'PAID'] } },
+                run: { year, status: 'RELEASED' },
             },
             include: {
                 run: true,

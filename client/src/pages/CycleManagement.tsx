@@ -20,7 +20,8 @@ interface Cycle {
 
 const getErrorMessage = (error: unknown, fallback: string) => {
     if (error && typeof error === 'object' && 'response' in error) {
-        const response = (error as { response?: { data?: { message?: string } } }).response;
+        const response = (error as { response?: { data?: { message?: string; error?: string } } }).response;
+        if (response?.data?.error) return response.data.error;
         if (response?.data?.message) return response.data.message;
     }
     if (error instanceof Error) return error.message;
@@ -135,7 +136,7 @@ const CycleManagement: React.FC = () => {
     );
 
     return (
-        <div className="space-y-10 page-transition min-h-screen pb-20">
+        <div className="space-y-10 page-transition min-h-screen pb-24 lg:pb-8">
             <PageHeader 
                 title={t('cycles.title')}
                 description={t('cycles.description')}
@@ -210,9 +211,9 @@ const CycleManagement: React.FC = () => {
                                     disabled={cycle.status !== 'ACTIVE' || !canManageCycles}
                                     className={cn(
                                         "px-8 py-4 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-xl",
-                                        cycle.status === 'ACTIVE' && canManageCycles 
-                                            ? "bg-[var(--primary)] text-[var(--text-inverse)] shadow-[var(--primary)]/20 hover:scale-105" 
-                                            : "bg-white/5 text-[var(--text-secondary)] border border-white/5 cursor-not-allowed grayscale"
+                                        cycle.status === 'ACTIVE' && canManageCycles
+                                            ? "bg-[var(--primary)] text-white shadow-[var(--primary)]/20 hover:scale-105"
+                                            : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)] cursor-not-allowed grayscale"
                                     )}
                                 >
                                     <Play size={16} fill="currentColor" /> {t('cycles.launch_reviews')}
@@ -251,9 +252,9 @@ const CycleManagement: React.FC = () => {
                                 <AlertTriangle className="text-red-500" size={32} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-tight">{t('cycles.system_reset_title')}</h3>
+                                <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tight">{t('cycles.system_reset_title')}</h3>
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 mt-1">{t('cycles.delete_warning')}</p>
-                                <p className="text-[10px] font-bold text-slate-500 mt-2 max-w-md">Deletes ALL cycles, packets, and historical reviews. Irreversible.</p>
+                                <p className="text-[10px] font-bold text-[var(--text-muted)] mt-2 max-w-md">Deletes ALL cycles, packets, and historical reviews. Irreversible.</p>
                             </div>
                         </div>
                         <button 
@@ -359,17 +360,17 @@ const CycleManagement: React.FC = () => {
             {/* CREATE MODAL */}
             <AnimatePresence>
                 {showModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div 
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
+                        <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onClick={() => setShowModal(false)}
-                            className="absolute inset-0 bg-black/90 backdrop-blur-2xl"
+                            className="absolute inset-0 bg-black/80 backdrop-blur-xl"
                         />
-                        <motion.div 
-                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="nx-card w-full max-w-xl bg-[var(--bg-card)] border-[var(--border-subtle)] p-10 relative shadow-2xl overflow-hidden"
+                        <motion.div
+                            initial={{ y: 40, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 40, opacity: 0 }}
+                            className="nx-card w-full max-w-xl bg-[var(--bg-card)] border-[var(--border-subtle)] p-7 sm:p-10 relative shadow-2xl overflow-hidden rounded-t-3xl sm:rounded-3xl max-h-[92dvh] overflow-y-auto"
                         >
                              <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
                                 <RefreshCw size={120} className="text-[var(--growth)]" />
@@ -387,7 +388,7 @@ const CycleManagement: React.FC = () => {
 
                              <form onSubmit={handleCreate} className="space-y-8 relative z-10">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('cycles.headers.cycle_name')}</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">{t('cycles.headers.cycle_name')}</label>
                                     <input
                                         required
                                         type="text"

@@ -43,6 +43,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const client_1 = __importDefault(require("../prisma/client"));
 const email_service_1 = require("../services/email.service");
 const roles_1 = require("../types/roles");
+const policy_service_1 = require("../services/policy.service");
 const getRoleRank = (role) => {
     if (!role)
         return 0;
@@ -110,7 +111,7 @@ const login = async (req, res) => {
             where: { email: normalizedEmail },
             select: { id: true, email: true, fullName: true, role: true, status: true,
                 passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true,
-                departmentId: true, rank: true }
+                departmentId: true, rank: true, loginEnabled: true, mustChangePassword: true }
         });
         if (!user) {
             await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'mcb-ghana-tenant', reason: 'USER_NOT_FOUND', req });
@@ -119,6 +120,10 @@ const login = async (req, res) => {
         if (user.status === 'TERMINATED') {
             await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'ACCOUNT_TERMINATED', req });
             return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
+        }
+        if (!user.loginEnabled) {
+            await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'LOGIN_NOT_PROVISIONED', req });
+            return res.status(403).json({ error: 'Login is not active yet. IT must complete account provisioning.' });
         }
         const orgId = user.organizationId || 'mcb-ghana-tenant';
         // CROSS-TENANT VALIDATION DISABLED FOR STANDALONE MODE
@@ -145,6 +150,7 @@ const login = async (req, res) => {
             throw new Error(`Session security initialization failed: ${tokenErr.message}`);
         }
         await safeLogSecurityEvent({ email: normalizedEmail, success: true, organizationId: orgId, reason: 'LOGIN_OK', req });
+        const permissions = await policy_service_1.PolicyService.getEffectivePermissions(user.id);
         return res.status(200).json({
             token,
             refreshToken,
@@ -158,6 +164,8 @@ const login = async (req, res) => {
                 organizationId: orgId,
                 avatar: user.avatarUrl,
                 departmentId: user.departmentId,
+                permissions,
+                mustChangePassword: user.mustChangePassword,
             },
             tokenMeta: {
                 accessExpiresIn: ACCESS_TOKEN_TTL,
@@ -199,7 +207,7 @@ const ssoLogin = async (req, res) => {
             where: { email: normalizedEmail },
             select: { id: true, email: true, fullName: true, role: true, status: true,
                 avatarUrl: true, organizationId: true, jobTitle: true,
-                departmentId: true }
+                departmentId: true, loginEnabled: true, mustChangePassword: true }
         });
         if (!user) {
             await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'mcb-ghana-tenant', reason: 'SSO_USER_NOT_FOUND', req });
@@ -208,6 +216,9 @@ const ssoLogin = async (req, res) => {
         if (user.status === 'TERMINATED') {
             await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'mcb-ghana-tenant', reason: 'SSO_ACCOUNT_TERMINATED', req });
             return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
+        }
+        if (!user.loginEnabled) {
+            return res.status(403).json({ error: 'Login is not active yet. IT must complete account provisioning.' });
         }
         const orgId = user.organizationId || 'mcb-ghana-tenant';
         const token = signAccessToken({
@@ -221,6 +232,7 @@ const ssoLogin = async (req, res) => {
         // In SSO, we also issue our Native Refresh token so they don't have to keep doing the OAuth popup.
         const refreshToken = await issueRefreshToken(user.id, orgId, req);
         await safeLogSecurityEvent({ email: normalizedEmail, success: true, organizationId: orgId, reason: `LOGIN_OK_${provider?.toUpperCase() || 'SSO'}`, req });
+        const permissions = await policy_service_1.PolicyService.getEffectivePermissions(user.id);
         return res.status(200).json({
             token,
             refreshToken,
@@ -234,6 +246,8 @@ const ssoLogin = async (req, res) => {
                 organizationId: orgId,
                 avatar: user.avatarUrl,
                 departmentId: user.departmentId,
+                permissions,
+                mustChangePassword: user.mustChangePassword,
             },
             tokenMeta: {
                 accessExpiresIn: ACCESS_TOKEN_TTL,
@@ -261,9 +275,9 @@ const refreshAccessToken = async (req, res) => {
         }
         const user = await client_1.default.user.findUnique({
             where: { id: found.userId },
-            select: { id: true, fullName: true, role: true, status: true, email: true, avatarUrl: true, organizationId: true, jobTitle: true },
+            select: { id: true, fullName: true, role: true, status: true, email: true, avatarUrl: true, organizationId: true, jobTitle: true, loginEnabled: true, mustChangePassword: true },
         });
-        if (!user || user.status === 'TERMINATED') {
+        if (!user || user.status === 'TERMINATED' || !user.loginEnabled) {
             return res.status(403).json({ error: 'Account unavailable' });
         }
         const orgId = user.organizationId || 'mcb-ghana-tenant';
@@ -278,6 +292,7 @@ const refreshAccessToken = async (req, res) => {
             organizationId: orgId,
             rank: user.rank || getRoleRank(user.role)
         });
+        const permissions = await policy_service_1.PolicyService.getEffectivePermissions(user.id);
         return res.json({
             token,
             refreshToken: nextRefreshToken,
@@ -290,6 +305,8 @@ const refreshAccessToken = async (req, res) => {
                 rank: getRoleRank(user.role),
                 organizationId: orgId,
                 avatar: user.avatarUrl,
+                permissions,
+                mustChangePassword: user.mustChangePassword,
             },
             tokenMeta: {
                 accessExpiresIn: ACCESS_TOKEN_TTL,
@@ -332,13 +349,13 @@ const getMe = async (req, res) => {
         const userId = req.user?.id;
         const today = new Date();
         // Single query: fetch user + active leave in one round trip
-        const [user, activeLeave] = await Promise.all([
+        const [user, activeLeave, permissions] = await Promise.all([
             client_1.default.user.findUnique({
                 where: { id: userId },
                 select: {
                     id: true, fullName: true, email: true, role: true,
                     status: true, avatarUrl: true, jobTitle: true,
-                    organizationId: true,
+                    organizationId: true, loginEnabled: true, mustChangePassword: true, employeeLifecycleStage: true,
                     departmentObj: { select: { name: true } },
                 },
             }),
@@ -351,12 +368,15 @@ const getMe = async (req, res) => {
                 },
                 select: { id: true },
             }),
+            policy_service_1.PolicyService.getEffectivePermissions(userId || ''),
         ]);
         if (!user)
             return res.status(404).json({ error: 'User not found' });
         if (user.status === 'TERMINATED')
             return res.status(403).json({ error: 'Account deactivated' });
-        return res.json({ ...user, isOnLeave: !!activeLeave });
+        if (!user.loginEnabled)
+            return res.status(403).json({ error: 'Login is not active yet. Contact IT.' });
+        return res.json({ ...user, permissions, isOnLeave: !!activeLeave });
     }
     catch {
         return res.status(500).json({ error: 'Internal Server Error' });
@@ -384,7 +404,7 @@ const changePassword = async (req, res) => {
             return res.status(401).json({ error: 'Current password is incorrect' });
         const newHash = await bcryptjs_1.default.hash(newPassword, 12);
         await client_1.default.$transaction([
-            client_1.default.user.update({ where: { id: userId }, data: { passwordHash: newHash } }),
+            client_1.default.user.update({ where: { id: userId }, data: { passwordHash: newHash, mustChangePassword: false } }),
             client_1.default.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } }),
         ]);
         return res.json({ success: true, message: 'Password updated successfully. Please login again.' });
@@ -466,7 +486,7 @@ const resetPassword = async (req, res) => {
             return res.status(403).json({ error: 'Account is deactivated' });
         const newHash = await bcryptjs_1.default.hash(newPassword, 12);
         await client_1.default.$transaction([
-            client_1.default.user.update({ where: { id: resetRecord.userId }, data: { passwordHash: newHash } }),
+            client_1.default.user.update({ where: { id: resetRecord.userId }, data: { passwordHash: newHash, mustChangePassword: false } }),
             client_1.default.passwordResetToken.update({ where: { id: resetRecord.id }, data: { usedAt: new Date() } }),
             client_1.default.refreshToken.updateMany({ where: { userId: resetRecord.userId, revokedAt: null }, data: { revokedAt: new Date() } }),
         ]);

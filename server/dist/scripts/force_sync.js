@@ -8,13 +8,17 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma = new client_1.PrismaClient();
 async function main() {
     console.log('🛡️ Emergency Identity Sync: johnsedofiadakey@gmail.com');
-    const passwordHash = await bcryptjs_1.default.hash('unlockme', 12);
+    const recoveryPassword = process.env.RECOVERY_ACCOUNT_PASSWORD;
+    if (!recoveryPassword || recoveryPassword.length < 16)
+        throw new Error('RECOVERY_ACCOUNT_PASSWORD must be at least 16 characters.');
+    const passwordHash = await bcryptjs_1.default.hash(recoveryPassword, 12);
     const user = await prisma.user.upsert({
         where: { email: 'johnsedofiadakey@gmail.com' },
         update: {
             passwordHash,
             role: 'DEV',
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            mustChangePassword: true
         },
         create: {
             fullName: 'John Sedofiadakey',
@@ -22,6 +26,7 @@ async function main() {
             passwordHash,
             role: 'DEV',
             status: 'ACTIVE',
+            mustChangePassword: true,
             jobTitle: 'System Architect'
         }
     });

@@ -5,6 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updatePromotionStatus = exports.createPromotionRequest = exports.listPromotionRequests = exports.getProbationStats = exports.updateProbationRecord = exports.createProbationRecord = exports.listProbationRecords = exports.getPolicyAcknowledgments = exports.acknowledgePolicy = exports.deletePolicy = exports.updatePolicy = exports.createPolicy = exports.listPolicies = exports.deleteDisciplinaryCase = exports.updateDisciplinaryCase = exports.createDisciplinaryCase = exports.listDisciplinaryCases = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
+const policy_service_1 = require("../services/policy.service");
+const permissions_1 = require("../types/permissions");
+const roles_1 = require("../types/roles");
 const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
 const getUser = (req) => req.user;
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,6 +45,9 @@ const createDisciplinaryCase = async (req, res) => {
         if (!employeeId || !type || !reason) {
             return res.status(400).json({ error: 'employeeId, type, and reason are required' });
         }
+        const employee = await client_1.default.user.findFirst({ where: { id: employeeId, organizationId: orgId }, select: { id: true } });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found in this organization' });
         const newCase = await client_1.default.disciplinaryCase.create({
             data: {
                 organizationId: orgId,
@@ -69,9 +75,13 @@ exports.createDisciplinaryCase = createDisciplinaryCase;
 const updateDisciplinaryCase = async (req, res) => {
     try {
         const { id } = req.params;
+        const orgId = getOrgId(req);
         const { status, outcome, resolvedAt, acknowledgedAt, hearingDate } = req.body;
+        const existing = await client_1.default.disciplinaryCase.findFirst({ where: { id, organizationId: orgId }, select: { id: true } });
+        if (!existing)
+            return res.status(404).json({ error: 'Disciplinary case not found' });
         const updated = await client_1.default.disciplinaryCase.update({
-            where: { id },
+            where: { id: existing.id },
             data: {
                 ...(status !== undefined ? { status } : {}),
                 ...(outcome !== undefined ? { outcome } : {}),
@@ -90,7 +100,10 @@ exports.updateDisciplinaryCase = updateDisciplinaryCase;
 const deleteDisciplinaryCase = async (req, res) => {
     try {
         const { id } = req.params;
-        await client_1.default.disciplinaryCase.delete({ where: { id } });
+        const orgId = getOrgId(req);
+        const deleted = await client_1.default.disciplinaryCase.deleteMany({ where: { id, organizationId: orgId } });
+        if (!deleted.count)
+            return res.status(404).json({ error: 'Disciplinary case not found' });
         res.json({ success: true });
     }
     catch (err) {
@@ -106,10 +119,11 @@ const listPolicies = async (req, res) => {
         const orgId = getOrgId(req);
         const user = getUser(req);
         const { category, status } = req.query;
+        const canManage = (await policy_service_1.PolicyService.evaluatePolicy(user.id, permissions_1.Permission.EMPLOYEE_WRITE)).allowed;
         const policies = await client_1.default.policyDocument.findMany({
             where: {
                 organizationId: orgId,
-                ...(status ? { status: status } : {}),
+                ...(canManage && status ? { status: status } : !canManage ? { status: 'PUBLISHED' } : {}),
                 ...(category ? { category: category } : {}),
             },
             include: {
@@ -122,7 +136,18 @@ const listPolicies = async (req, res) => {
             },
             orderBy: { updatedAt: 'desc' },
         });
-        res.json(policies);
+        const visible = canManage ? policies : policies.filter((policy) => {
+            if (!policy.targetRoles)
+                return true;
+            try {
+                const roles = JSON.parse(policy.targetRoles);
+                return !Array.isArray(roles) || roles.length === 0 || roles.includes(user.role);
+            }
+            catch {
+                return true;
+            }
+        });
+        res.json(visible);
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -161,6 +186,7 @@ exports.createPolicy = createPolicy;
 const updatePolicy = async (req, res) => {
     try {
         const { id } = req.params;
+        const orgId = getOrgId(req);
         const { title, description, content, fileUrl, category, version, isRequired, status, targetRoles } = req.body;
         const data = {};
         if (title !== undefined)
@@ -184,7 +210,10 @@ const updatePolicy = async (req, res) => {
             if (status === 'PUBLISHED')
                 data.publishedAt = new Date();
         }
-        const policy = await client_1.default.policyDocument.update({ where: { id }, data });
+        const existing = await client_1.default.policyDocument.findFirst({ where: { id, organizationId: orgId }, select: { id: true } });
+        if (!existing)
+            return res.status(404).json({ error: 'Policy not found' });
+        const policy = await client_1.default.policyDocument.update({ where: { id: existing.id }, data });
         res.json(policy);
     }
     catch (err) {
@@ -195,7 +224,10 @@ exports.updatePolicy = updatePolicy;
 const deletePolicy = async (req, res) => {
     try {
         const { id } = req.params;
-        await client_1.default.policyDocument.delete({ where: { id } });
+        const orgId = getOrgId(req);
+        const deleted = await client_1.default.policyDocument.deleteMany({ where: { id, organizationId: orgId } });
+        if (!deleted.count)
+            return res.status(404).json({ error: 'Policy not found' });
         res.json({ success: true });
     }
     catch (err) {
@@ -209,11 +241,14 @@ const acknowledgePolicy = async (req, res) => {
         const orgId = getOrgId(req);
         const user = getUser(req);
         const ipAddress = req.ip;
+        const policy = await client_1.default.policyDocument.findFirst({ where: { id, organizationId: orgId, status: 'PUBLISHED' }, select: { id: true } });
+        if (!policy)
+            return res.status(404).json({ error: 'Published policy not found' });
         const ack = await client_1.default.policyAcknowledgment.upsert({
-            where: { policyId_employeeId: { policyId: id, employeeId: user.id } },
+            where: { policyId_employeeId: { policyId: policy.id, employeeId: user.id } },
             create: {
                 organizationId: orgId,
-                policyId: id,
+                policyId: policy.id,
                 employeeId: user.id,
                 ipAddress,
             },
@@ -229,16 +264,19 @@ exports.acknowledgePolicy = acknowledgePolicy;
 const getPolicyAcknowledgments = async (req, res) => {
     try {
         const { id } = req.params;
+        const orgId = getOrgId(req);
+        const policy = await client_1.default.policyDocument.findFirst({ where: { id, organizationId: orgId }, select: { id: true, organizationId: true } });
+        if (!policy)
+            return res.status(404).json({ error: 'Policy not found' });
         const acks = await client_1.default.policyAcknowledgment.findMany({
-            where: { policyId: id },
+            where: { policyId: policy.id, organizationId: orgId },
             include: {
                 employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true, profilePhoto: true } },
             },
             orderBy: { acknowledgedAt: 'desc' },
         });
-        const policy = await client_1.default.policyDocument.findUnique({ where: { id } });
         const totalEmployees = await client_1.default.user.count({
-            where: { organizationId: policy?.organizationId, isArchived: false, status: 'ACTIVE' },
+            where: { organizationId: policy.organizationId, isArchived: false, status: 'ACTIVE' },
         });
         res.json({ acknowledgments: acks, totalEmployees, acknowledged: acks.length });
     }
@@ -291,6 +329,9 @@ const createProbationRecord = async (req, res) => {
         if (!employeeId || !startDate) {
             return res.status(400).json({ error: 'employeeId and startDate are required' });
         }
+        const employee = await client_1.default.user.findFirst({ where: { id: employeeId, organizationId: orgId }, select: { id: true } });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found in this organization' });
         const probationDays = period || 90;
         const start = new Date(startDate);
         const endDate = new Date(start);
@@ -323,6 +364,7 @@ exports.createProbationRecord = createProbationRecord;
 const updateProbationRecord = async (req, res) => {
     try {
         const { id } = req.params;
+        const orgId = getOrgId(req);
         const user = getUser(req);
         const { status, outcome, reviewDate, goals, notes, endDate } = req.body;
         const data = {};
@@ -340,7 +382,10 @@ const updateProbationRecord = async (req, res) => {
             data.endDate = new Date(endDate);
         if (status && status !== 'IN_PROGRESS')
             data.reviewedById = user.id;
-        const updated = await client_1.default.probationRecord.update({ where: { id }, data });
+        const existing = await client_1.default.probationRecord.findFirst({ where: { id, organizationId: orgId }, select: { id: true } });
+        if (!existing)
+            return res.status(404).json({ error: 'Probation record not found' });
+        const updated = await client_1.default.probationRecord.update({ where: { id: existing.id }, data });
         res.json(updated);
     }
     catch (err) {
@@ -412,12 +457,24 @@ const createPromotionRequest = async (req, res) => {
         if (!employeeId || !targetRole || !reason) {
             return res.status(400).json({ error: 'employeeId, targetRole, and reason are required' });
         }
+        const normalizedTargetRole = String(targetRole).toUpperCase().replace(/\s+/g, '_');
+        const targetRank = roles_1.ROLE_RANK_MAP[normalizedTargetRole];
+        const actorRole = String(user.role || '').toUpperCase().replace(/\s+/g, '_');
+        const actorRank = roles_1.ROLE_RANK_MAP[actorRole] || 0;
+        if (!targetRank)
+            return res.status(400).json({ error: 'Invalid target role' });
+        if (actorRole !== 'DEV' && targetRank >= actorRank) {
+            return res.status(403).json({ error: 'You cannot approve a promotion to your own role level or above' });
+        }
+        const employee = await client_1.default.user.findFirst({ where: { id: employeeId, organizationId: orgId }, select: { id: true } });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found in this organization' });
         const request = await client_1.default.promotionRequest.create({
             data: {
                 organizationId: orgId,
                 employeeId,
                 managerId: user.id,
-                targetRole,
+                targetRole: normalizedTargetRole,
                 targetJobTitle,
                 proposedSalary: proposedSalary ? Number(proposedSalary) : null,
                 reason,
@@ -445,34 +502,58 @@ const updatePromotionStatus = async (req, res) => {
         if (!['APPROVED', 'REJECTED'].includes(status)) {
             return res.status(400).json({ error: 'Invalid status' });
         }
-        const request = await client_1.default.promotionRequest.update({
-            where: { id },
-            data: { status, hrComment },
-        });
-        // If approved, update the employee's role/jobTitle/salary
-        if (status === 'APPROVED') {
-            const updateData = {
-                role: request.targetRole,
-                jobTitle: request.targetJobTitle || undefined,
-                salary: request.proposedSalary ? Number(request.proposedSalary) : undefined,
-            };
-            await client_1.default.user.update({
-                where: { id: request.employeeId },
-                data: updateData
+        const existing = await client_1.default.promotionRequest.findFirst({ where: { id, organizationId: orgId } });
+        if (!existing)
+            return res.status(404).json({ error: 'Promotion request not found' });
+        const request = await client_1.default.$transaction(async (tx) => {
+            const updated = await tx.promotionRequest.update({
+                where: { id: existing.id },
+                data: { status, hrComment },
             });
-            // Log history
-            await client_1.default.employeeHistory.create({
-                data: {
-                    organizationId: orgId,
-                    employeeId: request.employeeId,
-                    loggedById: req.user.id,
-                    title: 'Promotion Approved',
-                    description: `Professional promotion approved to ${request.targetJobTitle || request.targetRole}.`,
-                    type: 'PROMOTION',
-                    severity: 'SUCCESS'
+            // If approved, update the employee's role/jobTitle/salary
+            if (status === 'APPROVED') {
+                const employee = await tx.user.findFirst({
+                    where: { id: updated.employeeId, organizationId: orgId },
+                    select: { id: true, salary: true, currency: true }
+                });
+                if (!employee)
+                    throw new Error('Promotion employee not found in this organization');
+                const updateData = {
+                    role: updated.targetRole,
+                    rank: roles_1.ROLE_RANK_MAP[String(updated.targetRole || '').toUpperCase()] || undefined,
+                    jobTitle: updated.targetJobTitle || undefined,
+                    salary: updated.proposedSalary ? Number(updated.proposedSalary) : undefined,
+                };
+                await tx.user.update({ where: { id: employee.id }, data: updateData });
+                if (updated.proposedSalary !== null) {
+                    await tx.compensationHistory.create({
+                        data: {
+                            organizationId: orgId,
+                            employeeId: updated.employeeId,
+                            type: 'PROMOTION',
+                            previousSalary: employee.salary || 0,
+                            newSalary: updated.proposedSalary,
+                            currency: employee.currency || 'GHS',
+                            reason: updated.reason,
+                            effectiveDate: new Date(),
+                            authorizedById: req.user.id,
+                        }
+                    });
                 }
-            });
-        }
+                await tx.employeeHistory.create({
+                    data: {
+                        organizationId: orgId,
+                        employeeId: updated.employeeId,
+                        loggedById: req.user.id,
+                        title: 'Promotion Approved',
+                        description: `Professional promotion approved to ${updated.targetJobTitle || updated.targetRole}.`,
+                        type: 'PROMOTION',
+                        severity: 'SUCCESS'
+                    }
+                });
+            }
+            return updated;
+        });
         res.json(request);
     }
     catch (err) {

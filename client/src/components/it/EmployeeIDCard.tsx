@@ -58,7 +58,7 @@ const EmployeeIDCard: React.FC<EmployeeIDCardProps> = ({ employee, organization,
   if (cardStatus === 'SUSPENDED') {
     statusColor = 'bg-rose-500/10 border-rose-500/20 text-rose-400';
     statusDot = 'bg-rose-400';
-  } else if (cardStatus === 'REQUESTED') {
+  } else if (['REQUESTED', 'NOT_PROVISIONED'].includes(cardStatus)) {
     statusColor = 'bg-sky-500/10 border-sky-500/20 text-sky-400';
     statusDot = 'bg-sky-400';
   } else if (cardStatus === 'REVOKED') {

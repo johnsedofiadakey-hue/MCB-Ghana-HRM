@@ -1,4 +1,4 @@
-import { getRoleRank } from '../middleware/auth.middleware';
+import { getRoleRank, invalidateUserCache } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
@@ -6,7 +6,10 @@ import * as userService from '../services/user.service';
 import * as riskService from '../services/risk.service';
 import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
-import { sendWelcomeEmail } from '../services/email.service';
+import { sendEmail } from '../services/email.service';
+import crypto from 'crypto';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
 
 import { HierarchyService } from '../services/hierarchy.service';
 
@@ -36,7 +39,7 @@ const getPublicBaseUrl = (req: Request) => {
   const isOnRender = !!process.env.RENDER_SERVICE_ID;
   if (isOnRender && (host.includes('localhost') || !host)) {
      // Force the known production API domain
-     return 'https://mcb-hrm-ghana-api.onrender.com';
+     return 'https://mcb-ghana-hrm-api.onrender.com';
   }
 
   // Fallback for local dev
@@ -50,7 +53,7 @@ import { decryptValue } from '../utils/encryption';
 // ─── Field filter by role ─────────────────────────────────────────────────
 const getSafeUser = (user: any, requestorRole: string) => {
   const { passwordHash, ...safe } = user;
-  const userRank = getRoleRank(requestorRole);
+  const normalizedRole = String(requestorRole || '').toUpperCase();
 
   // 🔄 Leave Allowance Inheritance: Prioritize user-specific allowance, then organization default, then system default.
   // We use the centralized utility to ensure consistency across the platform.
@@ -60,7 +63,7 @@ const getSafeUser = (user: any, requestorRole: string) => {
 
   // Decrypt sensitive fields if authorized (HR/MD (>= 85))
   // 🛡️ REFINEMENT: Always try to decrypt if the Enc field exists, to ensure fresh plain text for the frontend.
-  if (userRank >= 85) {
+  if (['DEV', 'MD', 'HR_DIRECTOR', 'HR_MANAGER'].includes(normalizedRole)) {
     if (safe.bankAccountEnc) {
         const dec = decryptValue(safe.bankAccountEnc);
         if (dec) safe.bankAccountNumber = dec;
@@ -78,6 +81,17 @@ const getSafeUser = (user: any, requestorRole: string) => {
       if (dec) safe.salary = parseFloat(dec);
     }
   }
+  else {
+    delete safe.salary;
+    delete safe.salaryEnc;
+    delete safe.bankAccountNumber;
+    delete safe.bankAccountEnc;
+    delete safe.nationalId;
+    delete safe.ghanaCardEnc;
+    delete safe.ssnitNumber;
+    delete safe.ssnitEnc;
+    delete safe.nationalIdDocUrl;
+  }
 
   // Parse certifications if stringified JSON
   if (typeof safe.certifications === 'string' && safe.certifications.startsWith('[')) {
@@ -88,14 +102,6 @@ const getSafeUser = (user: any, requestorRole: string) => {
     }
   }
 
-  if (userRank < 85) {
-    delete safe.salary;
-    delete safe.currency;
-    delete safe.bankAccountEnc;
-    delete safe.ghanaCardEnc;
-    delete safe.ssnitEnc;
-    delete safe.salaryEnc;
-  }
   return safe;
 };
 
@@ -170,8 +176,7 @@ export const createEmployee = async (req: Request, res: Response) => {
     const actorRole = userReq.role;
     const actorId = userReq.id;
 
-    // Only HR/MD (>= 85) can set salary/currency on create
-    // GLOBAL CONTROLLER ACCESS: HR/IT Managers (Rank 85+) can create all roles.
+    // Role rank remains display metadata; route permissions determine access.
     const targetRank = getRoleRank(req.body.role);
     if (actorRank < 85) {
       delete req.body.salary;
@@ -181,7 +186,7 @@ export const createEmployee = async (req: Request, res: Response) => {
         return res.status(403).json({ error: 'Access denied: Only managers can create administrative accounts.' });
     }
 
-    const tempPassword = req.body.password || 'SecureInit!';
+    delete req.body.password;
     
     // 🛡️ Validate SubUnit/Department pairing
     if (req.body.subUnitId && req.body.departmentId) {
@@ -193,10 +198,6 @@ export const createEmployee = async (req: Request, res: Response) => {
 
     const user = await userService.createUser(organizationId, req.body);
     const { passwordHash, ...safeUser } = user;
-
-    // Fire-and-forget welcome email
-    const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true } });
-    sendWelcomeEmail(user.email, user.fullName, tempPassword, org?.name || 'HRM Engine').catch(console.error);
 
     // 🚀 AUTO-ONBOARDING: Attach default template if exists
     try {
@@ -218,6 +219,10 @@ export const createEmployee = async (req: Request, res: Response) => {
                 organizationId,
                 title: task.title,
                 category: task.category,
+                ownerRole: task.ownerRole,
+                assignedToId: task.ownerRole === 'MANAGER' ? user.supervisorId : null,
+                status: 'PENDING',
+                autoCompleteEvent: task.autoCompleteEvent,
                 isRequired: task.isRequired,
                 dueDate: new Date(Date.now() + task.dueAfterDays * 24 * 60 * 60 * 1000)
               }))
@@ -232,6 +237,62 @@ export const createEmployee = async (req: Request, res: Response) => {
     res.status(201).json(withDepartment(getSafeUser(safeUser, actorRole)));
   } catch (err: any) {
     res.status(400).json({ message: err.message });
+  }
+};
+
+export const activateEmployeeLogin = async (req: Request, res: Response) => {
+  try {
+    const actor = (req as any).user;
+    const organizationId = actor.organizationId || 'mcb-ghana-tenant';
+    const employee = await prisma.user.findFirst({
+      where: { id: req.params.id, organizationId },
+      select: { id: true, email: true, fullName: true, loginEnabled: true },
+    });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+    const requiredIT = await prisma.onboardingItem.findMany({
+      where: {
+        organizationId,
+        session: { employeeId: employee.id },
+        ownerRole: 'IT',
+        isRequired: true,
+      },
+      select: { status: true },
+    });
+    if (!requiredIT.length) {
+      return res.status(409).json({ error: 'No mandatory IT onboarding checklist is configured for this employee.' });
+    }
+    const outstandingIT = requiredIT.filter((task) => !['COMPLETED', 'VERIFIED'].includes(task.status)).length;
+    if (outstandingIT > 0) {
+      return res.status(409).json({ error: `${outstandingIT} mandatory IT onboarding task(s) are incomplete.` });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const token = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await prisma.$transaction([
+      prisma.passwordResetToken.deleteMany({ where: { userId: employee.id } }),
+      prisma.passwordResetToken.create({
+        data: { userId: employee.id, token, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+      }),
+    ]);
+
+    const inviteUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
+    const sent = await sendEmail({
+      to: employee.email,
+      subject: 'Your MCB HRM account is ready',
+      html: `<p>Hello ${employee.fullName},</p><p>IT has completed your account setup. Use this secure link within 24 hours to choose your password.</p><p><a href="${inviteUrl}">Activate my account</a></p>`,
+    });
+    if (!sent) {
+      return res.status(503).json({ error: 'Invitation email could not be delivered. Verify SMTP settings and retry; login remains disabled.' });
+    }
+    await prisma.user.update({
+      where: { id: employee.id },
+      data: { loginEnabled: true, mustChangePassword: true, employeeLifecycleStage: 'ONBOARDING' },
+    });
+    invalidateUserCache(employee.id);
+    return res.json({ success: true, loginEnabled: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Could not activate employee login' });
   }
 };
 
@@ -339,22 +400,41 @@ export const getEmployee = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const userRole = userReq.role;
-    const userRank = getRoleRank(userRole);
     const actorId = userReq.id;
 
-    // 🛡️ ACCESS CONTROL: 
-    // - MD/HR/Director (>= 80) can view all.
-    // - Manager/Staff (< 80) can only view their department, themselves, or their subordinates.
-    if (userRank < 80 && userRole !== 'DEV' && actorId !== targetId) {
-      if (user.departmentId !== userReq.departmentId) {
-        const isSub = await HierarchyService.isSubordinate(actorId, targetId, organizationId);
-        if (!isSub) {
-          return res.status(403).json({ message: 'Access denied: You can only view employees in your department or reporting chain.' });
-        }
+    const [peopleAccess, historyAccess, isSubordinate] = await Promise.all([
+      PolicyService.evaluatePolicy(actorId, Permission.EMPLOYEE_READ, { targetUserId: targetId }),
+      PolicyService.evaluatePolicy(actorId, Permission.EMPLOYEE_HISTORY_READ, { targetUserId: targetId }),
+      actorId === targetId ? Promise.resolve(false) : HierarchyService.isSubordinate(actorId, targetId, organizationId),
+    ]);
+
+    // The basic employee directory is visible to colleagues in the same
+    // department, authorized people teams, card operations, and reporting
+    // managers. Sensitive nested records are redacted separately below.
+    if (actorId !== targetId && !peopleAccess.allowed && !isSubordinate && user.departmentId !== userReq.departmentId) {
+      const [cardProduction, cardAccess] = await Promise.all([
+        PolicyService.evaluatePolicy(actorId, Permission.CARD_PRODUCTION, { targetUserId: targetId }),
+        PolicyService.evaluatePolicy(actorId, Permission.CARD_ACCESS, { targetUserId: targetId }),
+      ]);
+      if (!cardProduction.allowed && !cardAccess.allowed) {
+        return res.status(403).json({ message: 'Access denied: employee is outside your permitted directory scope.' });
       }
     }
 
-    res.json(withDepartment(getSafeUser(user, userRole)));
+    const safe = withDepartment(getSafeUser(user, userRole));
+    if (actorId === targetId) {
+      safe.historyLogs = (safe.historyLogs || []).filter((record: any) => ['COMMENDATION', 'GENERAL_NOTE'].includes(record.type));
+    } else if (!historyAccess.allowed) {
+      safe.historyLogs = [];
+    }
+    if (actorId !== targetId && !peopleAccess.allowed && !isSubordinate) {
+      safe.appraisalPackets = [];
+      safe.targetsAssignedToMe = [];
+      safe.subordinates = [];
+      safe.employeeReportingLines = [];
+    }
+
+    res.json(safe);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
@@ -381,13 +461,21 @@ export const updateEmployee = async (req: Request, res: Response) => {
     // 🛡️ REQUISITE: Only MD, HR, or IT can update employee details
     // 🔄 SELF-SERVICE OVERRIDE: Allow any user to update their own contact/bank details
     const isSelfUpdate = actorId === targetId;
+    const canManagePeople = ['DEV', 'MD', 'HR DIRECTOR', 'HR MANAGER', 'HR OFFICER'].includes(actorRole);
     const allowedSelfFields = [
       'contactNumber', 'bankName', 'bankAccountNumber', 'bankBranch', 
       'address', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 
       'emergencyContactName', 'emergencyContactPhone', 'gender', 'maritalStatus', 'bloodGroup'
     ];
 
-    if (!privilegedRoles.includes(actorRole) && actorRank < 70) {
+    if (isSelfUpdate && !canManagePeople) {
+      const filteredBody: any = {};
+      Object.keys(req.body).forEach(field => {
+        if (allowedSelfFields.includes(field)) filteredBody[field] = req.body[field];
+      });
+      if (Object.keys(filteredBody).length === 0) return res.status(400).json({ error: 'No permitted fields provided for self-service update.' });
+      req.body = filteredBody;
+    } else if (!privilegedRoles.includes(actorRole) && actorRank < 70) {
       if (!isSelfUpdate) {
         return res.status(403).json({ message: 'Access denied: Only Managers, HR, or IT can update personnel profiles.' });
       }
@@ -436,7 +524,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
 
     // Only HR/MD (>= 85) can change salary/currency
     // 🛡️ SENSITIVE DATA PROTECTION: Rank < 85 (Managers/Officers) cannot modify payroll/SSNIT data
-    if (actorRank < 85 && actorRole !== 'DEV') {
+    if (!['DEV', 'MD', 'HR DIRECTOR', 'HR MANAGER'].includes(actorRole)) {
       delete req.body.salary;
       delete req.body.currency;
       delete req.body.bankName;
@@ -573,19 +661,19 @@ export const assignRole = async (req: Request, res: Response) => {
     const actorRank = getRoleRank(actorRole);
     const { userId, role, supervisorId } = req.body;
     
-    const privilegedRoles = [
-      'MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR DIRECTOR', 
-      'HR_MANAGER', 'HR MANAGER', 'IT_MANAGER', 'IT MANAGER', 
-      'IT_ADMIN', 'IT ADMIN', 'HR_OFFICER', 'HR OFFICER'
-    ];
-    if (actorRank < 80 || !privilegedRoles.includes(actorRole)) {
-       return res.status(403).json({ message: 'Access denied: Only MD, HR, or IT can manage personnel role assignments.' });
+    const roleAdministrators = ['DEV', 'MD', 'HR DIRECTOR', 'SUPER ADMIN'];
+    if (!roleAdministrators.includes(actorRole)) {
+       return res.status(403).json({ message: 'Access denied: Only the HR Director or Managing Director can assign roles.' });
     }
 
-    const validRoles = ['DEV', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
+    const validRoles = ['DEV', 'MD', 'HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'FINANCE_MANAGER', 'MARKETING_HEAD', 'IT_MANAGER', 'IT_ADMIN', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
+    const normalizedTargetRole = String(role || '').toUpperCase().replace(/\s+/g, '_');
+    if (!validRoles.includes(normalizedTargetRole)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
     
     // 🛡️ Hierarchy Guard: Only MD/DEV (90+) or Admin Managers (85+) can assign roles >= 85 (HR/IT Manager)
-    const targetRoleRank = getRoleRank(role);
+    const targetRoleRank = getRoleRank(normalizedTargetRole);
     if (actorRank < 85 && actorRole !== 'DEV' && targetRoleRank >= 85) {
         return res.status(403).json({ error: 'Access denied: Only the MD or Administrative Managers can assign administrative roles.' });
     }
@@ -596,14 +684,18 @@ export const assignRole = async (req: Request, res: Response) => {
     }
 
     // 🛡️ Hierarchy Guard: Anti-Recursion check
+    const targetUser = await prisma.user.findFirst({ where: { id: userId, organizationId }, select: { id: true } });
+    if (!targetUser) return res.status(404).json({ error: 'Employee not found in this organization' });
     if (supervisorId) {
+      const supervisor = await prisma.user.findFirst({ where: { id: supervisorId, organizationId }, select: { id: true } });
+      if (!supervisor) return res.status(404).json({ error: 'Supervisor not found in this organization' });
       const isCycle = await HierarchyService.detectCycle(userId, supervisorId);
       if (isCycle) {
         return res.status(400).json({ error: 'Circular reporting detected: An employee cannot report to their own subordinate.' });
       }
     }
 
-    const updateData: any = { role };
+    const updateData: any = { role: normalizedTargetRole, rank: targetRoleRank };
     // Use syncPrimaryReporting to keep both layers (User & Matrix) in sync
     await HierarchyService.syncPrimaryReporting(organizationId, userId, supervisorId || null);
 
@@ -613,9 +705,12 @@ export const assignRole = async (req: Request, res: Response) => {
       select: { id: true, fullName: true, role: true, supervisorId: true }
     });
 
+    // Force the next request from this user to re-derive permissions from DB
+    invalidateUserCache(userId);
+
     await notify(userId, 'Your Role Has Been Updated',
-      `Your role has been changed to ${role}.`, 'INFO');
-    await logAction(actorId, 'ROLE_ASSIGNED', 'User', userId, { role, supervisorId }, req.ip);
+      `Your role has been changed to ${normalizedTargetRole}.`, 'INFO');
+    await logAction(actorId, 'ROLE_ASSIGNED', 'User', userId, { role: normalizedTargetRole, supervisorId }, req.ip);
     res.json({ success: true, user });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -876,6 +971,8 @@ export const promoteEmployee = async (req: Request, res: Response) => {
       data: updateData
     });
 
+    invalidateUserCache(id);
+
     // Optionally log in history
     await prisma.employeeHistory.create({
       data: {
@@ -912,11 +1009,6 @@ export const resetEmployeePassword = async (req: Request, res: Response) => {
     const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
     const actorId = userReq.id;
     const targetId = req.params.id;
-    const { newPassword } = req.body;
-
-    if (!newPassword) return res.status(400).json({ error: 'newPassword is required' });
-    if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
-
     const targetUser = await prisma.user.findUnique({ where: { id: targetId, organizationId } });
     if (!targetUser) return res.status(404).json({ error: 'User not found' });
 
@@ -931,10 +1023,32 @@ export const resetEmployeePassword = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Access denied: The Managing Director password can only be reset by the MD or a System Architect.' });
     }
 
-    await userService.adminResetPassword(organizationId, targetId, newPassword);
-    await logAction(actorId, 'PWD_ADMIN_RESET', 'User', targetId, { adminId: actorId }, req.ip);
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const token = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await prisma.$transaction([
+      prisma.passwordResetToken.deleteMany({ where: { userId: targetId, usedAt: null } }),
+      prisma.passwordResetToken.create({
+        data: { userId: targetId, token, expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
+      }),
+    ]);
+
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
+    const sent = await sendEmail({
+      to: targetUser.email,
+      subject: 'MCB HRM password reset invitation',
+      html: `<p>Hello ${targetUser.fullName},</p><p>An administrator initiated a secure password reset. This link expires in one hour.</p><p><a href="${resetUrl}">Choose a new password</a></p>`,
+    });
+    if (!sent) {
+      return res.status(503).json({ error: 'Password-reset email could not be delivered. Verify SMTP settings and retry.' });
+    }
+
+    await prisma.$transaction([
+      prisma.refreshToken.updateMany({ where: { userId: targetId, organizationId, revokedAt: null }, data: { revokedAt: new Date() } }),
+      prisma.user.update({ where: { id: targetId, organizationId }, data: { mustChangePassword: true } }),
+    ]);
+    await logAction(actorId, 'PWD_RESET_INVITED', 'User', targetId, { adminId: actorId }, req.ip);
     
-    res.json({ success: true, message: 'Password has been reset and all sessions revoked.' });
+    res.json({ success: true, message: `Password-reset invitation sent to ${targetUser.email}. All active sessions were revoked.` });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }

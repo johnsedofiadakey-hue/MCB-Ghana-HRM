@@ -19,7 +19,9 @@ const getCompensationHistory = async (req, res) => {
             where: { id: employeeId, organizationId },
             select: { salary: true, currency: true }
         });
-        res.json({ currentSalary: user?.salary || 0, currency: user?.currency || 'GHS', history });
+        if (!user)
+            return res.status(404).json({ error: 'Employee not found' });
+        res.json({ currentSalary: user.salary || 0, currency: user.currency || 'GHS', history });
     }
     catch (error) {
         console.error('[Get Compensation]', error);
@@ -30,19 +32,29 @@ exports.getCompensationHistory = getCompensationHistory;
 const addCompensationRecord = async (req, res) => {
     try {
         const { employeeId } = req.params;
-        const { type, previousSalary, newSalary, currency, reason, effectiveDate } = req.body;
-        const authorizedById = req.user?.id;
-        if (!type || typeof newSalary !== 'number') {
+        const { type, newSalary, currency, reason, effectiveDate } = req.body;
+        const numericSalary = Number(newSalary);
+        if (!type || !Number.isFinite(numericSalary) || numericSalary < 0) {
             return res.status(400).json({ error: 'Missing required compensation data' });
         }
+        const userReq = req.user;
+        const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
+        const authorizedById = userReq.id;
+        const employee = await client_1.default.user.findFirst({
+            where: { id: employeeId, organizationId },
+            select: { id: true, salary: true, currency: true }
+        });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found' });
+        const effective = new Date(effectiveDate || Date.now());
+        if (Number.isNaN(effective.getTime()))
+            return res.status(400).json({ error: 'Invalid effective date' });
+        const previousSalary = Number(employee.salary || 0);
         const transaction = await client_1.default.$transaction(async (tx) => {
-            const userReq = req.user;
-            const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
-            const authorizedById = userReq.id;
             // 1. Update the user's current salary
-            const updatedUser = await tx.user.updateMany({
-                where: { id: employeeId, organizationId },
-                data: { salary: newSalary, currency: currency || 'GHS' }
+            const updatedUser = await tx.user.update({
+                where: { id: employee.id },
+                data: { salary: numericSalary, currency: currency || employee.currency || 'GHS' }
             });
             // 2. Create the historical ledger record
             const record = await tx.compensationHistory.create({
@@ -51,10 +63,10 @@ const addCompensationRecord = async (req, res) => {
                     employeeId,
                     type,
                     previousSalary: previousSalary || 0,
-                    newSalary,
-                    currency: currency || 'GHS',
+                    newSalary: numericSalary,
+                    currency: currency || employee.currency || 'GHS',
                     reason,
-                    effectiveDate: new Date(effectiveDate || Date.now()),
+                    effectiveDate: effective,
                     authorizedById
                 }
             });
@@ -66,7 +78,7 @@ const addCompensationRecord = async (req, res) => {
                     entity: 'Salary',
                     entityId: employeeId,
                     userId: authorizedById || employeeId,
-                    details: `Salary adjusted from ${previousSalary} to ${newSalary}`
+                    details: `Salary adjusted from ${previousSalary} to ${numericSalary}`
                 }
             });
             return { user: updatedUser, record };

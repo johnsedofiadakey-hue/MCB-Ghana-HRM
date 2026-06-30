@@ -38,9 +38,10 @@ const cycleController = __importStar(require("../controllers/cycle.controller"))
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
-router.post('/', (0, auth_middleware_1.requireRole)(80), cycleController.createCycle); // Director+
+const appraisalAdminRoles = ['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV'];
+router.post('/', (0, auth_middleware_1.requireSpecificRole)(appraisalAdminRoles), cycleController.createCycle);
 router.get('/', cycleController.getCycles);
-router.patch('/:id/status', (0, auth_middleware_1.requireRole)(80), cycleController.updateCycleStatus);
-router.put('/:id', (0, auth_middleware_1.requireRole)(80), cycleController.updateCycleStatus); // client uses PUT
-router.delete('/:id', (0, auth_middleware_1.requireRole)(80), cycleController.deleteCycle);
+router.patch('/:id/status', (0, auth_middleware_1.requireSpecificRole)(appraisalAdminRoles), cycleController.updateCycleStatus);
+router.put('/:id', (0, auth_middleware_1.requireSpecificRole)(appraisalAdminRoles), cycleController.updateCycleStatus); // client uses PUT
+router.delete('/:id', (0, auth_middleware_1.requireSpecificRole)(appraisalAdminRoles), cycleController.deleteCycle);
 exports.default = router;

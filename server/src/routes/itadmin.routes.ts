@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireSpecificRole, requirePermission } from '../middleware/auth.middleware';
+import { Permission } from '../types/permissions';
 import { itCreateEmployee, itResetPassword, itSystemOverview, itGetUsers, itDeactivateUser, itCleanupLogs, getLiveLogs, getSecurityThreats } from '../controllers/itadmin.controller';
 import { validateHierarchy } from '../controllers/hierarchy.controller';
 
@@ -7,18 +8,18 @@ const router = Router();
 router.use(authenticate);
 
 // System overview — Director+ can view
-router.get('/overview', requireRole(80), itSystemOverview);
-router.get('/live-logs', requireRole(85), getLiveLogs);
-router.get('/security-threats', requireRole(85), getSecurityThreats);
+router.get('/overview', requireSpecificRole(['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), itSystemOverview);
+router.get('/live-logs', requireSpecificRole(['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), getLiveLogs);
+router.get('/security-threats', requireSpecificRole(['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), getSecurityThreats);
 
 // User management — IT Admin+ (Rank 85+) can manage accounts
-router.get('/users', requireRole(85), itGetUsers);
-router.post('/users', requireRole(85), itCreateEmployee);
-router.post('/users/:userId/reset-password', requireRole(85), itResetPassword);
-router.patch('/users/:userId/deactivate', requireRole(85), itDeactivateUser);
+router.get('/users', requirePermission(Permission.ACCOUNT_PROVISION), itGetUsers);
+router.post('/users', itCreateEmployee);
+router.post('/users/:userId/reset-password', requirePermission(Permission.ACCOUNT_PROVISION), itResetPassword);
+router.patch('/users/:userId/deactivate', requirePermission(Permission.ACCOUNT_PROVISION), itDeactivateUser);
 
 // Maintenance — MD only
-router.post('/maintenance/cleanup-logs', requireRole(90), itCleanupLogs);
+router.post('/maintenance/cleanup-logs', requireSpecificRole(['IT_MANAGER', 'MD', 'DEV']), itCleanupLogs);
 
 // Hierarchy validation — any authenticated user
 router.post('/hierarchy/validate', validateHierarchy);

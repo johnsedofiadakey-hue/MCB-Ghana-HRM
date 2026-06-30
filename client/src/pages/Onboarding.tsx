@@ -3,7 +3,7 @@ import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket,
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRoleRankValue } from '../utils/session';
+import { getStoredUser } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 import { getSafeAvatarUrl } from '../utils/avatar';
 
@@ -30,8 +30,10 @@ const Onboarding = () => {
   const [viewMode, setViewMode] = useState<'PERSONAL' | 'MANAGEMENT'>('PERSONAL');
 
   const user = getStoredUser();
-  const userRank = getRoleRankValue(user.role);
-  const isAdmin = userRank >= 80;
+  const permissions = user.permissions || [];
+  const has = (permission: string) => permissions.includes('*') || permissions.includes(permission);
+  const canManage = has('onboarding.manage');
+  const isAdmin = canManage || has('account.provision') || has('card.production');
 
   const fetchData = async () => {
     setLoading(true);
@@ -39,7 +41,7 @@ const Onboarding = () => {
       const [myRes] = await Promise.all([api.get('/onboarding/my')]);
       setSessions(Array.isArray(myRes.data) ? myRes.data : []);
       
-      if (isAdmin) {
+      if (canManage) {
         const [allRes, empRes, tempRes] = await Promise.all([
           api.get('/onboarding/all'),
           api.get('/users'),
@@ -48,6 +50,18 @@ const Onboarding = () => {
         setAllSessions(Array.isArray(allRes.data) ? allRes.data : []);
         setEmployees(Array.isArray(empRes.data) ? empRes.data.filter((u: any) => u.status !== 'TERMINATED') : []);
         setTemplates(Array.isArray(tempRes.data) ? tempRes.data : []);
+      } else if (isAdmin) {
+        const taskRes = await api.get('/onboarding/department-tasks');
+        const grouped = new Map<string, any>();
+        for (const item of Array.isArray(taskRes.data) ? taskRes.data : []) {
+          const sessionId = item.sessionId;
+          if (!grouped.has(sessionId)) grouped.set(sessionId, { id: sessionId, employee: item.session?.employee, startDate: item.session?.startDate, template: { name: `${item.ownerRole} task queue` }, items: [], progress: 0 });
+          grouped.get(sessionId).items.push(item);
+        }
+        for (const session of grouped.values()) {
+          session.progress = session.items.length ? Math.round(session.items.filter((item: any) => item.completedAt).length / session.items.length * 100) : 0;
+        }
+        setAllSessions([...grouped.values()]);
       }
     } catch (e) {
       console.error(e);
@@ -149,7 +163,7 @@ const Onboarding = () => {
                 </div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/60">{t('onboarding.progress')}</p>
               </>
-            ) : (
+            ) : canManage ? (
               <button
                 onClick={() => setShowLaunchModal(true)}
                 className="w-24 h-24 rounded-3xl bg-white text-[var(--primary)] shadow-2xl flex flex-col items-center justify-center gap-1 hover:scale-105 transition-all group"
@@ -157,7 +171,7 @@ const Onboarding = () => {
                 <Rocket size={24} className="group-hover:animate-bounce" />
                 <span className="text-[9px] font-black uppercase tracking-tight">{t('onboarding.manager.launch')}</span>
               </button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -420,6 +434,11 @@ const Onboarding = () => {
                         <span className="text-[11px] font-medium text-[var(--text-muted)]">{new Date(s.startDate).toLocaleDateString()}</span>
                       </td>
                       <td className="px-5 py-4 text-right">
+                        {!canManage && s.items?.some((item: any) => !item.completedAt) && (
+                          <button onClick={() => handleComplete(s.items.find((item: any) => !item.completedAt).id)} className="mr-2 px-3 py-1 rounded-lg bg-[var(--primary)] text-white text-[9px] font-bold uppercase">
+                            Complete next task
+                          </button>
+                        )}
                         <span className={cn(
                           "px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider border",
                           s.completedAt ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-amber-500/5 text-amber-600 border-amber-500/10"

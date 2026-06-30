@@ -98,6 +98,7 @@ const PageLoader = () => (
 
 const ProtectedRoute = () => {
   const token = storage.getItem(StorageKey.AUTH_TOKEN, null);
+  const user = getStoredUser();
   // 🛡️ STRUCTURAL GUARD: Ensure token exists and follows JWT pattern (3 segments)
   const isValidFormat = typeof token === 'string' && token.split('.').length === 3;
   
@@ -108,12 +109,15 @@ const ProtectedRoute = () => {
     }
     return <Navigate to="/" replace />;
   }
+  if (user.mustChangePassword && window.location.pathname !== '/profile') {
+    return <Navigate to="/profile?forcePasswordChange=1" replace />;
+  }
   return <Layout />;
 };
 
 // 🔒 LOCAL HELPER (Inlined to prevent ReferenceError in production bundle)
 const ROLE_RANK_MAP: Record<string, number> = {
-    DEV: 100, MD: 95, HR_DIRECTOR: 92, DIRECTOR: 90, HR_MANAGER: 88, FINANCE_MANAGER: 87,
+    DEV: 100, MD: 95, HR_DIRECTOR: 92, DIRECTOR: 90, HR_MANAGER: 88, FINANCE_MANAGER: 87, MARKETING_HEAD: 86,
     IT_MANAGER: 85, IT_ADMIN: 85, HR_OFFICER: 80, MANAGER: 75,
     MID_MANAGER: 65, SUPERVISOR: 65, STAFF: 50, CASUAL: 40,
     ADMIN: 85, SUPER_ADMIN: 100, EMPLOYEE: 50, EMPLOYEE_MEMBER: 50,
@@ -227,7 +231,7 @@ const Layout = () => {
         </div>
       )}
       <AnnouncementBanner />
-      <div className="flex bg-[var(--bg-main)]">
+      <div className="flex min-w-0 w-full bg-[var(--bg-main)]">
         <Sidebar 
           isOpen={isSidebarOpen} 
           onClose={() => setIsSidebarOpen(false)} 
@@ -235,7 +239,7 @@ const Layout = () => {
           setIsCollapsed={setIsCollapsed}
         />
         <div className={cn(
-          "flex-1 flex flex-col min-h-screen transition-[margin] duration-300",
+          "flex-1 min-w-0 w-full flex flex-col min-h-screen transition-[margin] duration-300",
           isCollapsed ? "lg:ml-20" : "lg:ml-[280px]"
         )}>
           <TopHeader 
@@ -243,11 +247,11 @@ const Layout = () => {
             isCollapsed={isCollapsed} 
           />
           <main className={cn(
-            "flex-1 relative px-4 pb-4 transition-none overflow-x-hidden pt-14",
+            "flex-1 min-w-0 w-full max-w-full relative px-4 pb-4 transition-none overflow-x-hidden pt-14",
             "lg:px-10 lg:pb-10 lg:pt-28",
             isImpersonating && "mt-10"
           )}>
-            <div className="max-w-[1600px] mx-auto mobile-scroll-clearance lg:pb-0">
+            <div className="w-full min-w-0 max-w-[1600px] mx-auto mobile-scroll-clearance lg:pb-0">
               <ChunkErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
                   <AnimatePresence mode="wait" initial={false}>
@@ -257,7 +261,7 @@ const Layout = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -12 }}
                       transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                      className="w-full"
+                      className="w-full min-w-0 max-w-full"
                     >
                       <Outlet />
                     </motion.div>
@@ -292,16 +296,17 @@ const Layout = () => {
   );
 };
 
-const RoleGuard = ({ children, minRank, allowedRoles }: { children: React.ReactNode; minRank?: number; allowedRoles?: string[] }) => {
+const RoleGuard = ({ children, minRank, allowedRoles, permissions }: { children: React.ReactNode; minRank?: number; allowedRoles?: string[]; permissions?: string[] }) => {
   const user = getStoredUser();
   const rank = getRoleRankValueLocal(user?.role) || user?.rank || 0;
   const role = (user?.role || '').toUpperCase();
   
   const hasRank = minRank !== undefined && rank >= minRank;
   const hasRole = allowedRoles !== undefined && allowedRoles.includes(role);
+  const hasPermission = permissions?.some(permission => user?.permissions?.includes('*') || user?.permissions?.includes(permission)) ?? false;
   
   // Grant access if either rank requirement is met OR they have an explicitly allowed role
-  if (!hasRank && !hasRole) return <Navigate to="/dashboard" replace />;
+  if (!hasRank && !hasRole && !hasPermission) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -480,22 +485,22 @@ const AppContent = () => {
             <Route path="/performance/check-ins" element={<RoleGuard minRank={10}><CheckIns /></RoleGuard>} />
             <Route path="/performance/feedback" element={<RoleGuard minRank={10}><Feedback360 /></RoleGuard>} />
             <Route path="/manager/cockpit" element={<RoleGuard minRank={70}><Cockpit /></RoleGuard>} />
-            <Route path="/cards" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><CardManagement /></RoleGuard>} />
+            <Route path="/cards" element={<RoleGuard permissions={['card.production', 'card.access', 'card.design']} allowedRoles={['MARKETING_HEAD', 'IT_MANAGER', 'IT_ADMIN', 'DEV']}><CardManagement /></RoleGuard>} />
             <Route path="/analytics/predictive" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><PredictiveAnalytics /></RoleGuard>} />
             
             {/* Appraisal Module - Strict Routing */}
             <Route path="/reviews/my" element={<RoleGuard minRank={10}><Appraisals /></RoleGuard>} />
             <Route path="/reviews/team" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
             <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={10}><AppraisalPacketView /></RoleGuard>} />
-            <Route path="/reviews/final" element={<RoleGuard minRank={75}><FinalSignOff /></RoleGuard>} />
-            <Route path="/reviews/cycles" element={<RoleGuard minRank={75}><CycleManagement /></RoleGuard>} />
+            <Route path="/reviews/final" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']}><FinalSignOff /></RoleGuard>} />
+            <Route path="/reviews/cycles" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']}><CycleManagement /></RoleGuard>} />
 
             <Route path="/leave" element={<Leave />} />
             <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
-            <Route path="/employees" element={<RoleGuard minRank={70} allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
-            <Route path="/employees/history" element={<RoleGuard minRank={70} allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
+            <Route path="/employees" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
+            <Route path="/employees/history" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
-            <Route path="/print/ids" element={<RoleGuard minRank={70} allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
+            <Route path="/print/ids" element={<RoleGuard permissions={['card.production']} allowedRoles={['MARKETING_HEAD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
             <Route path="/assets" element={<AssetManagement />} />
             <Route path="/audit" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
@@ -503,7 +508,7 @@ const AppContent = () => {
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
-            <Route path="/payroll" element={<RoleGuard allowedRoles={['FINANCE_MANAGER', 'FINANCE', 'MD', 'DEV']}><Payroll /></RoleGuard>} />
+            <Route path="/payroll" element={<RoleGuard allowedRoles={['FINANCE_MANAGER', 'FINANCE', 'MD', 'DEV', 'HR_DIRECTOR']}><Payroll /></RoleGuard>} />
             <Route path="/finance" element={<FinanceHub />} />
             <Route path="/attendance" element={<AttendanceDashboard />} />
             <Route path="/org-chart" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><OrgChart /></RoleGuard>} />
@@ -514,11 +519,12 @@ const AppContent = () => {
             <Route path="/announcements" element={<AnnouncementsPage />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/onboarding" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><Onboarding /></RoleGuard>} />
+            <Route path="/onboarding" element={<RoleGuard permissions={['onboarding.manage', 'account.provision', 'card.production']} allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'IT_ADMIN', 'MARKETING_HEAD', 'DEV']}><Onboarding /></RoleGuard>} />
             <Route path="/offboarding" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><Offboarding /></RoleGuard>} />
             <Route path="/recruitment" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><Recruitment /></RoleGuard>} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/support/tickets/:ticketId" element={<Support />} />
             {/* New HR Modules */}
             <Route path="/disciplinary" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><Disciplinary /></RoleGuard>} />
             <Route path="/policies" element={<PolicyLibrary />} />

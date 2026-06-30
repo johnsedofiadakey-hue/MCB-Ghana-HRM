@@ -143,25 +143,36 @@ const SettingsHub = () => {
     idCardSecurityText: 'Operational Framework & Terms'
   });
 
-  // Initialize form data from settings only once to prevent overwriting user drafts
+  // Load the authenticated administrative view once. ThemeContext intentionally
+  // uses the public branding endpoint, which omits operational settings.
   const [initialized, setInitialized] = useState(false);
   useEffect(() => {
-    if (settings && !initialized) {
-      setFormData({
-        ...formData,
-        ...settings,
-        companyName: settings.name || '',
-        idCardPrimaryColor: settings.idCardPrimaryColor || '#009EE3',
-        idCardAccentColor: settings.idCardAccentColor || '#EE7100',
-        idCardOrientation: settings.idCardOrientation || 'VERTICAL',
-        idCardTheme: settings.idCardTheme || 'DARK',
-        idCardShowLogo: settings.idCardShowLogo ?? true,
-        idCardShowQrCode: settings.idCardShowQrCode ?? true,
-        idCardBackMessage: settings.idCardBackMessage || '',
-        idCardSecurityText: settings.idCardSecurityText || 'Terms of Use'
-      });
-      setInitialized(true);
-    }
+    if (initialized || !settings) return;
+    let active = true;
+    api.get('/settings/admin')
+      .then(({ data }) => {
+        if (!active) return;
+        const resolved = { ...settings, ...data };
+        setFormData(previous => ({
+          ...previous,
+          ...resolved,
+          companyName: resolved.name || '',
+          idCardPrimaryColor: resolved.idCardPrimaryColor || '#009EE3',
+          idCardAccentColor: resolved.idCardAccentColor || '#EE7100',
+          idCardOrientation: resolved.idCardOrientation || 'VERTICAL',
+          idCardTheme: resolved.idCardTheme || 'DARK',
+          idCardShowLogo: resolved.idCardShowLogo ?? true,
+          idCardShowQrCode: resolved.idCardShowQrCode ?? true,
+          idCardBackMessage: resolved.idCardBackMessage || '',
+          idCardSecurityText: resolved.idCardSecurityText || 'Terms of Use'
+        }));
+      })
+      .catch(() => {
+        if (!active) return;
+        setFormData(previous => ({ ...previous, ...settings, companyName: settings.name || '' }));
+      })
+      .finally(() => { if (active) setInitialized(true); });
+    return () => { active = false; };
   }, [settings, initialized]);
 
   // Debounced branding preview to avoid heavy DOM manipulation on every keystroke
@@ -258,16 +269,7 @@ const SettingsHub = () => {
         successColor: formData.successColor,
         warningColor: formData.warningColor,
         errorColor: formData.errorColor,
-        infoColor: formData.infoColor,
-        // ID Card Tokens
-        idCardPrimaryColor: formData.idCardPrimaryColor,
-        idCardAccentColor: formData.idCardAccentColor,
-        idCardShowLogo: formData.idCardShowLogo,
-        idCardShowQrCode: formData.idCardShowQrCode,
-        idCardOrientation: formData.idCardOrientation as any,
-        idCardTheme: formData.idCardTheme as any,
-        idCardBackMessage: formData.idCardBackMessage,
-        idCardSecurityText: formData.idCardSecurityText
+        infoColor: formData.infoColor
       }).catch(e => console.warn('[SettingsHub] Branding sync failed:', e));
       
       // Run cleanup and refresh in parallel in the background
@@ -278,7 +280,7 @@ const SettingsHub = () => {
 
     } catch (err: any) {
       setLoading(false);
-      toast.error(err.response?.data?.message || t('common.error_updating_settings'));
+      toast.error(err.response?.data?.error || err.response?.data?.message || t('common.error_updating_settings'));
     }
   };
 
@@ -324,7 +326,6 @@ const SettingsHub = () => {
     { id: 'leave', label: t('leave.management', 'Leave Management'), icon: Calendar, description: t('leave.settings_description', 'Define global leave allowances, carry-forward rules, and borrowing policies.') },
     { id: 'branding', label: t('settings.branding'), icon: Palette, description: t('settings.branding_description', 'Visual identity, logos, and theme presets.') },
     { id: 'localization', label: t('settings.localization'), icon: Globe, description: t('settings.localization_description', 'Language, currency, and regional formats.') },
-    { id: 'payroll', label: t('payroll.settings', 'Payroll Settings'), icon: CreditCard, description: t('payroll.settings_desc', 'Configure SSNIT rates, PAYE tax bands, and global payroll rules.') },
     
     // 🛡️ TECHNICAL DELEGATION:
     // Only IT Managers (>= 85 and role includes IT) or MD (>= 95) can see technical operational tabs.
@@ -348,13 +349,13 @@ const SettingsHub = () => {
           <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2 opacity-60">{t('settings.system_config')}</p>
         </div>
         
-        <div className="space-y-1.5">
+        <div className="flex xl:block gap-2 xl:space-y-1.5 overflow-x-auto no-scrollbar pb-2 xl:pb-0">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all group relative overflow-hidden",
+                "shrink-0 xl:w-full flex items-center gap-3 xl:gap-4 px-4 xl:px-5 py-3 xl:py-4 rounded-2xl transition-all group relative overflow-hidden",
                 activeTab === tab.id 
                   ? "bg-[var(--bg-card)] shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[var(--border-subtle)]" 
                   : "text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/40 hover:text-[var(--text-primary)]"
@@ -371,7 +372,7 @@ const SettingsHub = () => {
                 "transition-colors",
                 activeTab === tab.id ? "text-[var(--primary)]" : "text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]"
               )} />
-              <div className="text-left flex-1">
+              <div className="text-left flex-1 whitespace-nowrap">
                 <p className="text-[14px] font-bold tracking-tight">{tab.label}</p>
               </div>
               <ChevronRight size={14} className={cn(
@@ -1332,7 +1333,7 @@ const SettingsHub = () => {
                       </div>
                     </section>
 
-                    <section className="p-10 rounded-[2.5rem] bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                    <section className="p-4 sm:p-10 rounded-3xl sm:rounded-[2.5rem] bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
                         <div>
                           <h4 className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] flex items-center gap-3">
@@ -1360,7 +1361,7 @@ const SettingsHub = () => {
                       </div>
 
                       <div className="space-y-3">
-                         <div className="grid grid-cols-7 gap-4 px-6 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-40 mb-4">
+                         <div className="hidden sm:grid grid-cols-7 gap-4 px-6 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-40 mb-4">
                             <span className="col-span-3">Cumulative Limit (GHS)</span>
                             <span className="col-span-3">Marginal Rate (%)</span>
                             <span className="text-center">Action</span>
@@ -1370,7 +1371,7 @@ const SettingsHub = () => {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             key={idx} 
-                            className="grid grid-cols-7 gap-4 items-center bg-[var(--bg-card)] p-5 rounded-[1.5rem] border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all shadow-sm"
+                            className="grid grid-cols-7 gap-2 sm:gap-4 items-center bg-[var(--bg-card)] p-3 sm:p-5 rounded-2xl sm:rounded-[1.5rem] border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all shadow-sm"
                            >
                               <div className="col-span-3 relative">
                                 <input 
@@ -1471,19 +1472,26 @@ const SettingsHub = () => {
                            <div className="p-6 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-subtle)] space-y-4">
                               <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('settings.hardware_api_key', 'Hardware Node API Key')}</label>
                               <div className="flex items-center gap-3">
-                                 <input 
-                                   type="password" 
-                                   readOnly 
-                                   value={formData.attendanceApiKey || '••••••••••••••••'} 
-                                   className="flex-1 bg-transparent border-none font-mono text-sm outline-none" 
+                                 <input
+                                   type="text"
+                                   readOnly
+                                   value={formData.attendanceApiKeyMasked || formData.attendanceApiKey || (formData.attendanceApiKeyConfigured ? '••••••••••••••••' : 'Not configured')}
+                                   className="flex-1 bg-transparent border-none font-mono text-sm outline-none opacity-70"
                                  />
-                                 <button 
-                                   onClick={() => {
-                                      const key = 'MCB_' + Math.random().toString(36).substring(2, 15).toUpperCase();
-                                      setFormData({...formData, attendanceApiKey: key});
-                                      toast.success('New Hardware Key Generated');
+                                 <button
+                                   onClick={async () => {
+                                     try {
+                                       const res = await api.post('/settings/rotate-attendance-key');
+                                       const newKey = res.data.attendanceApiKey;
+                                       setFormData({...formData, attendanceApiKeyMasked: '••••••••' + newKey.slice(-4), attendanceApiKeyConfigured: true});
+                                       navigator.clipboard.writeText(newKey).catch(() => {});
+                                       toast.success(`New key generated. Copied to clipboard — save it now, it will not be shown again.`);
+                                     } catch (err: any) {
+                                       toast.error('Failed to rotate key: ' + (err?.response?.data?.error || err.message));
+                                     }
                                    }}
                                    className="p-2 hover:bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] transition-all"
+                                   title="Generate / Rotate Key"
                                  >
                                     <RefreshCw size={16} />
                                  </button>

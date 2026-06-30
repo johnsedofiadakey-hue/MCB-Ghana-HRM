@@ -84,13 +84,12 @@ class InboxService {
                         createdAt: l.createdAt
                     });
                 }
-                // 3b. Manager Review (Targeted to supervisor OR Department Manager)
-                const isManagerAction = l.status === 'MANAGER_REVIEW' && (l.employee?.supervisorId === userId || userRank >= 70);
-                // 3c. MD/Final Review (Targeted to MD Rank 90+)
+                // V5: HR Director (rank 92+) is the sole approver for HR_REVIEW
+                // Also includes legacy MANAGER_REVIEW records so HR Director can advance them
+                const isHRAction = ['HR_REVIEW', 'MANAGER_REVIEW'].includes(l.status) && userRank >= 92;
+                // MD/Final Review (rank 90+)
                 const isMDAction = l.status === 'MD_REVIEW' && userRank >= 90;
-                // 3d. HR Review (Targeted to HR Rank 80+)
-                const isHRAction = l.status === 'HR_REVIEW' && userRank >= 80;
-                if (isManagerAction || isMDAction || isHRAction) {
+                if (isHRAction || isMDAction) {
                     actions.push({
                         id: `leave-approve-${l.id}`,
                         type: 'LEAVE_APPROVE',

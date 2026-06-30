@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportBankCSV = exports.exportPayrollCSV = exports.downloadPayslipPDF = exports.getYearlySummary = exports.getMyPayslips = exports.getRunDetail = exports.getRuns = exports.updateItem = exports.deleteRun = exports.voidRun = exports.approveRun = exports.createRun = void 0;
+exports.approveStatutoryRule = exports.createStatutoryRule = exports.getStatutoryRules = exports.exportBankCSV = exports.exportPayrollCSV = exports.downloadPayslipPDF = exports.getYearlySummary = exports.getMyPayslips = exports.getRunDetail = exports.getRuns = exports.updateItem = exports.deleteRun = exports.voidRun = exports.mdRejectRun = exports.releaseRun = exports.hrRejectRun = exports.hrApproveRun = exports.submitRun = exports.approveRun = exports.createRun = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const payrollService = __importStar(require("../services/payroll.service"));
 const audit_service_1 = require("../services/audit.service");
@@ -90,6 +90,23 @@ const approveRun = async (req, res) => {
     }
 };
 exports.approveRun = approveRun;
+const transitionRun = (action) => async (req, res) => {
+    try {
+        const user = req.user;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+        const run = await payrollService.transitionPayrollRun(organizationId, req.params.id, user.id, action, req.body?.reason);
+        await (0, audit_service_1.logAction)(user.id, `PAYROLL_${action}`, 'PayrollRun', run.id, { period: run.period, reason: req.body?.reason }, req.ip);
+        return res.json(run);
+    }
+    catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+};
+exports.submitRun = transitionRun('SUBMIT');
+exports.hrApproveRun = transitionRun('HR_APPROVE');
+exports.hrRejectRun = transitionRun('HR_REJECT');
+exports.releaseRun = transitionRun('RELEASE');
+exports.mdRejectRun = transitionRun('MD_REJECT');
 const voidRun = async (req, res) => {
     try {
         const userReq = req.user;
@@ -99,7 +116,7 @@ const voidRun = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const organizationId = orgId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
-        const run = await payrollService.voidPayrollRun(organizationId, req.params.id);
+        const run = await payrollService.voidPayrollRun(organizationId, req.params.id, actorId);
         if (!run)
             return res.status(404).json({ error: 'Payroll run not found' });
         await (0, audit_service_1.logAction)(actorId, 'PAYROLL_VOIDED', 'PayrollRun', run.id, {}, req.ip);
@@ -113,9 +130,6 @@ exports.voidRun = voidRun;
 const deleteRun = async (req, res) => {
     try {
         const userReq = req.user;
-        if ((0, auth_middleware_1.getRoleRank)(userReq.role) < 90) {
-            return res.status(403).json({ error: 'Only MD can delete payroll runs' });
-        }
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const organizationId = orgId || 'mcb-ghana-tenant';
         const actorId = userReq.id;
@@ -212,12 +226,10 @@ const downloadPayslipPDF = async (req, res) => {
         const organizationId = orgId || 'mcb-ghana-tenant';
         const requesterId = userReq.id;
         const requesterRole = userReq.role;
-        if ((0, auth_middleware_1.getRoleRank)(requesterRole) < 80 && requesterId !== employeeId) {
-            return res.status(403).json({ error: 'Access denied' });
-        }
+        const isSelf = requesterId === employeeId;
         const [item, org] = await Promise.all([
             client_1.default.payrollItem.findFirst({
-                where: { runId, employeeId, organizationId },
+                where: { runId, employeeId, organizationId, run: { status: 'RELEASED' } },
                 include: {
                     run: true,
                     employee: {
@@ -240,6 +252,9 @@ const downloadPayslipPDF = async (req, res) => {
         ]);
         if (!item)
             return res.status(404).json({ error: 'Payslip not found' });
+        if (!isSelf && !['FINANCE_MANAGER', 'HR_DIRECTOR', 'MD', 'DEV'].includes(requesterRole)) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
         const pdfBuffer = await pdf_service_1.PdfExportService.generateBrandedPdf(organizationId, `Electronic Payslip: ${item.run.period}`, item, 'PAYSLIP');
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="payslip-${item.employee.employeeCode || employeeId}-${item.run.period}.pdf"`);
@@ -293,6 +308,8 @@ const exportBankCSV = async (req, res) => {
         });
         if (!run)
             return res.status(404).json({ error: 'Payroll run not found' });
+        if (run.status !== 'RELEASED')
+            return res.status(409).json({ error: 'Bank export is available only after MD release.' });
         const csvStringifier = (0, csv_writer_1.createObjectCsvStringifier)({
             header: [
                 { id: 'name', title: 'ACCOUNT NAME' },
@@ -323,3 +340,76 @@ const exportBankCSV = async (req, res) => {
     }
 };
 exports.exportBankCSV = exportBankCSV;
+const getStatutoryRules = async (req, res) => {
+    const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+    const rules = await client_1.default.payrollStatutoryRule.findMany({ where: { organizationId }, orderBy: { effectiveFrom: 'desc' } });
+    return res.json(rules);
+};
+exports.getStatutoryRules = getStatutoryRules;
+const createStatutoryRule = async (req, res) => {
+    try {
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+        const { name, effectiveFrom, effectiveTo, employeeSsnitRate, employerSsnitRate, minimumInsurable, maximumInsurable, payeBands, bonusRules, overtimeRules } = req.body;
+        if (!name || !effectiveFrom || !Array.isArray(payeBands) || !payeBands.length) {
+            return res.status(400).json({ error: 'name, effectiveFrom and payeBands are required.' });
+        }
+        const from = new Date(effectiveFrom);
+        const to = effectiveTo ? new Date(effectiveTo) : null;
+        if (Number.isNaN(from.getTime()) || (to && Number.isNaN(to.getTime())) || (to && to < from)) {
+            return res.status(400).json({ error: 'The statutory-rule effective date range is invalid.' });
+        }
+        const employeeRate = Number(employeeSsnitRate);
+        const employerRate = Number(employerSsnitRate);
+        if (![employeeRate, employerRate].every(rate => Number.isFinite(rate) && rate >= 0 && rate <= 1)) {
+            return res.status(400).json({ error: 'SSNIT rates must be decimal values between 0 and 1.' });
+        }
+        if (!payeBands.every((band) => Number.isFinite(Number(band.limit)) && Number(band.limit) > 0 && Number.isFinite(Number(band.rate)) && Number(band.rate) >= 0 && Number(band.rate) <= 1)) {
+            return res.status(400).json({ error: 'Every PAYE band requires a positive limit and a decimal rate between 0 and 1.' });
+        }
+        if (Number(minimumInsurable) > Number(maximumInsurable)) {
+            return res.status(400).json({ error: 'Minimum insurable earnings cannot exceed the maximum.' });
+        }
+        const rule = await client_1.default.payrollStatutoryRule.create({
+            data: {
+                organizationId, name, effectiveFrom: from, effectiveTo: to,
+                employeeSsnitRate: employeeRate, employerSsnitRate: employerRate, minimumInsurable, maximumInsurable, payeBands, bonusRules, overtimeRules,
+                accountantApproved: false,
+            },
+        });
+        return res.status(201).json(rule);
+    }
+    catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+};
+exports.createStatutoryRule = createStatutoryRule;
+const approveStatutoryRule = async (req, res) => {
+    const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+    const user = req.user;
+    if (req.body?.accountantConfirmation !== true) {
+        return res.status(400).json({ error: 'Explicit accountant confirmation is required.' });
+    }
+    const rule = await client_1.default.payrollStatutoryRule.findFirst({ where: { id: req.params.id, organizationId } });
+    if (!rule)
+        return res.status(404).json({ error: 'Statutory rule not found' });
+    const overlap = await client_1.default.payrollStatutoryRule.findFirst({
+        where: {
+            organizationId,
+            id: { not: rule.id },
+            accountantApproved: true,
+            effectiveFrom: { lte: rule.effectiveTo || new Date('9999-12-31T00:00:00.000Z') },
+            OR: [{ effectiveTo: null }, { effectiveTo: { gte: rule.effectiveFrom } }],
+        },
+        select: { id: true, name: true },
+    });
+    if (overlap)
+        return res.status(409).json({ error: `This period overlaps approved rule "${overlap.name}".` });
+    const result = await client_1.default.payrollStatutoryRule.updateMany({
+        where: { id: rule.id, organizationId, accountantApproved: false },
+        data: { accountantApproved: true, approvedBy: user.id, approvedAt: new Date() },
+    });
+    if (!result.count)
+        return res.status(409).json({ error: 'Statutory rule is already approved' });
+    return res.json({ success: true });
+};
+exports.approveStatutoryRule = approveStatutoryRule;

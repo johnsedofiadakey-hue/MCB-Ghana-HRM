@@ -30,19 +30,6 @@ export const getDepartments = async (req: Request, res: Response) => {
       orderBy: { name: 'asc' }
     });
 
-    // Fallback: If no departments for current tenant, try to find mcb-ghana-tenant ones
-    if (departments.length === 0 && orgId && orgId !== 'mcb-ghana-tenant') {
-       departments = await prisma.department.findMany({
-         where: { organizationId: 'mcb-ghana-tenant' },
-         include: {
-           manager: { select: { fullName: true, avatarUrl: true, jobTitle: true } },
-           employees: { select: { id: true } },
-           subUnits: { select: { id: true, name: true, manager: { select: { fullName: true } } } }
-         },
-         orderBy: { name: 'asc' }
-       });
-    }
-
     const employeeIds = departments.flatMap((dept) => dept.employees.map((emp) => emp.id));
     const sheets = await prisma.kpiSheet.findMany({
       where: {
@@ -93,6 +80,10 @@ export const createDepartment = async (req: Request, res: Response) => {
     const organizationId = orgId || 'mcb-ghana-tenant';
     const { name, managerId } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Department name is required' });
+    if (managerId) {
+      const manager = await prisma.user.findFirst({ where: { id: managerId, organizationId }, select: { id: true } });
+      if (!manager) return res.status(404).json({ error: 'Manager not found in this organization' });
+    }
     const existing = await prisma.department.findFirst({ where: { name: name.trim(), organizationId } });
     if (existing) return res.status(409).json({ error: 'Department already exists' });
     const dept = await prisma.department.create({ data: { name: name.trim(), organizationId, ...(managerId ? { managerId } : {}) } });
@@ -108,6 +99,10 @@ export const updateDepartment = async (req: Request, res: Response) => {
     const whereOrg = orgId ? { organizationId: orgId } : {};
     const { name, managerId } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Department name is required' });
+    if (managerId) {
+      const manager = await prisma.user.findFirst({ where: { id: managerId, ...whereOrg }, select: { id: true } });
+      if (!manager) return res.status(404).json({ error: 'Manager not found in this organization' });
+    }
     const dept = await prisma.department.update({
       where: { id: Number(req.params.id), ...whereOrg },
       data: { name: name.trim(), ...(managerId !== undefined ? { managerId: managerId || null } : {}) }

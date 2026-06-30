@@ -7,15 +7,23 @@ exports.rejectExpense = exports.approveExpense = exports.getAllExpenses = export
 const client_1 = __importDefault(require("../prisma/client"));
 const requestLoan = async (req, res) => {
     try {
-        const { employeeId, type, principalAmount, monthsDuration, purpose } = req.body;
+        const { type, principalAmount, monthsDuration, purpose } = req.body;
+        const employeeId = req.user?.id;
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const amount = Number(principalAmount);
+        const duration = Number(monthsDuration);
+        if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(duration) || duration < 1 || duration > 24) {
+            return res.status(400).json({ error: 'Enter a positive amount and a repayment duration from 1 to 24 months' });
+        }
         const loan = await client_1.default.loan.create({
             data: {
+                organizationId,
                 employeeId,
                 type: type || 'ADVANCE',
-                principalAmount: Number(principalAmount),
-                totalRepayment: Number(principalAmount), // Zero interest for now
-                installmentAmount: Number(principalAmount) / Number(monthsDuration),
-                monthsDuration: Number(monthsDuration),
+                principalAmount: amount,
+                totalRepayment: amount, // Zero interest for now
+                installmentAmount: amount / duration,
+                monthsDuration: duration,
                 purpose
             }
         });
@@ -28,8 +36,9 @@ const requestLoan = async (req, res) => {
 exports.requestLoan = requestLoan;
 const getMyLoans = async (req, res) => {
     try {
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const loans = await client_1.default.loan.findMany({
-            where: { employeeId: req.user.id },
+            where: { employeeId: req.user?.id, organizationId },
             include: { installments: true },
             orderBy: { requestedAt: 'desc' }
         });
@@ -42,7 +51,9 @@ const getMyLoans = async (req, res) => {
 exports.getMyLoans = getMyLoans;
 const getAllLoans = async (req, res) => {
     try {
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const loans = await client_1.default.loan.findMany({
+            where: { organizationId },
             include: { employee: { select: { fullName: true, email: true, departmentObj: true } } },
             orderBy: { requestedAt: 'desc' }
         });
@@ -56,8 +67,9 @@ exports.getAllLoans = getAllLoans;
 const approveLoan = async (req, res) => {
     try {
         const { id } = req.params;
-        const adminId = req.user.id;
-        const loan = await client_1.default.loan.findUnique({ where: { id } });
+        const adminId = req.user?.id;
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const loan = await client_1.default.loan.findFirst({ where: { id, organizationId, status: 'PENDING' } });
         if (!loan)
             return res.status(404).json({ error: 'Loan not found' });
         // Create installments
@@ -67,6 +79,7 @@ const approveLoan = async (req, res) => {
             date.setMonth(date.getMonth() + 1);
             installmentsData.push({
                 loanId: loan.id,
+                organizationId,
                 amount: loan.installmentAmount,
                 month: date.getMonth() + 1,
                 year: date.getFullYear()
@@ -89,9 +102,13 @@ exports.approveLoan = approveLoan;
 const rejectLoan = async (req, res) => {
     try {
         const { id } = req.params;
-        const adminId = req.user.id;
+        const adminId = req.user?.id;
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const existing = await client_1.default.loan.findFirst({ where: { id, organizationId, status: 'PENDING' }, select: { id: true } });
+        if (!existing)
+            return res.status(404).json({ error: 'Pending loan not found' });
         const loan = await client_1.default.loan.update({
-            where: { id },
+            where: { id: existing.id },
             data: { status: 'REJECTED', approvedById: adminId, approvedAt: new Date() }
         });
         res.json(loan);
@@ -104,13 +121,20 @@ exports.rejectLoan = rejectLoan;
 // --- EXPENSES ---
 const submitExpense = async (req, res) => {
     try {
-        const { employeeId, title, description, amount, category } = req.body;
+        const { title, description, amount, category } = req.body;
+        const employeeId = req.user?.id;
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const numericAmount = Number(amount);
+        if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+            return res.status(400).json({ error: 'Expense amount must be positive' });
+        }
         const expense = await client_1.default.expenseClaim.create({
             data: {
+                organizationId,
                 employeeId,
                 title,
                 description,
-                amount: Number(amount),
+                amount: numericAmount,
                 category
             }
         });
@@ -123,8 +147,9 @@ const submitExpense = async (req, res) => {
 exports.submitExpense = submitExpense;
 const getMyExpenses = async (req, res) => {
     try {
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const expenses = await client_1.default.expenseClaim.findMany({
-            where: { employeeId: req.user.id },
+            where: { employeeId: req.user?.id, organizationId },
             orderBy: { submittedAt: 'desc' }
         });
         res.json(expenses);
@@ -136,7 +161,9 @@ const getMyExpenses = async (req, res) => {
 exports.getMyExpenses = getMyExpenses;
 const getAllExpenses = async (req, res) => {
     try {
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
         const expenses = await client_1.default.expenseClaim.findMany({
+            where: { organizationId },
             include: { employee: { select: { fullName: true, email: true, departmentObj: true } } },
             orderBy: { submittedAt: 'desc' }
         });
@@ -150,9 +177,13 @@ exports.getAllExpenses = getAllExpenses;
 const approveExpense = async (req, res) => {
     try {
         const { id } = req.params;
-        const adminId = req.user.id;
+        const adminId = req.user?.id;
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const existing = await client_1.default.expenseClaim.findFirst({ where: { id, organizationId, status: 'PENDING' }, select: { id: true } });
+        if (!existing)
+            return res.status(404).json({ error: 'Pending expense not found' });
         const expense = await client_1.default.expenseClaim.update({
-            where: { id },
+            where: { id: existing.id },
             data: { status: 'APPROVED', approvedById: adminId, approvedAt: new Date() }
         });
         res.json(expense);
@@ -165,9 +196,13 @@ exports.approveExpense = approveExpense;
 const rejectExpense = async (req, res) => {
     try {
         const { id } = req.params;
-        const adminId = req.user.id;
+        const adminId = req.user?.id;
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const existing = await client_1.default.expenseClaim.findFirst({ where: { id, organizationId, status: 'PENDING' }, select: { id: true } });
+        if (!existing)
+            return res.status(404).json({ error: 'Pending expense not found' });
         const expense = await client_1.default.expenseClaim.update({
-            where: { id },
+            where: { id: existing.id },
             data: { status: 'REJECTED', approvedById: adminId, approvedAt: new Date() }
         });
         res.json(expense);

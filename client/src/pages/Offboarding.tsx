@@ -9,6 +9,7 @@ import api from '../services/api';
 import { getStoredUser } from '../utils/session';
 import InitiateOffboardingModal from '../components/offboarding/InitiateOffboardingModal';
 import OffboardingDetailsModal from '../components/offboarding/OffboardingDetailsModal';
+import { toast } from '../utils/toast';
 
 const Offboarding = () => {
   const [processes, setProcesses] = useState<any[]>([]);

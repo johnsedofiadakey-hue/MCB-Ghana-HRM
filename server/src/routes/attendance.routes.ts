@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireRole, requirePermission } from '../middleware/auth.middleware';
+import { Permission } from '../types/permissions';
 import { clockIn, clockOut, getMyAttendance, getAllAttendance, nodeScan } from '../controllers/attendance.controller';
 import { syncPunches, kioskPunch } from '../controllers/biometric.controller';
 
@@ -15,7 +16,7 @@ router.get('/me', getMyAttendance);
 router.get('/', requireRole(70), getAllAttendance);
 
 // 🛡️ Biometric Sync (Rank 85+ or IT Admin)
-router.post('/sync', requireRole(85), syncPunches);
+router.post('/sync', requirePermission(Permission.ACCOUNT_PROVISION), syncPunches);
 router.post('/kiosk-punch', kioskPunch);
 
 export default router;

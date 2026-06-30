@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
+import { ROLE_RANK_MAP } from '../types/roles';
 
 const getOrgId = (req: Request): string =>
     (req as any).user?.organizationId || 'mcb-ghana-tenant';
@@ -44,6 +47,8 @@ export const createDisciplinaryCase = async (req: Request, res: Response) => {
         if (!employeeId || !type || !reason) {
             return res.status(400).json({ error: 'employeeId, type, and reason are required' });
         }
+        const employee = await prisma.user.findFirst({ where: { id: employeeId, organizationId: orgId }, select: { id: true } });
+        if (!employee) return res.status(404).json({ error: 'Employee not found in this organization' });
 
         const newCase = await prisma.disciplinaryCase.create({
             data: {
@@ -72,10 +77,13 @@ export const createDisciplinaryCase = async (req: Request, res: Response) => {
 export const updateDisciplinaryCase = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const orgId = getOrgId(req);
         const { status, outcome, resolvedAt, acknowledgedAt, hearingDate } = req.body;
 
+        const existing = await prisma.disciplinaryCase.findFirst({ where: { id, organizationId: orgId }, select: { id: true } });
+        if (!existing) return res.status(404).json({ error: 'Disciplinary case not found' });
         const updated = await prisma.disciplinaryCase.update({
-            where: { id },
+            where: { id: existing.id },
             data: {
                 ...(status !== undefined ? { status } : {}),
                 ...(outcome !== undefined ? { outcome } : {}),
@@ -94,7 +102,9 @@ export const updateDisciplinaryCase = async (req: Request, res: Response) => {
 export const deleteDisciplinaryCase = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        await prisma.disciplinaryCase.delete({ where: { id } });
+        const orgId = getOrgId(req);
+        const deleted = await prisma.disciplinaryCase.deleteMany({ where: { id, organizationId: orgId } });
+        if (!deleted.count) return res.status(404).json({ error: 'Disciplinary case not found' });
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -110,11 +120,12 @@ export const listPolicies = async (req: Request, res: Response) => {
         const orgId = getOrgId(req);
         const user = getUser(req);
         const { category, status } = req.query;
+        const canManage = (await PolicyService.evaluatePolicy(user.id, Permission.EMPLOYEE_WRITE)).allowed;
 
         const policies = await prisma.policyDocument.findMany({
             where: {
                 organizationId: orgId,
-                ...(status ? { status: status as string } : {}),
+                ...(canManage && status ? { status: status as string } : !canManage ? { status: 'PUBLISHED' } : {}),
                 ...(category ? { category: category as string } : {}),
             },
             include: {
@@ -128,7 +139,16 @@ export const listPolicies = async (req: Request, res: Response) => {
             orderBy: { updatedAt: 'desc' },
         });
 
-        res.json(policies);
+        const visible = canManage ? policies : policies.filter((policy) => {
+            if (!policy.targetRoles) return true;
+            try {
+                const roles = JSON.parse(policy.targetRoles);
+                return !Array.isArray(roles) || roles.length === 0 || roles.includes(user.role);
+            } catch {
+                return true;
+            }
+        });
+        res.json(visible);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
@@ -167,6 +187,7 @@ export const createPolicy = async (req: Request, res: Response) => {
 export const updatePolicy = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const orgId = getOrgId(req);
         const { title, description, content, fileUrl, category, version, isRequired, status, targetRoles } = req.body;
 
         const data: any = {};
@@ -183,7 +204,9 @@ export const updatePolicy = async (req: Request, res: Response) => {
             if (status === 'PUBLISHED') data.publishedAt = new Date();
         }
 
-        const policy = await prisma.policyDocument.update({ where: { id }, data });
+        const existing = await prisma.policyDocument.findFirst({ where: { id, organizationId: orgId }, select: { id: true } });
+        if (!existing) return res.status(404).json({ error: 'Policy not found' });
+        const policy = await prisma.policyDocument.update({ where: { id: existing.id }, data });
         res.json(policy);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -193,7 +216,9 @@ export const updatePolicy = async (req: Request, res: Response) => {
 export const deletePolicy = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        await prisma.policyDocument.delete({ where: { id } });
+        const orgId = getOrgId(req);
+        const deleted = await prisma.policyDocument.deleteMany({ where: { id, organizationId: orgId } });
+        if (!deleted.count) return res.status(404).json({ error: 'Policy not found' });
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -206,12 +231,14 @@ export const acknowledgePolicy = async (req: Request, res: Response) => {
         const orgId = getOrgId(req);
         const user = getUser(req);
         const ipAddress = req.ip;
+        const policy = await prisma.policyDocument.findFirst({ where: { id, organizationId: orgId, status: 'PUBLISHED' }, select: { id: true } });
+        if (!policy) return res.status(404).json({ error: 'Published policy not found' });
 
         const ack = await prisma.policyAcknowledgment.upsert({
-            where: { policyId_employeeId: { policyId: id, employeeId: user.id } },
+            where: { policyId_employeeId: { policyId: policy.id, employeeId: user.id } },
             create: {
                 organizationId: orgId,
-                policyId: id,
+                policyId: policy.id,
                 employeeId: user.id,
                 ipAddress,
             },
@@ -227,18 +254,20 @@ export const acknowledgePolicy = async (req: Request, res: Response) => {
 export const getPolicyAcknowledgments = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const orgId = getOrgId(req);
+        const policy = await prisma.policyDocument.findFirst({ where: { id, organizationId: orgId }, select: { id: true, organizationId: true } });
+        if (!policy) return res.status(404).json({ error: 'Policy not found' });
 
         const acks = await prisma.policyAcknowledgment.findMany({
-            where: { policyId: id },
+            where: { policyId: policy.id, organizationId: orgId },
             include: {
                 employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true, profilePhoto: true } },
             },
             orderBy: { acknowledgedAt: 'desc' },
         });
 
-        const policy = await prisma.policyDocument.findUnique({ where: { id } });
         const totalEmployees = await prisma.user.count({
-            where: { organizationId: policy?.organizationId, isArchived: false, status: 'ACTIVE' },
+            where: { organizationId: policy.organizationId, isArchived: false, status: 'ACTIVE' },
         });
 
         res.json({ acknowledgments: acks, totalEmployees, acknowledged: acks.length });
@@ -295,6 +324,8 @@ export const createProbationRecord = async (req: Request, res: Response) => {
         if (!employeeId || !startDate) {
             return res.status(400).json({ error: 'employeeId and startDate are required' });
         }
+        const employee = await prisma.user.findFirst({ where: { id: employeeId, organizationId: orgId }, select: { id: true } });
+        if (!employee) return res.status(404).json({ error: 'Employee not found in this organization' });
 
         const probationDays = period || 90;
         const start = new Date(startDate);
@@ -329,6 +360,7 @@ export const createProbationRecord = async (req: Request, res: Response) => {
 export const updateProbationRecord = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const orgId = getOrgId(req);
         const user = getUser(req);
         const { status, outcome, reviewDate, goals, notes, endDate } = req.body;
 
@@ -341,7 +373,9 @@ export const updateProbationRecord = async (req: Request, res: Response) => {
         if (endDate !== undefined) data.endDate = new Date(endDate);
         if (status && status !== 'IN_PROGRESS') data.reviewedById = user.id;
 
-        const updated = await prisma.probationRecord.update({ where: { id }, data });
+        const existing = await prisma.probationRecord.findFirst({ where: { id, organizationId: orgId }, select: { id: true } });
+        if (!existing) return res.status(404).json({ error: 'Probation record not found' });
+        const updated = await prisma.probationRecord.update({ where: { id: existing.id }, data });
         res.json(updated);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -416,13 +450,23 @@ export const createPromotionRequest = async (req: Request, res: Response) => {
         if (!employeeId || !targetRole || !reason) {
             return res.status(400).json({ error: 'employeeId, targetRole, and reason are required' });
         }
+        const normalizedTargetRole = String(targetRole).toUpperCase().replace(/\s+/g, '_');
+        const targetRank = ROLE_RANK_MAP[normalizedTargetRole];
+        const actorRole = String(user.role || '').toUpperCase().replace(/\s+/g, '_');
+        const actorRank = ROLE_RANK_MAP[actorRole] || 0;
+        if (!targetRank) return res.status(400).json({ error: 'Invalid target role' });
+        if (actorRole !== 'DEV' && targetRank >= actorRank) {
+            return res.status(403).json({ error: 'You cannot approve a promotion to your own role level or above' });
+        }
+        const employee = await prisma.user.findFirst({ where: { id: employeeId, organizationId: orgId }, select: { id: true } });
+        if (!employee) return res.status(404).json({ error: 'Employee not found in this organization' });
 
         const request = await prisma.promotionRequest.create({
             data: {
                 organizationId: orgId,
                 employeeId,
                 managerId: user.id,
-                targetRole,
+                targetRole: normalizedTargetRole,
                 targetJobTitle,
                 proposedSalary: proposedSalary ? Number(proposedSalary) : null,
                 reason,
@@ -452,37 +496,61 @@ export const updatePromotionStatus = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Invalid status' });
         }
 
-        const request = await prisma.promotionRequest.update({
-            where: { id },
-            data: { status, hrComment },
-        });
+        const existing = await prisma.promotionRequest.findFirst({ where: { id, organizationId: orgId } });
+        if (!existing) return res.status(404).json({ error: 'Promotion request not found' });
 
-        // If approved, update the employee's role/jobTitle/salary
-        if (status === 'APPROVED') {
-            const updateData: any = {
-                role: request.targetRole,
-                jobTitle: request.targetJobTitle || undefined,
-                salary: request.proposedSalary ? Number(request.proposedSalary) : undefined,
-            };
-
-            await prisma.user.update({
-                where: { id: request.employeeId },
-                data: updateData
+        const request = await prisma.$transaction(async (tx) => {
+            const updated = await tx.promotionRequest.update({
+                where: { id: existing.id },
+                data: { status, hrComment },
             });
 
-            // Log history
-            await prisma.employeeHistory.create({
-                data: {
-                    organizationId: orgId,
-                    employeeId: request.employeeId,
-                    loggedById: (req as any).user.id,
-                    title: 'Promotion Approved',
-                    description: `Professional promotion approved to ${request.targetJobTitle || request.targetRole}.`,
-                    type: 'PROMOTION',
-                    severity: 'SUCCESS'
+            // If approved, update the employee's role/jobTitle/salary
+            if (status === 'APPROVED') {
+                const employee = await tx.user.findFirst({
+                    where: { id: updated.employeeId, organizationId: orgId },
+                    select: { id: true, salary: true, currency: true }
+                });
+                if (!employee) throw new Error('Promotion employee not found in this organization');
+                const updateData: any = {
+                    role: updated.targetRole,
+                    rank: ROLE_RANK_MAP[String(updated.targetRole || '').toUpperCase()] || undefined,
+                    jobTitle: updated.targetJobTitle || undefined,
+                    salary: updated.proposedSalary ? Number(updated.proposedSalary) : undefined,
+                };
+
+                await tx.user.update({ where: { id: employee.id }, data: updateData });
+
+                if (updated.proposedSalary !== null) {
+                    await tx.compensationHistory.create({
+                        data: {
+                            organizationId: orgId,
+                            employeeId: updated.employeeId,
+                            type: 'PROMOTION',
+                            previousSalary: employee.salary || 0,
+                            newSalary: updated.proposedSalary,
+                            currency: employee.currency || 'GHS',
+                            reason: updated.reason,
+                            effectiveDate: new Date(),
+                            authorizedById: (req as any).user.id,
+                        }
+                    });
                 }
-            });
-        }
+
+                await tx.employeeHistory.create({
+                    data: {
+                        organizationId: orgId,
+                        employeeId: updated.employeeId,
+                        loggedById: (req as any).user.id,
+                        title: 'Promotion Approved',
+                        description: `Professional promotion approved to ${updated.targetJobTitle || updated.targetRole}.`,
+                        type: 'PROMOTION',
+                        severity: 'SUCCESS'
+                    }
+                });
+            }
+            return updated;
+        });
 
         res.json(request);
     } catch (err: any) {

@@ -3,7 +3,7 @@ import { toast } from '../utils/toast';
 import { useParams } from 'react-router-dom';
 import { Shield, Clock, AlertTriangle, FileText, CheckCircle, Plus, X, Loader2, Sparkles, History } from 'lucide-react';
 import api from '../services/api';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, hasPermission } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 
@@ -25,6 +25,7 @@ const EmployeeHistory = () => {
     const isSelf = !employeeId;
     const currentUser = getStoredUser();
     const userId = currentUser?.id;
+    const canWriteHistory = hasPermission(currentUser, 'employee.history.write');
 
     // For demo, if strictly "portal" for logged in user to see their own history:
     // But request asked for "reports can be inputed by supervisor". So it's a management view too.
@@ -110,7 +111,7 @@ const EmployeeHistory = () => {
                         A complete audit trail of professional milestones and incidents.
                     </p>
                 </div>
-                {!isSelf && (
+                {!isSelf && canWriteHistory && (
                     <motion.button
                         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                         onClick={() => setShowForm(!showForm)}

@@ -2,7 +2,7 @@ import axios from 'axios';
 import crypto from 'crypto';
 import prisma from '../prisma/client';
 
-export type WebhookEvent = 'EMPLOYEE_CREATED' | 'EMPLOYEE_TERMINATED' | 'LEAVE_APPROVED' | 'PAYROLL_RUN_COMPLETED' | 'APPRAISAL_COMPLETED';
+export type WebhookEvent = 'EMPLOYEE_CREATED' | 'EMPLOYEE_TERMINATED' | 'LEAVE_APPROVED' | 'PAYROLL_RUN_COMPLETED' | 'PAYROLL_RUN_RELEASED' | 'APPRAISAL_COMPLETED';
 
 export const triggerWebhook = async (organizationId: string, event: WebhookEvent, payload: any) => {
     try {

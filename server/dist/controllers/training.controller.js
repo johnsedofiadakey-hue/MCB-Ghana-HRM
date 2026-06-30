@@ -8,6 +8,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const websocket_service_1 = require("../services/websocket.service");
 const enterprise_controller_1 = require("./enterprise.controller");
+const isHrTrainingAdmin = (role) => ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'MD', 'DEV'].includes(String(role || '').toUpperCase());
 const getPrograms = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
@@ -57,11 +58,21 @@ const enroll = async (req, res) => {
         const actorId = user.id;
         const { programId, employeeId } = req.body;
         const targetEmpId = employeeId || actorId;
+        if (targetEmpId !== actorId && !isHrTrainingAdmin(user.role)) {
+            return res.status(403).json({ error: 'Only HR may enroll another employee' });
+        }
+        const [program, employee] = await Promise.all([
+            client_1.default.trainingProgram.findFirst({ where: { id: programId, organizationId }, select: { id: true, title: true } }),
+            client_1.default.user.findFirst({ where: { id: targetEmpId, organizationId, status: { not: 'TERMINATED' } }, select: { id: true } }),
+        ]);
+        if (!program)
+            return res.status(404).json({ error: 'Training program not found' });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found in this organization' });
         const enrollment = await client_1.default.trainingEnrollment.create({
             data: { programId, employeeId: targetEmpId, organizationId }
         });
-        const program = await client_1.default.trainingProgram.findUnique({ where: { id: programId } });
-        await (0, websocket_service_1.notify)(targetEmpId, 'Training Enrollment', `You have been enrolled in "${program?.title}"`, 'INFO', '/training');
+        await (0, websocket_service_1.notify)(targetEmpId, 'Training Enrollment', `You have been enrolled in "${program.title}"`, 'INFO', '/training');
         await (0, audit_service_1.logAction)(actorId, 'TRAINING_ENROLLED', 'TrainingEnrollment', enrollment.id, { programId, employeeId: targetEmpId }, req.ip);
         res.status(201).json(enrollment);
     }
@@ -75,9 +86,23 @@ const markComplete = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const { enrollmentId, score, certificate } = req.body;
         const whereOrg = orgId ? { organizationId: orgId } : {};
-        const enrollment = await client_1.default.trainingEnrollment.update({
+        const actor = req.user;
+        const existing = await client_1.default.trainingEnrollment.findFirst({
             where: { id: enrollmentId, ...whereOrg },
-            data: { status: 'COMPLETED', completedAt: new Date(), score, certificate },
+            select: { id: true, employeeId: true }
+        });
+        if (!existing)
+            return res.status(404).json({ error: 'Training enrollment not found' });
+        if (existing.employeeId !== actor.id && !isHrTrainingAdmin(actor.role)) {
+            return res.status(403).json({ error: 'You may only complete your own training enrollment' });
+        }
+        const normalizedScore = score === undefined ? undefined : Math.min(100, Math.max(0, Number(score)));
+        if (normalizedScore !== undefined && !Number.isFinite(normalizedScore)) {
+            return res.status(400).json({ error: 'Score must be a number from 0 to 100' });
+        }
+        const enrollment = await client_1.default.trainingEnrollment.update({
+            where: { id: existing.id },
+            data: { status: 'COMPLETED', completedAt: new Date(), score: normalizedScore, certificate },
             include: { program: true }
         });
         // --- INTEGRATION: Update KPI progress if applicable ---

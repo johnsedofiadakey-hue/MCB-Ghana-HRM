@@ -35,17 +35,18 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const permissions_1 = require("../types/permissions");
 const validate_middleware_1 = require("../middleware/validate.middleware");
 const assetController = __importStar(require("../controllers/asset.controller"));
 const router = (0, express_1.Router)();
 // Get Inventory (All Staff)
 router.get('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('STAFF'), assetController.getInventory);
 // Create Asset (Admin/MD/Director)
-router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), (0, validate_middleware_1.validate)(validate_middleware_1.AssetSchema), assetController.createAsset);
+router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requirePermission)(permissions_1.Permission.ASSET_MANAGE), (0, validate_middleware_1.validate)(validate_middleware_1.AssetSchema), assetController.createAsset);
 // Assign Asset (Admin/MD/Director)
-router.post('/assign', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), (0, validate_middleware_1.validate)(validate_middleware_1.AssetAssignSchema), assetController.assignAsset);
+router.post('/assign', auth_middleware_1.authenticate, (0, auth_middleware_1.requirePermission)(permissions_1.Permission.ASSET_MANAGE), (0, validate_middleware_1.validate)(validate_middleware_1.AssetAssignSchema), assetController.assignAsset);
 // Return Asset (Admin/MD/Director)
-router.post('/return', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.returnAsset);
+router.post('/return', auth_middleware_1.authenticate, (0, auth_middleware_1.requirePermission)(permissions_1.Permission.ASSET_MANAGE), assetController.returnAsset);
 // Delete Asset (Admin/MD/Director)
-router.delete('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.deleteAsset);
+router.delete('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requirePermission)(permissions_1.Permission.ASSET_MANAGE), assetController.deleteAsset);
 exports.default = router;

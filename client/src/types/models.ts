@@ -20,6 +20,10 @@ export interface User {
   leaveAllowance?: number;
   organizationId?: string;
   supervisorId?: string;
+  permissions?: string[];
+  loginEnabled?: boolean;
+  mustChangePassword?: boolean;
+  employeeLifecycleStage?: string;
 }
 
 export type LeaveStatus = 

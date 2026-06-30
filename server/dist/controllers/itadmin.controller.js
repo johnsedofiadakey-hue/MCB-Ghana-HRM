@@ -1,45 +1,12 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSecurityThreats = exports.getLiveLogs = exports.itCleanupLogs = exports.itDeactivateUser = exports.itGetUsers = exports.itSystemOverview = exports.itResetPassword = exports.itCreateEmployee = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
-const userService = __importStar(require("../services/user.service"));
 const email_service_1 = require("../services/email.service");
+const crypto_1 = __importDefault(require("crypto"));
 const audit_service_1 = require("../services/audit.service");
 const websocket_service_1 = require("../services/websocket.service");
 const workspace_service_1 = require("../services/workspace.service");
@@ -54,52 +21,43 @@ const workspace_service_1 = require("../services/workspace.service");
  */
 // Create employee account (IT Admin version — no salary fields exposed)
 const itCreateEmployee = async (req, res) => {
-    try {
-        // Strip salary/compensation fields — IT Admin should not set these
-        const { salary, currency, ...safeData } = req.body;
-        const tempPassword = safeData.password || 'SecureInit!';
-        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
-        const user = await userService.createUser(organizationId, { ...safeData, password: tempPassword });
-        const { passwordHash, ...safeUser } = user;
-        // Send welcome email asynchronously
-        const settings = await client_1.default.systemSettings.findFirst();
-        (0, email_service_1.sendWelcomeEmail)(user.email, user.fullName, tempPassword, settings?.companyName || 'HRM Engine').catch(console.error);
-        // Audit log
-        // @ts-ignore
-        await (0, audit_service_1.logAction)(req.user?.id, 'IT_ADMIN_CREATE_ACCOUNT', 'User', user.id, { email: user.email, role: user.role }, req.ip);
-        // Notify HR and IT leadership
-        const leadership = await client_1.default.user.findMany({
-            where: { role: { in: ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER'] } },
-            select: { id: true }
-        });
-        for (const admin of leadership) {
-            await (0, websocket_service_1.notify)(admin.id, 'New Account Created', `IT Admin created account for ${user.fullName} (${user.email})`, 'INFO', '/employees');
-        }
-        res.status(201).json({ ...safeUser, message: `Account created. Welcome email sent to ${user.email}.` });
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
-    }
+    return res.status(405).json({
+        error: 'HR must create the preboarding employee record. IT provisions and activates the resulting account.',
+    });
 };
 exports.itCreateEmployee = itCreateEmployee;
-// Force password reset — sends a new temp password to the user's email
+// Force password reset — sends a one-time link to the user's email.
 const itResetPassword = async (req, res) => {
     try {
         const { userId } = req.params;
         // @ts-ignore
         const actorId = req.user?.id;
-        const user = await client_1.default.user.findUnique({ where: { id: userId }, select: { id: true, email: true, fullName: true } });
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const user = await client_1.default.user.findFirst({ where: { id: userId, organizationId }, select: { id: true, email: true, fullName: true } });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
-        const bcrypt = await Promise.resolve().then(() => __importStar(require('bcryptjs')));
-        const tempPassword = `MCB${Math.random().toString(36).slice(-6).toUpperCase()}!`;
-        const passwordHash = await bcrypt.default.hash(tempPassword, 12);
-        await client_1.default.user.update({ where: { id: userId }, data: { passwordHash } });
-        const settings = await client_1.default.systemSettings.findFirst();
-        (0, email_service_1.sendWelcomeEmail)(user.email, user.fullName, tempPassword, settings?.companyName || 'MCB-HRM Ghana').catch(console.error);
-        await (0, websocket_service_1.notify)(user.id, 'Password Reset', 'Your password has been reset by IT. Check your email for the temporary password.', 'WARNING');
-        await (0, audit_service_1.logAction)(actorId, 'IT_PASSWORD_RESET', 'User', userId, { email: user.email }, req.ip);
-        res.json({ success: true, message: `Temporary password sent to ${user.email}` });
+        const rawToken = crypto_1.default.randomBytes(32).toString('hex');
+        const token = crypto_1.default.createHash('sha256').update(rawToken).digest('hex');
+        await client_1.default.$transaction([
+            client_1.default.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+            client_1.default.passwordResetToken.create({ data: { userId: user.id, token, expiresAt: new Date(Date.now() + 60 * 60 * 1000) } }),
+        ]);
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
+        const sent = await (0, email_service_1.sendEmail)({
+            to: user.email,
+            subject: 'MCB HRM password reset invitation',
+            html: `<p>Hello ${user.fullName},</p><p>IT initiated a secure password reset. This link expires in one hour.</p><p><a href="${resetUrl}">Choose a new password</a></p>`,
+        });
+        if (!sent) {
+            return res.status(503).json({ error: 'Password-reset email could not be delivered. Verify SMTP settings and retry.' });
+        }
+        await client_1.default.$transaction([
+            client_1.default.refreshToken.updateMany({ where: { userId: user.id, organizationId, revokedAt: null }, data: { revokedAt: new Date() } }),
+            client_1.default.user.update({ where: { id: user.id }, data: { mustChangePassword: true } }),
+        ]);
+        await (0, websocket_service_1.notify)(user.id, 'Password Reset Requested', 'IT sent a secure password-reset link to your email.', 'WARNING');
+        await (0, audit_service_1.logAction)(actorId, 'IT_PASSWORD_RESET_INVITED', 'User', userId, { email: user.email }, req.ip);
+        res.json({ success: true, message: `Password-reset invitation sent to ${user.email}` });
     }
     catch (error) {
         res.status(500).json({ error: error.message });

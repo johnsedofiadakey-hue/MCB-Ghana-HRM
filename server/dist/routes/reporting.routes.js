@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const ctrl = __importStar(require("../controllers/reporting.controller"));
+const permissions_1 = require("../types/permissions");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
 // Get all reporting lines for an employee (accessible to the employee + their managers)
@@ -43,9 +44,9 @@ router.get('/employee/:employeeId', ctrl.getEmployeeReportingLines);
 // Get all employees who report to the current user
 router.get('/my-reports', ctrl.getMyDirectReports);
 // Add a reporting line (Manager+ can do this)
-router.post('/', (0, auth_middleware_1.requireRole)(60), ctrl.addReportingLine);
+router.post('/', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.EMPLOYEE_WRITE), ctrl.addReportingLine);
 // Update a reporting line
-router.patch('/:id', (0, auth_middleware_1.requireRole)(60), ctrl.updateReportingLine);
+router.patch('/:id', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.EMPLOYEE_WRITE), ctrl.updateReportingLine);
 // Remove a reporting line
-router.delete('/:id', (0, auth_middleware_1.requireRole)(60), ctrl.removeReportingLine);
+router.delete('/:id', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.EMPLOYEE_WRITE), ctrl.removeReportingLine);
 exports.default = router;

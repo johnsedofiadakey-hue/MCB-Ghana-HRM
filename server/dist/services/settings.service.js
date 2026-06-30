@@ -104,6 +104,10 @@ const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false)
             idCardTheme: true,
             idCardBackMessage: true,
             idCardSecurityText: true,
+            attendanceScanningEnabled: true,
+            attendanceApiKey: true,
+            tier2PensionEnabled: true,
+            tier2PensionRate: true,
             settings: {
                 select: {
                     isMaintenanceMode: true,
@@ -120,7 +124,6 @@ const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false)
                         isMaintenanceMode: true,
                         maintenanceNotice: true,
                         paystackPublicKey: true,
-                        paystackSecretKey: true,
                         paystackPayLink: true,
                         monthlyPriceGHS: true,
                         annualPriceGHS: true,
@@ -280,7 +283,12 @@ const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false)
         idCardBackMessage: org.idCardBackMessage || '',
         idCardSecurityText: org.idCardSecurityText || 'Operational Framework & Terms',
         attendanceScanningEnabled: org.attendanceScanningEnabled ?? false,
-        attendanceApiKey: org.attendanceApiKey || '',
+        attendanceApiKeyMasked: org.attendanceApiKey
+            ? '••••••••' + org.attendanceApiKey.slice(-4)
+            : null,
+        attendanceApiKeyConfigured: !!org.attendanceApiKey,
+        tier2PensionEnabled: org.tier2PensionEnabled ?? false,
+        tier2PensionRate: Number(org.tier2PensionRate ?? 0.05),
         ...(org.settings || {}),
         ...pricing
     };
@@ -391,22 +399,8 @@ const updateSettings = async (organizationId = 'mcb-ghana-tenant', data) => {
         orgUpdate.payeBands = typeof payeBands === 'string' ? payeBands : JSON.stringify(payeBands);
     if (vatRate !== undefined)
         orgUpdate.vatRate = safeNum(vatRate);
-    if (idCardPrimaryColor !== undefined)
-        orgUpdate.idCardPrimaryColor = idCardPrimaryColor;
-    if (idCardAccentColor !== undefined)
-        orgUpdate.idCardAccentColor = idCardAccentColor;
-    if (idCardShowLogo !== undefined)
-        orgUpdate.idCardShowLogo = !!idCardShowLogo;
-    if (idCardShowQrCode !== undefined)
-        orgUpdate.idCardShowQrCode = !!idCardShowQrCode;
-    if (idCardOrientation !== undefined)
-        orgUpdate.idCardOrientation = idCardOrientation;
-    if (idCardTheme !== undefined)
-        orgUpdate.idCardTheme = idCardTheme;
-    if (idCardBackMessage !== undefined)
-        orgUpdate.idCardBackMessage = idCardBackMessage;
-    if (idCardSecurityText !== undefined)
-        orgUpdate.idCardSecurityText = idCardSecurityText;
+    // ID-card production design is intentionally write-protected here. Marketing
+    // owns it through /card-design-settings; organization settings remain IT-only.
     if (attendanceScanningEnabled !== undefined)
         orgUpdate.attendanceScanningEnabled = !!attendanceScanningEnabled;
     if (attendanceApiKey !== undefined)

@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
 
 /**
  * EXPENSE & REIMBURSEMENT CONTROLLER
@@ -61,14 +63,15 @@ export const getPendingApprovals = async (req: Request, res: Response) => {
   try {
     const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const supervisorId = req.user?.id!;
-    const rank = req.user?.rank || 0;
+    const financeAccess = await PolicyService.evaluatePolicy(supervisorId, Permission.EXPENSE_MANAGE);
 
-    // If MD or HR Manager, see everything open. Otherwise, see subordinates.
+    // Finance operations can review the organization queue. Other managers see
+    // only claims submitted by their direct reports.
     const claims = await prisma.expenseClaim.findMany({
       where: {
         organizationId,
         status: 'PENDING',
-        ...(rank < 70 ? { employee: { supervisorId } } : {})
+        ...(financeAccess.allowed ? {} : { employee: { supervisorId } })
       },
       include: {
         employee: { select: { fullName: true, departmentObj: { select: { name: true } } } }
@@ -86,6 +89,17 @@ export const approveExpense = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const approvedById = req.user?.id!;
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+    const financeAccess = await PolicyService.evaluatePolicy(approvedById, Permission.EXPENSE_MANAGE);
+
+    const existing = await prisma.expenseClaim.findFirst({
+      where: { id, organizationId, status: 'PENDING' },
+      include: { employee: { select: { supervisorId: true } } },
+    });
+    if (!existing) return res.status(404).json({ error: 'Pending expense claim not found' });
+    if (!financeAccess.allowed && existing.employee.supervisorId !== approvedById) {
+      return res.status(403).json({ error: 'Only the employee\'s supervisor or Finance may approve this claim' });
+    }
 
     const claim = await prisma.expenseClaim.update({
       where: { id },
@@ -110,6 +124,20 @@ export const rejectExpense = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { reason } = req.body;
     const rejectedById = req.user?.id!;
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+    const financeAccess = await PolicyService.evaluatePolicy(rejectedById, Permission.EXPENSE_MANAGE);
+
+    if (!reason || String(reason).trim().length < 3) {
+      return res.status(400).json({ error: 'A rejection reason is required' });
+    }
+    const existing = await prisma.expenseClaim.findFirst({
+      where: { id, organizationId, status: 'PENDING' },
+      include: { employee: { select: { supervisorId: true } } },
+    });
+    if (!existing) return res.status(404).json({ error: 'Pending expense claim not found' });
+    if (!financeAccess.allowed && existing.employee.supervisorId !== rejectedById) {
+      return res.status(403).json({ error: 'Only the employee\'s supervisor or Finance may reject this claim' });
+    }
 
     const claim = await prisma.expenseClaim.update({
       where: { id },

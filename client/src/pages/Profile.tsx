@@ -10,6 +10,7 @@ import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { optimizeImage } from '../utils/image';
 import SignaturePad from '../components/common/SignaturePad';
 import EmployeeIDCard from '../components/it/EmployeeIDCard';
+import { storage } from '../services/storage';
 
 
 const Profile = () => {
@@ -29,12 +30,13 @@ const Profile = () => {
         confirmPassword: ''
     });
     const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history' | 'id-card'>('info');
+    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history' | 'id-card'>(user.mustChangePassword ? 'security' : 'info');
     const [history, setHistory] = useState<any[]>([]);
     
     // Employee Card states
     const [profile, setProfile] = useState<any | null>(null);
     const [card, setCard] = useState<any | null>(null);
+    const [cardDesign, setCardDesign] = useState<any | null>(null);
     const [loadingCard, setLoadingCard] = useState(false);
     const [cardOrientation, setCardOrientation] = useState<'VERTICAL' | 'HORIZONTAL'>('VERTICAL');
     const [cardTheme, setCardTheme] = useState<'DARK' | 'LIGHT' | 'PRISTINE'>('DARK');
@@ -98,33 +100,22 @@ const Profile = () => {
     const fetchCard = async () => {
         setLoadingCard(true);
         try {
-            const res = await api.get('/cards');
+            const [res, designRes] = await Promise.all([
+                api.get('/cards'),
+                api.get('/card-design-settings')
+            ]);
             if (res.data && res.data.length > 0) {
                 setCard(res.data[0]);
             } else {
                 setCard(null);
             }
+            setCardDesign(designRes.data || null);
+            setCardOrientation(designRes.data?.orientation || 'VERTICAL');
+            setCardTheme(designRes.data?.theme || 'DARK');
         } catch (err) {
             console.error('Failed to fetch card details', err);
         } finally {
             setLoadingCard(false);
-        }
-    };
-
-    const handleRequestCard = async () => {
-        setIsSubmitting(true);
-        setError('');
-        setSuccess('');
-        try {
-            await api.post('/cards/request', {
-                employeeId: profile?.id || user.id
-            });
-            setSuccess('NFC Access Card requested successfully.');
-            await fetchCard();
-        } catch (err: any) {
-            setError(err?.response?.data?.error || 'Failed to request NFC card.');
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -210,6 +201,8 @@ const Profile = () => {
             });
             setSuccess('Password changed successfully.');
             setFormData(d => ({ ...d, currentPassword: '', newPassword: '', confirmPassword: '' }));
+            storage.clearSession();
+            window.location.href = '/';
         } catch (err: any) {
             setError(err?.response?.data?.error || 'Failed to change password.');
         } finally {
@@ -247,9 +240,15 @@ const Profile = () => {
                 )}
             </AnimatePresence>
 
+            {user.mustChangePassword && (
+                <div className="p-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-700 text-sm font-bold">
+                    You must choose a new password before accessing the rest of the system.
+                </div>
+            )}
+
             {/* Matrix Tabs */}
             <div className="flex border-b border-[var(--border-subtle)]/30 overflow-x-auto no-scrollbar">
-                {(['info', 'security', 'id-card', 'history'] as const).map(tab => (
+                {(user.mustChangePassword ? ['security'] : ['info', 'security', 'id-card', 'history'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveTab(tab)}
                         className={cn("pb-5 px-4 sm:px-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap flex-shrink-0",
                         activeTab === tab ? "text-[var(--primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
@@ -689,52 +688,12 @@ const Profile = () => {
                                                 </div>
 
                                                 <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-6">
-                                                    Your digital company card is integrated with real-time NFC building access. Changes to status are governed by IT Administration and Security Policies.
+                                                    Marketing owns card production and design. IT controls physical access activation, suspension and revocation. Your view is read-only.
                                                 </p>
 
-                                                {/* Card Customization Control Panel */}
-                                                <div className="space-y-6 bg-[var(--bg-elevated)]/50 p-6 rounded-2xl border border-[var(--border-subtle)]/30 backdrop-blur-md">
-                                                    <div>
-                                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)] mb-3">Card Viewer Theme</h4>
-                                                        <div className="grid grid-cols-3 gap-3">
-                                                            {(['DARK', 'LIGHT', 'PRISTINE'] as const).map(themeOpt => (
-                                                                <button
-                                                                    key={themeOpt}
-                                                                    type="button"
-                                                                    onClick={() => setCardTheme(themeOpt)}
-                                                                    className={cn(
-                                                                        "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border",
-                                                                        cardTheme === themeOpt
-                                                                            ? "bg-[var(--primary)] border-[var(--primary)] text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-                                                                            : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]/40 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                                                                    )}
-                                                                >
-                                                                    {themeOpt === 'DARK' ? 'Holo Dark' : themeOpt === 'LIGHT' ? 'Prism Light' : 'Pristine'}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div>
-                                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)] mb-3">Card Layout Orientation</h4>
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            {(['VERTICAL', 'HORIZONTAL'] as const).map(orientOpt => (
-                                                                <button
-                                                                    key={orientOpt}
-                                                                    type="button"
-                                                                    onClick={() => setCardOrientation(orientOpt)}
-                                                                    className={cn(
-                                                                        "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border",
-                                                                        cardOrientation === orientOpt
-                                                                            ? "bg-[var(--primary)] border-[var(--primary)] text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-                                                                            : "bg-[var(--bg-elevated)] border-[var(--border-subtle)]/40 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                                                                    )}
-                                                                >
-                                                                    {orientOpt}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
+                                                <div className="grid grid-cols-2 gap-3 bg-[var(--bg-elevated)]/50 p-5 rounded-2xl border border-[var(--border-subtle)]/30">
+                                                    <div><p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Production</p><p className="mt-1 text-xs font-black text-[var(--text-primary)]">{card?.productionStatus || 'NOT ISSUED'}</p></div>
+                                                    <div><p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Access</p><p className="mt-1 text-xs font-black text-[var(--text-primary)]">{card?.accessStatus || 'NOT PROVISIONED'}</p></div>
                                                 </div>
                                             </div>
 
@@ -753,16 +712,16 @@ const Profile = () => {
                                                         </div>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Security Registry:</span>
-                                                            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">ACTIVE & SECURED</span>
+                                                            <span className="text-xs font-black uppercase tracking-widest text-[var(--primary)]">{card.accessStatus?.replaceAll('_', ' ') || 'NOT PROVISIONED'}</span>
                                                         </div>
                                                         <div className="flex gap-4 pt-2">
                                                             <button
                                                                 type="button"
-                                                                onClick={() => window.print()}
+                                                                onClick={() => setShowRequestModal(true)}
                                                                 className="flex-1 py-4.5 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[10px] font-black uppercase tracking-widest border border-[var(--border-subtle)]/50 flex items-center justify-center gap-2.5 text-[var(--text-primary)] transition-all"
                                                             >
-                                                                <Printer size={14} />
-                                                                <span>Print Credentials</span>
+                                                                <Mail size={14} />
+                                                                <span>Report a correction</span>
                                                             </button>
                                                             <button
                                                                 type="button"
@@ -776,16 +735,15 @@ const Profile = () => {
                                                 ) : (
                                                     <div className="space-y-4">
                                                         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium leading-relaxed">
-                                                            No active corporate ID card was found in your registry. If you have not been issued a physical NFC access card, please request one.
+                                                            No employee card has been issued. Contact the Marketing help-desk queue if your onboarding card task is delayed.
                                                         </div>
                                                         <button
                                                             type="button"
-                                                            onClick={handleRequestCard}
-                                                            disabled={isSubmitting}
+                                                            onClick={() => setShowRequestModal(true)}
                                                             className="w-full btn-primary bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-slate-950 shadow-md font-black uppercase tracking-widest text-[10px] py-4.5 flex items-center justify-center gap-2"
                                                         >
-                                                            {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-                                                            <span>Request Corporate NFC Card</span>
+                                                            <Mail size={16} />
+                                                            <span>Contact Marketing</span>
                                                         </button>
                                                     </div>
                                                 )}
@@ -797,7 +755,7 @@ const Profile = () => {
                                             <div className="absolute inset-0 bg-radial-gradient from-[var(--primary)]/5 to-transparent pointer-events-none" />
                                             {/* Scrollable wrapper: on mobile the card is larger than the container, scroll within */}
                                             <div className="overflow-auto w-full max-h-full flex items-center justify-center p-2">
-                                            <div className="transition-transform duration-500" style={{ zoom: 0.88 }}>
+                                            <div className="transition-transform duration-500" style={{ zoom: cardOrientation === 'HORIZONTAL' ? 0.6 : 0.82 }}>
                                                 <EmployeeIDCard
                                                     employee={{
                                                         fullName: profile?.fullName || user?.name || '',
@@ -810,14 +768,18 @@ const Profile = () => {
                                                     }}
                                                     organization={{
                                                         name: 'MCB Ghana',
-                                                        primaryColor: '#0F172A',
-                                                        accentColor: '#F59E0B',
-                                                        idCardPrimaryColor: '#0F172A',
-                                                        idCardAccentColor: '#F59E0B',
+                                                        primaryColor: cardDesign?.primaryColor || '#0F172A',
+                                                        accentColor: cardDesign?.secondaryColor || '#F59E0B',
+                                                        idCardPrimaryColor: cardDesign?.primaryColor || '#0F172A',
+                                                        idCardAccentColor: cardDesign?.secondaryColor || '#F59E0B',
                                                         idCardOrientation: cardOrientation,
                                                         idCardTheme: cardTheme,
+                                                        idCardShowLogo: cardDesign?.showLogo ?? true,
+                                                        idCardShowQrCode: cardDesign?.showQrCode ?? true,
+                                                        idCardBackMessage: cardDesign?.backMessage,
+                                                        idCardSecurityText: cardDesign?.securityText,
                                                     }}
-                                                    status={card?.status || 'REQUESTED'}
+                                                    status={card?.accessStatus || 'NOT_PROVISIONED'}
                                                 />
                                             </div>
                                             </div>
@@ -862,7 +824,7 @@ const Profile = () => {
                             </div>
 
                             <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed bg-[var(--bg-elevated)]/50 p-4 rounded-xl border border-[var(--border-subtle)]/50 italic">
-                                "Self-service identity editing is restricted to HR and IT departments. If any information in your summary is incorrect, please provide the details below and submit a formal report to the Support Center."
+                                "Employee cards and call cards are managed by Marketing. Describe the correction or issuance problem below; it will be routed to the Marketing help-desk queue."
                             </p>
 
                             <div className="space-y-3">
@@ -890,7 +852,7 @@ const Profile = () => {
                                           await api.post('/support/tickets', {
                                             subject: `Profile Update Request: ${user.name}`,
                                             description: requestMsg,
-                                            category: 'USER_IDENTITY',
+                                            category: 'MARKETING',
                                             priority: 'NORMAL'
                                           });
                                           setSuccess('Your update request has been submitted to the Support Inbox.');

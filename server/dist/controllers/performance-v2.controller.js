@@ -7,6 +7,8 @@ exports.updateEmployeeTarget = exports.deleteDepartmentKPI = exports.directorFin
 const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const enterprise_controller_1 = require("./enterprise.controller");
+const hierarchy_service_1 = require("../services/hierarchy.service");
+const hasPerformanceAdminAccess = (role) => ['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV'].includes(String(role || '').toUpperCase());
 // --- DEPARTMENT KPIs (Director+) ---
 const createDepartmentKPI = async (req, res) => {
     try {
@@ -14,6 +16,12 @@ const createDepartmentKPI = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
+        const department = await client_1.default.department.findFirst({ where: { id: Number(departmentId), organizationId }, select: { id: true, managerId: true } });
+        if (!department)
+            return res.status(404).json({ error: 'Department not found' });
+        if (department.managerId !== user.id && !hasPerformanceAdminAccess(user.role)) {
+            return res.status(403).json({ error: 'Only the department owner may create this KPI' });
+        }
         const kpi = await client_1.default.departmentKPI.create({
             data: {
                 organizationId,
@@ -39,11 +47,10 @@ const getDepartmentKPIs = async (req, res) => {
         const user = req.user;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
-        const userRank = user.rank || 0;
         const where = { ...whereOrg };
-        // Managers can view, Directors can manage. Staff cannot see Dept KPIs unless assigned.
-        if (userRank < 70) {
-            where.assignedToId = user.id;
+        if (!hasPerformanceAdminAccess(user.role)) {
+            const managed = await client_1.default.department.findMany({ where: { organizationId: orgId || 'mcb-ghana-tenant', managerId: user.id }, select: { id: true } });
+            where.departmentId = { in: [...new Set([user.departmentId, ...managed.map(department => department.id)].filter(Boolean))] };
         }
         const kpis = await client_1.default.departmentKPI.findMany({
             where,
@@ -65,6 +72,15 @@ const createTeamTarget = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
+        const parentKpi = await client_1.default.departmentKPI.findFirst({
+            where: { id: departmentKpiId, organizationId },
+            include: { department: { select: { managerId: true } } }
+        });
+        if (!parentKpi)
+            return res.status(404).json({ error: 'Department KPI not found' });
+        const ownsDepartment = parentKpi.department.managerId === user.id || parentKpi.departmentId === user.departmentId;
+        if (!ownsDepartment && !hasPerformanceAdminAccess(user.role))
+            return res.status(403).json({ error: 'KPI is outside your department scope' });
         const target = await client_1.default.teamTarget.create({
             data: {
                 organizationId,
@@ -90,10 +106,8 @@ const getTeamTargets = async (req, res) => {
         const user = req.user;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
-        const userRank = user.rank || 0;
         const where = { ...whereOrg };
-        // Managers see their own team targets, Directors see all in dept (simplified here to all in org)
-        if (userRank < 80) {
+        if (!hasPerformanceAdminAccess(user.role)) {
             where.managerId = user.id;
         }
         const targets = await client_1.default.teamTarget.findMany({
@@ -116,6 +130,17 @@ const createEmployeeTarget = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
+        const teamTarget = await client_1.default.teamTarget.findFirst({ where: { id: teamTargetId, organizationId }, select: { id: true, managerId: true } });
+        if (!teamTarget)
+            return res.status(404).json({ error: 'Team target not found' });
+        const managedIds = await hierarchy_service_1.HierarchyService.getManagedEmployeeIds(user.id, organizationId);
+        if (teamTarget.managerId !== user.id && !hasPerformanceAdminAccess(user.role))
+            return res.status(403).json({ error: 'Team target is outside your scope' });
+        if (!managedIds.includes(employeeId) && !hasPerformanceAdminAccess(user.role))
+            return res.status(403).json({ error: 'Employee is outside your reporting scope' });
+        const employee = await client_1.default.user.findFirst({ where: { id: employeeId, organizationId }, select: { id: true } });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found' });
         const target = await client_1.default.employeeTarget.create({
             data: {
                 organizationId,
@@ -160,10 +185,11 @@ exports.getMyTargets = getMyTargets;
 // --- PERFORMANCE REVIEWS (Multi-stage) ---
 const createReview = async (req, res) => {
     try {
-        const { employeeId, cycleId, selfReview, selfScore } = req.body;
+        const { cycleId, selfReview, selfScore } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const organizationId = orgId || 'mcb-ghana-tenant';
         const user = req.user;
+        const employeeId = user.id;
         const cycle = await client_1.default.reviewCycle.findFirst({ where: { id: cycleId, organizationId } });
         if (!cycle)
             return res.status(404).json({ error: 'Review cycle not found' });
@@ -193,6 +219,12 @@ const managerReview = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
         const user = req.user;
+        const existing = await client_1.default.performanceReviewV2.findFirst({ where: { id, organizationId: orgId || 'mcb-ghana-tenant' }, select: { id: true, employeeId: true } });
+        if (!existing)
+            return res.status(404).json({ error: 'Performance review not found' });
+        const managedIds = await hierarchy_service_1.HierarchyService.getManagedEmployeeIds(user.id, orgId || 'mcb-ghana-tenant');
+        if (!managedIds.includes(existing.employeeId) && !hasPerformanceAdminAccess(user.role))
+            return res.status(403).json({ error: 'Employee is outside your reporting scope' });
         const review = await client_1.default.performanceReviewV2.updateMany({
             where: { id, ...whereOrg },
             data: {
@@ -238,6 +270,12 @@ const deleteDepartmentKPI = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
+        const user = req.user;
+        const existing = await client_1.default.departmentKPI.findFirst({ where: { id: req.params.id, ...whereOrg }, include: { department: { select: { managerId: true } } } });
+        if (!existing)
+            return res.status(404).json({ error: 'Department KPI not found' });
+        if (existing.department.managerId !== user.id && existing.assignedById !== user.id && !hasPerformanceAdminAccess(user.role))
+            return res.status(403).json({ error: 'KPI is outside your department scope' });
         await client_1.default.departmentKPI.deleteMany({
             where: { id: req.params.id, ...whereOrg }
         });
@@ -249,17 +287,6 @@ const deleteDepartmentKPI = async (req, res) => {
 };
 exports.deleteDepartmentKPI = deleteDepartmentKPI;
 const updateEmployeeTarget = async (req, res) => {
-    try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const whereOrg = orgId ? { organizationId: orgId } : {};
-        const target = await client_1.default.employeeTarget.updateMany({
-            where: { id: req.params.id, ...whereOrg },
-            data: { ...req.body }
-        });
-        res.json(target);
-    }
-    catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    return res.status(410).json({ error: 'This legacy target endpoint has been retired. Use /api/targets/:id/progress.' });
 };
 exports.updateEmployeeTarget = updateEmployeeTarget;

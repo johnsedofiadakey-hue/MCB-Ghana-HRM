@@ -36,10 +36,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateStatus = exports.getEmployeeRecords = exports.createRecord = void 0;
 const historyService = __importStar(require("../services/history.service"));
 const audit_service_1 = require("../services/audit.service");
+const policy_service_1 = require("../services/policy.service");
+const permissions_1 = require("../types/permissions");
+const EMPLOYEE_VISIBLE_TYPES = ['COMMENDATION', 'GENERAL_NOTE'];
+const ALLOWED_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 const createRecord = async (req, res) => {
     try {
         const user = req.user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
+        if (!req.body.employeeId)
+            return res.status(400).json({ message: 'employeeId is required' });
         const record = await historyService.createHistory({
             ...req.body,
             loggedById: user.id,
@@ -57,14 +63,19 @@ const getEmployeeRecords = async (req, res) => {
     try {
         const user = req.user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
-        const records = await historyService.getHistoryByEmployee(organizationId, req.params.employeeId);
-        const userRole = user?.role;
-        if (userRole === 'STAFF' || userRole === 'CASUAL') {
-            const visibleToEmployee = ['COMMENDATION', 'GENERAL_NOTE'];
-            const filtered = records.filter(r => r.type && visibleToEmployee.includes(r.type));
-            return res.json(filtered);
+        const targetEmployeeId = req.params.employeeId;
+        if (targetEmployeeId !== user.id) {
+            const access = await policy_service_1.PolicyService.evaluatePolicy(user.id, permissions_1.Permission.EMPLOYEE_HISTORY_READ, {
+                targetUserId: targetEmployeeId
+            });
+            if (!access.allowed)
+                return res.status(403).json({ message: 'You cannot view this employee history' });
         }
-        res.json(records);
+        const records = await historyService.getHistoryByEmployee(organizationId, targetEmployeeId);
+        if (targetEmployeeId === user.id) {
+            return res.json(records.filter(r => r.type && EMPLOYEE_VISIBLE_TYPES.includes(r.type)));
+        }
+        return res.json(records);
     }
     catch (error) {
         res.status(500).json({ message: error.message });
@@ -75,8 +86,12 @@ const updateStatus = async (req, res) => {
     try {
         const user = req.user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
-        const record = await historyService.updateHistoryStatus(organizationId, req.params.id, req.body.status);
-        await (0, audit_service_1.logAction)(user?.id, 'UPDATE_HISTORY_STATUS', 'EmployeeHistory', req.params.id, { status: req.body.status }, req.ip);
+        const status = String(req.body.status || '').toUpperCase();
+        if (!ALLOWED_STATUSES.includes(status)) {
+            return res.status(400).json({ message: `status must be one of: ${ALLOWED_STATUSES.join(', ')}` });
+        }
+        const record = await historyService.updateHistoryStatus(organizationId, req.params.id, status);
+        await (0, audit_service_1.logAction)(user?.id, 'UPDATE_HISTORY_STATUS', 'EmployeeHistory', req.params.id, { status }, req.ip);
         res.json(record);
     }
     catch (error) {

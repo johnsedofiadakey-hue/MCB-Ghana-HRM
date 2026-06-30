@@ -3,6 +3,9 @@ import { AnalyticsService } from '../services/analytics.service';
 import { getOrgId } from './enterprise.controller';
 import prisma from '../prisma/client';
 import { PdfExportService } from '../services/pdf.service';
+import { HierarchyService } from '../services/hierarchy.service';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
 
 export class AnalyticsController {
   static async getDashboardMetrics(req: Request, res: Response) {
@@ -44,21 +47,27 @@ export class AnalyticsController {
     try {
         const user = (req as any).user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
-        const rank = user.rank || 50;
         const userId = user.id;
-
-        const isExecutive = rank >= 80;
+        const role = String(user.role || '').toUpperCase();
+        const isExecutive = ['MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR_MANAGER', 'DEV'].includes(role);
+        const payrollAccessResults = await Promise.all([
+            PolicyService.evaluatePolicy(userId, Permission.PAYROLL_PREPARE),
+            PolicyService.evaluatePolicy(userId, Permission.PAYROLL_HR_APPROVE),
+            PolicyService.evaluatePolicy(userId, Permission.PAYROLL_RELEASE),
+        ]);
+        const canViewPayrollTotal = payrollAccessResults.some(result => result.allowed);
+        const managedEmployeeIds = isExecutive ? [] : await HierarchyService.getManagedEmployeeIds(userId, organizationId);
         
         // Scope queries based on executive vs manager
         const userWhere: any = { organizationId, status: 'ACTIVE', role: { not: 'DEV' } };
-        if (!isExecutive) userWhere.supervisorId = userId;
+        if (!isExecutive) userWhere.id = { in: managedEmployeeIds };
 
         // Phase 1: employee scope (IDs needed to build subsequent where clauses)
         const [totalEmployees, scopedUsers] = await Promise.all([
             prisma.user.count({ where: userWhere }),
             isExecutive
-                ? Promise.resolve([] as { id: string }[])
-                : prisma.user.findMany({ where: userWhere, select: { id: true } }),
+                ? prisma.user.findMany({ where: userWhere, select: { id: true } })
+                : Promise.resolve(managedEmployeeIds.map(id => ({ id }))),
         ]);
         const employeeIds = scopedUsers.map(u => u.id);
 
@@ -93,17 +102,17 @@ export class AnalyticsController {
             prisma.leaveRequest.count({ where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } } }),
             prisma.kpiSheet.count({ where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } } }),
             (prisma as any).appraisalPacket.count({ where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] } }),
-            isExecutive
-                ? prisma.payrollRun.findFirst({ where: { organizationId, status: { in: ['APPROVED', 'PAID'] } }, orderBy: { createdAt: 'desc' }, select: { totalNet: true } })
+            canViewPayrollTotal
+                ? prisma.payrollRun.findFirst({ where: { organizationId, status: { in: ['RELEASED', 'PAID'] } }, orderBy: { createdAt: 'desc' }, select: { totalNet: true } })
                 : Promise.resolve(null),
             prisma.attendanceLog.count({ where: { organizationId, clockIn: { gte: thirtyDaysAgo }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) } }),
-            prisma.leaveRequest.findMany({ where: { organizationId, status: 'APPROVED', startDate: { gte: thirtyDaysAgo } }, select: { leaveDays: true }, take: 500 }),
-            prisma.publicHoliday.count({ where: { date: { gte: thirtyDaysAgo } } }),
+            prisma.leaveRequest.findMany({ where: { organizationId, status: 'APPROVED', startDate: { gte: thirtyDaysAgo }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) }, select: { leaveDays: true }, take: 500 }),
+            prisma.publicHoliday.count({ where: { organizationId, date: { gte: thirtyDaysAgo } } }),
             prisma.kpiSheet.groupBy({ by: ['employeeId'], where: { organizationId, status: { in: ['LOCKED', 'SUBMITTED'] }, ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) }, _avg: { totalScore: true } }),
             prisma.appraisalCycle.findFirst({ where: { organizationId, status: { in: ['ACTIVE', 'OPEN'] } } }),
-            prisma.kpiSheet.count({ where: { organizationId, status: 'ACTIVE' } }),
-            (prisma as any).appraisalPacket.count({ where: { organizationId, status: 'OPEN' } }),
-            (prisma as any).appraisalPacket.groupBy({ by: ['currentStage'], where: { organizationId, status: 'OPEN' }, _count: true }),
+            prisma.kpiSheet.count({ where: { organizationId, status: 'ACTIVE', ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) } }),
+            (prisma as any).appraisalPacket.count({ where: { organizationId, status: 'OPEN', ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) } }),
+            (prisma as any).appraisalPacket.groupBy({ by: ['currentStage'], where: { organizationId, status: 'OPEN', ...(isExecutive ? {} : { employeeId: { in: employeeIds } }) }, _count: true }),
             prisma.user.findMany({ where: userWhere, orderBy: { rank: 'desc' }, take: 5, select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true } }),
             prisma.user.findMany({ where: { organizationId, supervisorId: userId, status: 'ACTIVE' }, orderBy: { rank: 'desc' }, select: { id: true, fullName: true, jobTitle: true, status: true, avatarUrl: true } }),
             isExecutive
@@ -181,13 +190,18 @@ export class AnalyticsController {
     }
   }
 
-  static async getDepartmentGrowth(req: Request, res: Response) {
+    static async getDepartmentGrowth(req: Request, res: Response) {
     try {
         const user = (req as any).user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
+        const role = String(user.role || '').toUpperCase();
+        const hasOrgOversight = ['MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR_MANAGER', 'DEV'].includes(role);
 
         const departments = await prisma.department.findMany({
-            where: { organizationId },
+            where: {
+                organizationId,
+                ...(hasOrgOversight ? {} : { OR: [{ managerId: user.id }, ...(user.departmentId ? [{ id: user.departmentId }] : [])] })
+            },
             include: { _count: { select: { employees: true } } }
         });
 

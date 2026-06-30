@@ -116,7 +116,7 @@ export const DevPinSchema = z.object({
 
 // ── User / Employee ──────────────────────────────────────────────────────
 
-const ROLES = ['DEV', 'MD', 'HR_DIRECTOR', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'] as const;
+const ROLES = ['DEV', 'MD', 'HR_DIRECTOR', 'DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'MARKETING_HEAD', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'IT_ADMIN', 'HR_OFFICER', 'STAFF', 'CASUAL'] as const;
 const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'] as const;
 const USER_STATUSES = ['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED', 'SUSPENDED'] as const;
 const CURRENCIES = ['GHS', 'USD', 'EUR', 'GBP', 'GNF', 'NGN', 'KES', 'XOF'] as const;
@@ -158,11 +158,17 @@ export const LeaveRequestSchema = z.object({
   reason: str(500),
   leaveType: z.enum(LEAVE_TYPES).optional().default('Annual'),
   relieverId: optUuid,
+  handoverNotes: optStr(2000),
+  relieverAcceptanceRequired: z.boolean().optional().default(false),
 });
 
 export const LeaveActionSchema = z.object({
-  status: z.enum(['APPROVED', 'REJECTED']),
-  managerComment: optStr(500),
+  id: uuid,
+  action: z.enum(['APPROVE', 'REJECT', 'APPROVED', 'REJECTED']).transform((value) =>
+    value === 'APPROVED' ? 'APPROVE' : value === 'REJECTED' ? 'REJECT' : value
+  ),
+  role: z.enum(['RELIEVER', 'MANAGER', 'HR', 'MD']).optional(),
+  comment: optStr(500),
 });
 
 // ── Payroll ───────────────────────────────────────────────────────────────
@@ -203,9 +209,10 @@ export const DepartmentSchema = z.object({
 export const AnnouncementSchema = z.object({
   title: str(200),
   content: str(5000),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('MEDIUM'),
-  targetRoles: z.array(z.string()).optional(),
-  expiresAt: optDateStr,
+  priority: z.enum(['LOW', 'NORMAL', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('NORMAL'),
+  targetAudience: z.enum(['ALL', 'DEPARTMENT', 'MANAGERS', 'EXECUTIVES']).optional().default('ALL'),
+  departmentId: z.coerce.number().int().positive().optional().nullable().or(z.literal('')),
+  expirationDate: optDateStr,
 });
 
 // ── Appraisals ────────────────────────────────────────────────────────────
@@ -230,19 +237,21 @@ export const AppraisalCycleSchema = z.object({
 
 export const AssetSchema = z.object({
   name: str(200),
-  assetTag: optStr(50),
-  category: optStr(100),
-  serialNumber: optStr(100),
+  serialNumber: str(100),
+  type: str(100),
+  make: optStr(100),
+  model: optStr(100),
+  description: optStr(500),
+  isCompanyProperty: z.boolean().optional().default(true),
   purchaseDate: optDateStr,
-  purchasePrice: nonNegativeNum.optional(),
-  condition: z.enum(['NEW', 'GOOD', 'FAIR', 'POOR', 'DAMAGED']).optional().default('NEW'),
-  notes: optStr(500),
+  warrantyExpiry: optDateStr,
 });
 
 export const AssetAssignSchema = z.object({
-  employeeId: z.string().uuid(),
-  assignedDate: optDateStr,
-  notes: optStr(500),
+  assetId: uuid,
+  userId: uuid,
+  condition: optStr(100),
+  signature: optStr(2_000_000),
 });
 
 // ── Training ──────────────────────────────────────────────────────────────
@@ -250,12 +259,12 @@ export const AssetAssignSchema = z.object({
 export const TrainingProgramSchema = z.object({
   title: str(200),
   description: optStr(2000),
+  provider: optStr(200),
   startDate: optDateStr,
   endDate: optDateStr,
-  capacity: z.coerce.number().int().min(1).max(10000).optional(),
-  location: optStr(200),
-  trainer: optStr(100),
-  type: z.enum(['INTERNAL', 'EXTERNAL', 'ONLINE', 'WORKSHOP']).optional().default('INTERNAL'),
+  durationHours: z.preprocess((value) => value === '' ? undefined : value, z.coerce.number().int().min(0).max(10000).optional()),
+  maxSeats: z.preprocess((value) => value === '' ? undefined : value, z.coerce.number().int().min(1).max(10000).optional()),
+  cost: z.preprocess((value) => value === '' ? undefined : value, nonNegativeNum.optional()),
 });
 
 // ── Recruitment ───────────────────────────────────────────────────────────
@@ -288,11 +297,12 @@ export const InterviewScheduleSchema = z.object({
 // ── Expenses ──────────────────────────────────────────────────────────────
 
 export const ExpenseClaimSchema = z.object({
+  title: str(200),
   description: str(500),
   amount: z.coerce.number().min(0.01, 'Amount must be greater than zero'),
   category: optStr(100),
+  currency: z.enum(CURRENCIES).optional().default('GHS'),
   receiptUrl: optStr(500),
-  date: optDateStr,
 });
 
 // ── Onboarding ────────────────────────────────────────────────────────────

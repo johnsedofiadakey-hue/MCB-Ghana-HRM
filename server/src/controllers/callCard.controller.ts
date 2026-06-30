@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { getOrgId } from './enterprise.controller';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
+import { completeOnboardingTasksForEvent } from '../services/onboarding-events.service';
 
 export const upsertCallCard = async (req: Request, res: Response) => {
   try {
-    const orgId = getOrgId(req);
+    const orgId = getOrgId(req) || 'mcb-ghana-tenant';
     const {
       employeeId,
       fullName,
@@ -29,44 +32,36 @@ export const upsertCallCard = async (req: Request, res: Response) => {
     if (!fullName?.trim() || !jobTitle?.trim() || !email?.trim()) {
       return res.status(400).json({ error: 'Full Name, Job Title, and Email are required fields' });
     }
-
-    const card = await prisma.callCard.upsert({
-      where: { employeeId },
-      update: {
-        fullName: fullName.trim(),
-        jobTitle: jobTitle.trim(),
-        department: department?.trim() || null,
-        bio: bio?.trim() || '',
-        email: email.trim(),
-        phone: phone?.trim() || '',
-        whatsapp: whatsapp?.trim() || '',
-        linkedin: linkedin?.trim() || '',
-        github: github?.trim() || '',
-        website: website?.trim() || '',
-        theme: theme || 'MCB_GOLD',
-        logoUrl: logoUrl || '',
-        isActive: isActive !== undefined ? isActive : true,
-        enableContactCollection: enableContactCollection !== undefined ? enableContactCollection : false
-      },
-      create: {
-        employeeId,
-        organizationId: orgId || 'mcb-ghana-tenant',
-        fullName: fullName.trim(),
-        jobTitle: jobTitle.trim(),
-        department: department?.trim() || null,
-        bio: bio?.trim() || '',
-        email: email.trim(),
-        phone: phone?.trim() || '',
-        whatsapp: whatsapp?.trim() || '',
-        linkedin: linkedin?.trim() || '',
-        github: github?.trim() || '',
-        website: website?.trim() || '',
-        theme: theme || 'MCB_GOLD',
-        logoUrl: logoUrl || '',
-        isActive: isActive !== undefined ? isActive : true,
-        enableContactCollection: enableContactCollection !== undefined ? enableContactCollection : false
-      }
+    const employee = await prisma.user.findFirst({
+      where: { id: employeeId, organizationId: orgId, isArchived: false, status: { not: 'TERMINATED' } },
+      select: { id: true }
     });
+    if (!employee) return res.status(404).json({ error: 'Employee not found in this organization' });
+
+    const existing = await prisma.callCard.findFirst({ where: { employeeId, organizationId: orgId } });
+
+    const payload = {
+        fullName: fullName.trim(),
+        jobTitle: jobTitle.trim(),
+        department: department?.trim() || null,
+        bio: bio?.trim() || '',
+        email: email.trim(),
+        phone: phone?.trim() || '',
+        whatsapp: whatsapp?.trim() || '',
+        linkedin: linkedin?.trim() || '',
+        github: github?.trim() || '',
+        website: website?.trim() || '',
+        theme: theme || 'MCB_GOLD',
+        logoUrl: logoUrl || '',
+        isActive: isActive !== undefined ? isActive : true,
+        enableContactCollection: enableContactCollection !== undefined ? enableContactCollection : false
+    };
+    const card = existing
+      ? await prisma.callCard.update({ where: { id: existing.id }, data: payload })
+      : await prisma.callCard.create({ data: { ...payload, employeeId, organizationId: orgId } });
+    if (payload.isActive) {
+      await completeOnboardingTasksForEvent({ organizationId: orgId, employeeId, event: 'CALL_CARD_PUBLISHED', actorId: (req as any).user.id });
+    }
 
     console.log(`[CallCard] Successfully configured card for Employee ID ${employeeId} with theme ${theme}`);
     res.status(200).json(card);
@@ -79,13 +74,18 @@ export const upsertCallCard = async (req: Request, res: Response) => {
 export const getCallCardByEmployee = async (req: Request, res: Response) => {
   try {
     const { employeeId } = req.params;
+    const actor = (req as any).user;
+    const organizationId = actor.organizationId || 'mcb-ghana-tenant';
 
     if (!employeeId) {
       return res.status(400).json({ error: 'Employee ID is required' });
     }
 
-    const card = await prisma.callCard.findUnique({
-      where: { employeeId }
+    const canManage = (await PolicyService.evaluatePolicy(actor.id, Permission.CALL_CARD_MANAGE)).allowed;
+    if (employeeId !== actor.id && !canManage) return res.status(403).json({ error: 'Access denied' });
+
+    const card = await prisma.callCard.findFirst({
+      where: { employeeId, organizationId }
     });
 
     if (card) {
@@ -93,8 +93,8 @@ export const getCallCardByEmployee = async (req: Request, res: Response) => {
     }
 
     // Default template derived from active user database context
-    const user = await prisma.user.findUnique({
-      where: { id: employeeId },
+    const user = await prisma.user.findFirst({
+      where: { id: employeeId, organizationId },
       include: { departmentObj: { select: { name: true } } }
     });
 
@@ -137,8 +137,12 @@ export const getPublicCallCard = async (req: Request, res: Response) => {
     }
 
     // Increment scan impressions (views) on every active card fetch
+    const active = await prisma.callCard.findFirst({
+      where: { id, isActive: true, employee: { isArchived: false, status: { not: 'TERMINATED' } } }
+    });
+    if (!active) return res.status(404).json({ error: 'Call Card not found or inactive.' });
     const card = await prisma.callCard.update({
-      where: { id },
+      where: { id: active.id },
       data: { views: { increment: 1 } },
       include: {
         employee: {
@@ -152,10 +156,6 @@ export const getPublicCallCard = async (req: Request, res: Response) => {
 
     if (!card) {
       return res.status(404).json({ error: 'Call Card not found or has been removed.' });
-    }
-
-    if (!card.isActive) {
-      return res.status(403).json({ error: 'This digital call card is currently suspended by management.' });
     }
 
     res.json(card);
@@ -177,8 +177,8 @@ export const submitConnection = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Full Name and Email are required to connect' });
     }
 
-    const card = await prisma.callCard.findUnique({
-      where: { id }
+    const card = await prisma.callCard.findFirst({
+      where: { id, isActive: true, employee: { isArchived: false, status: { not: 'TERMINATED' } } }
     });
 
     if (!card) {
@@ -186,7 +186,7 @@ export const submitConnection = async (req: Request, res: Response) => {
     }
 
     if (!card.enableContactCollection) {
-      return res.status(403).json({ error: 'Contact collection is not enabled for this employee by the IT Admin.' });
+      return res.status(403).json({ error: 'Contact collection is not enabled for this employee.' });
     }
 
     const connection = await prisma.callCardConnection.create({
@@ -215,8 +215,9 @@ export const getEmployeeConnections = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const card = await prisma.callCard.findUnique({
-      where: { employeeId },
+    const organizationId = (req as any).user.organizationId || 'mcb-ghana-tenant';
+    const card = await prisma.callCard.findFirst({
+      where: { employeeId, organizationId },
       include: {
         connections: {
           orderBy: { createdAt: 'desc' }

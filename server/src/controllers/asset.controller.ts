@@ -1,8 +1,10 @@
-import { getRoleRank } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import * as assetService from '../services/asset.service';
 import { logAction } from '../services/audit.service';
 import prisma from '../prisma/client';
+import { completeOnboardingTasksForEvent } from '../services/onboarding-events.service';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
 
 export const createAsset = async (req: Request, res: Response) => {
     try {
@@ -21,7 +23,6 @@ export const getInventory = async (req: Request, res: Response) => {
         const userReq = (req as any).user;
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const actorRole = userReq.role;
-        const actorRank = getRoleRank(actorRole);
         const actorId = userReq.id;
 
         let assets = await assetService.getAllAssets(organizationId);
@@ -29,8 +30,7 @@ export const getInventory = async (req: Request, res: Response) => {
         // 🛡️ ASSET GOVERNANCE (Strict Role-Based Isolation):
         // - MD / IT_MANAGER / DEV can see all inventory.
         // - All other roles see only assets assigned to THEM personally.
-        const authorizedRoles = ['MD', 'IT_MANAGER', 'DEV'];
-        const isFullAccess = authorizedRoles.includes(actorRole?.toUpperCase() || '');
+        const isFullAccess = (await PolicyService.evaluatePolicy(actorId, Permission.ASSET_MANAGE)).allowed;
 
         if (!isFullAccess) {
             assets = assets.filter(asset => 
@@ -50,6 +50,7 @@ export const assignAsset = async (req: Request, res: Response) => {
         const organizationId = userReq.organizationId || 'mcb-ghana-tenant';
         const { assetId, userId, condition, signature } = req.body;
         const assignment = await assetService.assignAsset(organizationId, assetId, userId, condition, signature);
+        await completeOnboardingTasksForEvent({ organizationId, employeeId: userId, event: 'ASSET_ASSIGNED', actorId: userReq.id });
         await logAction(userReq.id, 'ASSIGN_ASSET', 'Asset', assetId, { assignedTo: userId, signed: !!signature }, req.ip);
         res.json(assignment);
     } catch (error: any) {

@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.reassignSupervisor = exports.getHierarchy = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const client_1 = __importDefault(require("../prisma/client"));
+const hierarchy_service_1 = require("../services/hierarchy.service");
 const getHierarchy = async (req, res) => {
     try {
         const userReq = req.user;
@@ -106,10 +107,21 @@ exports.getHierarchy = getHierarchy;
 const reassignSupervisor = async (req, res) => {
     try {
         const { employeeId, supervisorId } = req.body;
-        const user = await client_1.default.user.update({
-            where: { id: employeeId },
-            data: { supervisorId }
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        if (!employeeId)
+            return res.status(400).json({ message: 'employeeId is required' });
+        const ids = [employeeId, ...(supervisorId ? [supervisorId] : [])];
+        const users = await client_1.default.user.findMany({
+            where: { organizationId, id: { in: ids } },
+            select: { id: true }
         });
+        if (users.length !== ids.length)
+            return res.status(404).json({ message: 'Employee or supervisor not found in this organization' });
+        if (supervisorId && await hierarchy_service_1.HierarchyService.detectCycle(employeeId, supervisorId)) {
+            return res.status(400).json({ message: 'This assignment would create a reporting cycle' });
+        }
+        await hierarchy_service_1.HierarchyService.syncPrimaryReporting(organizationId, employeeId, supervisorId || null);
+        const user = await client_1.default.user.findFirst({ where: { id: employeeId, organizationId } });
         res.json(user);
     }
     catch (error) {

@@ -6,6 +6,9 @@ import { getRoleRank } from '../middleware/auth.middleware';
 // Local helper
 
 import { logAction } from '../services/audit.service';
+import { PolicyService } from '../services/policy.service';
+import { Permission } from '../types/permissions';
+import { HierarchyService } from '../services/hierarchy.service';
 
 export const initAppraisalCycle = async (req: Request, res: Response) => {
   try {
@@ -46,13 +49,14 @@ export const getPacketDetail = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const userRole = (req as any).user.role;
     const userRank = getRoleRank(userRole);
+    const canViewAll = (await PolicyService.evaluatePolicy(userId, Permission.EMPLOYEE_HISTORY_READ)).allowed;
     
-    const packet = await AppraisalService.getPacketDetail(packetId, userId, organizationId, userRank);
+    const packet = await AppraisalService.getPacketDetail(packetId, userId, organizationId, userRank, canViewAll);
     if (!packet) return res.status(404).json({ error: 'Appraisal packet not found' });
     
     return res.json(packet);
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(error.statusCode || 500).json({ error: error.message });
   }
 };
 
@@ -72,10 +76,11 @@ export const getTeamPackets = async (req: Request, res: Response) => {
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userId = (req as any).user.id;
     const userRank = getRoleRank((req as any).user.role);
+    const canViewAll = (await PolicyService.evaluatePolicy(userId, Permission.EMPLOYEE_HISTORY_READ)).allowed;
     
     console.log(`[AppraisalController] Fetching team packets: User=${userId}, Rank=${userRank}, Org=${organizationId}`);
     
-    const packets = await AppraisalService.getReviewerPackets(userId, organizationId, userRank);
+    const packets = await AppraisalService.getReviewerPackets(userId, organizationId, userRank, canViewAll);
     return res.json(packets);
   } catch (error: any) {
     console.error('[AppraisalController] CRITICAL FAILURE:', error);
@@ -203,7 +208,7 @@ export const updateAppraisalPacket = async (req: Request, res: Response) => {
 
 export const deleteAppraisalPacket = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id || req.params.packetId;
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const userRole = (req as any).user.role;
 
@@ -315,11 +320,14 @@ export const getPerformanceTrend = async (req: Request, res: Response) => {
     const { employeeId } = req.params;
     const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
     const user = (req as any).user;
-    const userRank = getRoleRank(user.role);
-
-    // Guard: Only self, Manager+, HR, or MD can view trends
-    if (user.id !== employeeId && userRank < 60) {
-      return res.status(403).json({ error: 'Not authorised to view performance trends for other employees' });
+    if (user.id !== employeeId) {
+      const [peopleAccess, managedIds] = await Promise.all([
+        PolicyService.evaluatePolicy(user.id, Permission.EMPLOYEE_READ, { targetUserId: employeeId }),
+        HierarchyService.getManagedEmployeeIds(user.id, organizationId),
+      ]);
+      if (!peopleAccess.allowed && !managedIds.includes(employeeId)) {
+        return res.status(403).json({ error: 'Not authorised to view performance trends for this employee' });
+      }
     }
 
     const trend = await AppraisalService.getEmployeePerformanceTrend(employeeId, organizationId);

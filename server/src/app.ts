@@ -229,8 +229,34 @@ cron.schedule('0 8 * * *', async () => {
 });
 
 cron.schedule('0 9 * * *', async () => {
-  try { await RenewalService.checkExpirations(); } 
+  try { await RenewalService.checkExpirations(); }
   catch (e) { console.error('[Cron] Renewal check failed:', e); }
+});
+
+// OKR weekly check-in nudge — every Monday at 8:30am
+cron.schedule('30 8 * * 1', async () => {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const staleObjectives = await prisma.target.findMany({
+      where: {
+        status: 'IN_PROGRESS',
+        isArchived: false,
+        updatedAt: { lt: sevenDaysAgo }
+      },
+      select: { id: true, title: true, assigneeId: true }
+    });
+    const { notify } = await import('./services/websocket.service');
+    let count = 0;
+    for (const obj of staleObjectives) {
+      if (!obj.assigneeId) continue;
+      await notify(obj.assigneeId, '📊 OKR Weekly Check-in',
+        `Update your Key Results for: "${obj.title}"`,
+        'INFO', '/kpi/my-targets'
+      ).catch(() => {});
+      count++;
+    }
+    if (count) console.log(`[CRON] OKR check-in nudges sent: ${count}`);
+  } catch (e) { console.error('[Cron] OKR check-in failed:', e); }
 });
 
 /* 
@@ -380,13 +406,22 @@ app.use((req: Request, res: Response) => {
 
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
 import { errorLogger } from './services/error-log.service';
+import { AppError } from './utils/errors';
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  errorLogger.log('GlobalErrorHandler', err);
-  res.status(500).json({ 
-    success: false, 
-    message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+  if (!(err instanceof AppError)) {
+    errorLogger.log('GlobalErrorHandler', err);
+  }
+  const statusCode = (err as AppError).statusCode ?? 500;
+  const code = (err as AppError).code;
+  if (statusCode >= 500) {
+    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+  }
+  res.status(statusCode).json({
+    success: false,
+    error: err.message,
+    ...(code && { code }),
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
 

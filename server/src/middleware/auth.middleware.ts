@@ -10,6 +10,7 @@ declare global {
         organizationId: string | null;
         rank: number;
         isDemo?: boolean;
+        permissions?: string[];
       };
     }
   }
@@ -94,7 +95,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     if (decoded.organizationId === 'sandbox-org-001') {
        const sandboxUser = await prisma.user.findFirst({
          where: { id: decoded.id, organizationId: 'sandbox-org-001' },
-         select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true }
+         select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true, loginEnabled: true }
        });
 
        if (!sandboxUser) {
@@ -123,7 +124,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     if (!user) {
       user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true },
+        select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true, loginEnabled: true },
       }).catch(err => {
         console.error('[Auth Middleware] Database Error:', err.message);
         throw err;
@@ -139,6 +140,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     if (user.status === 'TERMINATED') {
       console.warn(`[Auth Middleware] Terminated user attempting access: ${user.id}`);
       return res.status(403).json({ error: 'Your account has been deactivated. Contact HR.' });
+    }
+
+    if (!user.loginEnabled) {
+      return res.status(403).json({ error: 'Login is not active yet. Contact IT.' });
     }
 
     if (user.role !== 'DEV' && !user.organizationId) {
@@ -263,6 +268,19 @@ export const requirePermission = (permission: string, getContext?: (req: Request
     }
 
     next();
+  };
+};
+
+export const requireAnyPermission = (permissions: string[], getContext?: (req: Request) => any) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+    const context = getContext ? getContext(req) : {};
+    for (const permission of permissions) {
+      const result = await PolicyService.evaluatePolicy(user.id, permission, context);
+      if (result.allowed) return next();
+    }
+    return res.status(403).json({ error: 'Forbidden: none of the required permissions were granted' });
   };
 };
 export const checkBilling = async (req: Request, res: Response, next: NextFunction) => {

@@ -21,14 +21,14 @@ interface Employee {
 }
 
 const statusColors: Record<string, string> = {
-  NO_GOALS: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-  PENDING_APPROVAL: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  LOCKED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  NO_GOALS: 'badge-neutral',
+  PENDING_APPROVAL: 'badge-warning',
+  LOCKED: 'badge-success',
 };
 
 // 🔒 LOCAL HELPER (Inlined to prevent ReferenceError in production bundle)
 const ROLE_RANK_MAP: Record<string, number> = {
-    DEV: 100, MD: 95, DIRECTOR: 90, HR_MANAGER: 88, FINANCE_MANAGER: 87,
+    DEV: 100, MD: 95, DIRECTOR: 90, HR_MANAGER: 88, FINANCE_MANAGER: 87, MARKETING_HEAD: 86,
     IT_MANAGER: 85, IT_ADMIN: 85, HR_OFFICER: 80, MANAGER: 75,
     SUPERVISOR: 65, STAFF: 50, CASUAL: 40,
     'MANAGING DIRECTOR': 95, 'SYSTEM DEVELOPER': 100
@@ -122,7 +122,7 @@ const TeamReview = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 gap-4">
       <Target size={32} className="animate-spin text-primary-light" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Syncing team strategy...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Syncing team strategy...</p>
     </div>
   );
 

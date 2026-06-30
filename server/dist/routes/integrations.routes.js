@@ -6,7 +6,7 @@ const integrations_controller_1 = require("../controllers/integrations.controlle
 const router = (0, express_1.Router)();
 // Only top level tenant admins (Rank 90+) can manage integrations
 router.use(auth_middleware_1.authenticate);
-router.use((0, auth_middleware_1.requireRole)(90));
+router.use((0, auth_middleware_1.requireSpecificRole)(['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']));
 // API Keys
 router.get('/keys', integrations_controller_1.listApiKeys);
 router.post('/keys', integrations_controller_1.createApiKey);

@@ -1,6 +1,7 @@
 import { getRoleRank } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { HierarchyService } from '../services/hierarchy.service';
 
 export const getHierarchy = async (req: Request, res: Response) => {
   try {
@@ -110,10 +111,19 @@ export const getHierarchy = async (req: Request, res: Response) => {
 export const reassignSupervisor = async (req: Request, res: Response) => {
   try {
     const { employeeId, supervisorId } = req.body;
-    const user = await prisma.user.update({
-      where: { id: employeeId },
-      data: { supervisorId }
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+    if (!employeeId) return res.status(400).json({ message: 'employeeId is required' });
+    const ids = [employeeId, ...(supervisorId ? [supervisorId] : [])];
+    const users = await prisma.user.findMany({
+      where: { organizationId, id: { in: ids } },
+      select: { id: true }
     });
+    if (users.length !== ids.length) return res.status(404).json({ message: 'Employee or supervisor not found in this organization' });
+    if (supervisorId && await HierarchyService.detectCycle(employeeId, supervisorId)) {
+      return res.status(400).json({ message: 'This assignment would create a reporting cycle' });
+    }
+    await HierarchyService.syncPrimaryReporting(organizationId, employeeId, supervisorId || null);
+    const user = await prisma.user.findFirst({ where: { id: employeeId, organizationId } });
     res.json(user);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

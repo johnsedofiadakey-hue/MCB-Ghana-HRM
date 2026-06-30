@@ -8,6 +8,13 @@ export class AnnouncementService {
    */
   static async create(organizationId: string, createdById: string, data: any) {
     const { title, content, targetAudience, departmentId, priority, expirationDate } = data;
+    if (targetAudience === 'DEPARTMENT') {
+      const department = await prisma.department.findFirst({
+        where: { id: Number(departmentId), organizationId },
+        select: { id: true }
+      });
+      if (!department) throw new Error('Target department not found in this organization');
+    }
 
     const announcement = await prisma.announcement.create({
       data: {
@@ -53,19 +60,24 @@ export class AnnouncementService {
    * List announcements for a user based on their role and department
    */
   static async listForUser(organizationId: string, userId: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findFirst({ where: { id: userId, organizationId } });
     if (!user) throw new Error('User not found');
 
     const now = new Date();
+    const role = String(user.role || '').toUpperCase();
+    const isManager = ['MD', 'DIRECTOR', 'HR_DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'MARKETING_HEAD', 'IT_MANAGER', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'DEV'].includes(role);
+    const isExecutive = ['MD', 'DIRECTOR', 'HR_DIRECTOR', 'DEV'].includes(role);
+    const audiences: any[] = [
+      { targetAudience: 'ALL' },
+      { targetAudience: 'DEPARTMENT', departmentId: user.departmentId },
+    ];
+    if (isManager) audiences.push({ targetAudience: 'MANAGERS' });
+    if (isExecutive) audiences.push({ targetAudience: 'EXECUTIVES' });
 
     return prisma.announcement.findMany({
       where: {
         organizationId,
-        OR: [
-          { targetAudience: 'ALL' },
-          { targetAudience: 'DEPARTMENT', departmentId: user.departmentId },
-          { targetAudience: 'MANAGERS', AND: [{ createdBy: { role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'IT_MANAGER', 'HR_OFFICER'] } } }] } // Simplified manager check
-        ],
+        OR: audiences,
         AND: [
             { OR: [ { expirationDate: null }, { expirationDate: { gte: now } } ] }
         ]
@@ -82,7 +94,7 @@ export class AnnouncementService {
    * Delete an announcement
    */
   static async delete(id: string, organizationId: string, actorId: string, actorRole: string) {
-    const announcement = await prisma.announcement.findUnique({ where: { id } });
+    const announcement = await prisma.announcement.findFirst({ where: { id, organizationId } });
     if (!announcement) throw new Error('Announcement not found');
     
     // Authorization: Creator or MD/Admin
@@ -90,6 +102,6 @@ export class AnnouncementService {
       throw new Error('Unauthorized to delete this announcement');
     }
 
-    return prisma.announcement.delete({ where: { id } });
+    return prisma.announcement.delete({ where: { id: announcement.id } });
   }
 }

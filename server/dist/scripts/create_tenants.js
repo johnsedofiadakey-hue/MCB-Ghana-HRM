@@ -9,7 +9,10 @@ const demo_seeder_service_1 = require("../services/demo-seeder.service");
 const prisma = new client_1.PrismaClient();
 async function main() {
     console.log('🚀 Creating Production and Demo Tenants...');
-    const commonPass = await bcryptjs_1.default.hash('unlockme', 12);
+    const initialPassword = process.env.SEED_INITIAL_PASSWORD;
+    if (!initialPassword || initialPassword.length < 16)
+        throw new Error('SEED_INITIAL_PASSWORD must be at least 16 characters.');
+    const commonPass = await bcryptjs_1.default.hash(initialPassword, 12);
     // 0. Master System Architect (Global Access)
     console.log('👑 Provisioning System Architect...');
     await prisma.user.upsert({
@@ -23,6 +26,7 @@ async function main() {
             status: 'ACTIVE',
             jobTitle: 'System Architect',
             organizationId: null,
+            mustChangePassword: true,
         }
     });
     // 1. Create Production Tenant
@@ -51,7 +55,8 @@ async function main() {
             passwordHash: commonPass,
             role: 'MD',
             status: 'ACTIVE',
-            jobTitle: 'Managing Director'
+            jobTitle: 'Managing Director',
+            mustChangePassword: true,
         }
     });
     // 2. Create Demo Tenant

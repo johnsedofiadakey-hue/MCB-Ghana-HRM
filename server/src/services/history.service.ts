@@ -10,6 +10,12 @@ export const createHistory = async (data: {
     severity?: string;
     status?: string;
 }) => {
+    const employee = await prisma.user.findFirst({
+        where: { id: data.employeeId, organizationId: data.organizationId },
+        select: { id: true }
+    });
+    if (!employee) throw new Error('Employee not found in this organization');
+
     return prisma.employeeHistory.create({
         data: {
             organizationId: data.organizationId,
@@ -26,6 +32,13 @@ export const createHistory = async (data: {
     });
 };
 
+export const getHistoryById = async (organizationId: string, id: string) => {
+    return prisma.employeeHistory.findFirst({
+        where: { id, organizationId },
+        select: { id: true, employeeId: true, status: true }
+    });
+};
+
 export const getHistoryByEmployee = async (organizationId: string, employeeId: string) => {
     return prisma.employeeHistory.findMany({
         where: { employeeId, organizationId },
@@ -35,8 +48,8 @@ export const getHistoryByEmployee = async (organizationId: string, employeeId: s
 };
 
 export const updateHistoryStatus = async (organizationId: string, id: string, status: string) => {
-    return prisma.employeeHistory.updateMany({
-        where: { id, organizationId },
-        data: { status }
-    });
+    const record = await getHistoryById(organizationId, id);
+    if (!record) throw new Error('Employee history record not found');
+
+    return prisma.employeeHistory.update({ where: { id: record.id }, data: { status } });
 };

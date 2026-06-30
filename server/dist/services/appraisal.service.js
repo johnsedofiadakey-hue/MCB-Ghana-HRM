@@ -544,9 +544,6 @@ class AppraisalService {
         }
     }
     static isStageOwner(packet, stage, userId, userRank = 0, reviewerDeptId) {
-        // Global Oversight: Directors (80) and MDs (90) can review any stage if the packet is open
-        if (userRank >= 80 && packet.status === 'OPEN')
-            return true;
         if (stage === 'SELF_REVIEW')
             return packet.employeeId === userId;
         if (stage === 'MANAGER_REVIEW') {
@@ -556,8 +553,7 @@ class AppraisalService {
             return isPrimary || isDeptManager;
         }
         if (stage === 'FINAL_REVIEW') {
-            // Specifically check for assigned final reviewers or senior management (MD/Director/HR = 85+)
-            return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85;
+            return packet.finalReviewerId === userId || packet.hrReviewerId === userId;
         }
         return false;
     }
@@ -570,7 +566,7 @@ class AppraisalService {
             return packet.finalReviewerId || packet.hrReviewerId;
         return null;
     }
-    static async getPacketDetail(packetId, userId, organizationId, userRank = 0) {
+    static async getPacketDetail(packetId, userId, organizationId, userRank = 0, canViewAll = false) {
         const start = Date.now();
         console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId} in Org ${organizationId}`);
         try {
@@ -595,9 +591,21 @@ class AppraisalService {
                 console.warn(`[AppraisalSync] Packet ${packetId} not found in Org ${organizationId}`);
                 return null;
             }
+            const isParticipant = [
+                packet.employeeId,
+                packet.supervisorId,
+                packet.matrixSupervisorId,
+                packet.managerId,
+                packet.hrReviewerId,
+                packet.finalReviewerId,
+            ].filter(Boolean).includes(userId);
+            if (!canViewAll && !isParticipant) {
+                const error = new Error('You are not authorized to view this appraisal packet');
+                error.statusCode = 403;
+                throw error;
+            }
             // 🔒 STRATEGIC PRIVACY LOGIC (Permanent Comment Redaction)
-            // Rank 85+ (HR/Director/MD) bypasses all redaction for institutional oversight
-            const isHighRank = userRank >= 85;
+            const isHighRank = canViewAll;
             if (!isHighRank) {
                 const reviews = packet.reviews.map((r) => {
                     const isMyReview = r.reviewerId === userId;
@@ -690,11 +698,11 @@ class AppraisalService {
             date: p.cycle.startDate
         }));
     }
-    static async getReviewerPackets(userId, organizationId, userRank = 0) {
+    static async getReviewerPackets(userId, organizationId, userRank = 0, canViewAll = false) {
         try {
             console.log(`[AppraisalService] getReviewerPackets: LIVE FETCH - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
             const where = { organizationId };
-            if (userRank < 80) {
+            if (!canViewAll) {
                 where.OR = [
                     { supervisorId: userId },
                     { matrixSupervisorId: userId },

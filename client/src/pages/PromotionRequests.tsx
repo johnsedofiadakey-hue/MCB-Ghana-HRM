@@ -9,6 +9,7 @@ import api from '../services/api';
 import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
 import { toast } from '../utils/toast';
+import { getStoredUser, hasPermission } from '../utils/session';
 
 const PromotionRequests = () => {
     const [requests, setRequests] = useState<any[]>([]);
@@ -19,6 +20,8 @@ const PromotionRequests = () => {
     const [hrComment, setHrComment] = useState('');
     const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const { t } = useTranslation();
+    const user = getStoredUser();
+    const canApprove = hasPermission(user, 'compensation.manage');
 
     const fetchRequests = async () => {
         setLoading(true);
@@ -208,7 +211,7 @@ const PromotionRequests = () => {
                                 </div>
                             </div>
 
-                            {req.status === 'PENDING' && (
+                            {req.status === 'PENDING' && canApprove && (
                                 <div className="flex gap-4">
                                     <button 
                                         onClick={() => setSelectedRequest(req)}

@@ -215,6 +215,15 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
               </div>
             </div>
             <div className="text-[9px] font-black text-slate-400/80 uppercase tracking-[0.15em]">{t('targets.overall_progress')}</div>
+            {(() => {
+              const p = Number(target.progress) || 0;
+              if (target.status === 'COMPLETED' || target.status === 'APPROVED') return null;
+              if (p >= 90) return <span className="text-[7px] font-black uppercase tracking-widest text-blue-500 bg-blue-50 border border-blue-200/50 px-2 py-0.5 rounded-full">Exceeded — raise the bar</span>;
+              if (p >= 70) return <span className="text-[7px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200/50 px-2 py-0.5 rounded-full">On track · 0.7+ score</span>;
+              if (p >= 40) return <span className="text-[7px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-full">Making progress</span>;
+              if (p > 0) return <span className="text-[7px] font-black uppercase tracking-widest text-rose-500 bg-rose-50 border border-rose-200/50 px-2 py-0.5 rounded-full">Needs attention</span>;
+              return null;
+            })()}
           </div>
           <motion.div animate={{ rotate: showDetails ? 180 : 0 }} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all">
              <ChevronDown size={20} strokeWidth={2.5} />

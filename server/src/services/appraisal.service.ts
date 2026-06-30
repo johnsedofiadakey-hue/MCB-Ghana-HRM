@@ -595,9 +595,6 @@ export class AppraisalService {
   }
 
   private static isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): boolean {
-    // Global Oversight: Directors (80) and MDs (90) can review any stage if the packet is open
-    if (userRank >= 80 && packet.status === 'OPEN') return true;
-
     if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
     
     if (stage === 'MANAGER_REVIEW') {
@@ -608,8 +605,7 @@ export class AppraisalService {
     }
 
     if (stage === 'FINAL_REVIEW') {
-      // Specifically check for assigned final reviewers or senior management (MD/Director/HR = 85+)
-      return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85; 
+      return packet.finalReviewerId === userId || packet.hrReviewerId === userId;
     }
     return false;
   }
@@ -621,7 +617,7 @@ export class AppraisalService {
     return null;
   }
 
-  static async getPacketDetail(packetId: string, userId: string, organizationId: string, userRank: number = 0) {
+  static async getPacketDetail(packetId: string, userId: string, organizationId: string, userRank: number = 0, canViewAll: boolean = false) {
     const start = Date.now();
     console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId} in Org ${organizationId}`);
     
@@ -650,9 +646,22 @@ export class AppraisalService {
         return null;
       }
 
+      const isParticipant = [
+        packet.employeeId,
+        packet.supervisorId,
+        packet.matrixSupervisorId,
+        packet.managerId,
+        packet.hrReviewerId,
+        packet.finalReviewerId,
+      ].filter(Boolean).includes(userId);
+      if (!canViewAll && !isParticipant) {
+        const error: any = new Error('You are not authorized to view this appraisal packet');
+        error.statusCode = 403;
+        throw error;
+      }
+
       // 🔒 STRATEGIC PRIVACY LOGIC (Permanent Comment Redaction)
-      // Rank 85+ (HR/Director/MD) bypasses all redaction for institutional oversight
-      const isHighRank = userRank >= 85;
+      const isHighRank = canViewAll;
 
       if (!isHighRank) {
         const reviews = packet.reviews.map((r: any) => {
@@ -754,13 +763,13 @@ export class AppraisalService {
     }));
   }
 
-  static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
+  static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0, canViewAll: boolean = false) {
     try {
       console.log(`[AppraisalService] getReviewerPackets: LIVE FETCH - User=${userId}, Rank=${userRank}, Org=${organizationId}`);
       
       const where: any = { organizationId };
 
-      if (userRank < 80) {
+      if (!canViewAll) {
         where.OR = [
           { supervisorId: userId },
           { matrixSupervisorId: userId },
@@ -1113,4 +1122,3 @@ export class AppraisalService {
     });
   }
 }
-

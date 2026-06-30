@@ -65,8 +65,10 @@ export const updateJobPosition = async (req: Request, res: Response) => {
     const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const data = req.body;
 
+    const existing = await prisma.jobPosition.findFirst({ where: { id, organizationId }, select: { id: true } });
+    if (!existing) return res.status(404).json({ error: 'Job position not found' });
     const job = await prisma.jobPosition.update({
-      where: { id },
+      where: { id: existing.id },
       data
     });
 
@@ -81,7 +83,12 @@ export const updateJobPosition = async (req: Request, res: Response) => {
 export const applyForJob = async (req: Request, res: Response) => {
   try {
     const { jobPositionId, fullName, email, phone, resumeUrl, source, notes } = req.body;
-    const organizationId = req.body.organizationId || 'mcb-ghana-tenant'; // Public apply might not have req.user
+    const job = await prisma.jobPosition.findFirst({
+      where: { id: jobPositionId, status: 'OPEN' },
+      select: { id: true, organizationId: true }
+    });
+    if (!job) return res.status(404).json({ error: 'Open job position not found' });
+    const organizationId = job.organizationId;
 
     const candidate = await prisma.candidate.create({
       data: {
@@ -99,7 +106,11 @@ export const applyForJob = async (req: Request, res: Response) => {
 
     // Notify HR/MD
     const admins = await prisma.user.findMany({ 
-      where: { role: { in: ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER'] } },
+      where: {
+        organizationId,
+        role: { in: ['MD', 'HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN'] },
+        status: { not: 'TERMINATED' }
+      },
       select: { id: true }
     });
     
@@ -137,9 +148,12 @@ export const updateCandidateStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
 
+    const existing = await prisma.candidate.findFirst({ where: { id, organizationId }, select: { id: true } });
+    if (!existing) return res.status(404).json({ error: 'Candidate not found' });
     const candidate = await prisma.candidate.update({
-      where: { id },
+      where: { id: existing.id },
       data: { status, notes }
     });
 
@@ -155,21 +169,30 @@ export const scheduleInterview = async (req: Request, res: Response) => {
   try {
     const { candidateId, stage, scheduledAt, interviewerId } = req.body;
     const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+    const [candidate, interviewer] = await Promise.all([
+      prisma.candidate.findFirst({ where: { id: candidateId, organizationId }, select: { id: true } }),
+      interviewerId
+        ? prisma.user.findFirst({ where: { id: interviewerId, organizationId, status: { not: 'TERMINATED' } }, select: { id: true } })
+        : Promise.resolve(null),
+    ]);
+    if (!candidate) return res.status(404).json({ error: 'Candidate not found' });
+    if (interviewerId && !interviewer) return res.status(404).json({ error: 'Interviewer not found in this organization' });
 
-    const interview = await prisma.interviewStage.create({
-      data: {
-        organizationId,
-        candidateId,
-        stage,
-        scheduledAt: new Date(scheduledAt),
-        interviewerId
-      }
-    });
-
-    // Update candidate status
-    await prisma.candidate.update({
-      where: { id: candidateId },
-      data: { status: 'INTERVIEW_SCHEDULED' }
+    const interview = await prisma.$transaction(async (tx) => {
+      const created = await tx.interviewStage.create({
+        data: {
+          organizationId,
+          candidateId,
+          stage,
+          scheduledAt: new Date(scheduledAt),
+          interviewerId
+        }
+      });
+      await tx.candidate.update({
+        where: { id: candidate.id },
+        data: { status: 'INTERVIEW_SCHEDULED' }
+      });
+      return created;
     });
 
     if (interviewerId) {
@@ -187,6 +210,21 @@ export const submitInterviewFeedback = async (req: Request, res: Response) => {
     const { candidateId, interviewStageId, rating, feedback, recommendation } = req.body;
     const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const reviewerId = req.user?.id!;
+    const [candidate, interviewStage] = await Promise.all([
+      prisma.candidate.findFirst({ where: { id: candidateId, organizationId }, select: { id: true } }),
+      interviewStageId
+        ? prisma.interviewStage.findFirst({ where: { id: interviewStageId, candidateId, organizationId }, select: { id: true, interviewerId: true } })
+        : Promise.resolve(null),
+    ]);
+    if (!candidate) return res.status(404).json({ error: 'Candidate not found' });
+    if (interviewStageId && !interviewStage) return res.status(404).json({ error: 'Interview stage not found' });
+    const isHrReviewer = ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'HR_ADMIN', 'MD', 'DEV'].includes(String(req.user?.role || '').toUpperCase());
+    if (!interviewStage && !isHrReviewer) {
+      return res.status(403).json({ error: 'An interview stage assignment is required to submit feedback' });
+    }
+    if (interviewStage && interviewStage.interviewerId !== reviewerId && !isHrReviewer) {
+      return res.status(403).json({ error: 'Only the assigned interviewer or HR may submit feedback' });
+    }
 
     const entry = await prisma.interviewFeedback.create({
       data: {

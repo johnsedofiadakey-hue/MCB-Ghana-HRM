@@ -35,7 +35,7 @@ const TeamLeaveRequests = () => {
     }
   };
 
-  const handleAction = async (id: string, action: 'APPROVED' | 'REJECTED') => {
+  const handleAction = async (id: string, action: 'APPROVE' | 'REJECT') => {
     if (!confirm(`Are you sure you want to ${action} this request?`)) return;
 
     try {
@@ -83,13 +83,13 @@ const TeamLeaveRequests = () => {
             {/* Action Buttons */}
             <div className="flex gap-3 w-full md:w-auto">
               <button
-                onClick={() => handleAction(req.id, 'REJECTED')}
+                onClick={() => handleAction(req.id, 'REJECT')}
                 className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 border border-red-200 text-red-600 font-bold rounded-lg hover:bg-red-50 transition-colors"
               >
                 <X size={18} className="mr-2" /> Reject
               </button>
               <button
-                onClick={() => handleAction(req.id, 'APPROVED')}
+                onClick={() => handleAction(req.id, 'APPROVE')}
                 className="flex-1 md:flex-none flex items-center justify-center px-6 py-2 bg-[var(--primary)] text-white font-bold rounded-lg hover:opacity-90 shadow-lg shadow-[var(--primary)]/20 transition-all"
               >
                 <Check size={18} className="mr-2" /> Approve
