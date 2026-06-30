@@ -903,6 +903,42 @@ export const getSupervisors = async (req: Request, res: Response) => {
   res.json(supervisors);
 };
 
+// ─── CASUAL WORKER OVERSIGHT ──────────────────────────────────────────────
+// Org-wide summary of casual/factory workers grouped by their supervisor, so
+// HR Director can see at a glance who's managing how many casual staff.
+export const getCasualWorkerSummary = async (req: Request, res: Response) => {
+  try {
+    const organizationId = (req as any).user.organizationId || 'mcb-ghana-tenant';
+
+    const groups = await prisma.user.groupBy({
+      by: ['supervisorId'],
+      where: { organizationId, role: 'CASUAL', isArchived: false },
+      _count: { _all: true },
+    });
+
+    const totalCasualWorkers = groups.reduce((sum, g) => sum + g._count._all, 0);
+    const supervisorIds = groups.map(g => g.supervisorId).filter(Boolean) as string[];
+    const supervisors = supervisorIds.length
+      ? await prisma.user.findMany({
+          where: { id: { in: supervisorIds } },
+          select: { id: true, fullName: true, jobTitle: true },
+        })
+      : [];
+    const supervisorById = new Map(supervisors.map(s => [s.id, s]));
+
+    const bySupervisor = groups.map(g => ({
+      supervisorId: g.supervisorId,
+      supervisorName: g.supervisorId ? (supervisorById.get(g.supervisorId)?.fullName || 'Unknown') : 'Unassigned',
+      supervisorJobTitle: g.supervisorId ? supervisorById.get(g.supervisorId)?.jobTitle || null : null,
+      count: g._count._all,
+    })).sort((a, b) => b.count - a.count);
+
+    res.json({ totalCasualWorkers, bySupervisor });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to load casual worker summary' });
+  }
+};
+
 // ─── RISK PROFILE ─────────────────────────────────────────────────────────
 // ─── ARCHIVE EMPLOYEE (Soft Delete) ──────────────────────────────────────
 export const archiveEmployee = async (req: Request, res: Response) => {

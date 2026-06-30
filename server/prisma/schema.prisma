@@ -534,6 +534,7 @@ model LeaveRequest {
   isArchived                 Boolean          @default(false)
   archivedAt                 DateTime?
   handoverRecords            HandoverRecord[]
+  days                       LeaveRequestDay[]
   employee                   User             @relation("EmployeeLeaves", fields: [employeeId], references: [id], onDelete: Cascade)
   hrReviewer                 User?            @relation("HRReviewLeaves", fields: [hrReviewerId], references: [id])
   manager                    User?            @relation("ManagerLeaves", fields: [managerId], references: [id])
@@ -541,6 +542,18 @@ model LeaveRequest {
 
   @@index([organizationId, employeeId, status])
   @@index([organizationId, relieverId, status])
+}
+
+model LeaveRequestDay {
+  id             String       @id @default(uuid())
+  organizationId String?      @default("mcb-ghana-tenant")
+  leaveRequestId String
+  date           DateTime
+  createdAt      DateTime     @default(now())
+  leaveRequest   LeaveRequest @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([leaveRequestId, date])
+  @@index([organizationId, date])
 }
 
 model HandoverRecord {

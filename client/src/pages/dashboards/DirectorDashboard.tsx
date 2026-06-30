@@ -33,6 +33,13 @@ const DirectorDashboard = () => {
     strategyPhases: [] as any[],
     growthPhases: [] as any[]
   });
+  const [casualSummary, setCasualSummary] = useState<{ totalCasualWorkers: number; bySupervisor: Array<{ supervisorName: string; count: number }> } | null>(null);
+  const canSeeCasualOversight = ['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV'].includes(String(user?.role || '').toUpperCase());
+
+  useEffect(() => {
+    if (!canSeeCasualOversight) return;
+    api.get('/users/stats/casual-summary').then(res => setCasualSummary(res.data)).catch(() => {});
+  }, [canSeeCasualOversight]);
 
   useEffect(() => {
     Promise.all([
@@ -132,6 +139,26 @@ const DirectorDashboard = () => {
               </motion.div>
             ))}
           </div>
+
+          {canSeeCasualOversight && casualSummary && casualSummary.totalCasualWorkers > 0 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+              className="premium-glass border-glow-premium p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-black text-sm text-[var(--text-primary)] tracking-tight">Casual Workforce Oversight</h3>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1 opacity-50">{casualSummary.totalCasualWorkers} casual worker{casualSummary.totalCasualWorkers !== 1 ? 's' : ''} across the organization</p>
+                </div>
+                <Users size={18} className="text-[var(--warning)] opacity-50" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {casualSummary.bySupervisor.slice(0, 6).map((s, i) => (
+                  <span key={i} className="px-3 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-bold text-[var(--text-secondary)]">
+                    {s.supervisorName}: <span className="text-[var(--text-primary)] font-black">{s.count}</span>
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

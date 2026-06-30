@@ -2,6 +2,8 @@ import PDFDocument from 'pdfkit';
 import axios from 'axios';
 import prisma from '../prisma/client';
 import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
+import { FirebaseStorageService } from './firebase-storage.service';
+import { errorLogger } from './error-log.service';
 import { 
   PdfOrganization, 
   PdfTargetContent, 
@@ -501,14 +503,28 @@ export class PdfExportService {
 
     doc.moveDown(4);
     const sigY = doc.y;
-    if (leave.employee?.signatureUrl) await this.renderSignature(doc, leave.employee.signatureUrl, 70, sigY, 160);
-    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
-    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 70, sigY + 8);
 
-    const reviewerSig = leave.hrReviewer?.signatureUrl || leave.manager?.signatureUrl;
-    if (reviewerSig) await this.renderSignature(doc, reviewerSig, 370, sigY, 160);
-    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
-    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('MANAGEMENT / HR SIGNATURE', 370, sigY + 8);
+    // Employee — always present
+    if (leave.employee?.signatureUrl) await this.renderSignature(doc, leave.employee.signatureUrl, 55, sigY, 150);
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(55, sigY).lineTo(205, sigY).stroke();
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 55, sigY + 8, { width: 150 });
+
+    // Direct manager — only present for the regular-staff approval chain;
+    // omitted for managers' own leave (no peer reviewer in that path)
+    if (leave.manager) {
+      if (leave.manager.signatureUrl) await this.renderSignature(doc, leave.manager.signatureUrl, 220, sigY, 150);
+      doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(220, sigY).lineTo(370, sigY).stroke();
+      doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.manager.fullName?.toUpperCase() || 'LINE MANAGER', 220, sigY + 8, { width: 150 });
+    }
+
+    // Final approver — HR Director for regular staff, or HR Director/MD for the
+    // manager path (hrReviewer carries whichever was the terminal approver)
+    if (leave.hrReviewer) {
+      const finalX = leave.manager ? 385 : 220;
+      if (leave.hrReviewer.signatureUrl) await this.renderSignature(doc, leave.hrReviewer.signatureUrl, finalX, sigY, 150);
+      doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(finalX, sigY).lineTo(finalX + 150, sigY).stroke();
+      doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('FINAL APPROVAL SIGNATURE', finalX, sigY + 8, { width: 150 });
+    }
   }
 
   private static keyValGrid(doc: PDFKit.PDFDocument, x: number, y: number, label: string, value: string) {
@@ -634,5 +650,48 @@ export class PdfExportService {
   private static recordMetadata(doc: PDFKit.PDFDocument, label: string, value: string) {
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${label.toUpperCase()}: `, this.SAFE_MARGIN, doc.y, { continued: true }).font('Helvetica').fillColor('#1e293b').text(value);
     doc.moveDown(0.2);
+  }
+
+  /**
+   * Generates the leave approval letter and files it into every recipient's own
+   * document register (EmployeeDocument). Called on terminal approval only
+   * (hrValidation / mdFinalReview) — never blocks or rolls back the approval
+   * itself if PDF generation or storage fails.
+   */
+  static async generateAndArchiveLeaveApprovalPdf(leaveId: string, recipientEmployeeIds: string[]) {
+    try {
+      const leave = await prisma.leaveRequest.findUnique({
+        where: { id: leaveId },
+        include: {
+          employee: { include: { departmentObj: { select: { name: true } } } },
+          reliever: { select: { fullName: true } },
+          manager: { select: { fullName: true, signatureUrl: true } },
+          hrReviewer: { select: { fullName: true, signatureUrl: true } },
+          handoverRecords: { include: { reliever: { select: { fullName: true } } } },
+        },
+      });
+      if (!leave) return;
+
+      const organizationId = leave.organizationId || 'mcb-ghana-tenant';
+      const buffer = await this.generateBrandedPdf(organizationId, 'Leave Authorization Certificate', leave as any, 'LEAVE');
+      const fileUrl = await FirebaseStorageService.uploadFile(buffer, `leave-approval-${leaveId}.pdf`, 'leave-approvals', 'application/pdf');
+
+      const uniqueRecipients = Array.from(new Set(recipientEmployeeIds.filter(Boolean)));
+      const dateRange = `${new Date(leave.startDate).toLocaleDateString()} – ${new Date(leave.endDate).toLocaleDateString()}`;
+      const title = `Leave Approval Letter — ${leave.employee?.fullName || 'Employee'} (${dateRange})`;
+
+      await prisma.employeeDocument.createMany({
+        data: uniqueRecipients.map(employeeId => ({
+          organizationId,
+          employeeId,
+          title,
+          category: 'Leave Approval Letter',
+          fileUrl,
+        })),
+      });
+    } catch (e: any) {
+      // PDF/storage failure must never affect the leave approval itself — log and move on.
+      errorLogger.log('PdfExportService.generateAndArchiveLeaveApprovalPdf', e);
+    }
   }
 }

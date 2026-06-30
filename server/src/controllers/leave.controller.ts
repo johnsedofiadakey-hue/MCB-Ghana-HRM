@@ -13,51 +13,16 @@ import { Permission } from '../types/permissions';
 
 const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'mcb-ghana-tenant';
 
-// Working-day calculator (weekends & holidays excluded) - Timezone Stable
-const calcWorkingDays = (start: Date, end: Date, holidayDates: string[] = []): number => {
-  let count = 0;
-  // Use UTC to avoid local timezone shifts during day iteration
-  const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
-  const fin = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
-  
-  const holidaySet = new Set(holidayDates);
-
-  while (cur <= fin) {
-    const d = cur.getUTCDay(); // 0=Sun, 6=Sat
-    const dateStr = cur.toISOString().split('T')[0];
-    
-    // Skip weekends and registered public holidays
-    if (d !== 0 && d !== 6 && !holidaySet.has(dateStr)) {
-      count++;
-    }
-    cur.setUTCDate(cur.getUTCDate() + 1);
-  }
-  return count;
-};
-
 // ── 1. APPLY FOR LEAVE ────────────────────────────────────────────────────────
 export const applyForLeave = async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, reason, relieverId, leaveType, handoverNotes, relieverAcceptanceRequired } = req.body;
+    const { dates, reason, relieverId, leaveType, handoverNotes, relieverAcceptanceRequired } = req.body;
     const orgId = getOrgId(req);
     const user = (req as any).user;
     const employeeId = user.id;
 
-    if (!startDate || !endDate || !reason) {
-      return res.status(400).json({ error: 'startDate, endDate, and reason are required' });
-    }
-    const start = new Date(`${startDate}T00:00:00.000Z`);
-    const end = new Date(`${endDate}T00:00:00.000Z`);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      return res.status(400).json({ error: 'Please provide valid start and end dates' });
-    }
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    if (start < today) {
-      return res.status(400).json({ error: 'Cannot request leave for a past date' });
-    }
-    if (end < start) {
-      return res.status(400).json({ error: 'End date cannot be before start date' });
+    if (!Array.isArray(dates) || dates.length === 0 || !reason) {
+      return res.status(400).json({ error: 'dates (at least one) and reason are required' });
     }
 
     const employee = await prisma.user.findFirst({ where: { id: employeeId, organizationId: orgId } });
@@ -68,9 +33,46 @@ export const applyForLeave = async (req: Request, res: Response) => {
       if (relieverId === employeeId) return res.status(400).json({ error: 'You cannot select yourself as your cover person' });
       const reliever = await prisma.user.findFirst({ where: { id: relieverId, organizationId: orgId, isArchived: false, status: 'ACTIVE' } });
       if (!reliever) return res.status(400).json({ error: 'Selected reliever not found' });
+      if (!handoverNotes || String(handoverNotes).trim().length < 10) {
+        return res.status(400).json({ error: 'Please provide instructions for your cover person (at least 10 characters) when assigning a reliever.' });
+      }
     }
 
-    const overlappingRequest = await prisma.leaveRequest.findFirst({
+    // Validates weekday-only/no-holiday/no-past-date/no-duplicate selections
+    let normalizedDates: Date[];
+    let daysRequested: number;
+    try {
+      const result = await LeaveService.validateAndCountSelectedDays(orgId, dates);
+      normalizedDates = result.normalizedDates;
+      daysRequested = result.count;
+    } catch (e: any) {
+      return res.status(400).json({ error: e.message || 'Invalid date selection' });
+    }
+    const start = normalizedDates[0];
+    const end = normalizedDates[normalizedDates.length - 1];
+
+    // Exact-date conflict check against this employee's own non-rejected requests
+    const exactConflict = await prisma.leaveRequestDay.findFirst({
+      where: {
+        date: { in: normalizedDates },
+        leaveRequest: {
+          organizationId: orgId,
+          employeeId,
+          isArchived: false,
+          status: { notIn: ['CANCELLED', 'RELIEVER_DECLINED', 'MANAGER_REJECTED', 'HR_REJECTED', 'MD_REJECTED'] },
+        }
+      },
+      include: { leaveRequest: { select: { status: true } } }
+    });
+    if (exactConflict) {
+      return res.status(409).json({ error: `You already have an active leave request (${exactConflict.leaveRequest.status}) covering ${exactConflict.date.toISOString().split('T')[0]}` });
+    }
+
+    // Bounding-box fallback: catches conflicts against requests created before the
+    // LeaveRequestDay backfill ran (those rows have no per-day data yet). Safe to keep
+    // permanently — cheap, and only adds false positives in the rare case two requests'
+    // overall date spans overlap without sharing an actual selected day.
+    const boundingBoxConflict = await prisma.leaveRequest.findFirst({
       where: {
         organizationId: orgId,
         employeeId,
@@ -78,21 +80,11 @@ export const applyForLeave = async (req: Request, res: Response) => {
         status: { notIn: ['CANCELLED', 'RELIEVER_DECLINED', 'MANAGER_REJECTED', 'HR_REJECTED', 'MD_REJECTED'] },
         startDate: { lte: end },
         endDate: { gte: start },
+        days: { none: {} }, // only un-backfilled rows — backfilled ones are already covered by the exact check above
       },
     });
-    if (overlappingRequest) {
-      return res.status(409).json({ error: 'You already have an active leave request that overlaps these dates' });
-    }
-
-    // Fetch public holidays for this org to exclude from calculation
-    const holidays = await prisma.publicHoliday.findMany({
-      where: { organizationId: orgId, date: { gte: start, lte: end } }
-    });
-    const holidayDates = holidays.map(h => h.date.toISOString().split('T')[0]);
-
-    const daysRequested = calcWorkingDays(start, end, holidayDates);
-    if (daysRequested < 1) {
-      return res.status(400).json({ error: 'The selected period contains no working days' });
+    if (boundingBoxConflict) {
+      return res.status(409).json({ error: `You already have an active leave request (${boundingBoxConflict.status}) overlapping this period (${boundingBoxConflict.startDate.toLocaleDateString()} – ${boundingBoxConflict.endDate.toLocaleDateString()})` });
     }
 
     // Leave balance policy applies consistently to every employee, including
@@ -118,7 +110,7 @@ export const applyForLeave = async (req: Request, res: Response) => {
       const effectiveLimit = allowBorrowing ? (availableBalance + borrowLimit) : availableBalance;
 
       if (effectiveLimit < daysRequested) {
-        const errorMsg = allowBorrowing 
+        const errorMsg = allowBorrowing
           ? `Insufficient available leave. ${pendingDays} day(s) are already pending. Available including borrowing: ${effectiveLimit}; requested: ${daysRequested}.`
           : `Insufficient available leave. Balance: ${balance}; pending: ${pendingDays}; available: ${availableBalance}; requested: ${daysRequested}.`;
         return res.status(400).json({ error: errorMsg });
@@ -155,39 +147,46 @@ export const applyForLeave = async (req: Request, res: Response) => {
     });
 
     if (myCoverage) {
-      return res.status(400).json({ 
-        error: `Reliever Lock Active: You are assigned as a cover person for ${myCoverage.employee.fullName} during this period (${new Date(myCoverage.startDate).toLocaleDateString()} to ${new Date(myCoverage.endDate).toLocaleDateString()}). You cannot request leave while serving as a reliever.` 
+      return res.status(400).json({
+        error: `Reliever Lock Active: You are assigned as a cover person for ${myCoverage.employee.fullName} during this period (${new Date(myCoverage.startDate).toLocaleDateString()} to ${new Date(myCoverage.endDate).toLocaleDateString()}). You cannot request leave while serving as a reliever.`
       });
     }
 
-    // V5: no reliever → HR_REVIEW directly (HR Director is sole approver)
     const initialStatus = determineInitialLeaveStatus(employee.role, Boolean(relieverId));
 
-    const isSickLeaveLong = (leaveType === 'SICK_LEAVE' || leaveType === 'Sick') && daysRequested >= 3;
+    const isSickLeave = (leaveType === 'SICK_LEAVE' || leaveType === 'Sick');
 
-    const leave = await prisma.leaveRequest.create({
-      data: {
-        organizationId: orgId,
-        employeeId,
-        startDate: start,
-        endDate: end,
-        leaveDays: daysRequested,
-        reason,
-        leaveType: leaveType || 'Annual',
-        relieverId: relieverId || null,
-        handoverNotes: handoverNotes || null,
-        relieverAcceptanceRequired: !!relieverAcceptanceRequired,
-        status: initialStatus,
-        requiresMedicalCertificate: isSickLeaveLong,
-      },
+    const leave = await prisma.$transaction(async (tx) => {
+      const created = await tx.leaveRequest.create({
+        data: {
+          organizationId: orgId,
+          employeeId,
+          startDate: start,
+          endDate: end,
+          leaveDays: daysRequested,
+          reason,
+          leaveType: leaveType || 'Annual',
+          relieverId: relieverId || null,
+          handoverNotes: handoverNotes || null,
+          relieverAcceptanceRequired: !!relieverAcceptanceRequired,
+          status: initialStatus,
+          requiresMedicalCertificate: isSickLeave,
+        },
+      });
+      await tx.leaveRequestDay.createMany({
+        data: normalizedDates.map(date => ({ organizationId: orgId, leaveRequestId: created.id, date })),
+      });
+      return created;
     });
 
-    // Notify reliever or HR Director
+    // Notify reliever, or the assigned manager + monitoring HR Directors, or HR Director directly
     if (relieverId) {
       const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
       await notify(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
+    } else if (initialStatus === 'MANAGER_REVIEW') {
+      await LeaveService.notifyAssignedManagerAndHr(orgId, employee, daysRequested);
     } else {
-      const reviewerRoles = initialStatus === 'MD_REVIEW' ? ['MD'] : ['HR_DIRECTOR'];
+      const reviewerRoles = initialStatus === 'MD_REVIEW' ? ['MD', 'DEV'] : ['HR_DIRECTOR', 'DEV'];
       const reviewers = await prisma.user.findMany({
         where: { organizationId: orgId, role: { in: reviewerRoles }, isArchived: false },
         select: { id: true }
@@ -198,14 +197,14 @@ export const applyForLeave = async (req: Request, res: Response) => {
       );
     }
 
-    if (isSickLeaveLong) {
-      await notify(employeeId, '⚕️ Medical Certificate Required',
-        'Sick leave of 3+ days requires a medical certificate. Please upload it via your leave request before HR review.',
+    if (isSickLeave) {
+      await notify(employeeId, '⚕️ Doctor\'s Report Required',
+        'Sick leave requires a doctor\'s report. Please upload it via your leave request before HR review.',
         'WARNING', '/leave');
     }
 
     await logAction(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
-    
+
     // Combine warnings
     const combinedWarning = [overlapWarning, borrowingWarning].filter(Boolean).join(' | ');
     return res.status(201).json({ ...leave, warning: combinedWarning || null });
@@ -372,17 +371,35 @@ export const processLeave = async (req: Request, res: Response) => {
     // 1. Reliever Response (Explicitly as reliever)
     if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
       updated = await LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
-    } 
-    // 2. HR Director / MD Processing
+    }
+    // 2. MD final sign-off
     else if (leave.status === 'MD_REVIEW') {
         const access = await PolicyService.evaluatePolicy(actorId, Permission.LEAVE_MD_APPROVE, { targetUserId: leave.employeeId });
         if (!access.allowed) return res.status(403).json({ error: 'Only the Managing Director may complete final sign-off' });
         updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
     }
-    else if (['HR_REVIEW', 'MANAGER_REVIEW'].includes(leave.status)) {
+    // 3. Direct manager review (or HR Director override when the manager is unavailable)
+    else if (leave.status === 'MANAGER_REVIEW') {
+        const actorRank = getRoleRank(actorRole);
+        const employeeRecord = await prisma.user.findUnique({ where: { id: leave.employeeId }, select: { supervisorId: true } });
+        const isAssignedManager = employeeRecord?.supervisorId === actorId;
+
+        if (!isAssignedManager && actorRank >= 92) {
+          // HR Director override — manager not around. Reason required regardless of outcome.
+          if (!comment || comment.trim().length < 3) {
+            return res.status(400).json({ error: 'A reason is required when overriding the manager-review step.' });
+          }
+          updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment, { isOverride: true });
+          await logAction(actorId, 'LEAVE_MANAGER_REVIEW_OVERRIDDEN_BY_HR', 'LeaveRequest', id, { comment, assignedManagerId: employeeRecord?.supervisorId || null }, req.ip);
+        } else {
+          // Assigned manager, or a same-department manager (managerReview() validates this internally)
+          updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+        }
+    }
+    // 4. HR Director final review for regular staff
+    else if (leave.status === 'HR_REVIEW') {
         const access = await PolicyService.evaluatePolicy(actorId, Permission.LEAVE_HR_APPROVE, { targetUserId: leave.employeeId });
         if (!access.allowed) return res.status(403).json({ error: 'Only the HR Director may review this leave request' });
-        // MANAGER_REVIEW is a legacy status — HR Director can still action it via hrValidation
         updated = await LeaveService.hrValidation(id, actorId, action === 'APPROVE', comment);
     }
     else {

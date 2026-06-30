@@ -91,8 +91,8 @@ export const exportLeavePdf = async (req: Request, res: Response) => {
             include: { departmentObj: { select: { name: true } } }
         },
         reliever: { select: { fullName: true } },
-        manager: { select: { fullName: true } },
-        hrReviewer: { select: { fullName: true } },
+        manager: { select: { fullName: true, signatureUrl: true } },
+        hrReviewer: { select: { fullName: true, signatureUrl: true } },
         handoverRecords: {
           include: { reliever: { select: { fullName: true } } }
         }

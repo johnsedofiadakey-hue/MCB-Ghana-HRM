@@ -8,7 +8,8 @@ import {
   updateEmployee, deleteEmployee, hardDeleteEmployee,
   restoreEmployee,
   uploadImage, uploadSignature, getMyTeam, getSupervisors,
-  assignRole, getUserRiskProfile, resetEmployeePassword, activateEmployeeLogin
+  assignRole, getUserRiskProfile, resetEmployeePassword, activateEmployeeLogin,
+  getCasualWorkerSummary
 } from '../controllers/user.controller';
 
 const router = Router();
@@ -17,6 +18,7 @@ router.use(authenticate);
 // Read
 router.get('/me/team', getMyTeam);
 router.get('/supervisors', getSupervisors);
+router.get('/stats/casual-summary', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), getCasualWorkerSummary);
 router.get('/', requireRole(50), getAllEmployees);
 router.get('/:id', getEmployee);
 router.get('/:id/risk', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), getUserRiskProfile);

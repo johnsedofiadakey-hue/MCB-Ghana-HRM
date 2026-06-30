@@ -15,15 +15,16 @@ import { cn } from '../utils/cn';
 import { getStoredUser, getRoleRankValue } from '../utils/session';
 import { format } from 'date-fns';
 import { useAI } from '../context/AIContext';
+import LeaveDatePicker from '../components/leave/LeaveDatePicker';
 
 const statusConfig: Record<string, { label: string; badge: string; icon: React.ElementType; color: string }> = {
   SUBMITTED: { label: 'leave.status.SUBMITTED', badge: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10', icon: Clock, color: 'text-[var(--warning)]' },
   PENDING_RELIEVER: { label: 'leave.status.PENDING_RELIEVER', badge: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10', icon: Clock, color: 'text-[var(--warning)]' },
   RELIEVER_ACCEPTED: { label: 'leave.status.RELIEVER_ACCEPTED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
   RELIEVER_DECLINED: { label: 'leave.status.RELIEVER_DECLINED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
-  MANAGER_REVIEW: { label: 'leave.status.HR_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: Clock, color: 'text-[var(--primary)]' },
+  MANAGER_REVIEW: { label: 'leave.status.MANAGER_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: Clock, color: 'text-[var(--primary)]' },
   MANAGER_APPROVED: { label: 'leave.status.MANAGER_APPROVED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
-  MANAGER_REJECTED: { label: 'leave.status.HR_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
+  MANAGER_REJECTED: { label: 'leave.status.MANAGER_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
   HR_REVIEW: { label: 'leave.status.HR_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
   HR_REJECTED: { label: 'leave.status.HR_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
   MD_REVIEW: { label: 'leave.status.MD_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
@@ -89,7 +90,7 @@ const Leave = () => {
 
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
+  const [form, setForm] = useState({ selectedDates: [] as string[], reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
   const [relieverSearch, setRelieverSearch] = useState('');
   const [showRelieverOptions, setShowRelieverOptions] = useState(false);
   const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'HISTORY' | 'REGISTER' | 'ADMIN'>('MY');
@@ -183,13 +184,13 @@ const Leave = () => {
     e?.preventDefault();
     setSaving(true);
     try {
-      const res = await api.post('/leave/apply', form);
+      const res = await api.post('/leave/apply', { ...form, dates: form.selectedDates });
       const { warning } = res.data;
-      
-      setShowModal(false); 
-      setForm({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
+
+      setShowModal(false);
+      setForm({ selectedDates: [], reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
       fetchData();
-      
+
       if (warning) {
         toast.info(warning);
       } else {
@@ -203,22 +204,10 @@ const Leave = () => {
   };
 
   const calculatedDays = useMemo<number | null>(() => {
-    if (!form.startDate || !form.endDate) return null;
-    const start = new Date(`${form.startDate}T00:00:00.000Z`);
-    const end = new Date(`${form.endDate}T00:00:00.000Z`);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
+    return form.selectedDates.length > 0 ? form.selectedDates.length : null;
+  }, [form.selectedDates]);
 
-    const holidayDates = new Set(holidays.map((holiday) => new Date(holiday.date).toISOString().split('T')[0]));
-    const cursor = new Date(start);
-    let count = 0;
-    while (cursor <= end) {
-      const day = cursor.getUTCDay();
-      const date = cursor.toISOString().split('T')[0];
-      if (day !== 0 && day !== 6 && !holidayDates.has(date)) count++;
-      cursor.setUTCDate(cursor.getUTCDate() + 1);
-    }
-    return count;
-  }, [form.startDate, form.endDate, holidays]);
+  const handoverNotesValid = !form.relieverId || form.handoverNotes.trim().length >= 10;
 
   const filteredEmployees = employees.filter(e => 
     e.id !== user.id && 
@@ -327,7 +316,7 @@ const Leave = () => {
     reader.onloadend = async () => {
       try {
         await api.patch(`/leave/${medCertTargetId}/medical-cert`, { medicalCertificateUrl: reader.result });
-        toast.success('Medical certificate uploaded successfully.');
+        toast.success('Doctor\'s report uploaded successfully.');
         setLeaves(prev => prev.map(l => l.id === medCertTargetId ? { ...l, medicalCertificateUploaded: true } : l));
       } catch (err: any) {
         toast.error(err?.response?.data?.error || 'Upload failed. Please try again.');
@@ -358,7 +347,7 @@ const Leave = () => {
 
   return (
     <div className="space-y-12 pb-32 overflow-x-hidden">
-      {/* Hidden medical certificate file input */}
+      {/* Hidden doctor's report file input */}
       <input
         type="file"
         ref={medCertInputRef}
@@ -598,16 +587,16 @@ const Leave = () => {
                                               onClick={() => { setMedCertTargetId(leave.id); medCertInputRef.current?.click(); }}
                                               disabled={medCertUploading === leave.id}
                                               className="flex items-center gap-2 text-[9px] font-bold text-[var(--warning)] bg-[var(--warning)]/5 px-3 py-1.5 rounded-lg border border-[var(--warning)]/20 w-fit hover:bg-[var(--warning)]/10 transition-all"
-                                              title="Sick leave ≥ 3 days — medical certificate required"
+                                              title="Sick leave requires a doctor's report"
                                             >
                                               {medCertUploading === leave.id ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                                              <span>Medical cert required — upload</span>
+                                              <span>Doctor's report required — upload</span>
                                             </button>
                                           )}
                                           {leave.requiresMedicalCertificate && leave.medicalCertificateUploaded && (
                                             <div className="flex items-center gap-2 text-[9px] font-bold text-[var(--success)] bg-[var(--success)]/5 px-3 py-1.5 rounded-lg border border-[var(--success)]/10 w-fit">
                                               <FileCheck size={10} />
-                                              <span>Medical certificate uploaded</span>
+                                              <span>Doctor's report uploaded</span>
                                             </div>
                                           )}
                                         </div>
@@ -689,11 +678,11 @@ const Leave = () => {
                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border w-fit shadow-sm", (statusConfig[leave.status] || {}).badge)}>
                                            {t(statusConfig[leave.status]?.label || leave.status)}
                                          </span>
-                                         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {leave.status === 'MD_REVIEW' ? t('leave.stage_final_md', 'MD Approval') : leave.status === 'HR_REVIEW' ? 'HR Director Review' : leave.status === 'SUBMITTED' ? 'Awaiting Reliever' : ''}</span>
+                                         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {leave.status === 'MD_REVIEW' ? t('leave.stage_final_md', 'MD Approval') : leave.status === 'HR_REVIEW' ? 'HR Director Review' : leave.status === 'MANAGER_REVIEW' ? 'Awaiting Manager' : leave.status === 'SUBMITTED' ? 'Awaiting Reliever' : ''}</span>
                                          {leave.requiresMedicalCertificate && !leave.medicalCertificateUploaded && (
                                            <div className="flex items-center gap-1.5 text-[7px] font-black text-[var(--warning)] bg-[var(--warning)]/5 px-2.5 py-1 rounded-lg border border-[var(--warning)]/20 w-fit ml-2">
                                              <AlertTriangle size={8} />
-                                             <span>Med cert pending</span>
+                                             <span>Doctor's report pending</span>
                                            </div>
                                          )}
                                       </div>
@@ -713,7 +702,8 @@ const Leave = () => {
                                            <Printer size={18} />
                                         </button>
                                          {((userRank >= 95 && leave.status === 'MD_REVIEW') ||
-                                            (userRank >= 92 && ['HR_REVIEW', 'MANAGER_REVIEW'].includes(leave.status))) &&
+                                            (userRank >= 92 && leave.status === 'HR_REVIEW') ||
+                                            (leave.status === 'MANAGER_REVIEW' && (userRank >= 92 || userRank >= 65 || leave.employee?.supervisorId === user.id))) &&
                                             !(leave.relieverAcceptanceRequired && leave.status === 'SUBMITTED') ? (
                                             <>
                                               <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-[var(--success)]/5 text-[var(--success)] border border-[var(--success)]/10 flex items-center justify-center hover:bg-[var(--success)] hover:text-white transition-all shadow-lg active:scale-90" title={t('common.approve')}><CheckCircle size={18} /></button>
@@ -721,10 +711,11 @@ const Leave = () => {
                                             </>
                                           ) : (
                                             <div className="px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/30 flex items-center gap-2">
-                                               <Clock size={12} className="text-[var(--text-muted)] animate-pulse" /> 
+                                               <Clock size={12} className="text-[var(--text-muted)] animate-pulse" />
                                                <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
                                                   {leave.status === 'SUBMITTED' ? t('leave.awaiting_handover') :
-                                                   ['HR_REVIEW', 'MANAGER_REVIEW'].includes(leave.status) ? 'Awaiting HR Director' :
+                                                   leave.status === 'MANAGER_REVIEW' ? 'Awaiting Manager' :
+                                                   leave.status === 'HR_REVIEW' ? 'Awaiting HR Director' :
                                                    leave.status === 'MD_REVIEW' ? t('leave.status.MD_REVIEW') :
                                                    t('leave.final_review')}
                                                </span>
@@ -1155,26 +1146,14 @@ const Leave = () => {
                          </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
-                         <div className="space-y-4">
-                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.start_point')}</label>
-                            <input 
-                               type="date" className="nx-input" min={minLeaveDate}
-                               value={form.startDate}
-                               onChange={e => setForm((current) => ({...current, startDate: e.target.value}))}
-                               required
-                            />
-                         </div>
-
-                         <div className="space-y-4">
-                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.end_point')}</label>
-                            <input 
-                               type="date" className="nx-input" min={form.startDate || minLeaveDate}
-                               value={form.endDate}
-                               onChange={e => setForm((current) => ({...current, endDate: e.target.value}))}
-                               required
-                            />
-                         </div>
+                      <div className="space-y-4">
+                         <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.select_days', 'Select your leave days')}</label>
+                         <LeaveDatePicker
+                            selectedDates={form.selectedDates}
+                            onChange={(dates) => setForm((current) => ({ ...current, selectedDates: dates }))}
+                            holidays={holidays}
+                            minDate={new Date(minLeaveDate)}
+                         />
                       </div>
 
                       {calculatedDays !== null && (
@@ -1211,13 +1190,16 @@ const Leave = () => {
                             </div>
                             
                             <div className="space-y-4">
-                               <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('leave.protocol_notes')}</label>
-                               <textarea 
-                                  className="nx-input min-h-[100px] py-4" 
-                                  placeholder={t('leave.handover_placeholder')}
+                               <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Instructions for your cover person *</label>
+                               <textarea
+                                  className="nx-input min-h-[100px] py-4"
+                                  placeholder="What should they cover while you're away? Be specific — pending tasks, who to contact, deadlines..."
                                   value={form.handoverNotes}
                                   onChange={e => setForm((current) => ({...current, handoverNotes: e.target.value}))}
                                />
+                               {!handoverNotesValid && (
+                                  <p className="text-[9px] font-bold text-[var(--status-error-text)] ml-1">Add at least 10 characters of instructions so your cover person knows what to handle.</p>
+                               )}
                             </div>
 
                             <label className="flex items-center gap-4 cursor-pointer group p-2">
@@ -1239,7 +1221,7 @@ const Leave = () => {
                          <button 
                             type="button"
                             onClick={() => handleApply()}
-                            disabled={saving || calculatedDays === null || calculatedDays < 1 || !form.reason.trim()}
+                            disabled={saving || calculatedDays === null || calculatedDays < 1 || !form.reason.trim() || !handoverNotesValid}
                             className="w-full min-h-14 px-4 py-4 rounded-2xl sm:rounded-[2rem] bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                          >
                             {t('leave.initiate_vector_btn')}

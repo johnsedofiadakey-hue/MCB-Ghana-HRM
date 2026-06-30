@@ -15,10 +15,20 @@ describe('leave approval contract', () => {
     expect(determineHrReviewStatus('MD', true)).toBe('MD_REVIEW');
   });
 
-  it('sends the HR Director own request directly to MD when no reliever is required', () => {
+  it('sends the HR Director own request directly to MD when no reliever is required, never to HR_REVIEW (self-approval guard)', () => {
     expect(determineInitialLeaveStatus('HR_DIRECTOR', false)).toBe('MD_REVIEW');
-    expect(determineInitialLeaveStatus('STAFF', false)).toBe('HR_REVIEW');
     expect(determineInitialLeaveStatus('HR_DIRECTOR', true)).toBe('SUBMITTED');
+  });
+
+  it('routes regular staff through their direct manager first', () => {
+    expect(determineInitialLeaveStatus('STAFF', false)).toBe('MANAGER_REVIEW');
+    expect(determineInitialLeaveStatus('CASUAL', false)).toBe('MANAGER_REVIEW');
+  });
+
+  it('routes manager-tier employees (rank 65-91) straight to HR_REVIEW, skipping peer manager review', () => {
+    expect(determineInitialLeaveStatus('SUPERVISOR', false)).toBe('HR_REVIEW');
+    expect(determineInitialLeaveStatus('MANAGER', false)).toBe('HR_REVIEW');
+    expect(determineInitialLeaveStatus('DIRECTOR', false)).toBe('HR_REVIEW');
   });
 
   it('uses explicit HR and MD permissions rather than numeric rank inheritance', () => {
