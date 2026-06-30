@@ -52,7 +52,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProp
             <input 
               required
               placeholder="e.g. Printer Offline / Payroll Query / VPN Issue"
-              className="nx-input pl-12"
+              className="nx-input nx-input-l"
               value={form.subject}
               onChange={e => setForm({...form, subject: e.target.value})}
             />
@@ -65,7 +65,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProp
              <div className="relative group">
                <Layers size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                <select 
-                 className="nx-input pl-12 appearance-none"
+                 className="nx-input nx-input-l appearance-none"
                  value={form.category}
                  onChange={e => setForm({...form, category: e.target.value})}
                >
@@ -81,7 +81,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProp
              <div className="relative group">
                <AlertTriangle size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                <select 
-                 className="nx-input pl-12 appearance-none"
+                 className="nx-input nx-input-l appearance-none"
                  value={form.priority}
                  onChange={e => setForm({...form, priority: e.target.value})}
                >

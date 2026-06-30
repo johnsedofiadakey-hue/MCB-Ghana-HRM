@@ -56,7 +56,7 @@ const CreateExpenseModal = ({ isOpen, onClose, onSuccess }: CreateExpenseModalPr
             <input 
               required
               placeholder="e.g. Flight to Kumasi / Client Dinner"
-              className="nx-input pl-12"
+              className="nx-input nx-input-l"
               value={form.title}
               onChange={e => setForm({...form, title: e.target.value})}
             />
@@ -105,7 +105,7 @@ const CreateExpenseModal = ({ isOpen, onClose, onSuccess }: CreateExpenseModalPr
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    className="nx-input pl-12 font-mono font-bold"
+                    className="nx-input nx-input-l font-mono font-bold"
                     value={form.amount}
                     onChange={e => setForm({...form, amount: e.target.value})}
                   />

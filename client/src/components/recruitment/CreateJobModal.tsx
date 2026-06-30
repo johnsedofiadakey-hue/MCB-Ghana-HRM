@@ -67,7 +67,7 @@ const CreateJobModal = ({ isOpen, onClose, onSuccess }: CreateJobModalProps) => 
             <input 
               required
               placeholder="e.g. Senior Software Engineer"
-              className="nx-input pl-12"
+              className="nx-input nx-input-l"
               value={form.title}
               onChange={e => setForm({...form, title: e.target.value})}
             />
@@ -80,7 +80,7 @@ const CreateJobModal = ({ isOpen, onClose, onSuccess }: CreateJobModalProps) => 
              <div className="relative group">
                <Building2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                <select 
-                 className="nx-input pl-12 appearance-none"
+                 className="nx-input nx-input-l appearance-none"
                  value={form.departmentId}
                  onChange={e => setForm({...form, departmentId: e.target.value})}
                >
@@ -95,7 +95,7 @@ const CreateJobModal = ({ isOpen, onClose, onSuccess }: CreateJobModalProps) => 
                <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                <input 
                  placeholder="e.g. Remote / Accra, Ghana"
-                 className="nx-input pl-12"
+                 className="nx-input nx-input-l"
                  value={form.location}
                  onChange={e => setForm({...form, location: e.target.value})}
                />

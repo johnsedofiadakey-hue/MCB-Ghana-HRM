@@ -83,7 +83,7 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
             <UserX size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
             <select 
               required
-              className="nx-input pl-12 appearance-none"
+              className="nx-input nx-input-l appearance-none"
               value={form.employeeId}
               onChange={e => setForm({...form, employeeId: e.target.value})}
             >
@@ -101,7 +101,7 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
             <ClipboardList size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
             <select 
               required
-              className="nx-input pl-12 appearance-none"
+              className="nx-input nx-input-l appearance-none"
               value={form.templateId}
               onChange={e => setForm({...form, templateId: e.target.value})}
             >
@@ -120,7 +120,7 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
             <input 
               required
               type="date"
-              className="nx-input pl-12"
+              className="nx-input nx-input-l"
               value={form.effectiveDate}
               onChange={e => setForm({...form, effectiveDate: e.target.value})}
             />

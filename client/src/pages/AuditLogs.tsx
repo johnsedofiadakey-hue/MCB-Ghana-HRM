@@ -98,7 +98,7 @@ const AuditLogs = () => {
             <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500/50" />
             <input 
                type="text" 
-               className="nx-input pl-10 py-3 text-xs w-full bg-[var(--bg-input)] border-[var(--border-subtle)] font-bold focus:border-[var(--primary)] transition-all" 
+               className="nx-input nx-input-l py-3 text-xs w-full bg-[var(--bg-input)] border-[var(--border-subtle)] font-bold focus:border-[var(--primary)] transition-all"
                placeholder={t('audit.search_placeholder')}
                value={search} 
                onChange={e => setSearch(e.target.value)} 

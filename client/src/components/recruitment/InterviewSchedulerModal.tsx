@@ -153,7 +153,7 @@ const InterviewSchedulerModal = ({ isOpen, onClose, candidateId, candidateName }
                     <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                     <input 
                       type="text" 
-                      className="nx-input pl-12" 
+                      className="nx-input nx-input-l"
                       placeholder="Meeting link or office room"
                       value={form.location}
                       onChange={e => setForm({ ...form, location: e.target.value })}

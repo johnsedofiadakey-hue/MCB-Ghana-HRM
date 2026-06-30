@@ -40,9 +40,11 @@ const payrollViewPermissions = [Permission.PAYROLL_PREPARE, Permission.PAYROLL_H
 
 router.get('/summary', requireAnyPermission(payrollViewPermissions), getYearlySummary);
 router.get('/', requireAnyPermission(payrollViewPermissions), getRuns);
+// Statutory rule drafting/approval: Finance prepares, HR Director can also draft/approve per client requirements
+const statutoryRuleManagePermissions = [Permission.PAYROLL_PREPARE, Permission.PAYROLL_HR_APPROVE];
 router.get('/statutory-rules', requireAnyPermission(payrollViewPermissions), getStatutoryRules);
-router.post('/statutory-rules', requirePermission(Permission.PAYROLL_PREPARE), createStatutoryRule);
-router.post('/statutory-rules/:id/approve', requirePermission(Permission.PAYROLL_PREPARE), approveStatutoryRule);
+router.post('/statutory-rules', requireAnyPermission(statutoryRuleManagePermissions), createStatutoryRule);
+router.post('/statutory-rules/:id/approve', requireAnyPermission(statutoryRuleManagePermissions), approveStatutoryRule);
 router.post('/runs', requirePermission(Permission.PAYROLL_PREPARE), validate(PayrollRunSchema), createRun);
 router.post('/run', requirePermission(Permission.PAYROLL_PREPARE), validate(PayrollRunSchema), createRun); // compatibility
 router.get('/:id', requireAnyPermission(payrollViewPermissions), getRunDetail);

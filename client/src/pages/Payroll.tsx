@@ -436,10 +436,10 @@ const Payroll = () => {
                     <h2 className="text-xl font-black text-[var(--text-primary)]">Ghana Statutory Rules</h2>
                     <p className="mt-2 text-sm text-[var(--text-muted)]">Payroll is blocked until an effective rule is explicitly approved after accountant review.</p>
                   </div>
-                  {isFinance && <button onClick={() => setShowRuleForm(!showRuleForm)} className="btn-primary w-full sm:w-auto"><Plus size={16} /> New Draft Rule</button>}
+                  {(isFinance || isHR) && <button onClick={() => setShowRuleForm(!showRuleForm)} className="btn-primary w-full sm:w-auto"><Plus size={16} /> New Draft Rule</button>}
                 </div>
 
-                {showRuleForm && isFinance && <form onSubmit={handleCreateRule} className="nx-card p-5 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {showRuleForm && (isFinance || isHR) && <form onSubmit={handleCreateRule} className="nx-card p-5 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <label className="space-y-2 sm:col-span-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Rule name</span><input required className="nx-input" value={ruleForm.name} onChange={e => setRuleForm({ ...ruleForm, name: e.target.value })} /></label>
                   <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Effective from</span><input required type="date" className="nx-input" value={ruleForm.effectiveFrom} onChange={e => setRuleForm({ ...ruleForm, effectiveFrom: e.target.value })} /></label>
                   <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Effective to (optional)</span><input type="date" className="nx-input" value={ruleForm.effectiveTo} onChange={e => setRuleForm({ ...ruleForm, effectiveTo: e.target.value })} /></label>
@@ -455,7 +455,7 @@ const Payroll = () => {
                   {statutoryRules.map(rule => <div key={rule.id} className="nx-card p-6 border-[var(--border-subtle)]">
                     <div className="flex items-start justify-between gap-4"><div><h3 className="font-black text-[var(--text-primary)]">{rule.name}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">{new Date(rule.effectiveFrom).toLocaleDateString()} – {rule.effectiveTo ? new Date(rule.effectiveTo).toLocaleDateString() : 'Open ended'}</p></div><span className={cn('px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border', rule.accountantApproved ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-500 bg-amber-500/10 border-amber-500/20')}>{rule.accountantApproved ? 'Approved' : 'Draft'}</span></div>
                     <div className="mt-5 grid grid-cols-2 gap-3 text-xs"><div className="rounded-xl bg-[var(--bg-elevated)] p-3"><span className="text-[var(--text-muted)]">Employee SSNIT</span><strong className="block mt-1 text-[var(--text-primary)]">{Number(rule.employeeSsnitRate) * 100}%</strong></div><div className="rounded-xl bg-[var(--bg-elevated)] p-3"><span className="text-[var(--text-muted)]">Employer SSNIT</span><strong className="block mt-1 text-[var(--text-primary)]">{Number(rule.employerSsnitRate) * 100}%</strong></div></div>
-                    {!rule.accountantApproved && isFinance && <button onClick={() => handleApproveRule(rule)} className="mt-5 btn-primary w-full">Confirm Accountant Approval</button>}
+                    {!rule.accountantApproved && (isFinance || isHR) && <button onClick={() => handleApproveRule(rule)} className="mt-5 btn-primary w-full">Confirm Accountant Approval</button>}
                   </div>)}
                   {statutoryRules.length === 0 && <div className="lg:col-span-2 nx-card p-12 text-center border-dashed"><AlertCircle className="mx-auto text-amber-500 mb-4" /><p className="font-bold text-[var(--text-primary)]">No statutory rule configured. Finance cannot create a payroll run yet.</p></div>}
                 </div>

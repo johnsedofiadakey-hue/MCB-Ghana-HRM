@@ -923,8 +923,8 @@ const Leave = () => {
                                     <div className="relative">
                                        <input 
                                           type="text" 
-                                          className="nx-input pl-12" 
-                                          placeholder="Search by name or department..." 
+                                          className="nx-input nx-input-l"
+                                          placeholder="Search by name or department..."
                                           value={relieverSearch}
                                           onChange={e => setRelieverSearch(e.target.value)}
                                        />
@@ -1109,7 +1109,7 @@ const Leave = () => {
                              <div className="relative">
                                 <input 
                                    type="text" 
-                                   className="nx-input pl-12" 
+                                   className="nx-input nx-input-l"
                                    placeholder={t('leave.search_personnel')}
                                    value={relieverSearch}
                                    onChange={e => {

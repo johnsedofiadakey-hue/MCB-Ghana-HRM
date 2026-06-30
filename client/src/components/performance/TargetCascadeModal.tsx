@@ -96,7 +96,7 @@ const TargetCascadeModal: React.FC<Props> = ({ target, onClose, onSuccess }) => 
              <input 
                type="text" 
                placeholder="Search staff members..." 
-               className="nx-input w-full pl-12 shadow-none"
+               className="nx-input nx-input-l w-full shadow-none"
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
              />

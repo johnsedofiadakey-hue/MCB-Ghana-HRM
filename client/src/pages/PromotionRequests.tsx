@@ -87,7 +87,7 @@ const PromotionRequests = () => {
                     <input 
                         type="text" 
                         placeholder="Search by staff or manager..."
-                        className="nx-input pl-12 w-full"
+                        className="nx-input nx-input-l w-full"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
