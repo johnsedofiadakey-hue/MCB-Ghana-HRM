@@ -281,7 +281,7 @@ export default function EmployeeManagement() {
   const handleSave = async (submittedForm: any) => {
     setSaving(true); setError('');
     try {
-    if (!submittedForm.fullName || !submittedForm.email || !submittedForm.role || (!submittedForm.password && modal === 'create')) {
+    if (!submittedForm.fullName || !submittedForm.email || !submittedForm.role) {
       toast.error(t('common.fill_required'));
       return;
     }
