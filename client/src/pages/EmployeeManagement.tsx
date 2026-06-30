@@ -303,6 +303,7 @@ export default function EmployeeManagement() {
       if (modal === 'create') {
         await api.post('/employees', submittedForm);
         toast.success(t('employees.personnel_deployment_success'));
+        toast.info('Starter password: unlockme — they\'ll be asked to set their own on first login.', 6000);
       } else {
         await api.put(`/employees/${selected.id}`, submittedForm);
         toast.success(t('employees.dossier_updated_success'));
