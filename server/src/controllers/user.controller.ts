@@ -917,9 +917,9 @@ export const getSupervisors = async (req: Request, res: Response) => {
   const supervisors = await prisma.user.findMany({
     where: { 
       organizationId, 
-      role: { in: ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR'] }, 
+      role: { in: ['MD', 'HR_DIRECTOR', 'DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'MARKETING_HEAD', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'HR_OFFICER'] },
       status: 'ACTIVE',
-      NOT: { role: 'DEV' } // Redundant but safe
+      NOT: { role: 'DEV' }
     },
     select: { id: true, fullName: true, role: true, jobTitle: true, departmentObj: { select: { name: true } } },
     orderBy: { fullName: 'asc' },

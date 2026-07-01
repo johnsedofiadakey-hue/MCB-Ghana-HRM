@@ -27,7 +27,7 @@ export class ReceiptService {
     }
 
     const lang = org?.language || 'en';
-    const companyName = org?.name || 'MCB-HRM Ghana';
+    const companyName = org?.name || 'MC-BAUCHEMIE GHANA';
     const t = (key: string) => i18n.translate(key, lang);
 
     const doc = new PDFDocument({ 

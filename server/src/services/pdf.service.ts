@@ -163,16 +163,16 @@ export class PdfExportService {
       .fillColor(primaryColor)
       .fontSize(18)
       .font('Helvetica-Bold')
-      .text(org?.name?.toUpperCase() || 'MCB-HRM GHANA', margin, headerTop + 5, { width: 350 });
+      .text(org?.name?.toUpperCase() || 'MC-BAUCHEMIE GHANA', margin, headerTop + 5, { width: 350 });
 
     doc
       .fontSize(9)
       .font('Helvetica')
       .fillColor('#64748b')
-      .text(`${org?.address || 'Corporate Headquarters'}`, margin, headerTop + 30, { width: 350 })
-      .text(`${org?.city || ''}, ${org?.country || ''}`, margin, headerTop + 42, { width: 350 })
+      .text(`${org?.address || 'Tema Industrial Area, Accra'}`, margin, headerTop + 30, { width: 350 })
+      .text(`${org?.city || 'Tema'}, ${org?.country || 'Ghana'}`, margin, headerTop + 42, { width: 350 })
       .fillColor(primaryColor)
-      .text(`Phone: ${org?.phone || 'N/A'} | Email: ${org?.email || 'N/A'}`, margin, headerTop + 55, { width: 350 });
+      .text(`Phone: ${org?.phone || '+233 (0) 303 309 999'} | Email: ${org?.email || 'info@mc-bauchemie.com.gh'}`, margin, headerTop + 55, { width: 350 });
 
     // Decorative Header Line
     doc
@@ -202,7 +202,7 @@ export class PdfExportService {
       .lineTo(550, 780)
       .stroke();
 
-    const footerText = `Institutional Record | ${org?.name || 'MCB-HRM Ghana'} | Page ${page} of ${total}`;
+    const footerText = `Institutional Record | ${org?.name || 'MC-BAUCHEMIE GHANA'} | Page ${page} of ${total}`;
     doc
       .fontSize(7)
       .fillColor('#94a3b8')

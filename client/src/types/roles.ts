@@ -54,7 +54,7 @@ export const ROLE_LABELS: Record<string, string> = {
   DIRECTOR: 'Director',
   HR_MANAGER: 'HR Manager',
   FINANCE_MANAGER: 'Finance Manager',
-  MARKETING_HEAD: 'Marketing Head',
+  MARKETING_HEAD: 'Marketing Manager',
   IT_MANAGER: 'IT Manager',
   IT_ADMIN: 'IT Administrator',
   HR_OFFICER: 'HR Officer',

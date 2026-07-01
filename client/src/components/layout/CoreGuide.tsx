@@ -450,7 +450,7 @@ const PAGE_GUIDES: Record<string, {
       'Use Urgent priority sparingly — overuse dulls the impact.',
       'Always set an expiry date so the banner doesn\'t linger.',
     ],
-    access: 'Create/publish: Marketing Head, authorized HR roles and MD. Read: authenticated employees in scope.',
+    access: 'Create/publish: Marketing Manager, authorized HR roles and MD. Read: authenticated employees in scope.',
     connections: [
       'All Pages — published announcements display as a top banner across every page system-wide.',
       'Inbox — employees also receive announcements as inbox notifications.',
@@ -887,7 +887,7 @@ const ROLE_SUMMARIES: Record<string, { label: string; color: string; desc: strin
   DIRECTOR: { label: 'Operations Director', color: '#8b5cf6', desc: 'Owns Facilities and Other/Operations help-desk queues and operational leadership.', sees: ['Facilities queue', 'Other queue triage', 'Department operations', 'Own reporting scope'] },
   HR_MANAGER: { label: 'HR Manager', color: '#ec4899', desc: 'HR people administrator without HR Director-only payroll or leave sign-off.', sees: ['Employee management', 'Recruitment', 'Onboarding', 'HR help desk', 'HR operations'] },
   FINANCE_MANAGER: { label: 'Finance Manager', color: '#10b981', desc: 'Owns payroll preparation, expenses, loans and Finance help desk.', sees: ['Payroll prepare/submit/export', 'Expense and loan approvals', 'Finance queue'] },
-  MARKETING_HEAD: { label: 'Marketing Head', color: '#f59e0b', desc: 'Owns employee ID production, call cards and the Marketing help desk.', sees: ['Card design and printing', 'Call-card publication', 'Marketing queue'] },
+  MARKETING_HEAD: { label: 'Marketing Manager', color: '#f59e0b', desc: 'Owns employee ID production, call cards and the Marketing help desk.', sees: ['Card design and printing', 'Call-card publication', 'Marketing queue'] },
   IT_MANAGER: { label: 'IT Manager', color: '#06b6d4', desc: 'Owns accounts, equipment, technical access, physical credential activation and IT support.', sees: ['IT Admin', 'Assets', 'Audit logs', 'Physical access status', 'IT queue'] },
   HR_OFFICER: { label: 'HR Officer', color: '#f43f5e', desc: 'Supports HR operations within specifically assigned routes and records.', sees: ['Employee operations', 'Recruitment', 'Policies', 'Own assigned work'] },
   MANAGER: { label: 'Manager', color: '#f59e0b', desc: 'Manages direct reports, performance and departmental induction.', sees: ['Direct team', 'Team targets', 'Appraisals', 'Assigned onboarding tasks'] },

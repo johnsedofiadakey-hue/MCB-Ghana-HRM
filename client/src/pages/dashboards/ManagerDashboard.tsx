@@ -21,6 +21,7 @@ const ManagerDashboard = () => {
   const isHR = role.includes('HR');
   const isFinance = role.includes('FINANCE') || role.includes('FIANANCE');
   const isIT = role.includes('IT');
+  const isMarketing = role === 'MARKETING_HEAD';
   const [stats, setStats] = useState({ 
     teamSize: 0, 
     pendingReviews: 0, 
@@ -57,13 +58,13 @@ const ManagerDashboard = () => {
   ];
 
   return (
-    <div className="relative space-y-12 pb-20 max-w-[1700px] mx-auto page-enter">
+    <div className="relative space-y-6 lg:space-y-12 pb-20 max-w-[1700px] mx-auto page-enter">
       {/* Background Decorative Elements */}
       <div className="bg-glow-radial -top-40 -left-40 opacity-40" />
       <div className="bg-glow-radial bottom-0 -right-40" style={{ background: 'radial-gradient(circle, rgba(var(--accent-rgb), 0.1) 0%, transparent 70%)' }} />
 
       {/* Identity Header */}
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 pt-8">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 lg:gap-8 pt-4 lg:pt-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <div className="flex items-center gap-3 mb-4">
              <div className="px-4 py-1.5 rounded-full premium-glass border-glow-premium text-[11px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2 shadow-xl">
@@ -260,7 +261,7 @@ const ManagerDashboard = () => {
           </div>
 
           {/* Specialized Operations Grid for Admin Managers */}
-          {(isHR || isIT || isFinance) && (
+          {(isHR || isIT || isFinance || isMarketing) && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
               className="premium-glass border-glow-premium p-10 shadow-2xl bg-gradient-to-br from-[var(--primary)]/5 to-transparent">
               <div className="mb-8">
@@ -394,6 +395,46 @@ const ManagerDashboard = () => {
                         <div>
                           <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Promotions Board</div>
                           <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Nominations & career ladder</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                  </>
+                )}
+                {isMarketing && (
+                  <>
+                    <Link to="/cards" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <CreditCard size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Card Management</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Employee ID & access cards</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/onboarding" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Users size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Onboarding</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">New employee setup & cards</div>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                    </Link>
+                    <Link to="/print/ids" className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/40 hover:bg-[var(--bg-elevated)] transition-all flex items-center justify-between group no-underline shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                          <Zap size={20} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-black text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">Print IDs</div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Bulk ID card printing</div>
                         </div>
                       </div>
                       <ArrowRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />

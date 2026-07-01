@@ -25,7 +25,7 @@ async function getOrgBranding(organizationId?: string): Promise<OrgBranding> {
     });
 
     const branding: OrgBranding = {
-      name: org?.name || 'MCB-HRM Ghana',
+      name: org?.name || 'MC-BAUCHEMIE GHANA',
       logoUrl: org?.logoUrl || null,
       primaryColor: org?.primaryColor || '#4f46e5',
       email: org?.email || null,
@@ -35,7 +35,7 @@ async function getOrgBranding(organizationId?: string): Promise<OrgBranding> {
     brandingCache.set(id, { data: branding, expires: Date.now() + CACHE_TTL });
     return branding;
   } catch {
-    return { name: 'MCB-HRM Ghana', primaryColor: '#4f46e5' };
+    return { name: 'MC-BAUCHEMIE GHANA', primaryColor: '#4f46e5' };
   }
 }
 

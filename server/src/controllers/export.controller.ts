@@ -186,7 +186,7 @@ export const exportEmployeePdf = async (req: Request, res: Response) => {
     });
 
     const primary = org?.primaryColor || '#4F46E5';
-    doc.fillColor(primary).fontSize(20).font('Helvetica-Bold').text(org?.name || 'MCB HRM Ghana', { align: 'center' });
+    doc.fillColor(primary).fontSize(20).font('Helvetica-Bold').text(org?.name || 'MC-BAUCHEMIE GHANA', { align: 'center' });
     doc.moveDown(0.5);
     doc.fillColor('#111827').fontSize(16).text('Employee Dossier', { align: 'center' });
     doc.moveDown(2);
@@ -213,7 +213,7 @@ export const exportEmployeePdf = async (req: Request, res: Response) => {
     row('Nationality: ', employee.nationality || employee.countryOfOrigin);
 
     doc.moveDown(2);
-    doc.fontSize(8).fillColor('#6B7280').text(`Generated ${new Date().toISOString()} by ${(req as any).user?.name || 'MCB HRM Ghana'}`, { align: 'center' });
+    doc.fontSize(8).fillColor('#6B7280').text(`Generated ${new Date().toISOString()} by ${(req as any).user?.name || 'MC-BAUCHEMIE GHANA'}`, { align: 'center' });
     doc.end();
   } catch (err: any) {
     errorLogger.log('ExportController.exportEmployeePdf', err);

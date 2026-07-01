@@ -18,8 +18,8 @@ export const getSettings = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[SettingsController] Critical failure fetching settings:', error);
     res.json({
-      companyName: 'MC Bauchemie',
-      name: 'MC Bauchemie',
+      companyName: 'MC-BAUCHEMIE GHANA',
+      name: 'MC-BAUCHEMIE GHANA',
       subtitle: 'Enterprise Portal',
       logoUrl: '',
       primaryColor: '#4F46E5', 

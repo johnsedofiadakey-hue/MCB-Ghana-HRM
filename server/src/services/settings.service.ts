@@ -107,8 +107,8 @@ export const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin =
   if (!org) {
     console.warn('[SettingsService] No organization found for ID:', organizationId, '- Using system fallback');
     return {
-      companyName: 'MCB-HRM Ghana',
-      name: 'MCB-HRM Ghana',
+      companyName: 'MC-BAUCHEMIE GHANA',
+      name: 'MC-BAUCHEMIE GHANA',
       subtitle: 'Institutional HRM OS',
       companyLogoUrl: '/favicon.ico',
       logoUrl: '/favicon.ico',
