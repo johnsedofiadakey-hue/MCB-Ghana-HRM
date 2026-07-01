@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -108,33 +141,32 @@ class PdfExportService {
             // --- Logo Rendering (Extreme Right) ---
             if (org?.logoUrl) {
                 const xPos = pageWidth - margin - logoWidth;
+                // Resolve raw bytes regardless of source (base64 data URI or remote URL)
+                let rawBuffer = null;
                 if (org.logoUrl.startsWith('data:image')) {
                     const b64 = org.logoUrl.split(',')[1];
                     if (b64)
-                        doc.image(Buffer.from(b64, 'base64'), xPos, headerTop, { width: logoWidth });
+                        rawBuffer = Buffer.from(b64, 'base64');
                 }
                 else {
                     let absoluteLogoUrl = org.logoUrl;
-                    try {
-                        if (!absoluteLogoUrl.startsWith('http')) {
-                            // Fallback to internal development or production asset path
-                            const apiOrigin = process.env.API_BASE_URL || process.env.RENDER_EXTERNAL_URL || 'https://mcb-ghana-hrm-api.onrender.com';
-                            absoluteLogoUrl = `${apiOrigin.replace(/\/$/, '')}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
-                        }
-                        const response = await axios_1.default.get(absoluteLogoUrl, {
-                            responseType: 'arraybuffer',
-                            timeout: 8000
-                        });
-                        doc.image(response.data, xPos, headerTop, { width: logoWidth });
+                    if (!absoluteLogoUrl.startsWith('http')) {
+                        const apiOrigin = process.env.API_BASE_URL || process.env.RENDER_EXTERNAL_URL || 'https://mcb-ghana-hrm-api.onrender.com';
+                        absoluteLogoUrl = `${apiOrigin.replace(/\/$/, '')}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
                     }
-                    catch (e) {
-                        console.warn('[PdfExportService] Remote logo fetch failed:', absoluteLogoUrl);
-                        throw e;
-                    }
+                    const response = await axios_1.default.get(absoluteLogoUrl, { responseType: 'arraybuffer', timeout: 8000 });
+                    rawBuffer = Buffer.from(response.data);
+                }
+                if (rawBuffer) {
+                    // PDFKit only supports PNG and JPEG — convert via sharp so WebP/SVG/etc. all work
+                    const sharp = (await Promise.resolve().then(() => __importStar(require('sharp')))).default;
+                    const pngBuffer = await sharp(rawBuffer).png().toBuffer();
+                    doc.image(pngBuffer, xPos, headerTop, { width: logoWidth });
                 }
             }
         }
         catch (err) {
+            console.warn('[PdfExportService] Logo render failed, using text fallback:', err?.message);
             // Fallback Branding on the Right if logo fails
             doc.fontSize(16).fillColor(primaryColor).font('Helvetica-Bold').text(org?.name?.slice(0, 3).toUpperCase() || 'MCB', pageWidth - margin - 60, headerTop + 10, { width: 60, align: 'right' });
         }
