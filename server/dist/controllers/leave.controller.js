@@ -1,9 +1,42 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadMedicalCertificate = exports.adjustLeaveBalance = exports.deleteHandover = exports.deleteLeave = exports.getHandoverHistory = exports.getMyReliefRequests = exports.getAllLeaves = exports.cancelLeave = exports.processLeave = exports.getPendingLeaves = exports.getMyLeaveBalance = exports.getMyLeaves = exports.getEligibleRelievers = exports.applyForLeave = void 0;
+exports.uploadMedicalCertificate = exports.getLeaveById = exports.adjustLeaveBalance = exports.deleteHandover = exports.deleteLeave = exports.getHandoverHistory = exports.getMyReliefRequests = exports.getAllLeaves = exports.cancelLeave = exports.processLeave = exports.getPendingLeaves = exports.getMyLeaveBalance = exports.getMyLeaves = exports.getEligibleRelievers = exports.applyForLeave = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
@@ -16,46 +49,15 @@ const errors_1 = require("../utils/errors");
 const policy_service_1 = require("../services/policy.service");
 const permissions_1 = require("../types/permissions");
 const getOrgId = (req) => req.user?.organizationId || 'mcb-ghana-tenant';
-// Working-day calculator (weekends & holidays excluded) - Timezone Stable
-const calcWorkingDays = (start, end, holidayDates = []) => {
-    let count = 0;
-    // Use UTC to avoid local timezone shifts during day iteration
-    const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
-    const fin = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
-    const holidaySet = new Set(holidayDates);
-    while (cur <= fin) {
-        const d = cur.getUTCDay(); // 0=Sun, 6=Sat
-        const dateStr = cur.toISOString().split('T')[0];
-        // Skip weekends and registered public holidays
-        if (d !== 0 && d !== 6 && !holidaySet.has(dateStr)) {
-            count++;
-        }
-        cur.setUTCDate(cur.getUTCDate() + 1);
-    }
-    return count;
-};
 // ── 1. APPLY FOR LEAVE ────────────────────────────────────────────────────────
 const applyForLeave = async (req, res) => {
     try {
-        const { startDate, endDate, reason, relieverId, leaveType, handoverNotes, relieverAcceptanceRequired } = req.body;
+        const { dates, reason, relieverId, leaveType, handoverNotes, relieverAcceptanceRequired } = req.body;
         const orgId = getOrgId(req);
         const user = req.user;
         const employeeId = user.id;
-        if (!startDate || !endDate || !reason) {
-            return res.status(400).json({ error: 'startDate, endDate, and reason are required' });
-        }
-        const start = new Date(`${startDate}T00:00:00.000Z`);
-        const end = new Date(`${endDate}T00:00:00.000Z`);
-        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-            return res.status(400).json({ error: 'Please provide valid start and end dates' });
-        }
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
-        if (start < today) {
-            return res.status(400).json({ error: 'Cannot request leave for a past date' });
-        }
-        if (end < start) {
-            return res.status(400).json({ error: 'End date cannot be before start date' });
+        if (!Array.isArray(dates) || dates.length === 0 || !reason) {
+            return res.status(400).json({ error: 'dates (at least one) and reason are required' });
         }
         const employee = await client_1.default.user.findFirst({ where: { id: employeeId, organizationId: orgId } });
         if (!employee)
@@ -67,8 +69,44 @@ const applyForLeave = async (req, res) => {
             const reliever = await client_1.default.user.findFirst({ where: { id: relieverId, organizationId: orgId, isArchived: false, status: 'ACTIVE' } });
             if (!reliever)
                 return res.status(400).json({ error: 'Selected reliever not found' });
+            if (!handoverNotes || String(handoverNotes).trim().length < 10) {
+                return res.status(400).json({ error: 'Please provide instructions for your cover person (at least 10 characters) when assigning a reliever.' });
+            }
         }
-        const overlappingRequest = await client_1.default.leaveRequest.findFirst({
+        // Validates weekday-only/no-holiday/no-past-date/no-duplicate selections
+        let normalizedDates;
+        let daysRequested;
+        try {
+            const result = await leave_service_1.LeaveService.validateAndCountSelectedDays(orgId, dates);
+            normalizedDates = result.normalizedDates;
+            daysRequested = result.count;
+        }
+        catch (e) {
+            return res.status(400).json({ error: e.message || 'Invalid date selection' });
+        }
+        const start = normalizedDates[0];
+        const end = normalizedDates[normalizedDates.length - 1];
+        // Exact-date conflict check against this employee's own non-rejected requests
+        const exactConflict = await client_1.default.leaveRequestDay.findFirst({
+            where: {
+                date: { in: normalizedDates },
+                leaveRequest: {
+                    organizationId: orgId,
+                    employeeId,
+                    isArchived: false,
+                    status: { notIn: ['CANCELLED', 'RELIEVER_DECLINED', 'MANAGER_REJECTED', 'HR_REJECTED', 'MD_REJECTED'] },
+                }
+            },
+            include: { leaveRequest: { select: { status: true } } }
+        });
+        if (exactConflict) {
+            return res.status(409).json({ error: `You already have an active leave request (${exactConflict.leaveRequest.status}) covering ${exactConflict.date.toISOString().split('T')[0]}` });
+        }
+        // Bounding-box fallback: catches conflicts against requests created before the
+        // LeaveRequestDay backfill ran (those rows have no per-day data yet). Safe to keep
+        // permanently — cheap, and only adds false positives in the rare case two requests'
+        // overall date spans overlap without sharing an actual selected day.
+        const boundingBoxConflict = await client_1.default.leaveRequest.findFirst({
             where: {
                 organizationId: orgId,
                 employeeId,
@@ -76,19 +114,11 @@ const applyForLeave = async (req, res) => {
                 status: { notIn: ['CANCELLED', 'RELIEVER_DECLINED', 'MANAGER_REJECTED', 'HR_REJECTED', 'MD_REJECTED'] },
                 startDate: { lte: end },
                 endDate: { gte: start },
+                days: { none: {} }, // only un-backfilled rows — backfilled ones are already covered by the exact check above
             },
         });
-        if (overlappingRequest) {
-            return res.status(409).json({ error: 'You already have an active leave request that overlaps these dates' });
-        }
-        // Fetch public holidays for this org to exclude from calculation
-        const holidays = await client_1.default.publicHoliday.findMany({
-            where: { organizationId: orgId, date: { gte: start, lte: end } }
-        });
-        const holidayDates = holidays.map(h => h.date.toISOString().split('T')[0]);
-        const daysRequested = calcWorkingDays(start, end, holidayDates);
-        if (daysRequested < 1) {
-            return res.status(400).json({ error: 'The selected period contains no working days' });
+        if (boundingBoxConflict) {
+            return res.status(409).json({ error: `You already have an active leave request (${boundingBoxConflict.status}) overlapping this period (${boundingBoxConflict.startDate.toLocaleDateString()} – ${boundingBoxConflict.endDate.toLocaleDateString()})` });
         }
         // Leave balance policy applies consistently to every employee, including
         // department heads and directors.
@@ -148,40 +178,48 @@ const applyForLeave = async (req, res) => {
                 error: `Reliever Lock Active: You are assigned as a cover person for ${myCoverage.employee.fullName} during this period (${new Date(myCoverage.startDate).toLocaleDateString()} to ${new Date(myCoverage.endDate).toLocaleDateString()}). You cannot request leave while serving as a reliever.`
             });
         }
-        // V5: no reliever → HR_REVIEW directly (HR Director is sole approver)
         const initialStatus = (0, leave_service_1.determineInitialLeaveStatus)(employee.role, Boolean(relieverId));
-        const isSickLeaveLong = (leaveType === 'SICK_LEAVE' || leaveType === 'Sick') && daysRequested >= 3;
-        const leave = await client_1.default.leaveRequest.create({
-            data: {
-                organizationId: orgId,
-                employeeId,
-                startDate: start,
-                endDate: end,
-                leaveDays: daysRequested,
-                reason,
-                leaveType: leaveType || 'Annual',
-                relieverId: relieverId || null,
-                handoverNotes: handoverNotes || null,
-                relieverAcceptanceRequired: !!relieverAcceptanceRequired,
-                status: initialStatus,
-                requiresMedicalCertificate: isSickLeaveLong,
-            },
+        const isSickLeave = (leaveType === 'SICK_LEAVE' || leaveType === 'Sick');
+        const leave = await client_1.default.$transaction(async (tx) => {
+            const created = await tx.leaveRequest.create({
+                data: {
+                    organizationId: orgId,
+                    employeeId,
+                    startDate: start,
+                    endDate: end,
+                    leaveDays: daysRequested,
+                    reason,
+                    leaveType: leaveType || 'Annual',
+                    relieverId: relieverId || null,
+                    handoverNotes: handoverNotes || null,
+                    relieverAcceptanceRequired: !!relieverAcceptanceRequired,
+                    status: initialStatus,
+                    requiresMedicalCertificate: isSickLeave,
+                },
+            });
+            await tx.leaveRequestDay.createMany({
+                data: normalizedDates.map(date => ({ organizationId: orgId, leaveRequestId: created.id, date })),
+            });
+            return created;
         });
-        // Notify reliever or HR Director
+        // Notify reliever, or the assigned manager + monitoring HR Directors, or HR Director directly
         if (relieverId) {
             const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
             await (0, websocket_service_1.notify)(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
         }
+        else if (initialStatus === 'MANAGER_REVIEW') {
+            await leave_service_1.LeaveService.notifyAssignedManagerAndHr(orgId, employee, daysRequested);
+        }
         else {
-            const reviewerRoles = initialStatus === 'MD_REVIEW' ? ['MD'] : ['HR_DIRECTOR'];
+            const reviewerRoles = initialStatus === 'MD_REVIEW' ? ['MD', 'DEV'] : ['HR_DIRECTOR', 'DEV'];
             const reviewers = await client_1.default.user.findMany({
                 where: { organizationId: orgId, role: { in: reviewerRoles }, isArchived: false },
                 select: { id: true }
             });
             await Promise.all(reviewers.map(reviewer => (0, websocket_service_1.notify)(reviewer.id, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave. Pending your review.`, 'INFO', '/leave')));
         }
-        if (isSickLeaveLong) {
-            await (0, websocket_service_1.notify)(employeeId, '⚕️ Medical Certificate Required', 'Sick leave of 3+ days requires a medical certificate. Please upload it via your leave request before HR review.', 'WARNING', '/leave');
+        if (isSickLeave) {
+            await (0, websocket_service_1.notify)(employeeId, '⚕️ Doctor\'s Report Required', 'Sick leave requires a doctor\'s report. Please upload it via your leave request before HR review.', 'WARNING', '/leave');
         }
         await (0, audit_service_1.logAction)(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
         // Combine warnings
@@ -339,18 +377,36 @@ const processLeave = async (req, res) => {
         if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
             updated = await leave_service_1.LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
         }
-        // 2. HR Director / MD Processing
+        // 2. MD final sign-off
         else if (leave.status === 'MD_REVIEW') {
             const access = await policy_service_1.PolicyService.evaluatePolicy(actorId, permissions_1.Permission.LEAVE_MD_APPROVE, { targetUserId: leave.employeeId });
             if (!access.allowed)
                 return res.status(403).json({ error: 'Only the Managing Director may complete final sign-off' });
             updated = await leave_service_1.LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
         }
-        else if (['HR_REVIEW', 'MANAGER_REVIEW'].includes(leave.status)) {
+        // 3. Direct manager review (or HR Director override when the manager is unavailable)
+        else if (leave.status === 'MANAGER_REVIEW') {
+            const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
+            const employeeRecord = await client_1.default.user.findUnique({ where: { id: leave.employeeId }, select: { supervisorId: true } });
+            const isAssignedManager = employeeRecord?.supervisorId === actorId;
+            if (!isAssignedManager && actorRank >= 92) {
+                // HR Director override — manager not around. Reason required regardless of outcome.
+                if (!comment || comment.trim().length < 3) {
+                    return res.status(400).json({ error: 'A reason is required when overriding the manager-review step.' });
+                }
+                updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment, { isOverride: true });
+                await (0, audit_service_1.logAction)(actorId, 'LEAVE_MANAGER_REVIEW_OVERRIDDEN_BY_HR', 'LeaveRequest', id, { comment, assignedManagerId: employeeRecord?.supervisorId || null }, req.ip);
+            }
+            else {
+                // Assigned manager, or a same-department manager (managerReview() validates this internally)
+                updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+            }
+        }
+        // 4. HR Director final review for regular staff
+        else if (leave.status === 'HR_REVIEW') {
             const access = await policy_service_1.PolicyService.evaluatePolicy(actorId, permissions_1.Permission.LEAVE_HR_APPROVE, { targetUserId: leave.employeeId });
             if (!access.allowed)
                 return res.status(403).json({ error: 'Only the HR Director may review this leave request' });
-            // MANAGER_REVIEW is a legacy status — HR Director can still action it via hrValidation
             updated = await leave_service_1.LeaveService.hrValidation(id, actorId, action === 'APPROVE', comment);
         }
         else {
@@ -574,6 +630,47 @@ const adjustLeaveBalance = async (req, res) => {
     }
 };
 exports.adjustLeaveBalance = adjustLeaveBalance;
+// ── GET SINGLE LEAVE (for approval modal) ────────────────────────────────────
+const getLeaveById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const orgId = getOrgId(req);
+        const actorId = req.user.id;
+        const actorRank = (0, auth_middleware_1.getRoleRank)(req.user.role);
+        const leave = await client_1.default.leaveRequest.findFirst({
+            where: { id, organizationId: orgId, isArchived: false },
+            include: {
+                employee: {
+                    select: {
+                        id: true, fullName: true, jobTitle: true, email: true,
+                        leaveBalance: true, leaveAllowance: true,
+                        departmentObj: { select: { name: true } },
+                    }
+                },
+                reliever: { select: { id: true, fullName: true, jobTitle: true } },
+                days: { orderBy: { date: 'asc' }, select: { date: true } },
+            }
+        });
+        if (!leave)
+            return res.status(404).json({ error: 'Leave request not found' });
+        // Permit: the employee themselves, their supervisor, any HR/MD rank, or managers 75+
+        const isEmployee = leave.employeeId === actorId;
+        const isSupervisor = (await client_1.default.user.findUnique({ where: { id: leave.employeeId }, select: { supervisorId: true } }))?.supervisorId === actorId;
+        if (!isEmployee && !isSupervisor && actorRank < 75) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        return res.json({
+            ...leave,
+            leaveDays: Number(leave.leaveDays),
+            leaveDaysArr: leave.days,
+            employee: { ...leave.employee, leaveBalance: Number(leave.employee?.leaveBalance || 0), leaveAllowance: Number(leave.employee?.leaveAllowance || 0) },
+        });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.getLeaveById = getLeaveById;
 // ── UPLOAD MEDICAL CERTIFICATE ────────────────────────────────────────────────
 const uploadMedicalCertificate = async (req, res) => {
     try {
@@ -594,10 +691,27 @@ const uploadMedicalCertificate = async (req, res) => {
         if (leave.employeeId !== actorId && actorRank < 92) {
             return res.status(403).json({ error: 'Not authorised to upload certificate for this leave' });
         }
+        // Upload to Firebase Storage if a base64 data URI was sent
+        let certUrl = medicalCertificateUrl;
+        if (medicalCertificateUrl.startsWith('data:')) {
+            try {
+                const { FirebaseStorageService } = await Promise.resolve().then(() => __importStar(require('../services/firebase-storage.service')));
+                const match = medicalCertificateUrl.match(/^data:([^;]+);base64,(.+)$/);
+                if (match) {
+                    const mime = match[1];
+                    const ext = mime.split('/')[1]?.replace('jpeg', 'jpg') || 'bin';
+                    const buffer = Buffer.from(match[2], 'base64');
+                    certUrl = await FirebaseStorageService.uploadFile(buffer, `med-cert-${id}-${Date.now()}.${ext}`, 'medical-certs', mime);
+                }
+            }
+            catch (fbErr) {
+                console.warn('[LeaveController] Firebase upload failed for medical cert, storing data URI:', fbErr);
+            }
+        }
         const updated = await client_1.default.leaveRequest.update({
             where: { id },
             data: {
-                medicalCertificateUrl,
+                medicalCertificateUrl: certUrl,
                 medicalCertificateUploaded: true,
             }
         });

@@ -7,18 +7,115 @@ exports.closeOnboarding = exports.getDepartmentTasks = exports.getAllOnboardingS
 const client_1 = __importDefault(require("../prisma/client"));
 const websocket_service_1 = require("../services/websocket.service");
 const audit_service_1 = require("../services/audit.service");
-const policy_service_1 = require("../services/policy.service");
 const permissions_1 = require("../types/permissions");
-const ownerPermission = {
-    HR: permissions_1.Permission.ONBOARDING_MANAGE,
-    IT: permissions_1.Permission.ACCOUNT_PROVISION,
-    MARKETING: permissions_1.Permission.CARD_PRODUCTION,
+// Which ownerRole values each system role is responsible for
+const roleOwnerMap = {
+    HR_DIRECTOR: ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER'],
+    HR_MANAGER: ['HR_MANAGER', 'HR_OFFICER'],
+    HR_OFFICER: ['HR_OFFICER'],
+    IT_MANAGER: ['IT_MANAGER', 'IT_ADMIN'],
+    IT_ADMIN: ['IT_ADMIN'],
+    MANAGER: ['MANAGER'],
+    DIRECTOR: ['MANAGER', 'DIRECTOR'],
+    MD: ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'DIRECTOR', 'Admin'],
+    DEV: ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'DIRECTOR', 'Admin'],
 };
+// Legacy permission-key map kept for any future policy checks
+const ownerPermission = {
+    HR_DIRECTOR: permissions_1.Permission.ONBOARDING_MANAGE,
+    HR_MANAGER: permissions_1.Permission.ONBOARDING_MANAGE,
+    IT_MANAGER: permissions_1.Permission.ACCOUNT_PROVISION,
+    IT_ADMIN: permissions_1.Permission.ACCOUNT_PROVISION,
+};
+const DEFAULT_TEMPLATES = [
+    {
+        name: 'General Staff Onboarding',
+        description: 'Standard onboarding checklist for all new employees',
+        isDefault: true,
+        tasks: [
+            { title: 'Welcome & Orientation', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 1, order: 1, description: 'Welcome meeting with HR — company values, culture, and org structure.' },
+            { title: 'Employment Contract Signing', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 1, order: 2, description: 'Sign employment contract, NDA, and policy acknowledgements.' },
+            { title: 'Payroll & Benefits Registration', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 2, order: 3, description: 'Register bank account, SSNIT number, and select applicable benefits.' },
+            { title: 'System Account Setup', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 4, description: 'Create company email, HRM portal login, and grant role-based system access.' },
+            { title: 'ID Card & Access Card Issuance', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 3, order: 5, autoCompleteEvent: 'ID_CARD_ISSUED', description: 'Print and issue employee photo ID and building access card.' },
+            { title: 'Workstation & Equipment Setup', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 2, order: 6, autoCompleteEvent: 'ASSET_ASSIGNED', description: 'Assign device, configure peripherals, install required software.' },
+            { title: 'Department Introduction', category: 'Manager', ownerRole: 'MANAGER', dueAfterDays: 2, order: 7, description: 'Line manager introduces the new employee to the team and explains workflow.' },
+            { title: 'Role & Responsibilities Briefing', category: 'Manager', ownerRole: 'MANAGER', dueAfterDays: 3, order: 8, description: 'Walk through KPIs, reporting structure, and 30/60/90 day expectations.' },
+            { title: 'Health & Safety Training', category: 'Admin', ownerRole: 'HR_OFFICER', dueAfterDays: 5, order: 9, description: 'Mandatory health & safety briefing and fire evacuation procedures.' },
+            { title: 'Probation Check-in (30 Days)', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 30, order: 10, description: 'First probation review — confirm settling in, address any concerns.' },
+        ],
+    },
+    {
+        name: 'IT Staff Onboarding',
+        description: 'Technical onboarding for IT team members',
+        isDefault: false,
+        tasks: [
+            { title: 'Welcome & Security Briefing', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 1, description: 'Security policies, data handling protocols, and acceptable use policy.' },
+            { title: 'System & Network Access', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 2, description: 'Set up VPN, internal network, server access, and admin tools.' },
+            { title: 'Development Environment Setup', category: 'IT', ownerRole: 'IT_ADMIN', dueAfterDays: 2, order: 3, description: 'Clone repos, configure IDE, install dev tools, set up local environment.' },
+            { title: 'HR Portal Account & ID Card', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 4, autoCompleteEvent: 'ID_CARD_ISSUED', description: 'Provision HRM login and issue photo ID and access card.' },
+            { title: 'Employment Contract & NDA', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 1, order: 5, description: 'Sign employment contract and confidentiality agreement.' },
+            { title: 'Payroll Registration', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 2, order: 6, description: 'Register bank details and SSNIT number.' },
+            { title: 'Codebase & Systems Walkthrough', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 3, order: 7, description: 'Senior team member walks through architecture, systems, and open projects.' },
+            { title: '30-Day Technical Review', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 30, order: 8, description: 'Review progress and assign first independent project.' },
+        ],
+    },
+    {
+        name: 'Management & Senior Staff Onboarding',
+        description: 'Onboarding for managers, directors, and senior leadership',
+        isDefault: false,
+        tasks: [
+            { title: 'Executive Welcome Meeting', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 1, order: 1, description: 'Meet MD and senior leadership. Discuss strategy and org structure.' },
+            { title: 'Employment & Confidentiality Documents', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 1, order: 2, description: 'Sign employment contract, NDA, and senior management conduct policy.' },
+            { title: 'Compensation & Benefits Briefing', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 2, order: 3, description: 'Review compensation, allowances, pension, vehicle, and executive benefits.' },
+            { title: 'System Access & Executive Tools', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 4, description: 'HRM admin access, reporting dashboards, email, and device setup.' },
+            { title: 'ID Card & Full Access Credentials', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 2, order: 5, autoCompleteEvent: 'ID_CARD_ISSUED', description: 'Issue executive ID card and full building access credentials.' },
+            { title: 'Department Handover Briefing', category: 'Manager', ownerRole: 'MANAGER', dueAfterDays: 3, order: 6, description: 'Full briefing on team structure, current projects, and open issues.' },
+            { title: 'Stakeholder Introductions', category: 'Admin', ownerRole: 'HR_DIRECTOR', dueAfterDays: 5, order: 7, description: 'Introduce to key internal stakeholders, clients, and partners.' },
+            { title: 'Strategic Goals Alignment', category: 'Manager', ownerRole: 'MANAGER', dueAfterDays: 7, order: 8, description: 'Align on 90-day plan, OKRs, and reporting expectations.' },
+            { title: '60-Day Leadership Review', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 60, order: 9, description: 'Assess integration, early wins, and leadership effectiveness.' },
+        ],
+    },
+];
 // ─── Templates (Admin) ────────────────────────────────────────────────────
 const getTemplates = async (req, res) => {
     try {
         const organizationId = req.user.organizationId;
-        const templates = await client_1.default.onboardingTemplate.findMany({ where: { organizationId }, include: { tasks: { orderBy: { order: 'asc' } } } });
+        let templates = await client_1.default.onboardingTemplate.findMany({ where: { organizationId }, include: { tasks: { orderBy: { order: 'asc' } } } });
+        // Auto-seed default templates on first use
+        if (templates.length === 0) {
+            for (const tmpl of DEFAULT_TEMPLATES) {
+                await client_1.default.onboardingTemplate.create({
+                    data: {
+                        organizationId, name: tmpl.name, description: tmpl.description, isDefault: tmpl.isDefault,
+                        tasks: { create: tmpl.tasks.map(t => ({ organizationId, ...t })) },
+                    },
+                });
+            }
+            templates = await client_1.default.onboardingTemplate.findMany({ where: { organizationId }, include: { tasks: { orderBy: { order: 'asc' } } } });
+        }
+        // One-time patch: wire autoCompleteEvent onto existing tasks/items that predate this field
+        const idCardTitles = ['ID Card', 'Access Card', 'Access Credentials'];
+        const equipTitles = ['Workstation', 'Equipment Setup'];
+        await Promise.all([
+            ...idCardTitles.map(t => client_1.default.onboardingTask.updateMany({
+                where: { organizationId, title: { contains: t }, autoCompleteEvent: null },
+                data: { autoCompleteEvent: 'ID_CARD_ISSUED' },
+            })),
+            ...equipTitles.map(t => client_1.default.onboardingTask.updateMany({
+                where: { organizationId, title: { contains: t }, autoCompleteEvent: null },
+                data: { autoCompleteEvent: 'ASSET_ASSIGNED' },
+            })),
+            ...idCardTitles.map(t => client_1.default.onboardingItem.updateMany({
+                where: { organizationId, title: { contains: t }, autoCompleteEvent: null },
+                data: { autoCompleteEvent: 'ID_CARD_ISSUED' },
+            })),
+            ...equipTitles.map(t => client_1.default.onboardingItem.updateMany({
+                where: { organizationId, title: { contains: t }, autoCompleteEvent: null },
+                data: { autoCompleteEvent: 'ASSET_ASSIGNED' },
+            })),
+        ]);
+        templates = await client_1.default.onboardingTemplate.findMany({ where: { organizationId }, include: { tasks: { orderBy: { order: 'asc' } } } });
         res.json(templates);
     }
     catch (err) {
@@ -125,12 +222,11 @@ const completeTask = async (req, res) => {
                 return res.status(409).json({ error: 'This task is blocked by an incomplete dependency.' });
             }
         }
+        const user = req.user;
         const isAssignee = current.assignedToId === userId;
         const isEmployeeTask = current.ownerRole === 'EMPLOYEE' && current.session.employeeId === userId;
-        const permission = ownerPermission[current.ownerRole];
-        const isDepartmentOwner = permission
-            ? (await policy_service_1.PolicyService.evaluatePolicy(userId || '', permission)).allowed
-            : false;
+        const myOwnerRoles = roleOwnerMap[user.role] || [];
+        const isDepartmentOwner = myOwnerRoles.includes(current.ownerRole);
         if (!isAssignee && !isEmployeeTask && !isDepartmentOwner) {
             return res.status(403).json({ error: 'This task belongs to another employee or department.' });
         }
@@ -188,18 +284,23 @@ const getDepartmentTasks = async (req, res) => {
     try {
         const user = req.user;
         const organizationId = user.organizationId || 'mcb-ghana-tenant';
-        const owners = [];
-        for (const [owner, permission] of Object.entries(ownerPermission)) {
-            if ((await policy_service_1.PolicyService.evaluatePolicy(user.id, permission)).allowed)
-                owners.push(owner);
-        }
+        const myOwnerRoles = roleOwnerMap[user.role] || [];
         const tasks = await client_1.default.onboardingItem.findMany({
             where: {
                 organizationId,
-                OR: [{ assignedToId: user.id }, ...(owners.length ? [{ ownerRole: { in: owners } }] : [])],
+                OR: [
+                    { assignedToId: user.id },
+                    ...(myOwnerRoles.length ? [{ ownerRole: { in: myOwnerRoles } }] : []),
+                ],
             },
-            include: { session: { include: { employee: { select: { id: true, fullName: true, jobTitle: true } } } } },
-            orderBy: [{ status: 'asc' }, { dueDate: 'asc' }],
+            include: {
+                session: {
+                    include: {
+                        employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
+                    },
+                },
+            },
+            orderBy: [{ completedAt: 'asc' }, { dueDate: 'asc' }],
         });
         return res.json(tasks);
     }

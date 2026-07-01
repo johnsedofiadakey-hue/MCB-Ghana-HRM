@@ -126,6 +126,12 @@ const deleteDepartment = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const deptId = Number(req.params.id);
         const whereOrg = orgId ? { organizationId: orgId } : {};
+        const activeEmployeeCount = await client_1.default.user.count({
+            where: { departmentId: deptId, isArchived: false, ...whereOrg }
+        });
+        if (activeEmployeeCount > 0) {
+            return res.status(409).json({ error: `Cannot delete: ${activeEmployeeCount} active employee(s) are still assigned to this department. Reassign them first.` });
+        }
         await client_1.default.$transaction(async (tx) => {
             // 1. Manually purge DepartmentKPIs first (as they have the most dependencies)
             // This will cascade TeamTargets automatically at the DB level

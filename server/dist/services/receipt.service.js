@@ -62,7 +62,7 @@ class ReceiptService {
             throw new Error('Subscription records not found for receipt generation.');
         }
         const lang = org?.language || 'en';
-        const companyName = org?.name || 'MCB-HRM Ghana';
+        const companyName = org?.name || 'MC-BAUCHEMIE GHANA';
         const t = (key) => i18n_service_1.i18n.translate(key, lang);
         const doc = new pdfkit_1.default({
             margin: 50,

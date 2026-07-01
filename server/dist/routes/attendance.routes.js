@@ -12,6 +12,7 @@ router.post('/clock-in', attendance_controller_1.clockIn);
 router.post('/clock-out', attendance_controller_1.clockOut);
 router.get('/me', attendance_controller_1.getMyAttendance);
 router.get('/', (0, auth_middleware_1.requireRole)(70), attendance_controller_1.getAllAttendance);
+router.get('/csv', (0, auth_middleware_1.requireRole)(70), attendance_controller_1.exportAttendanceCSV);
 // 🛡️ Biometric Sync (Rank 85+ or IT Admin)
 router.post('/sync', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.ACCOUNT_PROVISION), biometric_controller_1.syncPunches);
 router.post('/kiosk-punch', biometric_controller_1.kioskPunch);

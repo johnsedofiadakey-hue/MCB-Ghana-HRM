@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportLogsCSV = exports.getLogs = void 0;
+exports.exportLogsCSV = exports.getAuditUsers = exports.getLogs = void 0;
 const audit_service_1 = require("../services/audit.service");
 const client_1 = __importDefault(require("../prisma/client"));
 const getLogs = async (req, res) => {
@@ -14,7 +14,10 @@ const getLogs = async (req, res) => {
         const limit = parseInt(req.query.limit) || 50;
         const entity = req.query.entity;
         const userId = req.query.userId;
-        const data = await (0, audit_service_1.getAuditLogs)(organizationId, page, limit, { entity, userId });
+        const action = req.query.action;
+        const dateFrom = req.query.dateFrom;
+        const dateTo = req.query.dateTo;
+        const data = await (0, audit_service_1.getAuditLogs)(organizationId, page, limit, { entity, userId, action, dateFrom, dateTo });
         res.json(data);
     }
     catch (error) {
@@ -22,6 +25,23 @@ const getLogs = async (req, res) => {
     }
 };
 exports.getLogs = getLogs;
+const getAuditUsers = async (req, res) => {
+    try {
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const users = await client_1.default.auditLog.findMany({
+            where: { organizationId, userId: { not: null } },
+            select: { userId: true, user: { select: { fullName: true, email: true } } },
+            distinct: ['userId'],
+            orderBy: { createdAt: 'desc' },
+            take: 500,
+        });
+        res.json(users.filter(u => u.user).map(u => ({ id: u.userId, fullName: u.user.fullName, email: u.user.email })));
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.getAuditUsers = getAuditUsers;
 const exportLogsCSV = async (req, res) => {
     try {
         const userReq = req.user;

@@ -11,6 +11,7 @@ router.use(auth_middleware_1.authenticate);
 // Read
 router.get('/me/team', user_controller_1.getMyTeam);
 router.get('/supervisors', user_controller_1.getSupervisors);
+router.get('/stats/casual-summary', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), user_controller_1.getCasualWorkerSummary);
 router.get('/', (0, auth_middleware_1.requireRole)(50), user_controller_1.getAllEmployees);
 router.get('/:id', user_controller_1.getEmployee);
 router.get('/:id/risk', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), user_controller_1.getUserRiskProfile);
@@ -45,4 +46,10 @@ router.post('/signature', user_controller_1.uploadSignature);
 router.post('/:id/signature', user_controller_1.uploadSignature);
 // Administrative reset (IT_MANAGER or MD >= 85)
 router.post('/:id/reset-password', (0, auth_middleware_1.requireSpecificRole)(['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), user_controller_1.resetEmployeePassword);
+// HR onboarding approval (activate account after self-onboarding review)
+router.post('/:id/hr-review-approve', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'MD', 'DEV']), user_controller_1.hrApproveOnboarding);
+// Onboarding invite link management
+router.get('/:id/onboarding-invite', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), user_controller_1.getOnboardingInvite);
+router.post('/:id/regenerate-invite', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), user_controller_1.regenerateOnboardingInvite);
+router.post('/:id/toggle-invite', (0, auth_middleware_1.requireSpecificRole)(['HR_DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), user_controller_1.toggleOnboardingInvite);
 exports.default = router;

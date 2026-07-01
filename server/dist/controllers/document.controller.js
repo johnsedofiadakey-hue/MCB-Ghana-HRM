@@ -55,18 +55,31 @@ const getEmployeeDocuments = async (req, res) => {
 exports.getEmployeeDocuments = getEmployeeDocuments;
 const uploadDocument = async (req, res) => {
     try {
-        const { title, category, fileUrl } = req.body;
+        const { title, category, fileUrl, mimeType } = req.body;
         if (!title || !category || !fileUrl)
             return res.status(400).json({ error: 'Missing required fields' });
         const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
-        const doc = await client_1.default.employeeDocument.create({
-            data: {
-                organizationId,
-                employeeId: req.params.id,
-                title,
-                category,
-                fileUrl
+        // If the client sent a base64 data URI, upload to Firebase Storage for permanent persistence
+        // Falls back to storing the data URI directly if Firebase is unavailable
+        let storedUrl = fileUrl;
+        if (fileUrl.startsWith('data:')) {
+            try {
+                const { FirebaseStorageService } = await Promise.resolve().then(() => __importStar(require('../services/firebase-storage.service')));
+                const match = fileUrl.match(/^data:([^;]+);base64,(.+)$/);
+                if (match) {
+                    const detectedMime = mimeType || match[1];
+                    const ext = detectedMime.split('/')[1]?.replace('jpeg', 'jpg') || 'bin';
+                    const buffer = Buffer.from(match[2], 'base64');
+                    storedUrl = await FirebaseStorageService.uploadFile(buffer, `doc-${req.params.id}-${Date.now()}.${ext}`, 'employee-documents', detectedMime);
+                }
             }
+            catch (fbErr) {
+                console.warn('[DocumentController] Firebase upload failed, storing base64 in DB:', fbErr);
+                // storedUrl stays as the data URI — still works, just less efficient
+            }
+        }
+        const doc = await client_1.default.employeeDocument.create({
+            data: { organizationId, employeeId: req.params.id, title, category, fileUrl: storedUrl }
         });
         res.json(doc);
     }

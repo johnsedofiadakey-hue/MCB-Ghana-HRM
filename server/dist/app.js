@@ -198,8 +198,8 @@ app.use((0, helmet_1.default)({
 app.use((0, compression_1.default)({ threshold: 1024 }));
 app.use(xss_sanitizer_middleware_1.xssSanitizer);
 app.use(rate_limit_middleware_1.generalLimiter);
-app.use(express_1.default.json({ limit: '1mb' }));
-app.use(express_1.default.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express_1.default.json({ limit: '10mb' }));
+app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express_1.default.static('public'));
 app.use('/uploads', express_1.default.static('public/uploads'));
 app.use((0, morgan_1.default)(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -293,6 +293,71 @@ node_cron_1.default.schedule('30 8 * * 1', async () => {
     }
     catch (e) {
         console.error('[Cron] OKR check-in failed:', e);
+    }
+});
+// Probation end alert — 14 days before end date
+node_cron_1.default.schedule('0 9 * * *', async () => {
+    try {
+        const fourteenDaysFromNow = new Date();
+        fourteenDaysFromNow.setDate(fourteenDaysFromNow.getDate() + 14);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const expiring = await client_1.default.probationRecord.findMany({
+            where: {
+                status: 'IN_PROGRESS',
+                alertSentAt: null,
+                endDate: { gte: tomorrow, lte: fourteenDaysFromNow },
+            },
+            include: { employee: { select: { id: true, fullName: true, organizationId: true } } },
+        });
+        if (!expiring.length)
+            return;
+        const { notify } = await Promise.resolve().then(() => __importStar(require('./services/websocket.service')));
+        for (const record of expiring) {
+            const orgId = record.employee?.organizationId || 'mcb-ghana-tenant';
+            const hrDirectors = await client_1.default.user.findMany({
+                where: { organizationId: orgId, role: 'HR_DIRECTOR', status: 'ACTIVE', isArchived: false },
+                select: { id: true },
+            });
+            const daysLeft = Math.ceil((record.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+            for (const hr of hrDirectors) {
+                await notify(hr.id, '⏰ Probation Ending Soon', `${record.employee?.fullName}'s probation ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}. Please review and update status.`, 'WARNING', `/employees/${record.employeeId}`).catch(() => { });
+            }
+            await client_1.default.probationRecord.update({ where: { id: record.id }, data: { alertSentAt: new Date() } });
+        }
+        console.log(`[CRON] Probation alerts sent for ${expiring.length} employee(s)`);
+    }
+    catch (e) {
+        console.error('[Cron] Probation alert failed:', e);
+    }
+});
+// Auto-close RESOLVED support tickets older than 48 hours
+node_cron_1.default.schedule('0 * * * *', async () => {
+    try {
+        const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
+        const stale = await client_1.default.supportTicket.findMany({
+            where: { status: 'RESOLVED', resolvedAt: { lt: cutoff } },
+            select: { id: true, organizationId: true, employeeId: true },
+        });
+        for (const t of stale) {
+            await client_1.default.supportTicket.update({
+                where: { id: t.id },
+                data: { status: 'CLOSED', closedAt: new Date() },
+            });
+            await client_1.default.ticketActivity.create({
+                data: {
+                    organizationId: t.organizationId || 'mcb-ghana-tenant',
+                    ticketId: t.id, actorId: t.employeeId,
+                    action: 'AUTO_CLOSED',
+                    metadata: { reason: 'Resolved for >48h without re-open' },
+                },
+            });
+        }
+        if (stale.length)
+            console.log(`[Cron] Auto-closed ${stale.length} resolved tickets`);
+    }
+    catch (e) {
+        console.error('[Cron] Ticket auto-close failed:', e);
     }
 });
 /*
@@ -397,6 +462,10 @@ app.use('/api/manager', manager_cockpit_routes_1.default);
 app.use('/api', card_routes_1.default);
 app.use('/api', callCard_routes_1.default);
 app.use('/api/competencies', competency_routes_1.default);
+// ─── Public self-onboarding routes (no auth) ────────────────────────────────
+const user_controller_1 = require("./controllers/user.controller");
+app.get('/api/onboard/profile-form/:token', user_controller_1.getOnboardingProfileForm);
+app.patch('/api/onboard/profile-form/:token', user_controller_1.submitOnboardingProfileForm);
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-routes', (req, res) => {

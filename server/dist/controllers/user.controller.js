@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createEmployeeWithNotifications = exports.resetEmployeePassword = exports.getUserRiskProfile = exports.promoteEmployee = exports.transferEmployee = exports.restoreEmployee = exports.archiveEmployee = exports.getSupervisors = exports.uploadSignature = exports.uploadImage = exports.assignRole = exports.hardDeleteEmployee = exports.deleteEmployee = exports.updateEmployee = exports.getEmployee = exports.getAllEmployees = exports.activateEmployeeLogin = exports.createEmployee = exports.getMyTeam = void 0;
+exports.regenerateOnboardingInvite = exports.toggleOnboardingInvite = exports.getOnboardingInvite = exports.hrApproveOnboarding = exports.submitOnboardingProfileForm = exports.getOnboardingProfileForm = exports.createEmployeeWithNotifications = exports.resetEmployeePassword = exports.getUserRiskProfile = exports.promoteEmployee = exports.transferEmployee = exports.restoreEmployee = exports.archiveEmployee = exports.getCasualWorkerSummary = exports.getSupervisors = exports.uploadSignature = exports.uploadImage = exports.assignRole = exports.hardDeleteEmployee = exports.deleteEmployee = exports.updateEmployee = exports.getEmployee = exports.getAllEmployees = exports.activateEmployeeLogin = exports.createEmployee = exports.getMyTeam = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const client_1 = __importDefault(require("../prisma/client"));
 const leave_utils_1 = require("../utils/leave.utils");
@@ -252,6 +252,31 @@ const createEmployee = async (req, res) => {
         }
         catch (onboardErr) {
             console.error('[Onboarding Trigger Error]:', onboardErr);
+        }
+        // Self-onboarding invite
+        if (req.body.sendOnboardingInvite && user.email) {
+            try {
+                const rawToken = crypto_1.default.randomBytes(32).toString('hex');
+                const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                await client_1.default.onboardingInviteToken.upsert({
+                    where: { userId: user.id },
+                    create: { userId: user.id, token: rawToken, expiresAt },
+                    update: { token: rawToken, expiresAt, usedAt: null },
+                });
+                const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+                const inviteUrl = `${frontendUrl}/onboard/complete-profile?token=${rawToken}`;
+                await (0, email_service_1.sendEmail)({
+                    to: user.email,
+                    subject: 'Complete Your MCB Ghana HRM Profile',
+                    html: `<p>Hi <strong>${user.fullName}</strong>,</p>
+<p>Your HR team has created your employee account. Please click the link below to complete your profile details. This link expires in 7 days.</p>
+<p><a href="${inviteUrl}" style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block">Complete My Profile</a></p>
+<p style="color:#64748b;font-size:12px">If the button doesn't work, copy this link: ${inviteUrl}</p>`,
+                });
+            }
+            catch (inviteErr) {
+                console.error('[Self-Onboarding invite error]:', inviteErr);
+            }
         }
         res.status(201).json(withDepartment(getSafeUser(safeUser, actorRole)));
     }
@@ -885,9 +910,9 @@ const getSupervisors = async (req, res) => {
     const supervisors = await client_1.default.user.findMany({
         where: {
             organizationId,
-            role: { in: ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR'] },
+            role: { in: ['MD', 'HR_DIRECTOR', 'DIRECTOR', 'HR_MANAGER', 'FINANCE_MANAGER', 'MARKETING_HEAD', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR', 'HR_OFFICER'] },
             status: 'ACTIVE',
-            NOT: { role: 'DEV' } // Redundant but safe
+            NOT: { role: 'DEV' }
         },
         select: { id: true, fullName: true, role: true, jobTitle: true, departmentObj: { select: { name: true } } },
         orderBy: { fullName: 'asc' },
@@ -896,6 +921,39 @@ const getSupervisors = async (req, res) => {
     res.json(supervisors);
 };
 exports.getSupervisors = getSupervisors;
+// ─── CASUAL WORKER OVERSIGHT ──────────────────────────────────────────────
+// Org-wide summary of casual/factory workers grouped by their supervisor, so
+// HR Director can see at a glance who's managing how many casual staff.
+const getCasualWorkerSummary = async (req, res) => {
+    try {
+        const organizationId = req.user.organizationId || 'mcb-ghana-tenant';
+        const groups = await client_1.default.user.groupBy({
+            by: ['supervisorId'],
+            where: { organizationId, role: 'CASUAL', isArchived: false },
+            _count: { _all: true },
+        });
+        const totalCasualWorkers = groups.reduce((sum, g) => sum + g._count._all, 0);
+        const supervisorIds = groups.map(g => g.supervisorId).filter(Boolean);
+        const supervisors = supervisorIds.length
+            ? await client_1.default.user.findMany({
+                where: { id: { in: supervisorIds } },
+                select: { id: true, fullName: true, jobTitle: true },
+            })
+            : [];
+        const supervisorById = new Map(supervisors.map(s => [s.id, s]));
+        const bySupervisor = groups.map(g => ({
+            supervisorId: g.supervisorId,
+            supervisorName: g.supervisorId ? (supervisorById.get(g.supervisorId)?.fullName || 'Unknown') : 'Unassigned',
+            supervisorJobTitle: g.supervisorId ? supervisorById.get(g.supervisorId)?.jobTitle || null : null,
+            count: g._count._all,
+        })).sort((a, b) => b.count - a.count);
+        res.json({ totalCasualWorkers, bySupervisor });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message || 'Failed to load casual worker summary' });
+    }
+};
+exports.getCasualWorkerSummary = getCasualWorkerSummary;
 // ─── RISK PROFILE ─────────────────────────────────────────────────────────
 // ─── ARCHIVE EMPLOYEE (Soft Delete) ──────────────────────────────────────
 const archiveEmployee = async (req, res) => {
@@ -1047,3 +1105,221 @@ const resetEmployeePassword = async (req, res) => {
 exports.resetEmployeePassword = resetEmployeePassword;
 // Legacy alias
 exports.createEmployeeWithNotifications = exports.createEmployee;
+// ---------- Self-Onboarding Public Endpoints (no auth) ----------
+const ONBOARD_ALLOWED_FIELDS = [
+    'contactNumber', 'bankAccountNumber', 'bankBranch', 'bankName', 'address',
+    'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact',
+    'emergencyContactName', 'emergencyContactPhone',
+    'gender', 'maritalStatus', 'bloodGroup', 'dob', 'nationalId',
+    'education', 'ssnitNumber', 'nationality',
+];
+const resolveInviteToken = async (rawToken) => {
+    const record = await client_1.default.onboardingInviteToken.findUnique({
+        where: { token: rawToken },
+        include: {
+            user: {
+                select: {
+                    id: true, fullName: true, email: true, jobTitle: true,
+                    departmentObj: { select: { name: true } },
+                }
+            }
+        }
+    });
+    if (!record)
+        return { error: 'Invalid invite link.', status: 400 };
+    if (record.usedAt)
+        return { error: 'This invite link has already been used.', status: 410 };
+    if (record.expiresAt < new Date())
+        return { error: 'This invite link has expired. Contact HR for a new one.', status: 410 };
+    return { record };
+};
+const getOnboardingProfileForm = async (req, res) => {
+    const { token } = req.params;
+    const { error, status, record } = await resolveInviteToken(token);
+    if (error)
+        return res.status(status).json({ error });
+    const { id, fullName, email, jobTitle, departmentObj } = record.user;
+    return res.json({ id, fullName, email, jobTitle, department: departmentObj?.name });
+};
+exports.getOnboardingProfileForm = getOnboardingProfileForm;
+const submitOnboardingProfileForm = async (req, res) => {
+    const { token } = req.params;
+    const { error, status, record } = await resolveInviteToken(token);
+    if (error)
+        return res.status(status).json({ error });
+    const userId = record.user.id;
+    const data = {};
+    for (const field of ONBOARD_ALLOWED_FIELDS) {
+        if (req.body[field] !== undefined)
+            data[field] = req.body[field];
+    }
+    if (data.dob)
+        data.dob = new Date(data.dob);
+    await client_1.default.$transaction([
+        client_1.default.user.update({
+            where: { id: userId },
+            data: { ...data, employeeLifecycleStage: 'PENDING_HR_REVIEW' },
+        }),
+        client_1.default.onboardingInviteToken.update({
+            where: { id: record.id },
+            data: { usedAt: new Date() },
+        }),
+    ]);
+    // Notify HR Directors
+    const hrDirectors = await client_1.default.user.findMany({
+        where: { role: 'HR_DIRECTOR', isArchived: false },
+        select: { id: true },
+    });
+    await Promise.all(hrDirectors.map(hr => (0, websocket_service_1.notify)(hr.id, 'Profile Review Required', `${record.user.fullName} has completed their self-onboarding profile and is awaiting HR review.`, 'INFO', `/employees/${userId}`)));
+    return res.json({ success: true, message: 'Profile submitted successfully. HR will review and activate your account.' });
+};
+exports.submitOnboardingProfileForm = submitOnboardingProfileForm;
+const hrApproveOnboarding = async (req, res) => {
+    try {
+        const actor = req.user;
+        const organizationId = actor.organizationId || 'mcb-ghana-tenant';
+        const employee = await client_1.default.user.findFirst({
+            where: { id: req.params.id, organizationId },
+            select: { id: true, email: true, fullName: true, employeeLifecycleStage: true },
+        });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found' });
+        if (employee.employeeLifecycleStage !== 'PENDING_HR_REVIEW') {
+            return res.status(409).json({ error: 'Employee is not pending HR review.' });
+        }
+        const rawToken = crypto_1.default.randomBytes(32).toString('hex');
+        const tokenHash = crypto_1.default.createHash('sha256').update(rawToken).digest('hex');
+        await client_1.default.$transaction([
+            client_1.default.passwordResetToken.deleteMany({ where: { userId: employee.id } }),
+            client_1.default.passwordResetToken.create({
+                data: { userId: employee.id, token: tokenHash, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+            }),
+            client_1.default.user.update({
+                where: { id: employee.id },
+                data: { loginEnabled: true, mustChangePassword: true, employeeLifecycleStage: 'ONBOARDING' },
+            }),
+        ]);
+        const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+        const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+        if (employee.email) {
+            await (0, email_service_1.sendEmail)({
+                to: employee.email,
+                subject: 'Your MCB Ghana HRM Account is Ready',
+                html: `<p>Hi <strong>${employee.fullName}</strong>,</p>
+<p>Your profile has been reviewed and your account is now active. Click below to set your password and log in.</p>
+<p><a href="${resetUrl}" style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block">Set My Password</a></p>
+<p style="color:#64748b;font-size:12px">This link expires in 24 hours.</p>`,
+            });
+        }
+        await (0, audit_service_1.logAction)(actor.id, 'EMPLOYEE_ONBOARDING_APPROVED', 'User', employee.id, {}, req.ip);
+        return res.json({ success: true });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.hrApproveOnboarding = hrApproveOnboarding;
+// ─── GET ONBOARDING INVITE LINK ───────────────────────────────────────────
+const getOnboardingInvite = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const orgId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const employee = await client_1.default.user.findFirst({
+            where: { id, organizationId: orgId },
+            select: { id: true, fullName: true, email: true, employeeLifecycleStage: true },
+        });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found' });
+        const token = await client_1.default.onboardingInviteToken.findUnique({ where: { userId: id } });
+        if (!token)
+            return res.json({ inviteUrl: null, expiresAt: null, usedAt: null, isExpired: false, employeeLifecycleStage: employee.employeeLifecycleStage });
+        const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+        const inviteUrl = `${frontendUrl}/onboard/complete-profile?token=${token.token}`;
+        return res.json({
+            inviteUrl,
+            expiresAt: token.expiresAt,
+            usedAt: token.usedAt,
+            isExpired: new Date(token.expiresAt) < new Date(),
+            employeeLifecycleStage: employee.employeeLifecycleStage,
+        });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.getOnboardingInvite = getOnboardingInvite;
+// ─── TOGGLE ONBOARDING INVITE LINK ON / OFF ──────────────────────────────
+// enabled=true  → generate a fresh 7-day token (profile unlocked for employee)
+// enabled=false → expire the token (profile locked; employee must ticket HR to reopen)
+const toggleOnboardingInvite = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { enabled } = req.body;
+        const orgId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const employee = await client_1.default.user.findFirst({
+            where: { id, organizationId: orgId },
+            select: { id: true, fullName: true },
+        });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found' });
+        const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+        if (enabled) {
+            const rawToken = crypto_1.default.randomBytes(32).toString('hex');
+            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            await client_1.default.onboardingInviteToken.upsert({
+                where: { userId: id },
+                create: { userId: id, token: rawToken, expiresAt },
+                update: { token: rawToken, expiresAt, usedAt: null },
+            });
+            await (0, audit_service_1.logAction)(req.user.id, 'ONBOARDING_LINK_ENABLED', 'User', id, {}, req.ip);
+            const inviteUrl = `${frontendUrl}/onboard/complete-profile?token=${rawToken}`;
+            return res.json({ enabled: true, inviteUrl, expiresAt });
+        }
+        else {
+            // Disable by expiring the token (no token deletion — preserves audit trail)
+            await client_1.default.onboardingInviteToken.upsert({
+                where: { userId: id },
+                create: { userId: id, token: crypto_1.default.randomBytes(32).toString('hex'), expiresAt: new Date('2000-01-01') },
+                update: { expiresAt: new Date('2000-01-01') },
+            });
+            await client_1.default.user.update({
+                where: { id },
+                data: { employeeLifecycleStage: 'PROFILE_LOCKED' },
+            });
+            await (0, audit_service_1.logAction)(req.user.id, 'ONBOARDING_LINK_DISABLED', 'User', id, {}, req.ip);
+            return res.json({ enabled: false });
+        }
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.toggleOnboardingInvite = toggleOnboardingInvite;
+// ─── REGENERATE ONBOARDING INVITE LINK ───────────────────────────────────
+const regenerateOnboardingInvite = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const orgId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const employee = await client_1.default.user.findFirst({
+            where: { id, organizationId: orgId },
+            select: { id: true, fullName: true, email: true },
+        });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found' });
+        const rawToken = crypto_1.default.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        await client_1.default.onboardingInviteToken.upsert({
+            where: { userId: id },
+            create: { userId: id, token: rawToken, expiresAt },
+            update: { token: rawToken, expiresAt, usedAt: null },
+        });
+        const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+        const inviteUrl = `${frontendUrl}/onboard/complete-profile?token=${rawToken}`;
+        await (0, audit_service_1.logAction)(req.user.id, 'ONBOARDING_INVITE_REGENERATED', 'User', id, {}, req.ip);
+        return res.json({ inviteUrl, expiresAt });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.regenerateOnboardingInvite = regenerateOnboardingInvite;

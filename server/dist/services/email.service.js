@@ -20,7 +20,7 @@ async function getOrgBranding(organizationId) {
             select: { name: true, logoUrl: true, primaryColor: true, email: true, phone: true },
         });
         const branding = {
-            name: org?.name || 'MCB-HRM Ghana',
+            name: org?.name || 'MC-BAUCHEMIE GHANA',
             logoUrl: org?.logoUrl || null,
             primaryColor: org?.primaryColor || '#4f46e5',
             email: org?.email || null,
@@ -30,7 +30,7 @@ async function getOrgBranding(organizationId) {
         return branding;
     }
     catch {
-        return { name: 'MCB-HRM Ghana', primaryColor: '#4f46e5' };
+        return { name: 'MC-BAUCHEMIE GHANA', primaryColor: '#4f46e5' };
     }
 }
 function buildBrandedTemplate(branding, title, message, actionUrl, actionLabel = 'View in Dashboard') {

@@ -54,8 +54,11 @@ exports.PERMISSION_BUNDLES = {
     IT_OPERATIONS_ADMIN: [
         exports.Permission.ACCOUNT_PROVISION,
         exports.Permission.ACCOUNT_ACTIVATE,
+        exports.Permission.ONBOARDING_MANAGE,
         exports.Permission.ASSET_MANAGE,
         exports.Permission.CARD_ACCESS,
+        exports.Permission.CARD_PRODUCTION,
+        exports.Permission.CARD_DESIGN,
         exports.Permission.HELPDESK_IT,
     ],
     MARKETING_CARD_ADMIN: [

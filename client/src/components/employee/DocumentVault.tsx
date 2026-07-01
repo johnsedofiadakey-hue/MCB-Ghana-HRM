@@ -35,7 +35,8 @@ export default function DocumentVault({ employeeId, isAdmin }: { employeeId: str
         await api.post(`/documents/employee/${employeeId}`, {
           title: file.name,
           category: file.type.includes('image') ? 'ID' : file.type.includes('pdf') ? 'Certification' : 'Other',
-          fileUrl: reader.result
+          fileUrl: reader.result,
+          mimeType: file.type
         });
         fetchDocs();
       } catch (err) {

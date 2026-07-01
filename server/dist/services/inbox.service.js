@@ -69,7 +69,7 @@ class InboxService {
                 },
                 include: { employee: true }
             });
-            const user = await client_1.default.user.findUnique({ where: { id: userId }, select: { role: true } });
+            const user = await client_1.default.user.findUnique({ where: { id: userId }, select: { role: true, departmentId: true } });
             const userRank = (0, auth_middleware_1.getRoleRank)(user?.role || 'STAFF');
             leaveRequests.forEach(l => {
                 // 3a. Relief Request (Targeted to reliever)
@@ -80,14 +80,46 @@ class InboxService {
                         title: 'Relief Request',
                         subtitle: `${l.employee?.fullName || 'Staff Member'} requested you as a reliever.`,
                         priority: 'MEDIUM',
-                        link: '/leave',
+                        link: `/leave?leaveId=${l.id}`,
+                        data: { leaveId: l.id },
                         createdAt: l.createdAt
                     });
                 }
-                // V5: HR Director (rank 92+) is the sole approver for HR_REVIEW
-                // Also includes legacy MANAGER_REVIEW records so HR Director can advance them
-                const isHRAction = ['HR_REVIEW', 'MANAGER_REVIEW'].includes(l.status) && userRank >= 92;
-                // MD/Final Review (rank 90+)
+                // 3b. Direct manager review — actionable for the assigned/department manager;
+                // passive monitoring for HR Director (who can still override via the leave page)
+                if (l.status === 'MANAGER_REVIEW') {
+                    const isAssignedManager = l.employee?.supervisorId === userId;
+                    const isDeptManager = user?.departmentId != null && user.departmentId === l.employee?.departmentId && userRank >= 70;
+                    const isHrDirectorOverride = userRank >= 92;
+                    if (isAssignedManager || isDeptManager) {
+                        actions.push({
+                            id: `leave-approve-${l.id}`,
+                            type: 'LEAVE_APPROVE',
+                            title: 'Leave Approval Required',
+                            subtitle: `${l.employee?.fullName || 'Staff Member'} — awaiting your review`,
+                            priority: 'HIGH',
+                            link: `/leave?leaveId=${l.id}`,
+                            data: { leaveId: l.id },
+                            createdAt: l.createdAt
+                        });
+                    }
+                    else if (isHrDirectorOverride) {
+                        actions.push({
+                            id: `leave-monitor-${l.id}`,
+                            type: 'LEAVE_APPROVE',
+                            title: 'Leave With Manager',
+                            subtitle: `${l.employee?.fullName || 'Staff Member'} — with their manager for review`,
+                            priority: 'LOW',
+                            link: `/leave?leaveId=${l.id}`,
+                            data: { leaveId: l.id },
+                            createdAt: l.createdAt,
+                            monitorOnly: true,
+                        });
+                    }
+                }
+                // 3c. HR Director final review for regular staff (terminal stage)
+                const isHRAction = l.status === 'HR_REVIEW' && userRank >= 92;
+                // 3d. MD final review for managers' own leave
                 const isMDAction = l.status === 'MD_REVIEW' && userRank >= 90;
                 if (isHRAction || isMDAction) {
                     actions.push({
@@ -96,7 +128,8 @@ class InboxService {
                         title: 'Leave Approval Required',
                         subtitle: `${l.employee?.fullName || 'Staff Member'} - Stage: ${l.status.replace('_', ' ')}`,
                         priority: 'HIGH',
-                        link: '/leave',
+                        link: `/leave?leaveId=${l.id}`,
+                        data: { leaveId: l.id },
                         createdAt: l.createdAt
                     });
                 }

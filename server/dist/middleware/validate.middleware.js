@@ -135,8 +135,7 @@ exports.UpdateUserSchema = exports.CreateUserSchema.partial();
 // ── Leave ─────────────────────────────────────────────────────────────────
 const LEAVE_TYPES = ['Annual', 'Sick', 'Maternity', 'Paternity', 'Emergency', 'Unpaid', 'Compassionate', 'Study', 'Other'];
 exports.LeaveRequestSchema = zod_1.z.object({
-    startDate: dateStr,
-    endDate: dateStr,
+    dates: zod_1.z.array(dateStr).min(1, 'Select at least one day of leave').max(60, 'Select at most 60 days at a time'),
     reason: str(500),
     leaveType: zod_1.z.enum(LEAVE_TYPES).optional().default('Annual'),
     relieverId: optUuid,

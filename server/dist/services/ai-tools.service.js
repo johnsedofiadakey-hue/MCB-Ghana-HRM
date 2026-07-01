@@ -132,9 +132,19 @@ const executeTool = async (name, args, user) => {
                 department: me.departmentObj?.name
             };
         case 'request_leave':
+            // The AI extracts a natural-language date range; convert to the discrete weekday
+            // list the leave system now requires (weekends excluded — holidays are validated
+            // server-side inside LeaveService.requestLeave).
+            const rangeStart = new Date(`${args.startDate}T00:00:00.000Z`);
+            const rangeEnd = new Date(`${args.endDate}T00:00:00.000Z`);
+            const weekdayDates = [];
+            for (const cur = new Date(rangeStart); cur <= rangeEnd; cur.setUTCDate(cur.getUTCDate() + 1)) {
+                const dow = cur.getUTCDay();
+                if (dow !== 0 && dow !== 6)
+                    weekdayDates.push(cur.toISOString().split('T')[0]);
+            }
             const newLeave = await leave_service_1.LeaveService.requestLeave(organizationId, user.id, {
-                startDate: args.startDate,
-                endDate: args.endDate,
+                dates: weekdayDates,
                 leaveType: args.leaveType,
                 reason: args.reason || 'Requested via Cortex AI',
                 relieverId: args.relieverId || null

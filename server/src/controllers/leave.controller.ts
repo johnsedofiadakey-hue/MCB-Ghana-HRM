@@ -704,10 +704,32 @@ export const uploadMedicalCertificate = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorised to upload certificate for this leave' });
     }
 
+    // Upload to Firebase Storage if a base64 data URI was sent
+    let certUrl = medicalCertificateUrl;
+    if (medicalCertificateUrl.startsWith('data:')) {
+      try {
+        const { FirebaseStorageService } = await import('../services/firebase-storage.service');
+        const match = medicalCertificateUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (match) {
+          const mime = match[1];
+          const ext = mime.split('/')[1]?.replace('jpeg', 'jpg') || 'bin';
+          const buffer = Buffer.from(match[2], 'base64');
+          certUrl = await FirebaseStorageService.uploadFile(
+            buffer,
+            `med-cert-${id}-${Date.now()}.${ext}`,
+            'medical-certs',
+            mime
+          );
+        }
+      } catch (fbErr) {
+        console.warn('[LeaveController] Firebase upload failed for medical cert, storing data URI:', fbErr);
+      }
+    }
+
     const updated = await prisma.leaveRequest.update({
       where: { id },
       data: {
-        medicalCertificateUrl,
+        medicalCertificateUrl: certUrl,
         medicalCertificateUploaded: true,
       }
     });

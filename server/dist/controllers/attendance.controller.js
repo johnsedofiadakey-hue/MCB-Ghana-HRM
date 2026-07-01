@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.nodeScan = exports.getAllAttendance = exports.getMyAttendance = exports.clockOut = exports.clockIn = void 0;
+exports.nodeScan = exports.exportAttendanceCSV = exports.getAllAttendance = exports.getMyAttendance = exports.clockOut = exports.clockIn = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const enterprise_controller_1 = require("./enterprise.controller");
 const clockIn = async (req, res) => {
@@ -107,6 +107,29 @@ const getAllAttendance = async (req, res) => {
     }
 };
 exports.getAllAttendance = getAllAttendance;
+const exportAttendanceCSV = async (req, res) => {
+    try {
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const logs = await client_1.default.attendanceLog.findMany({
+            where: whereOrg,
+            include: { employee: { select: { fullName: true, departmentObj: true } } },
+            orderBy: { date: 'desc' },
+            take: 1000
+        });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="attendance-report.csv"');
+        let csv = 'Employee,Department,Date,Clock In,Clock Out,Status,Source\n';
+        logs.forEach(log => {
+            csv += `"${log.employee.fullName}","${log.employee.departmentObj?.name || ''}","${log.date.toLocaleDateString()}","${log.clockIn ? log.clockIn.toLocaleTimeString() : ''}","${log.clockOut ? log.clockOut.toLocaleTimeString() : ''}","${log.status}","${log.source}"\n`;
+        });
+        res.send(csv);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.exportAttendanceCSV = exportAttendanceCSV;
 const nodeScan = async (req, res) => {
     try {
         const apiKey = req.headers['authorization'];

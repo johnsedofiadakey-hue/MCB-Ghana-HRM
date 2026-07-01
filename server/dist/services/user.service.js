@@ -8,7 +8,6 @@ const client_1 = __importDefault(require("../prisma/client"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const encryption_1 = require("../utils/encryption");
 const roles_1 = require("../types/roles");
-const crypto_1 = __importDefault(require("crypto"));
 const getRankFromRole = (role) => {
     if (!role)
         return 40;
@@ -48,10 +47,9 @@ const createUser = async (organizationId, data) => {
         if (existingCode)
             throw new Error('User with this Employee Code already exists');
     }
-    // Preboarding accounts receive an unguessable placeholder. IT activates the
-    // account later and the employee chooses a password through an invitation.
-    const plainPassword = crypto_1.default.randomBytes(48).toString('base64url');
-    const passwordHash = await bcryptjs_1.default.hash(plainPassword, 12);
+    // New accounts default to a known starter password so the employee can log in
+    // immediately. mustChangePassword forces them to set their own on first login.
+    const passwordHash = await bcryptjs_1.default.hash('unlockme', 12);
     // 🛡️ Strict Requirement Validation
     if (!data.email?.trim())
         throw new Error('Employee validation failed: Email Address is required.');
@@ -79,9 +77,9 @@ const createUser = async (organizationId, data) => {
             passwordHash,
             employeeCode: safeData.employeeCode,
             status: safeData.status || 'ACTIVE',
-            loginEnabled: false,
+            loginEnabled: true,
             mustChangePassword: true,
-            employeeLifecycleStage: 'PREBOARDING',
+            employeeLifecycleStage: 'ONBOARDING',
             rank: getRankFromRole(safeData.role || 'STAFF'),
             position: safeData.position || safeData.jobTitle.trim(),
             joinDate: (safeData.joinDate && safeData.joinDate !== null) ? new Date(safeData.joinDate) : null,

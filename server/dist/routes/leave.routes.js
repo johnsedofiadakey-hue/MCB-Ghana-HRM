@@ -9,6 +9,7 @@ router.use(auth_middleware_1.authenticate);
 // Employee self-service
 router.post('/apply', (0, validate_middleware_1.validate)(validate_middleware_1.LeaveRequestSchema), leave_controller_1.applyForLeave);
 router.get('/my', leave_controller_1.getMyLeaves);
+router.get('/:id/detail', leave_controller_1.getLeaveById);
 router.get('/balance', leave_controller_1.getMyLeaveBalance);
 router.get('/my-relief-requests', leave_controller_1.getMyReliefRequests);
 router.get('/handover/history', leave_controller_1.getHandoverHistory);

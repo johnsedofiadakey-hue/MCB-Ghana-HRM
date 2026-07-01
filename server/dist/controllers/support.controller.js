@@ -3,12 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLeads = exports.createLead = exports.createKnowledgeArticle = exports.listKnowledgeArticles = exports.getQueueDashboard = exports.reopenTicket = exports.updateTicketStatus = exports.addComment = exports.getTicketDetails = exports.getAllTickets = exports.getMyTickets = exports.createTicket = exports.businessMinutesBetween = exports.addBusinessHours = exports.addBusinessMinutes = void 0;
+exports.assignTicket = exports.attachTicketFile = exports.getLeads = exports.createLead = exports.createKnowledgeArticle = exports.listKnowledgeArticles = exports.getQueueDashboard = exports.reopenTicket = exports.updateTicketStatus = exports.addComment = exports.getTicketDetails = exports.getAllTickets = exports.getMyTickets = exports.createTicket = exports.businessMinutesBetween = exports.addBusinessHours = exports.addBusinessMinutes = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const websocket_service_1 = require("../services/websocket.service");
 const policy_service_1 = require("../services/policy.service");
 const permissions_1 = require("../types/permissions");
+const firebase_storage_service_1 = require("../services/firebase-storage.service");
 const queuePermissions = {
     IT: permissions_1.Permission.HELPDESK_IT,
     HR: permissions_1.Permission.HELPDESK_HR,
@@ -115,6 +116,16 @@ const createTicket = async (req, res) => {
         if (!Object.prototype.hasOwnProperty.call(slaHours, normalizedPriority)) {
             return res.status(400).json({ error: 'Priority must be URGENT, HIGH, NORMAL, or LOW' });
         }
+        // Resolve the most-senior active user for this queue to auto-assign
+        const queueRoleMap = {
+            IT: ['IT_MANAGER', 'IT_ADMIN'], HR: ['HR_DIRECTOR', 'HR_MANAGER'], FINANCE: ['FINANCE_MANAGER'],
+            MARKETING: ['MARKETING_HEAD'], FACILITIES: ['DIRECTOR'], OTHER: ['HR_DIRECTOR'],
+        };
+        const queueOwner = await client_1.default.user.findFirst({
+            where: { organizationId, role: { in: queueRoleMap[queue] || ['HR_DIRECTOR'] }, isArchived: false, status: 'ACTIVE' },
+            orderBy: { rank: 'desc' },
+            select: { id: true },
+        });
         const ticket = await client_1.default.supportTicket.create({
             data: {
                 organizationId,
@@ -125,23 +136,27 @@ const createTicket = async (req, res) => {
                 priority: normalizedPriority,
                 status: 'OPEN',
                 employeeId,
+                assignedToId: queueOwner?.id ?? null,
+                assignedAt: queueOwner ? new Date() : null,
                 slaDueAt: (0, exports.addBusinessHours)(new Date(), slaHours[normalizedPriority] || slaHours.NORMAL),
             }
         });
-        await client_1.default.ticketActivity.create({
-            data: { organizationId, ticketId: ticket.id, actorId: employeeId, action: 'CREATED', metadata: { queue, priority: normalizedPriority } },
+        await client_1.default.ticketActivity.createMany({
+            data: [
+                { organizationId, ticketId: ticket.id, actorId: employeeId, action: 'CREATED', metadata: { queue, priority: normalizedPriority } },
+                ...(queueOwner ? [{ organizationId, ticketId: ticket.id, actorId: employeeId, action: 'ASSIGNED', metadata: { to: queueOwner.id, reason: 'auto-routed to queue owner' } }] : []),
+            ],
         });
         await (0, audit_service_1.logAction)(employeeId, 'CREATE_SUPPORT_TICKET', 'SupportTicket', ticket.id, { category, priority }, req.ip);
-        const roleByQueue = {
-            IT: ['IT_MANAGER', 'IT_ADMIN'], HR: ['HR_DIRECTOR', 'HR_MANAGER'], FINANCE: ['FINANCE_MANAGER'],
-            MARKETING: ['MARKETING_HEAD'], FACILITIES: ['DIRECTOR'], OTHER: ['DIRECTOR'],
-        };
-        const queueOwners = await client_1.default.user.findMany({
-            where: { organizationId, role: { in: roleByQueue[queue] || [] } },
+        const allOwnerIds = await client_1.default.user.findMany({
+            where: { organizationId, role: { in: queueRoleMap[queue] || [] } },
             select: { id: true }
         });
-        for (const admin of queueOwners) {
-            await (0, websocket_service_1.notify)(admin.id, 'New Support Ticket 🎫', `[${category}] ${subject}`, 'WARNING', `/support/tickets/${ticket.id}`);
+        for (const admin of allOwnerIds) {
+            await (0, websocket_service_1.notify)(admin.id, 'New Support Ticket', `[${category}] ${subject}`, 'WARNING', `/support?ticket=${ticket.id}`);
+        }
+        if (queueOwner) {
+            await (0, websocket_service_1.notify)(queueOwner.id, 'Ticket Assigned to You', `[${category}] ${subject}`, 'INFO', `/support?ticket=${ticket.id}`);
         }
         res.status(201).json(ticket);
     }
@@ -215,12 +230,13 @@ const getTicketDetails = async (req, res) => {
             where: { id, organizationId },
             include: {
                 employee: { select: { fullName: true, email: true, avatarUrl: true } },
-                assignedTo: { select: { fullName: true, email: true } },
+                assignedTo: { select: { id: true, fullName: true, email: true, avatarUrl: true } },
                 comments: {
                     include: { user: { select: { fullName: true, avatarUrl: true, role: true } } },
                     orderBy: { createdAt: 'asc' }
                 },
                 activities: { orderBy: { createdAt: 'asc' } },
+                attachments: { orderBy: { createdAt: 'asc' } },
             }
         });
         if (!ticket)
@@ -228,7 +244,8 @@ const getTicketDetails = async (req, res) => {
         if (!(await canAccessTicket(ticket, userId)))
             return res.status(403).json({ error: 'Access denied' });
         const isRequester = ticket.employeeId === userId;
-        res.json({ ...ticket, comments: isRequester ? ticket.comments.filter((comment) => !comment.isInternal) : ticket.comments });
+        const ticketData = ticket;
+        res.json({ ...ticketData, comments: isRequester ? ticketData.comments.filter((c) => !c.isInternal) : ticketData.comments });
     }
     catch (error) {
         res.status(500).json({ error: error.message });
@@ -502,3 +519,59 @@ const getLeads = async (req, res) => {
     }
 };
 exports.getLeads = getLeads;
+const attachTicketFile = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fileBase64, fileName, mimeType, commentId } = req.body;
+        const userId = req.user?.id;
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        if (!fileBase64 || !fileName || !mimeType) {
+            return res.status(400).json({ error: 'fileBase64, fileName, and mimeType are required' });
+        }
+        const ticket = await client_1.default.supportTicket.findFirst({ where: { id, organizationId } });
+        if (!ticket)
+            return res.status(404).json({ error: 'Ticket not found' });
+        if (!(await canAccessTicket(ticket, userId)))
+            return res.status(403).json({ error: 'Access denied' });
+        const buffer = Buffer.from(fileBase64.replace(/^data:[^;]+;base64,/, ''), 'base64');
+        const fileUrl = await firebase_storage_service_1.FirebaseStorageService.uploadFile(buffer, fileName, 'ticket-attachments', mimeType);
+        const attachment = await client_1.default.ticketAttachment.create({
+            data: { organizationId, ticketId: id, commentId: commentId || null, uploadedById: userId, fileUrl, fileName, mimeType },
+        });
+        await client_1.default.ticketActivity.create({
+            data: { organizationId, ticketId: id, actorId: userId, action: 'ATTACHMENT_ADDED', metadata: { fileName, mimeType } },
+        });
+        return res.status(201).json(attachment);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.attachTicketFile = attachTicketFile;
+const assignTicket = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { assigneeId } = req.body;
+        const userId = req.user?.id;
+        const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+        const ticket = await client_1.default.supportTicket.findFirst({ where: { id, organizationId } });
+        if (!ticket)
+            return res.status(404).json({ error: 'Ticket not found' });
+        const assignee = await client_1.default.user.findFirst({ where: { id: assigneeId, organizationId, isArchived: false }, select: { id: true, fullName: true } });
+        if (!assignee)
+            return res.status(404).json({ error: 'Assignee not found' });
+        const updated = await client_1.default.supportTicket.update({
+            where: { id },
+            data: { assignedToId: assigneeId, assignedAt: new Date() },
+        });
+        await client_1.default.ticketActivity.create({
+            data: { organizationId, ticketId: id, actorId: userId, action: 'REASSIGNED', metadata: { to: assigneeId, toName: assignee.fullName } },
+        });
+        await (0, websocket_service_1.notify)(assigneeId, 'Ticket Assigned to You', `[${ticket.queue}] ${ticket.subject}`, 'INFO', `/support?ticket=${id}`);
+        return res.json(updated);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.assignTicket = assignTicket;

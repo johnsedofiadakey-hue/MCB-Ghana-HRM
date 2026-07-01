@@ -89,8 +89,8 @@ const exportLeavePdf = async (req, res) => {
                     include: { departmentObj: { select: { name: true } } }
                 },
                 reliever: { select: { fullName: true } },
-                manager: { select: { fullName: true } },
-                hrReviewer: { select: { fullName: true } },
+                manager: { select: { fullName: true, signatureUrl: true } },
+                hrReviewer: { select: { fullName: true, signatureUrl: true } },
                 handoverRecords: {
                     include: { reliever: { select: { fullName: true } } }
                 }
@@ -175,7 +175,7 @@ const exportEmployeePdf = async (req, res) => {
             res.send(pdf);
         });
         const primary = org?.primaryColor || '#4F46E5';
-        doc.fillColor(primary).fontSize(20).font('Helvetica-Bold').text(org?.name || 'MCB HRM Ghana', { align: 'center' });
+        doc.fillColor(primary).fontSize(20).font('Helvetica-Bold').text(org?.name || 'MC-BAUCHEMIE GHANA', { align: 'center' });
         doc.moveDown(0.5);
         doc.fillColor('#111827').fontSize(16).text('Employee Dossier', { align: 'center' });
         doc.moveDown(2);
@@ -199,7 +199,7 @@ const exportEmployeePdf = async (req, res) => {
         row('Address: ', employee.address);
         row('Nationality: ', employee.nationality || employee.countryOfOrigin);
         doc.moveDown(2);
-        doc.fontSize(8).fillColor('#6B7280').text(`Generated ${new Date().toISOString()} by ${req.user?.name || 'MCB HRM Ghana'}`, { align: 'center' });
+        doc.fontSize(8).fillColor('#6B7280').text(`Generated ${new Date().toISOString()} by ${req.user?.name || 'MC-BAUCHEMIE GHANA'}`, { align: 'center' });
         doc.end();
     }
     catch (err) {
