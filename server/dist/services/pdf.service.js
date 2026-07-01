@@ -123,6 +123,11 @@ class PdfExportService {
                     this.renderWatermark(doc);
                     this.renderFooter(doc, org, i + 1, range.count, primaryColor);
                 }
+                // After switchToPage() + footer, doc.y can exceed the A4 bottom margin (~792pt).
+                // PDFKit flushes a trailing blank page when doc.y > page.maxY() at end() time.
+                // Switching back to the last content page and resetting doc.y prevents this.
+                doc.switchToPage(range.start + range.count - 1);
+                doc.y = 50;
                 doc.end();
             }
             catch (err) {
