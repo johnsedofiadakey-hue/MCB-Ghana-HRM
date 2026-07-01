@@ -5,10 +5,25 @@ import { logAction } from '../services/audit.service';
 import { PolicyService } from '../services/policy.service';
 import { Permission } from '../types/permissions';
 
+// Which ownerRole values each system role is responsible for
+const roleOwnerMap: Record<string, string[]> = {
+  HR_DIRECTOR:  ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER'],
+  HR_MANAGER:   ['HR_MANAGER', 'HR_OFFICER'],
+  HR_OFFICER:   ['HR_OFFICER'],
+  IT_MANAGER:   ['IT_MANAGER', 'IT_ADMIN'],
+  IT_ADMIN:     ['IT_ADMIN'],
+  MANAGER:      ['MANAGER'],
+  DIRECTOR:     ['MANAGER', 'DIRECTOR'],
+  MD:           ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'DIRECTOR', 'Admin'],
+  DEV:          ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'DIRECTOR', 'Admin'],
+};
+
+// Legacy permission-key map kept for any future policy checks
 const ownerPermission: Record<string, string> = {
-  HR: Permission.ONBOARDING_MANAGE,
-  IT: Permission.ACCOUNT_PROVISION,
-  MARKETING: Permission.CARD_PRODUCTION,
+  HR_DIRECTOR: Permission.ONBOARDING_MANAGE,
+  HR_MANAGER:  Permission.ONBOARDING_MANAGE,
+  IT_MANAGER:  Permission.ACCOUNT_PROVISION,
+  IT_ADMIN:    Permission.ACCOUNT_PROVISION,
 };
 
 const DEFAULT_TEMPLATES = [
@@ -178,12 +193,11 @@ export const completeTask = async (req: Request, res: Response) => {
       }
     }
 
+    const user = (req as any).user;
     const isAssignee = current.assignedToId === userId;
     const isEmployeeTask = current.ownerRole === 'EMPLOYEE' && current.session.employeeId === userId;
-    const permission = ownerPermission[current.ownerRole];
-    const isDepartmentOwner = permission
-      ? (await PolicyService.evaluatePolicy(userId || '', permission)).allowed
-      : false;
+    const myOwnerRoles = roleOwnerMap[user.role] || [];
+    const isDepartmentOwner = myOwnerRoles.includes(current.ownerRole);
     if (!isAssignee && !isEmployeeTask && !isDepartmentOwner) {
       return res.status(403).json({ error: 'This task belongs to another employee or department.' });
     }
@@ -242,17 +256,23 @@ export const getDepartmentTasks = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const organizationId = user.organizationId || 'mcb-ghana-tenant';
-    const owners: string[] = [];
-    for (const [owner, permission] of Object.entries(ownerPermission)) {
-      if ((await PolicyService.evaluatePolicy(user.id, permission)).allowed) owners.push(owner);
-    }
+    const myOwnerRoles = roleOwnerMap[user.role] || [];
     const tasks = await prisma.onboardingItem.findMany({
       where: {
         organizationId,
-        OR: [{ assignedToId: user.id }, ...(owners.length ? [{ ownerRole: { in: owners } }] : [])],
+        OR: [
+          { assignedToId: user.id },
+          ...(myOwnerRoles.length ? [{ ownerRole: { in: myOwnerRoles } }] : []),
+        ],
       },
-      include: { session: { include: { employee: { select: { id: true, fullName: true, jobTitle: true } } } } },
-      orderBy: [{ status: 'asc' }, { dueDate: 'asc' }],
+      include: {
+        session: {
+          include: {
+            employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
+          },
+        },
+      },
+      orderBy: [{ completedAt: 'asc' }, { dueDate: 'asc' }],
     });
     return res.json(tasks);
   } catch (err: any) {
