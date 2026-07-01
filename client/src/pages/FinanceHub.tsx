@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../utils/toast';
-import { Wallet, DollarSign, Receipt, Plus, Loader2, CheckCircle, XCircle, ChevronDown, ShieldCheck, History as FinanceHistory, X, FileText, Calendar } from 'lucide-react';
+import { Wallet, DollarSign, Receipt, Plus, Loader2, CheckCircle, XCircle, ChevronDown, ShieldCheck, History as FinanceHistory, X, FileText, Calendar, Eye } from 'lucide-react';
 import api from '../services/api';
-import { openApiUrl } from '../utils/apiUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +26,7 @@ const FinanceHub = () => {
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState<any>({});
     const [error, setError] = useState('');
+    const [loadingPayslipId, setLoadingPayslipId] = useState<string | null>(null);
 
     const user = getStoredUser();
     const canManageLoans = hasPermission(user, 'finance.loan.manage');
@@ -87,7 +87,31 @@ const FinanceHub = () => {
         }
     };
 
-    const downloadPayslip = (runId: string, empId: string) => openApiUrl(`/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`);
+    const viewPayslip = async (runId: string, empId: string, periodLabel?: string) => {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(
+                '<html><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;font-family:Inter,sans-serif">' +
+                '<p style="color:#94a3b8;font-size:14px">Generating payslip…</p></body></html>'
+            );
+        }
+        const key = `${runId}-${empId}`;
+        setLoadingPayslipId(key);
+        try {
+            const res = await api.get(`/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`, { responseType: 'blob' });
+            const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+            if (win && !win.closed) {
+                win.location.href = blobUrl;
+            } else {
+                window.open(blobUrl, '_blank');
+            }
+        } catch {
+            if (win && !win.closed) win.close();
+            toast.error('Failed to load payslip. Please try again.');
+        } finally {
+            setLoadingPayslipId(null);
+        }
+    };
 
     return (
         <div className="space-y-10 page-enter min-h-screen pb-20">
@@ -175,10 +199,12 @@ const FinanceHub = () => {
                                         </td>
                                         <td className="px-10 py-6 text-right">
                                             <button
-                                                onClick={() => downloadPayslip(slip.runId, user?.id || '')}
-                                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all ml-auto"
+                                                onClick={() => viewPayslip(slip.runId, user?.id || '', slip.run?.period)}
+                                                disabled={loadingPayslipId === `${slip.runId}-${user?.id}`}
+                                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)]/15 border border-[var(--primary)]/20 hover:border-[var(--primary)]/40 transition-all ml-auto disabled:opacity-50"
+                                                title="View Payslip"
                                             >
-                                                <FileText size={18} />
+                                                {loadingPayslipId === `${slip.runId}-${user?.id}` ? <Loader2 size={16} className="animate-spin" /> : <Eye size={16} />}
                                             </button>
                                         </td>
                                     </tr>
