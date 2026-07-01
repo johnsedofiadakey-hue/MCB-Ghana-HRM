@@ -197,7 +197,7 @@ const EmployeeProfile = () => {
             setKpiSummary(kpiRes.data);
             if (riskRes) setRiskProfile(riskRes.data);
             setPromotionForm(prev => ({ ...prev, targetJobTitle: empRes.data.jobTitle }));
-            fetchInviteData(targetId);
+            fetchInviteData(id);
         } catch (e) {
             console.error(e);
             toast.error('Error: Staff record not found');
@@ -398,6 +398,21 @@ const EmployeeProfile = () => {
             toast.error('Failed to generate invite link');
         } finally {
             setRegeneratingInvite(false);
+        }
+    };
+
+    const handleToggleInvite = async (enable: boolean) => {
+        try {
+            const res = await api.post(`/employees/${id}/toggle-invite`, { enabled: enable });
+            if (enable) {
+                setInviteData({ inviteUrl: res.data.inviteUrl, expiresAt: res.data.expiresAt, usedAt: null, isExpired: false, enabled: true });
+                toast.success('Profile unlocked — invite link is now active');
+            } else {
+                setInviteData((prev: any) => ({ ...prev, isExpired: true, enabled: false }));
+                toast.success('Profile locked — employee cannot make self-service changes');
+            }
+        } catch {
+            toast.error('Toggle failed');
         }
     };
 
@@ -892,136 +907,170 @@ const EmployeeProfile = () => {
                     <HistoryLog logs={employee.historyLogs} />
                 )}
 
-                {activeTab === 'onboarding' && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                {activeTab === 'onboarding' && (() => {
+                    const isHRAdmin = getRoleRankValue(currentUser?.role) >= 88;
+                    const isOwnProfile = currentUser?.id === employee.id;
+                    const linkIsActive = inviteData?.inviteUrl && !inviteData?.isExpired && !inviteData?.usedAt;
+                    const profileLocked = !linkIsActive && (employee.employeeLifecycleStage === 'PROFILE_LOCKED' || employee.employeeLifecycleStage === 'ACTIVE' || employee.employeeLifecycleStage === 'ONBOARDING');
+                    return (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+
                         {/* Lifecycle Stage Banner */}
-                        <div className={cn(
-                            "flex items-center gap-4 p-5 rounded-2xl border",
+                        <div className={cn("flex flex-wrap items-center gap-4 p-5 rounded-2xl border",
                             employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' ? "bg-amber-500/5 border-amber-500/20" :
+                            profileLocked ? "bg-rose-500/5 border-rose-500/20" :
                             employee.employeeLifecycleStage === 'PREBOARDING' ? "bg-[var(--primary)]/5 border-[var(--primary)]/20" :
                             "bg-emerald-500/5 border-emerald-500/20"
                         )}>
-                            <div className={cn(
-                                "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
                                 employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' ? "bg-amber-500/10 text-amber-500" :
+                                profileLocked ? "bg-rose-500/10 text-rose-500" :
                                 employee.employeeLifecycleStage === 'PREBOARDING' ? "bg-[var(--primary)]/10 text-[var(--primary)]" :
                                 "bg-emerald-500/10 text-emerald-500"
                             )}>
                                 <UserPlus size={18} />
                             </div>
-                            <div className="flex-1">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Onboarding Stage</p>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Profile Status</p>
                                 <p className="text-base font-black text-[var(--text-primary)] mt-0.5">
-                                    {employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' ? 'Awaiting HR Review' :
-                                     employee.employeeLifecycleStage === 'PREBOARDING' ? 'Invite Sent — Awaiting Employee' :
+                                    {employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' ? 'Submitted — Awaiting HR Review' :
+                                     employee.employeeLifecycleStage === 'PREBOARDING' ? 'Invite Active — Awaiting Employee' :
                                      employee.employeeLifecycleStage === 'ONBOARDING' ? 'Onboarding In Progress' :
-                                     employee.employeeLifecycleStage === 'ACTIVE' ? 'Fully Active' :
-                                     employee.employeeLifecycleStage || 'Active'}
+                                     profileLocked ? 'Profile Locked — Self-Service Disabled' :
+                                     'Active'}
                                 </p>
                             </div>
-                            {employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' && getRoleRankValue(currentUser?.role) >= 88 && (
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            await api.post(`/employees/${employee.id}/hr-review-approve`);
-                                            toast.success('Account activated — employee can now log in');
-                                            fetchEmployee();
-                                        } catch (err: any) {
-                                            toast.error(err?.response?.data?.error || 'Approval failed');
-                                        }
-                                    }}
-                                    className="px-5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg"
-                                >
+                            {employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' && isHRAdmin && (
+                                <button onClick={async () => {
+                                    try {
+                                        await api.post(`/employees/${employee.id}/hr-review-approve`);
+                                        toast.success('Account activated — employee can now log in');
+                                        fetchEmployee();
+                                    } catch (err: any) { toast.error(err?.response?.data?.error || 'Approval failed'); }
+                                }} className="px-5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg">
                                     Approve & Activate
                                 </button>
                             )}
                         </div>
 
-                        {/* Invite URL Card */}
-                        {getRoleRankValue(currentUser?.role) >= 88 && (
-                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-6">
-                                <div className="flex items-center justify-between flex-wrap gap-4">
+                        {/* HR ADMIN: Link Control Panel */}
+                        {isHRAdmin && (
+                            <div className="nx-card p-6 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-5">
+                                {/* Header row with toggle */}
+                                <div className="flex items-start justify-between gap-4 flex-wrap">
                                     <div>
-                                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                                            <Link2 size={15} className="text-[var(--primary)]" /> Self-Onboarding Link
+                                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-2">
+                                            <Link2 size={14} className="text-[var(--primary)]" /> Profile Access Control
                                         </h3>
-                                        <p className="text-xs text-[var(--text-muted)] mt-1.5">Copy and send this link to the employee via email or WhatsApp. They fill their own profile — no HR data entry needed.</p>
+                                        <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                                            {linkIsActive
+                                                ? 'Link is ON — employee can fill or update their personal details.'
+                                                : 'Link is OFF — employee profile is locked. Only HR can make changes.'}
+                                        </p>
                                     </div>
+                                    {/* Toggle switch */}
                                     <button
-                                        onClick={handleRegenerateInvite}
-                                        disabled={regeneratingInvite}
-                                        className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)]/30 transition-all flex items-center gap-2 disabled:opacity-50"
+                                        onClick={() => handleToggleInvite(!linkIsActive)}
+                                        className={cn(
+                                            "flex items-center gap-3 px-5 py-2.5 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all shadow-sm",
+                                            linkIsActive
+                                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-600"
+                                                : "bg-[var(--primary)]/10 border-[var(--primary)]/30 text-[var(--primary)] hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-600"
+                                        )}
                                     >
-                                        <RefreshCw size={13} className={regeneratingInvite ? 'animate-spin' : ''} />
-                                        {regeneratingInvite ? 'Generating...' : inviteData?.inviteUrl ? 'New Link' : 'Generate Link'}
+                                        <span className={cn("w-8 h-4.5 rounded-full flex items-center px-0.5 transition-colors", linkIsActive ? "bg-emerald-500" : "bg-[var(--text-muted)]/30")}>
+                                            <span className={cn("w-3.5 h-3.5 rounded-full bg-white shadow transition-transform", linkIsActive ? "translate-x-3.5" : "translate-x-0")} />
+                                        </span>
+                                        {linkIsActive ? 'Link ON — Click to Disable' : 'Link OFF — Click to Enable'}
                                     </button>
                                 </div>
 
                                 {loadingInvite ? (
-                                    <div className="h-16 flex items-center justify-center opacity-40">
-                                        <RefreshCw size={18} className="animate-spin" />
-                                    </div>
-                                ) : inviteData?.inviteUrl ? (
-                                    <div className="space-y-4">
-                                        {/* URL Display with copy */}
-                                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-subtle)] group">
+                                    <div className="h-14 flex items-center justify-center opacity-40"><RefreshCw size={16} className="animate-spin" /></div>
+                                ) : linkIsActive && inviteData?.inviteUrl ? (
+                                    <div className="space-y-3">
+                                        {/* URL copy bar */}
+                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-subtle)]">
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Invite URL</p>
-                                                <p className="text-xs text-[var(--text-secondary)] font-mono truncate" title={inviteData.inviteUrl}>{inviteData.inviteUrl}</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Invite URL — paste into email or WhatsApp</p>
+                                                <p className="text-[11px] text-[var(--text-secondary)] font-mono truncate" title={inviteData.inviteUrl}>{inviteData.inviteUrl}</p>
                                             </div>
                                             <button
                                                 onClick={() => handleCopy(inviteData.inviteUrl, 'invite-url')}
-                                                className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-[var(--primary)]/20"
+                                                className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-[var(--primary)]/20"
                                             >
-                                                {copiedField === 'invite-url' ? <CheckCheck size={14} /> : <Copy size={14} />}
-                                                {copiedField === 'invite-url' ? 'Copied!' : 'Copy'}
+                                                {copiedField === 'invite-url' ? <CheckCheck size={13} /> : <Copy size={13} />}
+                                                {copiedField === 'invite-url' ? 'Copied!' : 'Copy Link'}
                                             </button>
                                         </div>
 
-                                        {/* Meta info row */}
-                                        <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-[var(--text-muted)]">
-                                            <span className={cn(
-                                                "flex items-center gap-1.5 px-3 py-1.5 rounded-full border",
-                                                inviteData.usedAt ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" :
-                                                inviteData.isExpired ? "bg-rose-500/10 border-rose-500/20 text-rose-500" :
-                                                "bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]"
-                                            )}>
-                                                {inviteData.usedAt ? '✓ Used' : inviteData.isExpired ? '✗ Expired' : '● Active'}
+                                        <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold">
+                                            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600">
+                                                ● Active
                                             </span>
-                                            {inviteData.expiresAt && !inviteData.usedAt && (
-                                                <span className="flex items-center gap-1.5">
-                                                    <Clock size={11} />
-                                                    Expires {new Date(inviteData.expiresAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {inviteData.expiresAt && (
+                                                <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                                                    <Clock size={11} /> Expires {new Date(inviteData.expiresAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 </span>
                                             )}
-                                            {inviteData.usedAt && (
-                                                <span className="flex items-center gap-1.5">
-                                                    <CheckCheck size={11} className="text-emerald-500" />
-                                                    Completed {new Date(inviteData.usedAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                </span>
-                                            )}
+                                            <button onClick={handleRegenerateInvite} disabled={regeneratingInvite} className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all disabled:opacity-50">
+                                                <RefreshCw size={11} className={regeneratingInvite ? 'animate-spin' : ''} /> Regenerate
+                                            </button>
                                         </div>
 
-                                        {/* Quick share hint */}
-                                        <div className="p-4 rounded-xl bg-[var(--bg-elevated)]/40 border border-[var(--border-subtle)] text-[10px] text-[var(--text-muted)] leading-relaxed">
-                                            <strong className="text-[var(--text-secondary)]">How to share:</strong> Copy the link above, then paste it into an email or WhatsApp message to <strong className="text-[var(--primary)]">{employee.fullName}</strong>. The link works without a login — they just open it and fill in their details. It expires in 7 days from when it was generated.
-                                        </div>
+                                        <p className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-elevated)]/40 px-4 py-3 rounded-xl border border-[var(--border-subtle)]">
+                                            <strong className="text-[var(--text-secondary)]">Tip:</strong> Copy the link and send it to <strong className="text-[var(--primary)]">{employee.fullName}</strong> via email or WhatsApp. They open it without logging in, fill their details, and HR gets notified.
+                                        </p>
+                                    </div>
+                                ) : inviteData?.usedAt ? (
+                                    <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-3 text-[11px] text-emerald-600">
+                                        <CheckCheck size={16} />
+                                        <span>Profile completed by employee on <strong>{new Date(inviteData.usedAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</strong>. Link is now off — profile is locked.</span>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
-                                        <div className="w-14 h-14 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
-                                            <Send size={22} />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-[var(--text-primary)]">No invite link generated yet</p>
-                                            <p className="text-xs text-[var(--text-muted)] mt-1">Click "Generate Link" above to create a self-onboarding invite for this employee.</p>
-                                        </div>
+                                    <div className="p-4 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] flex items-center gap-3">
+                                        <Lock size={14} className="text-[var(--text-muted)] flex-shrink-0" />
+                                        <p className="text-[11px] text-[var(--text-muted)]">Profile is locked. Toggle the switch above to generate a new invite link and allow the employee to update their information.</p>
                                     </div>
                                 )}
                             </div>
                         )}
+
+                        {/* EMPLOYEE VIEW: Profile locked notice */}
+                        {isOwnProfile && profileLocked && (
+                            <div className="nx-card p-6 bg-[var(--bg-elevated)]/20 border border-rose-500/20 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center flex-shrink-0">
+                                        <Lock size={18} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)]">Profile Locked</h3>
+                                        <p className="text-xs text-[var(--text-muted)] mt-0.5">Your personal details — bank account, address, national ID, emergency contacts — are locked for data integrity.</p>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-[var(--text-secondary)] bg-[var(--bg-elevated)]/40 p-4 rounded-xl border border-[var(--border-subtle)] leading-relaxed">
+                                    If you need to update any personal details (e.g., change of bank, new address), you must raise a formal request with the HR team. HR will unlock your profile, allow you to make changes, then lock it again.
+                                </p>
+                                <button
+                                    onClick={() => navigate('/support?queue=HR&subject=Profile+Update+Request')}
+                                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
+                                >
+                                    <Send size={13} /> Raise Profile Update Request
+                                </button>
+                            </div>
+                        )}
+
+                        {/* EMPLOYEE VIEW: Profile is open for editing */}
+                        {isOwnProfile && linkIsActive && (
+                            <div className="p-4 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/20 flex items-center gap-3">
+                                <CheckCheck size={15} className="text-[var(--primary)] flex-shrink-0" />
+                                <p className="text-[11px] text-[var(--primary)] font-semibold">Your profile is currently open for updates. Use the invite link sent to your email to complete or update your personal information.</p>
+                            </div>
+                        )}
+
                     </motion.div>
-                )}
+                    );
+                })()}
 
                 {activeTab === 'documents' && (
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}

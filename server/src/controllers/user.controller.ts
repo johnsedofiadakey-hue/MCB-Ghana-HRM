@@ -1265,6 +1265,53 @@ export const getOnboardingInvite = async (req: Request, res: Response) => {
   }
 };
 
+// ─── TOGGLE ONBOARDING INVITE LINK ON / OFF ──────────────────────────────
+// enabled=true  → generate a fresh 7-day token (profile unlocked for employee)
+// enabled=false → expire the token (profile locked; employee must ticket HR to reopen)
+export const toggleOnboardingInvite = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { enabled } = req.body as { enabled: boolean };
+    const orgId = (req as any).user?.organizationId || 'mcb-ghana-tenant';
+
+    const employee = await prisma.user.findFirst({
+      where: { id, organizationId: orgId },
+      select: { id: true, fullName: true },
+    });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+
+    if (enabled) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await (prisma as any).onboardingInviteToken.upsert({
+        where: { userId: id },
+        create: { userId: id, token: rawToken, expiresAt },
+        update: { token: rawToken, expiresAt, usedAt: null },
+      });
+      await logAction((req as any).user.id, 'ONBOARDING_LINK_ENABLED', 'User', id, {}, req.ip);
+      const inviteUrl = `${frontendUrl}/onboard/complete-profile?token=${rawToken}`;
+      return res.json({ enabled: true, inviteUrl, expiresAt });
+    } else {
+      // Disable by expiring the token (no token deletion — preserves audit trail)
+      await (prisma as any).onboardingInviteToken.upsert({
+        where: { userId: id },
+        create: { userId: id, token: crypto.randomBytes(32).toString('hex'), expiresAt: new Date('2000-01-01') },
+        update: { expiresAt: new Date('2000-01-01') },
+      });
+      await prisma.user.update({
+        where: { id },
+        data: { employeeLifecycleStage: 'PROFILE_LOCKED' as any },
+      });
+      await logAction((req as any).user.id, 'ONBOARDING_LINK_DISABLED', 'User', id, {}, req.ip);
+      return res.json({ enabled: false });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 // ─── REGENERATE ONBOARDING INVITE LINK ───────────────────────────────────
 export const regenerateOnboardingInvite = async (req: Request, res: Response) => {
   try {
