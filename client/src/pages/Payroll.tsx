@@ -207,7 +207,21 @@ const Payroll = () => {
 
   const downloadCSV = (runId: string) => openApiUrl(`/payroll/${runId}/export/csv?lang=${i18n.language}`);
   const downloadBankCSV = (runId: string) => openApiUrl(`/payroll/${runId}/bank-export/csv?lang=${i18n.language}`);
-  const downloadPayslip = (runId: string, empId: string) => openApiUrl(`/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`);
+  const downloadPayslip = async (runId: string, empId: string) => {
+    try {
+      const res = await api.get(`/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payslip-${empId}-${runId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Failed to download payslip. Please try again.');
+    }
+  };
 
   const handleExportFullCSV = async () => {
     try {
