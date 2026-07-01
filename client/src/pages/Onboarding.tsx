@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket, ShieldCheck, Flag, Building2, Zap, GraduationCap } from 'lucide-react';
+import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket, ShieldCheck, Flag, Building2, Zap, GraduationCap, ListChecks, LayoutList } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 import { getSafeAvatarUrl } from '../utils/avatar';
+import { toast } from '../utils/toast';
 
 const categoryColors: Record<string, string> = {
   HR: 'text-[var(--primary)] border-[var(--primary)]/20 bg-[var(--primary)]/5',
@@ -28,6 +29,8 @@ const Onboarding = () => {
   const [launchData, setLaunchData] = useState({ employeeId: '', templateId: '', startDate: new Date().toISOString().split('T')[0] });
   const [launching, setLaunching] = useState(false);
   const [viewMode, setViewMode] = useState<'PERSONAL' | 'MANAGEMENT'>('PERSONAL');
+  const [mgmtTab, setMgmtTab] = useState<'sessions' | 'queue'>('queue');
+  const [myTasks, setMyTasks] = useState<any[]>([]);
 
   const user = getStoredUser();
   const permissions = user.permissions || [];
@@ -42,14 +45,16 @@ const Onboarding = () => {
       setSessions(Array.isArray(myRes.data) ? myRes.data : []);
       
       if (canManage) {
-        const [allRes, empRes, tempRes] = await Promise.all([
+        const [allRes, empRes, tempRes, taskRes] = await Promise.all([
           api.get('/onboarding/all'),
           api.get('/users'),
-          api.get('/onboarding/templates')
+          api.get('/onboarding/templates'),
+          api.get('/onboarding/department-tasks'),
         ]);
         setAllSessions(Array.isArray(allRes.data) ? allRes.data : []);
         setEmployees(Array.isArray(empRes.data) ? empRes.data.filter((u: any) => u.status !== 'TERMINATED') : []);
         setTemplates(Array.isArray(tempRes.data) ? tempRes.data : []);
+        setMyTasks(Array.isArray(taskRes.data) ? taskRes.data : []);
       } else if (isAdmin) {
         const taskRes = await api.get('/onboarding/department-tasks');
         const grouped = new Map<string, any>();
@@ -93,8 +98,10 @@ const Onboarding = () => {
     setCompleting(itemId);
     try {
       await api.post('/onboarding/task/complete', { itemId, notes: '' });
+      toast.success('Task marked complete');
       fetchData();
-    } catch (e) {
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || 'Failed to complete task');
       console.error(e);
     } finally {
       setCompleting(null);
@@ -372,7 +379,95 @@ const Onboarding = () => {
         </>
       ) : (
         <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center justify-between ml-1">
+          {/* Management sub-tabs */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMgmtTab('queue')}
+              className={cn("flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all",
+                mgmtTab === 'queue' ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/20" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              <ListChecks size={14} /> My Task Queue
+              {myTasks.filter((t: any) => !t.completedAt).length > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/20 text-white text-[9px] font-black">
+                  {myTasks.filter((t: any) => !t.completedAt).length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setMgmtTab('sessions')}
+              className={cn("flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all",
+                mgmtTab === 'sessions' ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/20" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              <LayoutList size={14} /> All Sessions
+            </button>
+          </div>
+
+          {/* MY TASK QUEUE */}
+          {mgmtTab === 'queue' && (
+            <div className="space-y-4">
+              {myTasks.length === 0 ? (
+                <div className="nx-card p-16 text-center flex flex-col items-center opacity-50">
+                  <ListChecks size={40} className="mb-4 text-[var(--text-muted)]" />
+                  <p className="font-black text-[13px] uppercase tracking-tight text-[var(--text-primary)]">No tasks assigned to you</p>
+                  <p className="text-[11px] text-[var(--text-muted)] mt-1">Tasks from active onboarding sessions assigned to your role will appear here.</p>
+                </div>
+              ) : (
+                myTasks.map((item: any) => {
+                  const isDone = !!item.completedAt;
+                  const isOverdue = !isDone && item.dueDate && new Date(item.dueDate) < new Date();
+                  const Theme = categoryColors[item.category] || categoryColors.General;
+                  return (
+                    <motion.div
+                      key={item.id}
+                      layout
+                      className={cn(
+                        "nx-card p-5 flex items-start gap-4 border transition-all",
+                        isDone ? "opacity-60 border-emerald-500/10" : isOverdue ? "border-rose-500/20" : "border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
+                      )}
+                    >
+                      <button
+                        onClick={() => !isDone && handleComplete(item.id)}
+                        disabled={isDone || completing === item.id}
+                        className={cn(
+                          "mt-0.5 flex-shrink-0 w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all",
+                          isDone ? "bg-emerald-500 border-emerald-500 text-white" : "border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)] hover:text-[var(--primary)]"
+                        )}
+                      >
+                        {completing === item.id ? <Loader2 size={14} className="animate-spin" /> : isDone ? <CheckCircle size={14} /> : <Circle size={14} />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <p className={cn("font-black text-[13px]", isDone ? "line-through text-[var(--text-muted)]" : "text-[var(--text-primary)]")}>{item.title}</p>
+                          <span className={cn("px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border", Theme)}>{item.category}</span>
+                          {item.isRequired && !isDone && <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">Required</span>}
+                          {isOverdue && !isDone && <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">Overdue</span>}
+                        </div>
+                        <p className="text-[11px] text-[var(--text-muted)] mb-2">{item.description || item.title}</p>
+                        <div className="flex items-center gap-4 flex-wrap">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                            For: <span className="text-[var(--text-primary)]">{item.session?.employee?.fullName}</span>
+                          </span>
+                          {item.dueDate && (
+                            <span className={cn("text-[10px] font-black uppercase tracking-widest flex items-center gap-1", isOverdue ? "text-rose-500" : "text-[var(--text-muted)]")}>
+                              <Clock size={10} /> Due {new Date(item.dueDate).toLocaleDateString()}
+                            </span>
+                          )}
+                          {isDone && <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1"><CheckCircle size={10} /> Done {new Date(item.completedAt).toLocaleDateString()}</span>}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* ALL SESSIONS TABLE */}
+          {mgmtTab === 'sessions' && (
+          <div>
+          <div className="flex items-center justify-between ml-1 mb-4">
             <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">{t('onboarding.manager.all_sessions')}</h2>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -451,6 +546,8 @@ const Onboarding = () => {
                 </tbody>
               </table>
             </div>
+          )}
+          </div>
           )}
         </div>
       )}

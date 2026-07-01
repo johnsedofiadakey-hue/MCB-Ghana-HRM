@@ -175,6 +175,8 @@ const EmployeeProfile = () => {
     });
     const [copiedField, setCopiedField] = useState<string | null>(null);
     const [inviteData, setInviteData] = useState<any>(null);
+    const [probationRecord, setProbationRecord] = useState<any>(null);
+    const [probationLoading, setProbationLoading] = useState(false);
     const [loadingInvite, setLoadingInvite] = useState(false);
     const [regeneratingInvite, setRegeneratingInvite] = useState(false);
     const [showMoreActions, setShowMoreActions] = useState(false);
@@ -198,6 +200,12 @@ const EmployeeProfile = () => {
             if (riskRes) setRiskProfile(riskRes.data);
             setPromotionForm(prev => ({ ...prev, targetJobTitle: empRes.data.jobTitle }));
             fetchInviteData(id);
+            if (getRoleRankValue(currentUser?.role) >= 92 || currentUser?.role === 'DEV') {
+                api.get(`/hr/probation?employeeId=${id}`).then(r => {
+                    const records = Array.isArray(r.data) ? r.data : [];
+                    setProbationRecord(records[0] || null);
+                }).catch(() => {});
+            }
         } catch (e) {
             console.error(e);
             toast.error('Error: Staff record not found');
@@ -622,6 +630,98 @@ const EmployeeProfile = () => {
                         style={{ justifyItems: "center" }}
                     >
                         <div className="lg:col-span-2 space-y-10">
+
+                            {/* Probation Status Card — HR Director only */}
+                            {(getRoleRankValue(currentUser?.role) >= 92 || currentUser?.role === 'DEV') && (() => {
+                                const isHRDirector = currentUser?.role === 'HR_DIRECTOR' || currentUser?.role === 'DEV';
+                                const status = probationRecord?.status;
+                                const isPassed = status === 'PASSED';
+                                const isOnProbation = status === 'IN_PROGRESS' || status === 'EXTENDED';
+                                const isFailed = status === 'FAILED';
+
+                                const handleProbationToggle = async (newStatus: string) => {
+                                    setProbationLoading(true);
+                                    try {
+                                        if (!probationRecord) {
+                                            // Create a new probation record starting today
+                                            const startDate = new Date().toISOString().split('T')[0];
+                                            const res = await api.post('/hr/probation', { employeeId: id, startDate, period: 90 });
+                                            setProbationRecord(res.data);
+                                            toast.success('Probation period started');
+                                        } else {
+                                            const res = await api.patch(`/hr/probation/${probationRecord.id}`, {
+                                                status: newStatus,
+                                                outcome: newStatus === 'PASSED' ? 'Employee successfully completed probation period.' : probationRecord.outcome,
+                                                reviewDate: new Date().toISOString().split('T')[0],
+                                            });
+                                            setProbationRecord(res.data);
+                                            toast.success(newStatus === 'PASSED' ? 'Probation marked as passed' : `Probation status updated to ${newStatus}`);
+                                        }
+                                    } catch (e: any) {
+                                        toast.error(e?.response?.data?.error || 'Failed to update probation');
+                                    } finally {
+                                        setProbationLoading(false);
+                                    }
+                                };
+
+                                return (
+                                    <div className={cn(
+                                        "nx-card p-6 border flex flex-col sm:flex-row sm:items-center gap-5",
+                                        isPassed ? "border-emerald-500/20 bg-emerald-500/[0.03]" :
+                                        isOnProbation ? "border-amber-500/20 bg-amber-500/[0.03]" :
+                                        isFailed ? "border-rose-500/20 bg-rose-500/[0.03]" :
+                                        "border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20"
+                                    )}>
+                                        <div className={cn(
+                                            "w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0",
+                                            isPassed ? "bg-emerald-500/10 text-emerald-500" :
+                                            isOnProbation ? "bg-amber-500/10 text-amber-500" :
+                                            isFailed ? "bg-rose-500/10 text-rose-500" :
+                                            "bg-[var(--bg-elevated)] text-[var(--text-muted)]"
+                                        )}>
+                                            <Shield size={20} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Probation Status</p>
+                                            <p className={cn("text-[15px] font-black tracking-tight",
+                                                isPassed ? "text-emerald-500" : isOnProbation ? "text-amber-500" : isFailed ? "text-rose-500" : "text-[var(--text-muted)]"
+                                            )}>
+                                                {isPassed ? 'Probation Passed' : isOnProbation ? `On Probation${probationRecord?.endDate ? ` · Ends ${new Date(probationRecord.endDate).toLocaleDateString()}` : ''}` : isFailed ? 'Probation Failed' : 'Not on Probation'}
+                                            </p>
+                                            {probationRecord?.outcome && <p className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate">{probationRecord.outcome}</p>}
+                                        </div>
+                                        {isHRDirector && (
+                                            <div className="flex gap-2 flex-shrink-0 flex-wrap">
+                                                {!probationRecord && (
+                                                    <button onClick={() => handleProbationToggle('IN_PROGRESS')} disabled={probationLoading}
+                                                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all">
+                                                        {probationLoading ? '...' : 'Start Probation'}
+                                                    </button>
+                                                )}
+                                                {isOnProbation && (
+                                                    <button onClick={() => handleProbationToggle('PASSED')} disabled={probationLoading}
+                                                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all">
+                                                        {probationLoading ? '...' : '✓ Mark as Passed'}
+                                                    </button>
+                                                )}
+                                                {isOnProbation && (
+                                                    <button onClick={() => handleProbationToggle('FAILED')} disabled={probationLoading}
+                                                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all">
+                                                        {probationLoading ? '...' : 'Mark Failed'}
+                                                    </button>
+                                                )}
+                                                {isPassed && (
+                                                    <button onClick={() => handleProbationToggle('IN_PROGRESS')} disabled={probationLoading}
+                                                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)] transition-all">
+                                                        {probationLoading ? '...' : 'Restart Probation'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+
                             <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] group">
                                 <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
                                     <Target className="text-[var(--primary)]" size={16} /> Performance Summary
