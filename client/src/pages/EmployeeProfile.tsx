@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Mail, Phone, Briefcase, Calendar, 
+import {
+  Mail, Phone, Briefcase, Calendar,
   Shield, Edit2, ChevronLeft, Download, FileText,
   Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe, Clock, Umbrella,
-  UserCheck, Award, QrCode
+  UserCheck, Award, QrCode, Copy, CheckCheck, RefreshCw, Link2, MoreHorizontal,
+  ExternalLink, Send, UserPlus
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -172,6 +173,11 @@ const EmployeeProfile = () => {
         proposedSalary: '',
         reason: ''
     });
+    const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [inviteData, setInviteData] = useState<any>(null);
+    const [loadingInvite, setLoadingInvite] = useState(false);
+    const [regeneratingInvite, setRegeneratingInvite] = useState(false);
+    const [showMoreActions, setShowMoreActions] = useState(false);
     const { t } = useTranslation();
     const { setContextData } = useAI();
     const { settings } = useTheme();
@@ -190,9 +196,8 @@ const EmployeeProfile = () => {
             setEmployee(empRes.data);
             setKpiSummary(kpiRes.data);
             if (riskRes) setRiskProfile(riskRes.data);
-            
-            // Default promotion job title
             setPromotionForm(prev => ({ ...prev, targetJobTitle: empRes.data.jobTitle }));
+            fetchInviteData(targetId);
         } catch (e) {
             console.error(e);
             toast.error('Error: Staff record not found');
@@ -360,6 +365,42 @@ const EmployeeProfile = () => {
         }
     };
 
+    const handleCopy = (text: string, field: string) => {
+        if (!text || text === '—') return;
+        navigator.clipboard.writeText(text).then(() => {
+            setCopiedField(field);
+            toast.success('Copied to clipboard');
+            setTimeout(() => setCopiedField(null), 2000);
+        });
+    };
+
+    const fetchInviteData = async (employeeId: string) => {
+        const rank = getRoleRankValue(currentUser?.role);
+        if (rank < 88) return;
+        setLoadingInvite(true);
+        try {
+            const res = await api.get(`/employees/${employeeId}/onboarding-invite`);
+            setInviteData(res.data);
+        } catch {
+            // Not an error if employee has no invite token
+        } finally {
+            setLoadingInvite(false);
+        }
+    };
+
+    const handleRegenerateInvite = async () => {
+        setRegeneratingInvite(true);
+        try {
+            const res = await api.post(`/employees/${id}/regenerate-invite`);
+            setInviteData({ ...res.data, usedAt: null, isExpired: false });
+            toast.success('New invite link generated — valid for 7 days');
+        } catch {
+            toast.error('Failed to generate invite link');
+        } finally {
+            setRegeneratingInvite(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="py-40 flex flex-col items-center justify-center gap-6">
@@ -369,15 +410,24 @@ const EmployeeProfile = () => {
         );
     }
 
-    const StatMini = ({ icon: Icon, label, value, color }: any) => (
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/50 overflow-hidden min-w-0">
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border border-[var(--border-subtle)]", color || 'text-[var(--primary)] bg-[var(--primary)]/5')}>
-                <Icon size={18} />
+    const StatMini = ({ icon: Icon, label, value, color, copyable, copyKey }: any) => (
+        <div
+            className={cn("flex items-center gap-3 p-4 rounded-2xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/50 overflow-hidden min-w-0 group transition-all", copyable && value && value !== '—' ? "cursor-pointer hover:border-[var(--primary)]/30 hover:bg-[var(--bg-elevated)]/50" : "")}
+            onClick={copyable ? () => handleCopy(value, copyKey || label) : undefined}
+            title={copyable && value && value !== '—' ? `Click to copy ${label}` : undefined}
+        >
+            <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center border border-[var(--border-subtle)] flex-shrink-0", color || 'text-[var(--primary)] bg-[var(--primary)]/5')}>
+                <Icon size={16} />
             </div>
             <div className="min-w-0 flex-1">
                 <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 truncate">{label}</p>
-                <p className="text-sm font-black text-[var(--text-primary)] truncate transition-all" title={value}>{value}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] truncate" title={value}>{value}</p>
             </div>
+            {copyable && value && value !== '—' && (
+                <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {copiedField === (copyKey || label) ? <CheckCheck size={14} className="text-emerald-500" /> : <Copy size={14} className="text-[var(--text-muted)]" />}
+                </div>
+            )}
         </div>
     );
 
@@ -386,47 +436,70 @@ const EmployeeProfile = () => {
             {/* Main Profile UI - Hidden during print */}
             <div className="print:hidden space-y-12">
             {/* Navigation & Actions */}
-            <div className="flex items-center justify-between print:hidden">
-                <button onClick={() => navigate('/employees')} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
-                    <ChevronLeft size={18} /> Back to Directory
+            <div className="flex items-center justify-between print:hidden flex-wrap gap-3">
+                <button onClick={() => navigate('/employees')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
+                    <ChevronLeft size={16} /> Back
                 </button>
-                <div className="flex gap-4">
-                    <motion.button 
-                        onClick={() => { setPrintType('dossier'); setTimeout(() => window.print(), 500); }} 
-                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
-                        className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
+                <div className="flex items-center gap-2 flex-wrap">
+                    {/* Always visible: Export PDF */}
+                    <motion.button
+                        onClick={() => { setPrintType('dossier'); setTimeout(() => window.print(), 500); }}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="px-4 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
                     >
-                        <Download size={14} /> Export PDF
+                        <Download size={13} /> Export PDF
                     </motion.button>
-                    {(normalizedRole === 'IT_MANAGER' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'DEV') && (
-                        <motion.button 
-                            onClick={() => { setPrintType('idcard'); setTimeout(() => window.print(), 500); }} 
-                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
-                            className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
-                        >
-                            <FileText size={14} /> Print ID Card
-                        </motion.button>
-                    )}
-                    {((currentUser?.rank || 0) >= 85 || currentUser?.role === 'DEV') && currentUser?.id !== employee.id && (
-                        <motion.button onClick={() => setShowResetModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-2">
-                            <Key size={14} /> Reset Password
-                        </motion.button>
-                    )}
-                    {(currentUser?.id === employee.supervisorId || (currentUser?.rank || 0) >= 85) && currentUser?.id !== employee.id && (
-                        <motion.button onClick={() => setShowPromotionModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-2">
-                            <Zap size={14} /> Suggest Promotion
-                        </motion.button>
-                    )}
+
+                    {/* Always visible for eligible roles: Adjust Leave */}
                     {((currentUser?.rank || 0) >= 75 || currentUser?.role === 'DEV') && (
-                        <motion.button onClick={() => setShowLeaveModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--info)]/10 border border-[var(--info)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--info)] hover:bg-[var(--info)] hover:text-white transition-all flex items-center gap-2">
-                            <Umbrella size={14} /> Adjust Leave
+                        <motion.button onClick={() => setShowLeaveModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-4 py-2.5 rounded-xl bg-[var(--info)]/10 border border-[var(--info)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--info)] hover:bg-[var(--info)] hover:text-white transition-all flex items-center gap-2">
+                            <Umbrella size={13} /> Leave
                         </motion.button>
                     )}
-                    {((currentUser?.rank || 0) >= 85 || currentUser?.id === employee.id) ? (
-                        <motion.button onClick={() => navigate('/employees?edit=' + employee.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
-                            <Edit2 size={14} /> Update Profile
+
+                    {/* More actions dropdown */}
+                    {currentUser?.id !== employee.id && (
+                        <div className="relative">
+                            <motion.button
+                                onClick={() => setShowMoreActions(prev => !prev)}
+                                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                className="px-4 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
+                            >
+                                <MoreHorizontal size={15} /> More
+                            </motion.button>
+                            {showMoreActions && (
+                                <div className="absolute right-0 top-full mt-2 z-50 w-52 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl overflow-hidden" onMouseLeave={() => setShowMoreActions(false)}>
+                                    {((currentUser?.rank || 0) >= 85 || currentUser?.role === 'DEV') && (
+                                        <button onClick={() => { setShowResetModal(true); setShowMoreActions(false); }} className="w-full px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-500/10 transition-all flex items-center gap-3">
+                                            <Key size={13} /> Reset Password
+                                        </button>
+                                    )}
+                                    {(currentUser?.id === employee.supervisorId || (currentUser?.rank || 0) >= 85) && (
+                                        <button onClick={() => { setShowPromotionModal(true); setShowMoreActions(false); }} className="w-full px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:bg-emerald-500/10 transition-all flex items-center gap-3">
+                                            <Zap size={13} /> Suggest Promotion
+                                        </button>
+                                    )}
+                                    {(normalizedRole === 'IT_MANAGER' || normalizedRole === 'IT_ADMIN' || normalizedRole === 'DEV') && (
+                                        <button onClick={() => { setPrintType('idcard'); setShowMoreActions(false); setTimeout(() => window.print(), 500); }} className="w-full px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all flex items-center gap-3">
+                                            <FileText size={13} /> Print ID Card
+                                        </button>
+                                    )}
+                                    {(getRoleRankValue(currentUser?.role) >= 88) && (
+                                        <button onClick={() => { setActiveTab('onboarding'); setShowMoreActions(false); }} className="w-full px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-all flex items-center gap-3">
+                                            <Link2 size={13} /> Onboarding Link
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Primary CTA */}
+                    {((currentUser?.rank || 0) >= 85 || currentUser?.id === employee.id) && (
+                        <motion.button onClick={() => navigate('/employees?edit=' + employee.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-2.5 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/30 flex items-center gap-2">
+                            <Edit2 size={13} /> Edit Profile
                         </motion.button>
-                    ) : null}
+                    )}
                 </div>
             </div>
 
@@ -493,8 +566,8 @@ const EmployeeProfile = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                            <StatMini icon={Mail} label="Email Address" value={employee.email} color="text-orange-500 bg-orange-500/5" />
-                            <StatMini icon={Phone} label="Contact Number" value={employee.contactNumber || '—'} color="text-blue-500 bg-blue-500/5" />
+                            <StatMini icon={Mail} label="Email Address" value={employee.email} color="text-orange-500 bg-orange-500/5" copyable copyKey="email" />
+                            <StatMini icon={Phone} label="Contact Number" value={employee.contactNumber || '—'} color="text-blue-500 bg-blue-500/5" copyable copyKey="phone" />
                             <StatMini 
                                 icon={Building} 
                                 label={t('employees.dept') || "Departmental Unit"} 
@@ -817,6 +890,137 @@ const EmployeeProfile = () => {
 
                 {activeTab === 'history' && (
                     <HistoryLog logs={employee.historyLogs} />
+                )}
+
+                {activeTab === 'onboarding' && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                        {/* Lifecycle Stage Banner */}
+                        <div className={cn(
+                            "flex items-center gap-4 p-5 rounded-2xl border",
+                            employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' ? "bg-amber-500/5 border-amber-500/20" :
+                            employee.employeeLifecycleStage === 'PREBOARDING' ? "bg-[var(--primary)]/5 border-[var(--primary)]/20" :
+                            "bg-emerald-500/5 border-emerald-500/20"
+                        )}>
+                            <div className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                                employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' ? "bg-amber-500/10 text-amber-500" :
+                                employee.employeeLifecycleStage === 'PREBOARDING' ? "bg-[var(--primary)]/10 text-[var(--primary)]" :
+                                "bg-emerald-500/10 text-emerald-500"
+                            )}>
+                                <UserPlus size={18} />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Onboarding Stage</p>
+                                <p className="text-base font-black text-[var(--text-primary)] mt-0.5">
+                                    {employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' ? 'Awaiting HR Review' :
+                                     employee.employeeLifecycleStage === 'PREBOARDING' ? 'Invite Sent — Awaiting Employee' :
+                                     employee.employeeLifecycleStage === 'ONBOARDING' ? 'Onboarding In Progress' :
+                                     employee.employeeLifecycleStage === 'ACTIVE' ? 'Fully Active' :
+                                     employee.employeeLifecycleStage || 'Active'}
+                                </p>
+                            </div>
+                            {employee.employeeLifecycleStage === 'PENDING_HR_REVIEW' && getRoleRankValue(currentUser?.role) >= 88 && (
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            await api.post(`/employees/${employee.id}/hr-review-approve`);
+                                            toast.success('Account activated — employee can now log in');
+                                            fetchEmployee();
+                                        } catch (err: any) {
+                                            toast.error(err?.response?.data?.error || 'Approval failed');
+                                        }
+                                    }}
+                                    className="px-5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg"
+                                >
+                                    Approve & Activate
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Invite URL Card */}
+                        {getRoleRankValue(currentUser?.role) >= 88 && (
+                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-6">
+                                <div className="flex items-center justify-between flex-wrap gap-4">
+                                    <div>
+                                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
+                                            <Link2 size={15} className="text-[var(--primary)]" /> Self-Onboarding Link
+                                        </h3>
+                                        <p className="text-xs text-[var(--text-muted)] mt-1.5">Copy and send this link to the employee via email or WhatsApp. They fill their own profile — no HR data entry needed.</p>
+                                    </div>
+                                    <button
+                                        onClick={handleRegenerateInvite}
+                                        disabled={regeneratingInvite}
+                                        className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)]/30 transition-all flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        <RefreshCw size={13} className={regeneratingInvite ? 'animate-spin' : ''} />
+                                        {regeneratingInvite ? 'Generating...' : inviteData?.inviteUrl ? 'New Link' : 'Generate Link'}
+                                    </button>
+                                </div>
+
+                                {loadingInvite ? (
+                                    <div className="h-16 flex items-center justify-center opacity-40">
+                                        <RefreshCw size={18} className="animate-spin" />
+                                    </div>
+                                ) : inviteData?.inviteUrl ? (
+                                    <div className="space-y-4">
+                                        {/* URL Display with copy */}
+                                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-subtle)] group">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Invite URL</p>
+                                                <p className="text-xs text-[var(--text-secondary)] font-mono truncate" title={inviteData.inviteUrl}>{inviteData.inviteUrl}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleCopy(inviteData.inviteUrl, 'invite-url')}
+                                                className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-[var(--primary)]/20"
+                                            >
+                                                {copiedField === 'invite-url' ? <CheckCheck size={14} /> : <Copy size={14} />}
+                                                {copiedField === 'invite-url' ? 'Copied!' : 'Copy'}
+                                            </button>
+                                        </div>
+
+                                        {/* Meta info row */}
+                                        <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-[var(--text-muted)]">
+                                            <span className={cn(
+                                                "flex items-center gap-1.5 px-3 py-1.5 rounded-full border",
+                                                inviteData.usedAt ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" :
+                                                inviteData.isExpired ? "bg-rose-500/10 border-rose-500/20 text-rose-500" :
+                                                "bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]"
+                                            )}>
+                                                {inviteData.usedAt ? '✓ Used' : inviteData.isExpired ? '✗ Expired' : '● Active'}
+                                            </span>
+                                            {inviteData.expiresAt && !inviteData.usedAt && (
+                                                <span className="flex items-center gap-1.5">
+                                                    <Clock size={11} />
+                                                    Expires {new Date(inviteData.expiresAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                </span>
+                                            )}
+                                            {inviteData.usedAt && (
+                                                <span className="flex items-center gap-1.5">
+                                                    <CheckCheck size={11} className="text-emerald-500" />
+                                                    Completed {new Date(inviteData.usedAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Quick share hint */}
+                                        <div className="p-4 rounded-xl bg-[var(--bg-elevated)]/40 border border-[var(--border-subtle)] text-[10px] text-[var(--text-muted)] leading-relaxed">
+                                            <strong className="text-[var(--text-secondary)]">How to share:</strong> Copy the link above, then paste it into an email or WhatsApp message to <strong className="text-[var(--primary)]">{employee.fullName}</strong>. The link works without a login — they just open it and fill in their details. It expires in 7 days from when it was generated.
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
+                                        <div className="w-14 h-14 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
+                                            <Send size={22} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-[var(--text-primary)]">No invite link generated yet</p>
+                                            <p className="text-xs text-[var(--text-muted)] mt-1">Click "Generate Link" above to create a self-onboarding invite for this employee.</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </motion.div>
                 )}
 
                 {activeTab === 'documents' && (

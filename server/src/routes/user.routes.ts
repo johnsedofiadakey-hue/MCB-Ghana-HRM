@@ -10,7 +10,8 @@ import {
   uploadImage, uploadSignature, getMyTeam, getSupervisors,
   assignRole, getUserRiskProfile, resetEmployeePassword, activateEmployeeLogin,
   getCasualWorkerSummary,
-  getOnboardingProfileForm, submitOnboardingProfileForm, hrApproveOnboarding
+  getOnboardingProfileForm, submitOnboardingProfileForm, hrApproveOnboarding,
+  getOnboardingInvite, regenerateOnboardingInvite
 } from '../controllers/user.controller';
 
 const router = Router();
@@ -63,5 +64,9 @@ router.post('/:id/reset-password', requireSpecificRole(['IT_MANAGER', 'IT_ADMIN'
 
 // HR onboarding approval (activate account after self-onboarding review)
 router.post('/:id/hr-review-approve', requireSpecificRole(['HR_DIRECTOR', 'MD', 'DEV']), hrApproveOnboarding);
+
+// Onboarding invite link management
+router.get('/:id/onboarding-invite', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), getOnboardingInvite);
+router.post('/:id/regenerate-invite', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), regenerateOnboardingInvite);
 
 export default router;

@@ -1236,3 +1236,59 @@ export const hrApproveOnboarding = async (req: Request, res: Response) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+// ─── GET ONBOARDING INVITE LINK ───────────────────────────────────────────
+export const getOnboardingInvite = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const orgId = (req as any).user?.organizationId || 'mcb-ghana-tenant';
+    const employee = await prisma.user.findFirst({
+      where: { id, organizationId: orgId },
+      select: { id: true, fullName: true, email: true, employeeLifecycleStage: true },
+    });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+    const token = await (prisma as any).onboardingInviteToken.findUnique({ where: { userId: id } });
+    if (!token) return res.json({ inviteUrl: null, expiresAt: null, usedAt: null, isExpired: false, employeeLifecycleStage: employee.employeeLifecycleStage });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+    const inviteUrl = `${frontendUrl}/onboard/complete-profile?token=${token.token}`;
+    return res.json({
+      inviteUrl,
+      expiresAt: token.expiresAt,
+      usedAt: token.usedAt,
+      isExpired: new Date(token.expiresAt) < new Date(),
+      employeeLifecycleStage: employee.employeeLifecycleStage,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+// ─── REGENERATE ONBOARDING INVITE LINK ───────────────────────────────────
+export const regenerateOnboardingInvite = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const orgId = (req as any).user?.organizationId || 'mcb-ghana-tenant';
+    const employee = await prisma.user.findFirst({
+      where: { id, organizationId: orgId },
+      select: { id: true, fullName: true, email: true },
+    });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await (prisma as any).onboardingInviteToken.upsert({
+      where: { userId: id },
+      create: { userId: id, token: rawToken, expiresAt },
+      update: { token: rawToken, expiresAt, usedAt: null },
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+    const inviteUrl = `${frontendUrl}/onboard/complete-profile?token=${rawToken}`;
+    await logAction((req as any).user.id, 'ONBOARDING_INVITE_REGENERATED', 'User', id, {}, req.ip);
+    return res.json({ inviteUrl, expiresAt });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
