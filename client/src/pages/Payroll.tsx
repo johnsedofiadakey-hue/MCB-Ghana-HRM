@@ -4,7 +4,8 @@ import {
   DollarSign, Plus, Download, FileText,
   X, Edit2, Save, BarChart3, Globe,
   TrendingUp, CreditCard, ShieldCheck, Wallet,
-  TrendingDown, PieChart, Activity, Calendar, Users, AlertCircle, Trash2
+  TrendingDown, PieChart, Activity, Calendar, Users, AlertCircle, Trash2,
+  Eye, Loader2, Maximize2
 } from 'lucide-react';
 import api from '../services/api';
 import { openApiUrl } from '../utils/apiUrl';
@@ -48,6 +49,8 @@ const Payroll = () => {
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [savingItem, setSavingItem] = useState(false);
   const [activeView, setActiveView] = useState<'runs' | 'payslips' | 'summary' | 'rules'>('runs');
+  const [pdfPreview, setPdfPreview] = useState<{ url: string; title: string } | null>(null);
+  const [loadingPayslipId, setLoadingPayslipId] = useState<string | null>(null);
   const [statutoryRules, setStatutoryRules] = useState<any[]>([]);
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [ruleForm, setRuleForm] = useState({
@@ -207,20 +210,33 @@ const Payroll = () => {
 
   const downloadCSV = (runId: string) => openApiUrl(`/payroll/${runId}/export/csv?lang=${i18n.language}`);
   const downloadBankCSV = (runId: string) => openApiUrl(`/payroll/${runId}/bank-export/csv?lang=${i18n.language}`);
-  const downloadPayslip = async (runId: string, empId: string) => {
+  const viewPayslip = async (runId: string, empId: string, periodLabel?: string) => {
+    const key = `${runId}-${empId}`;
+    setLoadingPayslipId(key);
     try {
       const res = await api.get(`/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `payslip-${empId}-${runId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      setPdfPreview({ url: blobUrl, title: periodLabel || `Payslip` });
     } catch {
-      toast.error('Failed to download payslip. Please try again.');
+      toast.error('Failed to load payslip. Please try again.');
+    } finally {
+      setLoadingPayslipId(null);
     }
+  };
+
+  const downloadPayslip = (periodLabel?: string) => {
+    if (!pdfPreview) return;
+    const a = document.createElement('a');
+    a.href = pdfPreview.url;
+    a.download = `payslip-${periodLabel || pdfPreview.title}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const closePdfPreview = () => {
+    if (pdfPreview) window.URL.revokeObjectURL(pdfPreview.url);
+    setPdfPreview(null);
   };
 
   const handleExportFullCSV = async () => {
@@ -357,10 +373,12 @@ const Payroll = () => {
                             </td>
                             <td className="text-right px-4 sm:px-10" data-label={t('payroll.headers.action')}>
                               <button
-                                onClick={() => downloadPayslip(slip.runId, user?.id || '')}
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all"
+                                onClick={() => viewPayslip(slip.runId, user?.id || '', slip.run?.period)}
+                                disabled={loadingPayslipId === `${slip.runId}-${user?.id}`}
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)]/15 border border-[var(--primary)]/20 hover:border-[var(--primary)]/40 transition-all disabled:opacity-50"
+                                title="View Payslip"
                               >
-                                <FileText size={18} />
+                                {loadingPayslipId === `${slip.runId}-${user?.id}` ? <Loader2 size={16} className="animate-spin" /> : <Eye size={16} />}
                               </button>
                             </td>
                           </tr>
@@ -731,7 +749,16 @@ const Payroll = () => {
                                                 </div>
                                               )
                                             )}
-                                            {selectedRun.status === 'RELEASED' && <button onClick={() => downloadPayslip(selectedRun.id, item.employeeId)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all"><FileText size={13} /></button>}
+                                            {selectedRun.status === 'RELEASED' && (
+                                            <button
+                                              onClick={() => viewPayslip(selectedRun.id, item.employeeId, `${item.employee?.fullName || ''} · ${selectedRun.period}`)}
+                                              disabled={loadingPayslipId === `${selectedRun.id}-${item.employeeId}`}
+                                              title="View Payslip"
+                                              className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)]/15 border border-[var(--primary)]/20 hover:border-[var(--primary)]/40 transition-all disabled:opacity-50"
+                                            >
+                                              {loadingPayslipId === `${selectedRun.id}-${item.employeeId}` ? <Loader2 size={12} className="animate-spin" /> : <Eye size={13} />}
+                                            </button>
+                                          )}
                                           </div>
                                        </td>
                                      </tr>
@@ -906,6 +933,54 @@ const Payroll = () => {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── PDF Payslip Viewer Modal ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {pdfPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex flex-col bg-black/90 backdrop-blur-xl"
+          >
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-6 py-4 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center">
+                  <FileText size={18} />
+                </div>
+                <div>
+                  <p className="text-[14px] font-black text-[var(--text-primary)] tracking-tight">{pdfPreview.title}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Official Payslip · Confidential</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => downloadPayslip(pdfPreview.title)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-[var(--primary)]/20"
+                >
+                  <Download size={14} /> Download PDF
+                </button>
+                <button
+                  onClick={closePdfPreview}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* PDF iframe */}
+            <div className="flex-1 overflow-hidden bg-[#525659]">
+              <iframe
+                src={pdfPreview.url}
+                title={pdfPreview.title}
+                className="w-full h-full border-none"
+              />
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
