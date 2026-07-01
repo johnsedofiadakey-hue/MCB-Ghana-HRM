@@ -63,9 +63,9 @@ const Payroll = () => {
   const user = getStoredUser();
   const permissions = user.permissions || [];
   const has = (permission: string) => permissions.includes('*') || permissions.includes(permission);
-  const isFinance = has('payroll.prepare');
-  const isHR = has('payroll.hr.approve');
-  const isMD = has('payroll.release');
+  const isFinance = has('payroll.prepare') || user?.role === 'FINANCE_MANAGER';
+  const isHR = has('payroll.hr.approve') || user?.role === 'HR_DIRECTOR' || user?.role === 'HR_MANAGER';
+  const isMD = has('payroll.release') || user?.role === 'MD' || user?.role === 'DEV';
   const isAdmin = isFinance || isHR || isMD;
 
   const fetchData = useCallback(async () => {
