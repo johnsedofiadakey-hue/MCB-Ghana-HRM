@@ -122,15 +122,19 @@ const resolveBranding = (data: any): any => {
 
 const mergeSettings = (prev: Settings | null, next: any): Settings => {
   if (!prev) return resolveBranding(next) as Settings;
-  
+
   const merged = { ...prev, ...next };
-  
+
+  // Keep name and companyName in sync — Firebase only sends `name`, API sends both
+  if (next.name !== undefined) merged.companyName = next.name;
+  if (next.companyName !== undefined) merged.name = next.companyName;
+
   // ✅ LOGO SHIELD: Never overwrite a populated logo with an empty one
   if (prev.logoUrl && !next.logoUrl && !next.companyLogoUrl && !next.logo) {
     merged.logoUrl = prev.logoUrl;
     merged.companyLogoUrl = prev.companyLogoUrl;
   }
-  
+
   return resolveBranding(merged) as Settings;
 };
 

@@ -211,13 +211,27 @@ const Payroll = () => {
   const downloadCSV = (runId: string) => openApiUrl(`/payroll/${runId}/export/csv?lang=${i18n.language}`);
   const downloadBankCSV = (runId: string) => openApiUrl(`/payroll/${runId}/bank-export/csv?lang=${i18n.language}`);
   const viewPayslip = async (runId: string, empId: string, periodLabel?: string) => {
+    // Open a blank tab synchronously (before any await) so popup blockers won't fire
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(
+        '<html><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;font-family:Inter,sans-serif">' +
+        '<p style="color:#94a3b8;font-size:14px">Generating payslip…</p></body></html>'
+      );
+    }
     const key = `${runId}-${empId}`;
     setLoadingPayslipId(key);
     try {
       const res = await api.get(`/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`, { responseType: 'blob' });
       const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      setPdfPreview({ url: blobUrl, title: periodLabel || `Payslip` });
+      if (win && !win.closed) {
+        win.location.href = blobUrl;
+      } else {
+        // Popup was blocked — fall back to the inline modal
+        setPdfPreview({ url: blobUrl, title: periodLabel || 'Payslip' });
+      }
     } catch {
+      if (win && !win.closed) win.close();
       toast.error('Failed to load payslip. Please try again.');
     } finally {
       setLoadingPayslipId(null);
