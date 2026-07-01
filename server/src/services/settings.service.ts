@@ -286,8 +286,9 @@ export const updateSettings = async (
           ...rest } = data;
 
   const orgUpdate: any = {};
+  // companyName is the canonical frontend field; `name` in formData is the old stale spread value and must not overwrite it
   if (companyName !== undefined) orgUpdate.name = companyName;
-  if (name !== undefined) orgUpdate.name = name;
+  else if (name !== undefined) orgUpdate.name = name;
   if (companyLogoUrl) orgUpdate.logoUrl = companyLogoUrl;
   if (logoUrl) orgUpdate.logoUrl = logoUrl;
   if (primaryColor !== undefined && isValidHex(primaryColor)) orgUpdate.primaryColor = primaryColor;

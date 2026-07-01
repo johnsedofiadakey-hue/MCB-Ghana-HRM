@@ -68,7 +68,7 @@ const ColorPicker = ({ id, label, value, onChange }: { id: string; label: string
 
 const SettingsHub = () => {
   const { t } = useTranslation();
-  const { theme, setTheme, settings, refreshSettings, previewSettings, setLanguage } = useTheme();
+  const { theme, setTheme, settings, refreshSettings, patchSettings, previewSettings, setLanguage } = useTheme();
   const [activeTab, setActiveTab] = useState<SettingsTab>('company');
   const [loading, setLoading] = useState(false);
   
@@ -238,10 +238,13 @@ const SettingsHub = () => {
       const res = await api.put('/settings', formData);
       const updatedSettings = res.data;
 
+      // Apply the fresh settings immediately — no round-trip needed, PUT already returns getSettings()
+      if (updatedSettings) patchSettings(updatedSettings);
+
       // Update organization default AND user preference lock
       setLanguage(formData.defaultLanguage || 'en');
       toast.success(t('settings.update_success'));
-      
+
       // Stop blocking the UI after the primary update is confirmed
       setLoading(false);
 
@@ -303,7 +306,8 @@ const SettingsHub = () => {
       setFormData(updatedData);
       
       // 🚀 PERSISTENCE SYNC: Immediately save to DB to avoid "disappearing" on refresh
-      await api.put('/settings', updatedData);
+      const putRes = await api.put('/settings', updatedData);
+      if (putRes.data) patchSettings(putRes.data);
       toast.success(t('settings.identity_sync_success'));
 
       // 3. Identity broadcast to all devices
@@ -311,8 +315,6 @@ const SettingsHub = () => {
       await BrandingService.updateBranding(syncOrgId, {
         companyLogoUrl: logoUrl
       });
-
-      await refreshSettings();
     } catch (err: any) {
       console.error('[Branding] Persistence sync failed:', err);
       toast.error(t('settings.identity_sync_error'));

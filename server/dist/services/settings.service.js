@@ -142,8 +142,8 @@ const getSettings = async (organizationId = 'mcb-ghana-tenant', isAdmin = false)
     if (!org) {
         console.warn('[SettingsService] No organization found for ID:', organizationId, '- Using system fallback');
         return {
-            companyName: 'MCB-HRM Ghana',
-            name: 'MCB-HRM Ghana',
+            companyName: 'MC-BAUCHEMIE GHANA',
+            name: 'MC-BAUCHEMIE GHANA',
             subtitle: 'Institutional HRM OS',
             companyLogoUrl: '/favicon.ico',
             logoUrl: '/favicon.ico',
@@ -298,9 +298,10 @@ const updateSettings = async (organizationId = 'mcb-ghana-tenant', data) => {
     // Split: branding → Organization, config → SystemSettings
     const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, isAiEnabled, defaultLeaveAllowance, allowLeaveCarryForward, allowLeaveBorrowing, allowCallCard, carryForwardLimit, borrowingLimit, ssnitRate, employerSsnitRate, payeBands, successColor, warningColor, errorColor, infoColor, address, phone, email, city, country, vatRate, idCardPrimaryColor, idCardAccentColor, idCardShowLogo, idCardShowQrCode, idCardOrientation, idCardTheme, idCardBackMessage, idCardSecurityText, attendanceScanningEnabled, attendanceApiKey, ...rest } = data;
     const orgUpdate = {};
+    // companyName is the canonical frontend field; `name` in formData is the old stale spread value and must not overwrite it
     if (companyName !== undefined)
         orgUpdate.name = companyName;
-    if (name !== undefined)
+    else if (name !== undefined)
         orgUpdate.name = name;
     if (companyLogoUrl)
         orgUpdate.logoUrl = companyLogoUrl;

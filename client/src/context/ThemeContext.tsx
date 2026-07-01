@@ -105,6 +105,7 @@ interface ThemeContextType {
   setTheme: (theme: ThemeName) => void;
   settings: Settings | null;
   refreshSettings: () => Promise<void>;
+  patchSettings: (freshData: any) => void;
   previewSettings: (customSettings: Settings) => void;
   formatCurrency: (amount: number | string) => string;
   setLanguage: (lang: string) => void;
@@ -461,12 +462,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     applyTheme(newTheme, settings);
   };
 
+  const patchSettings = useCallback((freshData: any) => {
+    const orgId = getOrgIdFromToken();
+    const resolved = resolveBranding(freshData);
+    setSettings(prev => mergeSettings(prev, resolved));
+    const targetTheme = (resolved.themePreset as ThemeName) || theme;
+    applyTheme(targetTheme, resolved);
+    const effectiveOrgId = resolved.organizationId || orgId;
+    localStorage.setItem(`mcb_branding_cache_${effectiveOrgId}`, JSON.stringify(resolved));
+  }, [theme, applyTheme]);
+
   return (
-    <ThemeContext.Provider value={{ 
-      theme, 
-      setTheme, 
-      settings, 
-      refreshSettings, 
+    <ThemeContext.Provider value={{
+      theme,
+      setTheme,
+      settings,
+      refreshSettings,
+      patchSettings,
       previewSettings: (s) => applyTheme(theme, s),
       formatCurrency: (amount: number | string) => {
         const symbol = settings?.currency || 'GHS';
