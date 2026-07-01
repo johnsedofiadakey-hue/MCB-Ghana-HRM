@@ -376,7 +376,7 @@ const EmployeeProfile = () => {
 
     const fetchInviteData = async (employeeId: string) => {
         const rank = getRoleRankValue(currentUser?.role);
-        if (rank < 88) return;
+        if (rank < 85) return;
         setLoadingInvite(true);
         try {
             const res = await api.get(`/employees/${employeeId}/onboarding-invite`);
@@ -908,7 +908,7 @@ const EmployeeProfile = () => {
                 )}
 
                 {activeTab === 'onboarding' && (() => {
-                    const isHRAdmin = getRoleRankValue(currentUser?.role) >= 88;
+                    const isHRAdmin = getRoleRankValue(currentUser?.role) >= 85;
                     const isOwnProfile = currentUser?.id === employee.id;
                     const linkIsActive = inviteData?.inviteUrl && !inviteData?.isExpired && !inviteData?.usedAt;
                     const profileLocked = !linkIsActive && (employee.employeeLifecycleStage === 'PROFILE_LOCKED' || employee.employeeLifecycleStage === 'ACTIVE' || employee.employeeLifecycleStage === 'ONBOARDING');

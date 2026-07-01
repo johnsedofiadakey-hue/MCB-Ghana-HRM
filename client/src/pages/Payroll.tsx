@@ -290,7 +290,7 @@ const Payroll = () => {
             {/* My Payslips View */}
             {(!isAdmin || activeView === 'payslips') && (
               <div className="nx-card overflow-hidden">
-                <div className="px-10 py-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center justify-between">
+                <div className="px-5 sm:px-10 py-5 sm:py-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center justify-between">
                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
                     <Wallet size={16} className="text-[var(--primary)]" /> {t('payroll.my_payslips_title', 'My Official Payslips')}
                   </h2>
@@ -307,7 +307,7 @@ const Payroll = () => {
                     <table className="nx-table nexus-responsive-table">
                       <thead>
                         <tr className="bg-[var(--bg-elevated)]/20">
-                          <th className="px-10">{t('payroll.headers.period')}</th>
+                          <th className="px-4 sm:px-10">{t('payroll.headers.period')}</th>
                           <th>{t('payroll.headers.gross')}</th>
                           <th>{t('payroll.headers.tax')}</th>
                           <th>{t('payroll.headers.ss')}</th>
@@ -318,7 +318,7 @@ const Payroll = () => {
                       <tbody className="divide-y divide-[var(--border-subtle)]/50">
                         {(myPayslips || []).map((slip: any) => (
                           <tr key={slip.id} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
-                            <td className="px-10 py-6" data-label={t('payroll.headers.period')}>
+                            <td className="px-4 sm:px-10 py-4 sm:py-6" data-label={t('payroll.headers.period')}>
                               <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] group-hover:bg-[var(--primary)]/10 transition-colors">
                                     <Calendar size={14} />
@@ -341,7 +341,7 @@ const Payroll = () => {
                                 {fmt(slip.netPay, slip.currency, i18n.language)}
                               </div>
                             </td>
-                            <td className="text-right px-10" data-label={t('payroll.headers.action')}>
+                            <td className="text-right px-4 sm:px-10" data-label={t('payroll.headers.action')}>
                               <button
                                 onClick={() => downloadPayslip(slip.runId, user?.id || '')}
                                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all"

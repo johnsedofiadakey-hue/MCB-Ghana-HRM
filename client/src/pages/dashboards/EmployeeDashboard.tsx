@@ -160,7 +160,7 @@ const EmployeeDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
         {[
           { title: t('employee_dashboard.my_performance'), value: loading ? '…' : `${stats?.overallPerformance ?? 0}%`, icon: Target, color: 'var(--primary)' },
           { title: t('employee_dashboard.attendance_rate'), value: loading ? '…' : `${stats?.attendanceRate ?? 0}%`, icon: Clock, color: 'var(--success)' },
@@ -170,26 +170,26 @@ const EmployeeDashboard: React.FC = () => {
           const isAccent = stat.color === 'var(--accent)' || stat.color === 'var(--warning)';
           return (
             <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className={`nx-card p-10 group transition-all ${isAccent ? 'hover:border-[var(--accent)]/30' : 'hover:border-[var(--primary)]/30'}`}>
+              className={`nx-card p-5 lg:p-10 group transition-all ${isAccent ? 'hover:border-[var(--accent)]/30' : 'hover:border-[var(--primary)]/30'}`}>
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors mb-8"
+                className="w-10 h-10 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center border transition-colors mb-4 lg:mb-8"
                 style={{
                   background: isAccent ? 'var(--accent-10)' : 'var(--primary-10)',
                   borderColor: isAccent ? 'rgba(238,113,0,0.22)' : 'rgba(0,158,227,0.22)',
                 }}
               >
-                <stat.icon size={22} style={{ color: stat.color }} />
+                <stat.icon size={18} style={{ color: stat.color }} />
               </div>
-              <div className="text-4xl font-black text-[var(--text-primary)] tracking-tight mb-2">{stat.value}</div>
-              <div className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{stat.title}</div>
+              <div className="text-2xl lg:text-4xl font-black text-[var(--text-primary)] tracking-tight mb-1 lg:mb-2">{stat.value}</div>
+              <div className="text-[9px] lg:text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] leading-tight">{stat.title}</div>
             </motion.div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="nx-card p-10">
-          <div className="flex items-center gap-4 mb-10">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="nx-card p-5 lg:p-10">
+          <div className="flex items-center gap-4 mb-6 lg:mb-10">
              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[var(--primary)]" style={{ background: 'var(--primary-10)', border: '1px solid rgba(0,158,227,0.22)' }}>
                 <Target size={20} />
              </div>
@@ -217,29 +217,29 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="nx-card p-10">
-          <div className="flex items-center gap-4 mb-10">
-             <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[var(--accent)]" style={{ background: 'var(--accent-10)', border: '1px solid rgba(238,113,0,0.22)' }}>
-                <Zap size={20} />
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="nx-card p-5 lg:p-10">
+          <div className="flex items-center gap-4 mb-5 lg:mb-10">
+             <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center text-[var(--accent)]" style={{ background: 'var(--accent-10)', border: '1px solid rgba(238,113,0,0.22)' }}>
+                <Zap size={18} />
              </div>
-             <h3 className="font-black text-2xl text-[var(--text-primary)] tracking-tight">{t('employee_dashboard.quick_actions')}</h3>
+             <h3 className="font-black text-lg lg:text-2xl text-[var(--text-primary)] tracking-tight">{t('employee_dashboard.quick_actions')}</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {[
               { label: t('employee_dashboard.request_leave'), href: '/leave', icon: Calendar },
-              { label: t('employee_dashboard.view_payslips'), href: '/finance', icon: FileText },
+              { label: t('employee_dashboard.view_payslips'), href: '/payroll', icon: FileText },
               { label: t('employee_dashboard.my_appraisal'), href: '/performance-reviews', icon: Target },
               { label: t('employee_dashboard.training_portal'), href: '/training', icon: Award },
             ].map((item, i) => (
               <Link key={i} to={item.href}
-                className="flex flex-col gap-4 p-8 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all group no-underline text-inherit">
+                className="flex flex-col gap-3 p-4 lg:p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all group no-underline text-inherit">
                 <div className="flex items-center justify-between">
-                  <div className={`p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] group-hover:scale-110 transition-transform`}>
-                    <item.icon size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
+                  <div className={`p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] group-hover:scale-110 transition-transform`}>
+                    <item.icon size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
                   </div>
-                  <ArrowRight size={14} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                  <ArrowRight size={12} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
                 </div>
-                <span className="text-[11px] font-black text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors uppercase tracking-widest">{item.label}</span>
+                <span className="text-[10px] font-black text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors uppercase tracking-widest leading-tight">{item.label}</span>
               </Link>
             ))}
           </div>

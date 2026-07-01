@@ -173,38 +173,38 @@ const MDDashboard = () => {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-6">
         {statCards.map((s, i) => {
           const isAccentStat = s.color === 'var(--accent)' || s.color === 'var(--warning)';
           return (
           <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className={`nx-card p-10 group transition-all ${isAccentStat ? 'hover:border-[var(--accent)]/30' : 'hover:border-[var(--primary)]/30'}`}>
-            <div className="flex items-center justify-between mb-8">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors"
+            className={`nx-card p-5 lg:p-10 group transition-all ${isAccentStat ? 'hover:border-[var(--accent)]/30' : 'hover:border-[var(--primary)]/30'}`}>
+            <div className="flex items-center justify-between mb-4 lg:mb-8">
+              <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center border transition-colors"
                 style={{
                   background: isAccentStat ? 'var(--accent-10)' : 'var(--primary-10)',
                   borderColor: isAccentStat ? 'rgba(238,113,0,0.22)' : 'rgba(0,158,227,0.22)',
                 }}>
-                <s.icon size={22} style={{ color: s.color }} />
+                <s.icon size={18} style={{ color: s.color }} />
               </div>
               {s.change && (
-                <div className="px-3 py-1 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[10px] font-black text-[var(--success)] flex items-center gap-1">
-                  <ArrowUp size={10} />{s.change}
+                <div className="px-2 py-0.5 lg:px-3 lg:py-1 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[9px] font-black text-[var(--success)] flex items-center gap-1">
+                  <ArrowUp size={9} />{s.change}
                 </div>
               )}
             </div>
-            <div className="text-3xl sm:text-4xl font-black text-[var(--text-primary)] tracking-tight mb-2 truncate">
+            <div className="text-2xl lg:text-4xl font-black text-[var(--text-primary)] tracking-tight mb-1 lg:mb-2 truncate">
               {loading ? <span className="text-[var(--text-muted)] animate-pulse">···</span> : s.value}
             </div>
-            <div className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] truncate">{s.label}</div>
+            <div className="text-[9px] lg:text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] truncate leading-tight">{s.label}</div>
           </motion.div>
           );
         })}
       </div>
 
       {/* Growth Chart */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="nx-card p-10">
-        <div className="flex items-center justify-between mb-10">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="nx-card p-5 lg:p-10">
+        <div className="flex items-center justify-between mb-5 lg:mb-10">
           <div>
             <h3 className="font-black text-2xl text-[var(--text-primary)] tracking-tight">{t('md_dashboard.workforce_growth')}</h3>
             <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('md_dashboard.headcount_trend')}</p>

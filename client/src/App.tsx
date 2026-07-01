@@ -499,8 +499,8 @@ const AppContent = () => {
 
             <Route path="/leave" element={<Leave />} />
             <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
-            <Route path="/employees" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
-            <Route path="/employees/history" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
+            <Route path="/employees" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']}><EmployeeManagement /></RoleGuard>} />
+            <Route path="/employees/history" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/print/ids" element={<RoleGuard permissions={['card.production']} allowedRoles={['MARKETING_HEAD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
             <Route path="/assets" element={<AssetManagement />} />
@@ -510,7 +510,7 @@ const AppContent = () => {
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
-            <Route path="/payroll" element={<RoleGuard allowedRoles={['FINANCE_MANAGER', 'FINANCE', 'MD', 'DEV', 'HR_DIRECTOR']}><Payroll /></RoleGuard>} />
+            <Route path="/payroll" element={<Payroll />} />
             <Route path="/finance" element={<FinanceHub />} />
             <Route path="/attendance" element={<AttendanceDashboard />} />
             <Route path="/org-chart" element={<RoleGuard allowedRoles={['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><OrgChart /></RoleGuard>} />

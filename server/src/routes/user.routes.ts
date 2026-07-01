@@ -66,8 +66,8 @@ router.post('/:id/reset-password', requireSpecificRole(['IT_MANAGER', 'IT_ADMIN'
 router.post('/:id/hr-review-approve', requireSpecificRole(['HR_DIRECTOR', 'MD', 'DEV']), hrApproveOnboarding);
 
 // Onboarding invite link management
-router.get('/:id/onboarding-invite', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), getOnboardingInvite);
-router.post('/:id/regenerate-invite', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), regenerateOnboardingInvite);
-router.post('/:id/toggle-invite', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'MD', 'DEV']), toggleOnboardingInvite);
+router.get('/:id/onboarding-invite', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), getOnboardingInvite);
+router.post('/:id/regenerate-invite', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), regenerateOnboardingInvite);
+router.post('/:id/toggle-invite', requireSpecificRole(['HR_DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), toggleOnboardingInvite);
 
 export default router;

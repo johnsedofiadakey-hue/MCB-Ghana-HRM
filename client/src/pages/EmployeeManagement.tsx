@@ -410,6 +410,10 @@ export default function EmployeeManagement() {
     }
   };
 
+  const pendingReviewCount = useMemo(() =>
+    employees.filter(e => e.employeeLifecycleStage === 'PENDING_HR_REVIEW').length,
+  [employees]);
+
   const filtered = useMemo(() => {
     return employees.filter(emp => {
       // 🛡️ STEALTH PROTOCOL: Accounts with Rank 100 (Dev) are invisible to everyone except other Rank 100 users.
@@ -437,8 +441,13 @@ export default function EmployeeManagement() {
                 <button onClick={() => { setActiveTab('active'); setShowPendingReview(false); }} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'active' && !showPendingReview ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
                     {t('employees.active_personnel')}
                 </button>
-                <button onClick={() => { setActiveTab('active'); setShowPendingReview(true); }} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", showPendingReview ? "bg-amber-500/20 text-amber-400 shadow-lg shadow-black/5 border border-amber-500/30" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
+                <button onClick={() => { setActiveTab('active'); setShowPendingReview(true); }} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2", showPendingReview ? "bg-amber-500/20 text-amber-400 shadow-lg shadow-black/5 border border-amber-500/30" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
                     Pending Review
+                    {pendingReviewCount > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[9px] font-black">
+                            {pendingReviewCount}
+                        </span>
+                    )}
                 </button>
                 <button onClick={() => { setActiveTab('archived'); setShowPendingReview(false); }} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'archived' && !showPendingReview ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
                     {t('employees.archived_personnel')}

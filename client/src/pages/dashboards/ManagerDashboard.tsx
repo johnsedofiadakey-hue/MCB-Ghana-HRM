@@ -181,27 +181,27 @@ const ManagerDashboard = () => {
       )}
 
       {/* Stats Cluster */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-8">
         {cardStats.map((s, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: s.delay }}
-            className="premium-glass border-glow-premium p-8 hover-float group shadow-xl">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-all group-hover:scale-110 mb-8 shadow-inner">
-              <s.icon size={22} style={{ color: s.color }} />
+            className="premium-glass border-glow-premium p-4 lg:p-8 hover-float group shadow-xl">
+            <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-all group-hover:scale-110 mb-4 lg:mb-8 shadow-inner">
+              <s.icon size={18} style={{ color: s.color }} />
             </div>
-            <div className="text-3xl sm:text-5xl font-black text-[var(--text-primary)] tracking-ultra mb-2">
+            <div className="text-2xl sm:text-4xl lg:text-5xl font-black text-[var(--text-primary)] tracking-ultra mb-1 lg:mb-2">
               {loading ? <span className="text-[var(--text-muted)] animate-pulse">···</span> : s.value}
             </div>
-            <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] opacity-60 group-hover:opacity-100 transition-opacity">{s.label}</div>
+            <div className="text-[9px] lg:text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] opacity-60 group-hover:opacity-100 transition-opacity leading-tight">{s.label}</div>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 lg:gap-8 items-start">
         {/* Left: Performance Detail */}
-        <div className="xl:col-span-8 flex flex-col gap-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
-            className="premium-glass border-glow-premium p-10 shadow-2xl">
-            <div className="flex items-center justify-between mb-12">
+        <div className="xl:col-span-8 flex flex-col gap-5 lg:gap-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="premium-glass border-glow-premium p-5 lg:p-10 shadow-2xl">
+            <div className="flex items-center justify-between mb-6 lg:mb-12">
               <div>
                 <h3 className="font-black text-3xl text-[var(--text-primary)] tracking-ultra">{t('manager_dashboard.performance_analytics')}</h3>
                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-2 opacity-60">{t('manager_dashboard.execution_scores')}</p>
@@ -211,7 +211,7 @@ const ManagerDashboard = () => {
                 </div>
               </div>
 
-            <div className="h-4 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden mb-16 shadow-inner">
+            <div className="h-4 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden mb-8 lg:mb-16 shadow-inner">
                <motion.div 
                  initial={{ width: 0 }} 
                  animate={{ width: `${stats.teamPerf}%` }} 
@@ -237,26 +237,26 @@ const ManagerDashboard = () => {
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Link to="/kpi/team" className="premium-glass border-glow-premium p-8 group no-underline hover-float shadow-xl">
-               <div className="flex items-center justify-between mb-8">
-                  <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
-                    <Target size={22} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-8">
+            <Link to="/kpi/team" className="premium-glass border-glow-premium p-5 lg:p-8 group no-underline hover-float shadow-xl">
+               <div className="flex items-center justify-between mb-5 lg:mb-8">
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                    <Target size={20} />
                   </div>
-                  <ArrowRight size={20} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                  <ArrowRight size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
                </div>
-               <h4 className="font-black text-xl text-[var(--text-primary)] uppercase tracking-tight mb-2 group-hover:text-[var(--primary)] transition-colors">{t('common.team_targets')}</h4>
-               <p className="text-xs font-medium text-[var(--text-secondary)] opacity-60 leading-relaxed">{t('manager_dashboard.strategic_mission')}</p>
+               <h4 className="font-black text-base lg:text-xl text-[var(--text-primary)] uppercase tracking-tight mb-2 group-hover:text-[var(--primary)] transition-colors">{t('common.team_targets')}</h4>
+               <p className="text-xs font-medium text-[var(--text-secondary)] opacity-60 leading-relaxed hidden sm:block">{t('manager_dashboard.strategic_mission')}</p>
             </Link>
-            <Link to="/reviews/team" className="premium-glass border-glow-premium p-8 group no-underline hover-float shadow-xl">
-               <div className="flex items-center justify-between mb-8">
-                  <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
-                    <ClipboardCheck size={22} />
+            <Link to="/reviews/team" className="premium-glass border-glow-premium p-5 lg:p-8 group no-underline hover-float shadow-xl">
+               <div className="flex items-center justify-between mb-5 lg:mb-8">
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20">
+                    <ClipboardCheck size={20} />
                   </div>
-                  <ArrowRight size={20} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+                  <ArrowRight size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
                </div>
-               <h4 className="font-black text-xl text-[var(--text-primary)] uppercase tracking-tight mb-2 group-hover:text-[var(--primary)] transition-colors">{t('manager_dashboard.pending_reviews')}</h4>
-               <p className="text-xs font-medium text-[var(--text-secondary)] opacity-60 leading-relaxed">{t('manager_dashboard.growth_calibration')}</p>
+               <h4 className="font-black text-base lg:text-xl text-[var(--text-primary)] uppercase tracking-tight mb-2 group-hover:text-[var(--primary)] transition-colors">{t('manager_dashboard.pending_reviews')}</h4>
+               <p className="text-xs font-medium text-[var(--text-secondary)] opacity-60 leading-relaxed hidden sm:block">{t('manager_dashboard.growth_calibration')}</p>
             </Link>
           </div>
 
