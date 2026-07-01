@@ -111,11 +111,6 @@ export class PdfExportService {
           this.renderFooter(doc, org, i + 1, range.count, primaryColor);
         }
 
-        // After switchToPage() + footer, doc.y can exceed the A4 bottom margin (~792pt).
-        // PDFKit flushes a trailing blank page when doc.y > page.maxY() at end() time.
-        // Switching back to the last content page and resetting doc.y prevents this.
-        doc.switchToPage(range.start + range.count - 1);
-        doc.y = 50;
         doc.end();
       } catch (err) {
         console.error('[PdfExportService] Logic Crash:', err);
@@ -206,18 +201,21 @@ export class PdfExportService {
   }
 
   private static renderFooter(doc: PDFKit.PDFDocument, org: PdfOrganization | null, page: number, total: number, primaryColor: string) {
+    // Keep footer well above page.maxY() (841pt - 50pt margin = 791pt).
+    // If text Y + lineHeight >= 791, PDFKit creates a new page before rendering it.
+    // At 7pt font (lineHeight ≈ 8.4pt): 770 + 8.4 = 778.4pt — safely within bounds.
     doc
       .strokeColor('#f1f5f9')
       .lineWidth(0.5)
-      .moveTo(50, 780)
-      .lineTo(550, 780)
+      .moveTo(50, 762)
+      .lineTo(550, 762)
       .stroke();
 
     const footerText = `Institutional Record | ${org?.name || 'MC-BAUCHEMIE GHANA'} | Page ${page} of ${total}`;
     doc
       .fontSize(7)
       .fillColor('#94a3b8')
-      .text(footerText, this.SAFE_MARGIN, 790, { align: 'center', width: this.CONTENT_WIDTH, lineBreak: false });
+      .text(footerText, this.SAFE_MARGIN, 770, { align: 'center', width: this.CONTENT_WIDTH, lineBreak: false });
   }
 
   private static renderTargetContent(doc: PDFKit.PDFDocument, target: PdfTargetContent, brandColor: string) {
