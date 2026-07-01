@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import EmployeeIDCard from '../../components/it/EmployeeIDCard';
 import toast from 'react-hot-toast';
 import { getStoredUser } from '../../utils/session';
@@ -48,6 +49,7 @@ const ColorPicker = ({ id, label, value, onChange }: { id: string; label: string
 
 const CardManagement: React.FC = () => {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'issuance' | 'call-cards' | 'design'>('issuance');
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,6 +128,12 @@ const CardManagement: React.FC = () => {
     fetchSettings();
     if (canManageCallCards) {
       api.get('/users?take=250').then((res) => setDirectory(Array.isArray(res.data) ? res.data : [])).catch(() => setDirectory([]));
+    }
+    // Deep-link from onboarding: pre-select employee and open the card request form
+    const linkedEmployeeId = searchParams.get('employeeId');
+    if (linkedEmployeeId && canProduce) {
+      setEmployeeId(linkedEmployeeId);
+      setShowForm(true);
     }
   }, []);
 

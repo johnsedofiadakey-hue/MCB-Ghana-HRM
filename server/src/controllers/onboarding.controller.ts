@@ -36,8 +36,8 @@ const DEFAULT_TEMPLATES = [
       { title: 'Employment Contract Signing', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 1, order: 2, description: 'Sign employment contract, NDA, and policy acknowledgements.' },
       { title: 'Payroll & Benefits Registration', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 2, order: 3, description: 'Register bank account, SSNIT number, and select applicable benefits.' },
       { title: 'System Account Setup', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 4, description: 'Create company email, HRM portal login, and grant role-based system access.' },
-      { title: 'ID Card & Access Card Issuance', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 3, order: 5, description: 'Print and issue employee photo ID and building access card.' },
-      { title: 'Workstation & Equipment Setup', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 2, order: 6, description: 'Assign device, configure peripherals, install required software.' },
+      { title: 'ID Card & Access Card Issuance', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 3, order: 5, autoCompleteEvent: 'ID_CARD_ISSUED', description: 'Print and issue employee photo ID and building access card.' },
+      { title: 'Workstation & Equipment Setup', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 2, order: 6, autoCompleteEvent: 'ASSET_ASSIGNED', description: 'Assign device, configure peripherals, install required software.' },
       { title: 'Department Introduction', category: 'Manager', ownerRole: 'MANAGER', dueAfterDays: 2, order: 7, description: 'Line manager introduces the new employee to the team and explains workflow.' },
       { title: 'Role & Responsibilities Briefing', category: 'Manager', ownerRole: 'MANAGER', dueAfterDays: 3, order: 8, description: 'Walk through KPIs, reporting structure, and 30/60/90 day expectations.' },
       { title: 'Health & Safety Training', category: 'Admin', ownerRole: 'HR_OFFICER', dueAfterDays: 5, order: 9, description: 'Mandatory health & safety briefing and fire evacuation procedures.' },
@@ -52,7 +52,7 @@ const DEFAULT_TEMPLATES = [
       { title: 'Welcome & Security Briefing', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 1, description: 'Security policies, data handling protocols, and acceptable use policy.' },
       { title: 'System & Network Access', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 2, description: 'Set up VPN, internal network, server access, and admin tools.' },
       { title: 'Development Environment Setup', category: 'IT', ownerRole: 'IT_ADMIN', dueAfterDays: 2, order: 3, description: 'Clone repos, configure IDE, install dev tools, set up local environment.' },
-      { title: 'HR Portal Account & ID Card', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 4, description: 'Provision HRM login and issue photo ID and access card.' },
+      { title: 'HR Portal Account & ID Card', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 4, autoCompleteEvent: 'ID_CARD_ISSUED', description: 'Provision HRM login and issue photo ID and access card.' },
       { title: 'Employment Contract & NDA', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 1, order: 5, description: 'Sign employment contract and confidentiality agreement.' },
       { title: 'Payroll Registration', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 2, order: 6, description: 'Register bank details and SSNIT number.' },
       { title: 'Codebase & Systems Walkthrough', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 3, order: 7, description: 'Senior team member walks through architecture, systems, and open projects.' },
@@ -68,7 +68,7 @@ const DEFAULT_TEMPLATES = [
       { title: 'Employment & Confidentiality Documents', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 1, order: 2, description: 'Sign employment contract, NDA, and senior management conduct policy.' },
       { title: 'Compensation & Benefits Briefing', category: 'HR', ownerRole: 'HR_DIRECTOR', dueAfterDays: 2, order: 3, description: 'Review compensation, allowances, pension, vehicle, and executive benefits.' },
       { title: 'System Access & Executive Tools', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 1, order: 4, description: 'HRM admin access, reporting dashboards, email, and device setup.' },
-      { title: 'ID Card & Full Access Credentials', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 2, order: 5, description: 'Issue executive ID card and full building access credentials.' },
+      { title: 'ID Card & Full Access Credentials', category: 'IT', ownerRole: 'IT_MANAGER', dueAfterDays: 2, order: 5, autoCompleteEvent: 'ID_CARD_ISSUED', description: 'Issue executive ID card and full building access credentials.' },
       { title: 'Department Handover Briefing', category: 'Manager', ownerRole: 'MANAGER', dueAfterDays: 3, order: 6, description: 'Full briefing on team structure, current projects, and open issues.' },
       { title: 'Stakeholder Introductions', category: 'Admin', ownerRole: 'HR_DIRECTOR', dueAfterDays: 5, order: 7, description: 'Introduce to key internal stakeholders, clients, and partners.' },
       { title: 'Strategic Goals Alignment', category: 'Manager', ownerRole: 'MANAGER', dueAfterDays: 7, order: 8, description: 'Align on 90-day plan, OKRs, and reporting expectations.' },
@@ -96,6 +96,30 @@ export const getTemplates = async (req: Request, res: Response) => {
       templates = await prisma.onboardingTemplate.findMany({ where: { organizationId }, include: { tasks: { orderBy: { order: 'asc' } } } });
     }
 
+    // One-time patch: wire autoCompleteEvent onto existing tasks/items that predate this field
+    const idCardTitles = ['ID Card', 'Access Card', 'Access Credentials'];
+    const equipTitles  = ['Workstation', 'Equipment Setup'];
+
+    await Promise.all([
+      ...idCardTitles.map(t => prisma.onboardingTask.updateMany({
+        where: { organizationId, title: { contains: t }, autoCompleteEvent: null },
+        data: { autoCompleteEvent: 'ID_CARD_ISSUED' },
+      })),
+      ...equipTitles.map(t => prisma.onboardingTask.updateMany({
+        where: { organizationId, title: { contains: t }, autoCompleteEvent: null },
+        data: { autoCompleteEvent: 'ASSET_ASSIGNED' },
+      })),
+      ...idCardTitles.map(t => prisma.onboardingItem.updateMany({
+        where: { organizationId, title: { contains: t }, autoCompleteEvent: null },
+        data: { autoCompleteEvent: 'ID_CARD_ISSUED' },
+      })),
+      ...equipTitles.map(t => prisma.onboardingItem.updateMany({
+        where: { organizationId, title: { contains: t }, autoCompleteEvent: null },
+        data: { autoCompleteEvent: 'ASSET_ASSIGNED' },
+      })),
+    ]);
+
+    templates = await prisma.onboardingTemplate.findMany({ where: { organizationId }, include: { tasks: { orderBy: { order: 'asc' } } } });
     res.json(templates);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
