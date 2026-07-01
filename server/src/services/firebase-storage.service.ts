@@ -68,6 +68,23 @@ export class FirebaseStorageService {
   }
 
   /**
+   * Download a file from Firebase Storage by its public URL.
+   * Uses the Admin SDK so it works even when the bucket has uniform access control
+   * (i.e. makePublic() failed and the URL isn't publicly readable via HTTP).
+   */
+  static async downloadByUrl(url: string): Promise<Buffer> {
+    if (!this.bucket) this.init();
+    if (!this.bucket) throw new Error('Cloud storage not configured');
+
+    // Extract the object path from storage.googleapis.com/<bucket>/<path>
+    const match = url.match(/storage\.googleapis\.com\/[^/]+\/(.+)/);
+    if (!match) throw new Error('Cannot parse Firebase Storage URL: ' + url);
+
+    const [data] = await this.bucket.file(match[1]).download();
+    return data as Buffer;
+  }
+
+  /**
    * Delete a file from Firebase Storage.
    */
   static async deleteFile(url: string): Promise<void> {

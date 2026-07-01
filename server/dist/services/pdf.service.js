@@ -154,13 +154,19 @@ class PdfExportService {
                         const apiOrigin = process.env.API_BASE_URL || process.env.RENDER_EXTERNAL_URL || 'https://mcb-ghana-hrm-api.onrender.com';
                         absoluteLogoUrl = `${apiOrigin.replace(/\/$/, '')}${absoluteLogoUrl.startsWith('/') ? '' : '/'}${absoluteLogoUrl}`;
                     }
-                    const response = await axios_1.default.get(absoluteLogoUrl, { responseType: 'arraybuffer', timeout: 8000 });
-                    rawBuffer = Buffer.from(response.data);
+                    // Use Firebase Admin SDK for GCS URLs — bypasses HTTP auth when bucket has uniform access control
+                    if (absoluteLogoUrl.includes('storage.googleapis.com')) {
+                        rawBuffer = await firebase_storage_service_1.FirebaseStorageService.downloadByUrl(absoluteLogoUrl);
+                    }
+                    else {
+                        const response = await axios_1.default.get(absoluteLogoUrl, { responseType: 'arraybuffer', timeout: 8000 });
+                        rawBuffer = Buffer.from(response.data);
+                    }
                 }
                 if (rawBuffer) {
-                    // PDFKit only supports PNG and JPEG — convert via sharp so WebP/SVG/etc. all work
+                    // PDFKit only supports PNG and JPEG — convert via sharp so WebP/SVG/GIF/etc. all work
                     const sharp = (await Promise.resolve().then(() => __importStar(require('sharp')))).default;
-                    const pngBuffer = await sharp(rawBuffer).png().toBuffer();
+                    const pngBuffer = await sharp(rawBuffer).resize({ width: 200, withoutEnlargement: true }).png().toBuffer();
                     doc.image(pngBuffer, xPos, headerTop, { width: logoWidth });
                 }
             }
@@ -213,7 +219,7 @@ class PdfExportService {
         doc
             .fontSize(7)
             .fillColor('#94a3b8')
-            .text(footerText, this.SAFE_MARGIN, 790, { align: 'center', width: this.CONTENT_WIDTH });
+            .text(footerText, this.SAFE_MARGIN, 790, { align: 'center', width: this.CONTENT_WIDTH, lineBreak: false });
     }
     static renderTargetContent(doc, target, brandColor) {
         const headerTop = doc.y;
