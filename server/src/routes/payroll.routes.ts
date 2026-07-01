@@ -7,6 +7,9 @@ import {
   downloadPayslipPDF, exportPayrollCSV, exportBankCSV, exportGraPayeCsv, exportSsnitCsv, getYearlySummary,
   getStatutoryRules, createStatutoryRule, approveStatutoryRule
 } from '../controllers/payroll.controller';
+import {
+  listDeductionTemplates, createDeductionTemplate, updateDeductionTemplate, deleteDeductionTemplate
+} from '../controllers/payroll-deductions.controller';
 import { validate, PayrollRunSchema, PayrollItemUpdateSchema } from '../middleware/validate.middleware';
 import { YearEndSummaryService } from '../services/year-end-summary.service';
 import { getOrgId } from '../controllers/enterprise.controller';
@@ -60,6 +63,13 @@ router.get('/:id/export/csv', requireAnyPermission(payrollViewPermissions), expo
 router.get('/:id/bank-export/csv', requirePermission(Permission.PAYROLL_EXPORT), exportBankCSV);
 router.get('/:id/export/gra-paye-csv', requireAnyPermission(payrollViewPermissions), exportGraPayeCsv);
 router.get('/:id/export/ssnit-csv', requireAnyPermission(payrollViewPermissions), exportSsnitCsv);
+
+// Custom deduction templates (Finance/MD manage)
+const deductionManagePermissions = [Permission.PAYROLL_PREPARE, Permission.PAYROLL_SUBMIT];
+router.get('/deduction-templates', requireAnyPermission(payrollViewPermissions), listDeductionTemplates);
+router.post('/deduction-templates', requireAnyPermission(deductionManagePermissions), createDeductionTemplate);
+router.patch('/deduction-templates/:id', requireAnyPermission(deductionManagePermissions), updateDeductionTemplate);
+router.delete('/deduction-templates/:id', requireAnyPermission(deductionManagePermissions), deleteDeductionTemplate);
 
 // Admin year-end summary for all employees
 router.get('/tax-summary/org/:year', requireAnyPermission(payrollViewPermissions), async (req, res) => {

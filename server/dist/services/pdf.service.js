@@ -8,6 +8,8 @@ const pdfkit_1 = __importDefault(require("pdfkit"));
 const axios_1 = __importDefault(require("axios"));
 const client_1 = __importDefault(require("../prisma/client"));
 const leave_utils_1 = require("../utils/leave.utils");
+const firebase_storage_service_1 = require("./firebase-storage.service");
+const error_log_service_1 = require("./error-log.service");
 class PdfExportService {
     /**
      * Generates a premium, branded PDF for various document types.
@@ -141,15 +143,15 @@ class PdfExportService {
             .fillColor(primaryColor)
             .fontSize(18)
             .font('Helvetica-Bold')
-            .text(org?.name?.toUpperCase() || 'MCB-HRM GHANA', margin, headerTop + 5, { width: 350 });
+            .text(org?.name?.toUpperCase() || 'MC-BAUCHEMIE GHANA', margin, headerTop + 5, { width: 350 });
         doc
             .fontSize(9)
             .font('Helvetica')
             .fillColor('#64748b')
-            .text(`${org?.address || 'Corporate Headquarters'}`, margin, headerTop + 30, { width: 350 })
-            .text(`${org?.city || ''}, ${org?.country || ''}`, margin, headerTop + 42, { width: 350 })
+            .text(`${org?.address || 'Tema Industrial Area, Accra'}`, margin, headerTop + 30, { width: 350 })
+            .text(`${org?.city || 'Tema'}, ${org?.country || 'Ghana'}`, margin, headerTop + 42, { width: 350 })
             .fillColor(primaryColor)
-            .text(`Phone: ${org?.phone || 'N/A'} | Email: ${org?.email || 'N/A'}`, margin, headerTop + 55, { width: 350 });
+            .text(`Phone: ${org?.phone || '+233 (0) 303 309 999'} | Email: ${org?.email || 'info@mc-bauchemie.com.gh'}`, margin, headerTop + 55, { width: 350 });
         // Decorative Header Line
         doc
             .strokeColor(primaryColor)
@@ -175,7 +177,7 @@ class PdfExportService {
             .moveTo(50, 780)
             .lineTo(550, 780)
             .stroke();
-        const footerText = `Institutional Record | ${org?.name || 'MCB-HRM Ghana'} | Page ${page} of ${total}`;
+        const footerText = `Institutional Record | ${org?.name || 'MC-BAUCHEMIE GHANA'} | Page ${page} of ${total}`;
         doc
             .fontSize(7)
             .fillColor('#94a3b8')
@@ -437,15 +439,28 @@ class PdfExportService {
         }
         doc.moveDown(4);
         const sigY = doc.y;
+        // Employee — always present
         if (leave.employee?.signatureUrl)
-            await this.renderSignature(doc, leave.employee.signatureUrl, 70, sigY, 160);
-        doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
-        doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 70, sigY + 8);
-        const reviewerSig = leave.hrReviewer?.signatureUrl || leave.manager?.signatureUrl;
-        if (reviewerSig)
-            await this.renderSignature(doc, reviewerSig, 370, sigY, 160);
-        doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
-        doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('MANAGEMENT / HR SIGNATURE', 370, sigY + 8);
+            await this.renderSignature(doc, leave.employee.signatureUrl, 55, sigY, 150);
+        doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(55, sigY).lineTo(205, sigY).stroke();
+        doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 55, sigY + 8, { width: 150 });
+        // Direct manager — only present for the regular-staff approval chain;
+        // omitted for managers' own leave (no peer reviewer in that path)
+        if (leave.manager) {
+            if (leave.manager.signatureUrl)
+                await this.renderSignature(doc, leave.manager.signatureUrl, 220, sigY, 150);
+            doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(220, sigY).lineTo(370, sigY).stroke();
+            doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.manager.fullName?.toUpperCase() || 'LINE MANAGER', 220, sigY + 8, { width: 150 });
+        }
+        // Final approver — HR Director for regular staff, or HR Director/MD for the
+        // manager path (hrReviewer carries whichever was the terminal approver)
+        if (leave.hrReviewer) {
+            const finalX = leave.manager ? 385 : 220;
+            if (leave.hrReviewer.signatureUrl)
+                await this.renderSignature(doc, leave.hrReviewer.signatureUrl, finalX, sigY, 150);
+            doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(finalX, sigY).lineTo(finalX + 150, sigY).stroke();
+            doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('FINAL APPROVAL SIGNATURE', finalX, sigY + 8, { width: 150 });
+        }
     }
     static keyValGrid(doc, x, y, label, value) {
         doc.fillColor('#64748b').fontSize(9).font('Helvetica-Bold').text(label.toUpperCase(), x, y);
@@ -483,8 +498,22 @@ class PdfExportService {
         drawRow('SSNIT Employee Contribution', Number(item.ssnit), true);
         if (Number(item.tier2Pension))
             drawRow('Tier 2 Pension', Number(item.tier2Pension), true);
+        // Show pre-tax custom deductions before PAYE line
+        const snapshot = Array.isArray(item.customDeductionsSnapshot) ? item.customDeductionsSnapshot : [];
+        for (const d of snapshot.filter((d) => d.taxTreatment === 'PRE_TAX' && d.type === 'DEDUCTION')) {
+            drawRow(d.name, Number(d.amount), true);
+        }
         drawRow('Income Tax (PAYE)', Number(item.tax), true);
-        if (Number(item.otherDeductions))
+        // Show post-tax custom deductions after PAYE
+        for (const d of snapshot.filter((d) => d.taxTreatment === 'POST_TAX' && d.type === 'DEDUCTION')) {
+            drawRow(d.name, Number(d.amount), true);
+        }
+        // Show employer contributions as neutral lines (no deduction marker)
+        for (const d of snapshot.filter((d) => d.type === 'EMPLOYER_CONTRIBUTION')) {
+            drawRow(`${d.name} (Employer)`, Number(d.amount));
+        }
+        // Legacy fallback: show otherDeductions lump sum only if no custom snapshot
+        if (!snapshot.length && Number(item.otherDeductions))
             drawRow('Other Deductions', Number(item.otherDeductions), true);
         drawRow('Net Payout', Number(item.netPay));
         doc.y = currentY + 30;
@@ -557,6 +586,47 @@ class PdfExportService {
     static recordMetadata(doc, label, value) {
         doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${label.toUpperCase()}: `, this.SAFE_MARGIN, doc.y, { continued: true }).font('Helvetica').fillColor('#1e293b').text(value);
         doc.moveDown(0.2);
+    }
+    /**
+     * Generates the leave approval letter and files it into every recipient's own
+     * document register (EmployeeDocument). Called on terminal approval only
+     * (hrValidation / mdFinalReview) — never blocks or rolls back the approval
+     * itself if PDF generation or storage fails.
+     */
+    static async generateAndArchiveLeaveApprovalPdf(leaveId, recipientEmployeeIds) {
+        try {
+            const leave = await client_1.default.leaveRequest.findUnique({
+                where: { id: leaveId },
+                include: {
+                    employee: { include: { departmentObj: { select: { name: true } } } },
+                    reliever: { select: { fullName: true } },
+                    manager: { select: { fullName: true, signatureUrl: true } },
+                    hrReviewer: { select: { fullName: true, signatureUrl: true } },
+                    handoverRecords: { include: { reliever: { select: { fullName: true } } } },
+                },
+            });
+            if (!leave)
+                return;
+            const organizationId = leave.organizationId || 'mcb-ghana-tenant';
+            const buffer = await this.generateBrandedPdf(organizationId, 'Leave Authorization Certificate', leave, 'LEAVE');
+            const fileUrl = await firebase_storage_service_1.FirebaseStorageService.uploadFile(buffer, `leave-approval-${leaveId}.pdf`, 'leave-approvals', 'application/pdf');
+            const uniqueRecipients = Array.from(new Set(recipientEmployeeIds.filter(Boolean)));
+            const dateRange = `${new Date(leave.startDate).toLocaleDateString()} – ${new Date(leave.endDate).toLocaleDateString()}`;
+            const title = `Leave Approval Letter — ${leave.employee?.fullName || 'Employee'} (${dateRange})`;
+            await client_1.default.employeeDocument.createMany({
+                data: uniqueRecipients.map(employeeId => ({
+                    organizationId,
+                    employeeId,
+                    title,
+                    category: 'Leave Approval Letter',
+                    fileUrl,
+                })),
+            });
+        }
+        catch (e) {
+            // PDF/storage failure must never affect the leave approval itself — log and move on.
+            error_log_service_1.errorLogger.log('PdfExportService.generateAndArchiveLeaveApprovalPdf', e);
+        }
     }
 }
 exports.PdfExportService = PdfExportService;

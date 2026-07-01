@@ -48,11 +48,20 @@ const Payroll = () => {
   const [error, setError] = useState('');
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [savingItem, setSavingItem] = useState(false);
-  const [activeView, setActiveView] = useState<'runs' | 'payslips' | 'summary' | 'rules'>('runs');
+  const [activeView, setActiveView] = useState<'runs' | 'payslips' | 'summary' | 'rules' | 'deductions'>('runs');
   const [pdfPreview, setPdfPreview] = useState<{ url: string; title: string } | null>(null);
   const [loadingPayslipId, setLoadingPayslipId] = useState<string | null>(null);
   const [statutoryRules, setStatutoryRules] = useState<any[]>([]);
   const [showRuleForm, setShowRuleForm] = useState(false);
+  const [deductionTemplates, setDeductionTemplates] = useState<any[]>([]);
+  const [showDeductionForm, setShowDeductionForm] = useState(false);
+  const [editingDeduction, setEditingDeduction] = useState<any | null>(null);
+  const [deductionForm, setDeductionForm] = useState({
+    name: '', type: 'DEDUCTION', scope: 'GLOBAL', employeeId: '',
+    basis: 'FIXED', amount: '', taxTreatment: 'POST_TAX', notes: '',
+  });
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [savingDeduction, setSavingDeduction] = useState(false);
   const [ruleForm, setRuleForm] = useState({
     name: `Ghana statutory rules ${new Date().getFullYear()}`,
     effectiveFrom: `${new Date().getFullYear()}-01-01`, effectiveTo: '',
@@ -78,14 +87,18 @@ const Payroll = () => {
       setMyPayslips(Array.isArray(slipRes.data) ? slipRes.data : []);
 
       if (isAdmin) {
-        const [runRes, summaryRes, rulesRes] = await Promise.all([
+        const [runRes, summaryRes, rulesRes, deductionRes, empRes] = await Promise.all([
           api.get('/payroll'),
           api.get(`/payroll/summary?year=${currentYear}`),
-          api.get('/payroll/statutory-rules')
+          api.get('/payroll/statutory-rules'),
+          api.get('/payroll/deduction-templates'),
+          api.get('/employees?status=ACTIVE&limit=200')
         ]);
         setRuns(Array.isArray(runRes.data?.runs) ? runRes.data.runs : []);
         setYearlySummary(summaryRes.data && typeof summaryRes.data === 'object' ? summaryRes.data : {});
         setStatutoryRules(Array.isArray(rulesRes.data) ? rulesRes.data : []);
+        setDeductionTemplates(Array.isArray(deductionRes.data) ? deductionRes.data : []);
+        setEmployees(Array.isArray(empRes.data?.employees) ? empRes.data.employees : (Array.isArray(empRes.data) ? empRes.data : []));
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -303,7 +316,7 @@ const Payroll = () => {
 
       {isAdmin && (
         <div className="flex bg-[var(--bg-elevated)] p-1.5 rounded-xl w-full sm:w-fit border border-[var(--border-subtle)] overflow-x-auto whitespace-nowrap px-2">
-          {([['runs', t('payroll.cycles', 'Payroll Cycles')], ['payslips', t('payroll.my_payslips', 'My Payslips')], ['summary', t('payroll.summary', 'Payroll Summary')], ['rules', 'Statutory Rules']] as const).map(([v, label]) => (
+          {([['runs', t('payroll.cycles', 'Payroll Cycles')], ['payslips', t('payroll.my_payslips', 'My Payslips')], ['summary', t('payroll.summary', 'Payroll Summary')], ['rules', 'Statutory Rules'], ['deductions', 'Deduction Rules']] as const).map(([v, label]) => (
             <button key={v} onClick={() => setActiveView(v)}
               className={cn(
                 "px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
@@ -504,6 +517,177 @@ const Payroll = () => {
                     {!rule.accountantApproved && (isFinance || isHR) && <button onClick={() => handleApproveRule(rule)} className="mt-5 btn-primary w-full">Confirm Accountant Approval</button>}
                   </div>)}
                   {statutoryRules.length === 0 && <div className="lg:col-span-2 nx-card p-12 text-center border-dashed"><AlertCircle className="mx-auto text-amber-500 mb-4" /><p className="font-bold text-[var(--text-primary)]">No statutory rule configured. Finance cannot create a payroll run yet.</p></div>}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Deduction Rules */}
+            {isAdmin && activeView === 'deductions' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-black text-[var(--text-primary)]">Custom Deduction Rules</h2>
+                    <p className="mt-2 text-sm text-[var(--text-muted)]">
+                      Rules apply automatically when the next payroll run is calculated. Global rules apply to all employees; employee-scoped rules apply to one person only.
+                    </p>
+                  </div>
+                  {isFinance && (
+                    <button onClick={() => { setEditingDeduction(null); setDeductionForm({ name: '', type: 'DEDUCTION', scope: 'GLOBAL', employeeId: '', basis: 'FIXED', amount: '', taxTreatment: 'POST_TAX', notes: '' }); setShowDeductionForm(true); }}
+                      className="btn-primary w-full sm:w-auto flex items-center gap-2">
+                      <Plus size={16} /> New Rule
+                    </button>
+                  )}
+                </div>
+
+                {showDeductionForm && isFinance && (
+                  <form onSubmit={async e => {
+                    e.preventDefault();
+                    setSavingDeduction(true);
+                    try {
+                      if (editingDeduction) {
+                        const res = await api.patch(`/payroll/deduction-templates/${editingDeduction.id}`, deductionForm);
+                        setDeductionTemplates(prev => prev.map(t => t.id === editingDeduction.id ? res.data : t));
+                        toast.success('Rule updated');
+                      } else {
+                        const res = await api.post('/payroll/deduction-templates', deductionForm);
+                        setDeductionTemplates(prev => [res.data, ...prev]);
+                        toast.success('Deduction rule created');
+                      }
+                      setShowDeductionForm(false);
+                    } catch (err: any) { toast.error(err?.response?.data?.error || 'Failed to save rule'); }
+                    finally { setSavingDeduction(false); }
+                  }} className="nx-card p-5 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <label className="space-y-2 sm:col-span-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Rule Name</span>
+                      <input required className="nx-input" placeholder="e.g. Union Dues, Staff Welfare Fund, Car Loan" value={deductionForm.name} onChange={e => setDeductionForm({ ...deductionForm, name: e.target.value })} />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Type</span>
+                      <select className="nx-input" value={deductionForm.type} onChange={e => setDeductionForm({ ...deductionForm, type: e.target.value })}>
+                        <option value="DEDUCTION">Employee Deduction (reduces net pay)</option>
+                        <option value="EMPLOYER_CONTRIBUTION">Employer Contribution (extra employer cost, shown on payslip)</option>
+                      </select>
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Tax Treatment</span>
+                      <select className="nx-input" value={deductionForm.taxTreatment} onChange={e => setDeductionForm({ ...deductionForm, taxTreatment: e.target.value })}>
+                        <option value="POST_TAX">Post-Tax (taken from net pay, after PAYE)</option>
+                        <option value="PRE_TAX">Pre-Tax (reduces taxable income, lowers PAYE)</option>
+                      </select>
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Scope</span>
+                      <select className="nx-input" value={deductionForm.scope} onChange={e => setDeductionForm({ ...deductionForm, scope: e.target.value, employeeId: '' })}>
+                        <option value="GLOBAL">All Employees (company-wide)</option>
+                        <option value="EMPLOYEE">Specific Employee</option>
+                      </select>
+                    </label>
+                    {deductionForm.scope === 'EMPLOYEE' && (
+                      <label className="space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Employee</span>
+                        <select required className="nx-input" value={deductionForm.employeeId} onChange={e => setDeductionForm({ ...deductionForm, employeeId: e.target.value })}>
+                          <option value="">Select employee…</option>
+                          {employees.map((emp: any) => <option key={emp.id} value={emp.id}>{emp.fullName} {emp.employeeCode ? `(${emp.employeeCode})` : ''}</option>)}
+                        </select>
+                      </label>
+                    )}
+                    <label className="space-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Calculation Basis</span>
+                      <select className="nx-input" value={deductionForm.basis} onChange={e => setDeductionForm({ ...deductionForm, basis: e.target.value })}>
+                        <option value="FIXED">Fixed Amount (GHS)</option>
+                        <option value="PERCENTAGE_BASIC">Percentage of Basic Salary (%)</option>
+                      </select>
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                        {deductionForm.basis === 'PERCENTAGE_BASIC' ? 'Rate (%)' : 'Amount (GHS)'}
+                      </span>
+                      <input required type="number" min="0.01" step="0.01" className="nx-input"
+                        placeholder={deductionForm.basis === 'PERCENTAGE_BASIC' ? 'e.g. 2.5' : 'e.g. 200'}
+                        value={deductionForm.amount} onChange={e => setDeductionForm({ ...deductionForm, amount: e.target.value })} />
+                    </label>
+                    <label className="space-y-2 sm:col-span-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Notes (optional)</span>
+                      <input className="nx-input" placeholder="Internal note about this rule" value={deductionForm.notes} onChange={e => setDeductionForm({ ...deductionForm, notes: e.target.value })} />
+                    </label>
+                    <div className="sm:col-span-2 flex flex-col sm:flex-row justify-end gap-3">
+                      <button type="button" onClick={() => setShowDeductionForm(false)} className="btn-secondary">Cancel</button>
+                      <button type="submit" disabled={savingDeduction} className="btn-primary">
+                        {savingDeduction ? 'Saving…' : editingDeduction ? 'Update Rule' : 'Create Rule'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Rules table */}
+                <div className="space-y-3">
+                  {['GLOBAL', 'EMPLOYEE'].map(scopeGroup => {
+                    const group = deductionTemplates.filter(t => t.scope === scopeGroup);
+                    if (!group.length) return null;
+                    return (
+                      <div key={scopeGroup}>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3">
+                          {scopeGroup === 'GLOBAL' ? 'Company-Wide Rules' : 'Per-Employee Rules'}
+                        </p>
+                        <div className="space-y-2">
+                          {group.map((tpl: any) => (
+                            <div key={tpl.id} className={cn('nx-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4', !tpl.isActive && 'opacity-50')}>
+                              <div className="flex items-start gap-4">
+                                <div className={cn('w-2 h-2 mt-1.5 rounded-full shrink-0', tpl.isActive ? 'bg-[var(--success)]' : 'bg-[var(--text-muted)]')} />
+                                <div>
+                                  <p className="font-black text-[var(--text-primary)]">{tpl.name}</p>
+                                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                                    {tpl.type === 'EMPLOYER_CONTRIBUTION' ? 'Employer Contribution' : 'Employee Deduction'} ·{' '}
+                                    {tpl.basis === 'FIXED' ? `GHS ${Number(tpl.amount).toFixed(2)}` : `${Number(tpl.amount)}% of basic`} ·{' '}
+                                    {tpl.taxTreatment === 'PRE_TAX' ? 'Pre-Tax' : 'Post-Tax'}
+                                    {tpl.scope === 'EMPLOYEE' && tpl.employee && ` · ${tpl.employee.fullName}`}
+                                  </p>
+                                  {tpl.notes && <p className="text-xs text-[var(--text-muted)] mt-0.5 italic">{tpl.notes}</p>}
+                                </div>
+                              </div>
+                              {isFinance && (
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <button onClick={async () => {
+                                    try {
+                                      await api.patch(`/payroll/deduction-templates/${tpl.id}`, { isActive: !tpl.isActive });
+                                      setDeductionTemplates(prev => prev.map(t => t.id === tpl.id ? { ...t, isActive: !tpl.isActive } : t));
+                                    } catch { toast.error('Failed to update'); }
+                                  }} className={cn('px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all',
+                                    tpl.isActive ? 'text-[var(--error)] bg-[var(--error)]/5 border-[var(--error)]/20 hover:bg-[var(--error)]/10'
+                                      : 'text-[var(--success)] bg-[var(--success)]/5 border-[var(--success)]/20 hover:bg-[var(--success)]/10'
+                                  )}>{tpl.isActive ? 'Disable' : 'Enable'}</button>
+                                  <button onClick={() => {
+                                    setEditingDeduction(tpl);
+                                    setDeductionForm({ name: tpl.name, type: tpl.type, scope: tpl.scope, employeeId: tpl.employeeId || '', basis: tpl.basis, amount: String(tpl.amount), taxTreatment: tpl.taxTreatment, notes: tpl.notes || '' });
+                                    setShowDeductionForm(true);
+                                  }} className="w-8 h-8 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center hover:text-[var(--primary)] transition-colors">
+                                    <Edit2 size={12} />
+                                  </button>
+                                  <button onClick={async () => {
+                                    if (!confirm(`Delete "${tpl.name}"? This cannot be undone.`)) return;
+                                    try {
+                                      await api.delete(`/payroll/deduction-templates/${tpl.id}`);
+                                      setDeductionTemplates(prev => prev.filter(t => t.id !== tpl.id));
+                                      toast.success('Rule deleted');
+                                    } catch { toast.error('Failed to delete'); }
+                                  }} className="w-8 h-8 rounded-xl bg-[var(--error)]/5 border border-[var(--error)]/20 text-[var(--error)] flex items-center justify-center hover:bg-[var(--error)]/10 transition-colors">
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {deductionTemplates.length === 0 && (
+                    <div className="nx-card p-12 text-center border-dashed">
+                      <DollarSign className="mx-auto text-[var(--text-muted)] mb-4" size={32} />
+                      <p className="font-bold text-[var(--text-primary)]">No custom deduction rules yet</p>
+                      <p className="text-sm text-[var(--text-muted)] mt-1">Rules created here auto-apply on the next payroll run.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -748,6 +932,16 @@ const Payroll = () => {
                                                PAYE: {fmt(Number(item.tax), '', i18n.language)} · Tier1: {fmt(Number(item.ssnit), '', i18n.language)} · Tier2: {fmt(Number(item.tier2Pension), '', i18n.language)}
                                              </span>
                                            )}
+                                           {Array.isArray(item.customDeductionsSnapshot) && (() => {
+                                             const employeeDeductions = (item.customDeductionsSnapshot as any[]).filter((d: any) => d.type !== 'EMPLOYER_CONTRIBUTION');
+                                             const customTotal = employeeDeductions.reduce((s: number, d: any) => s + Number(d.amount), 0);
+                                             if (customTotal <= 0) return null;
+                                             return (
+                                               <span className="text-[8px] font-bold text-violet-500 leading-tight" title={employeeDeductions.map((d: any) => `${d.name}: ${fmt(d.amount, '', i18n.language)}`).join(' · ')}>
+                                                 Custom: -{fmt(customTotal, '', i18n.language)}
+                                               </span>
+                                             );
+                                           })()}
                                          </div>
                                        </td>
                                        <td className="text-[14px] font-black text-[var(--text-primary)]" data-label={t('payroll.headers.net_payout')}>{fmt(item.netPay, item.currency, i18n.language)}</td>

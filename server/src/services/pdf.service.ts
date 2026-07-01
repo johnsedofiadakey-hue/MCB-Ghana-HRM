@@ -562,8 +562,22 @@ export class PdfExportService {
     if (Number(item.expenseReimbursements)) drawRow('Expense Reimbursement (Non-taxable)', Number(item.expenseReimbursements));
     drawRow('SSNIT Employee Contribution', Number(item.ssnit), true);
     if (Number(item.tier2Pension)) drawRow('Tier 2 Pension', Number(item.tier2Pension), true);
+    // Show pre-tax custom deductions before PAYE line
+    const snapshot: any[] = Array.isArray((item as any).customDeductionsSnapshot) ? (item as any).customDeductionsSnapshot : [];
+    for (const d of snapshot.filter((d: any) => d.taxTreatment === 'PRE_TAX' && d.type === 'DEDUCTION')) {
+      drawRow(d.name, Number(d.amount), true);
+    }
     drawRow('Income Tax (PAYE)', Number(item.tax), true);
-    if (Number(item.otherDeductions)) drawRow('Other Deductions', Number(item.otherDeductions), true);
+    // Show post-tax custom deductions after PAYE
+    for (const d of snapshot.filter((d: any) => d.taxTreatment === 'POST_TAX' && d.type === 'DEDUCTION')) {
+      drawRow(d.name, Number(d.amount), true);
+    }
+    // Show employer contributions as neutral lines (no deduction marker)
+    for (const d of snapshot.filter((d: any) => d.type === 'EMPLOYER_CONTRIBUTION')) {
+      drawRow(`${d.name} (Employer)`, Number(d.amount));
+    }
+    // Legacy fallback: show otherDeductions lump sum only if no custom snapshot
+    if (!snapshot.length && Number(item.otherDeductions)) drawRow('Other Deductions', Number(item.otherDeductions), true);
     drawRow('Net Payout', Number(item.netPay));
     
     doc.y = currentY + 30;

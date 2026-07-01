@@ -84,7 +84,7 @@ const calculateGhanaSSNIT = (basicSalary, employeeRate = 0.055, employerRate = 0
 exports.calculateGhanaSSNIT = calculateGhanaSSNIT;
 // ── MASTER CALCULATION (call this per employee per payroll run) ────────────────
 const calculateGhanaPayroll = (params) => {
-    const { grossSalary, bonus = 0, allowances = 0, overtime = 0, loanDeductions = 0, otherDeductions = 0, expenseReimbursements = 0, ssnitRate, employerSsnitRate, payeBands, minimumInsurable, maximumInsurable, bonusYtd = 0, bonusAnnualThresholdRate = 0.15, bonusFlatRate = 0.05, overtimeFlatRate, tier2PensionEnabled = false, tier2PensionRate = 0.05 } = params;
+    const { grossSalary, bonus = 0, allowances = 0, overtime = 0, loanDeductions = 0, otherDeductions = 0, expenseReimbursements = 0, preTaxDeductions = 0, ssnitRate, employerSsnitRate, payeBands, minimumInsurable, maximumInsurable, bonusYtd = 0, bonusAnnualThresholdRate = 0.15, bonusFlatRate = 0.05, overtimeFlatRate, tier2PensionEnabled = false, tier2PensionRate = 0.05 } = params;
     const totalGross = grossSalary + bonus + allowances + overtime;
     const { employeeSSNIT, employerSSNIT } = (0, exports.calculateGhanaSSNIT)(grossSalary, ssnitRate, employerSsnitRate, minimumInsurable, maximumInsurable);
     // Tier 2 occupational pension (optional, deducted from basic salary before PAYE)
@@ -96,9 +96,10 @@ const calculateGhanaPayroll = (params) => {
     const flatRateBonus = Math.min(bonus, remainingFlatBonus);
     const graduatedBonus = Math.max(0, bonus - flatRateBonus);
     const graduatedOvertime = overtimeFlatRate == null ? overtime : 0;
-    const taxableIncome = Math.max(0, grossSalary + allowances + graduatedBonus + graduatedOvertime - employeeSSNIT - tier2Pension);
+    // preTaxDeductions (custom pre-tax rules) reduce taxable income alongside SSNIT & Tier2
+    const taxableIncome = Math.max(0, grossSalary + allowances + graduatedBonus + graduatedOvertime - employeeSSNIT - tier2Pension - preTaxDeductions);
     const payeTax = Math.round(((0, exports.calculateGhanaPAYE)(taxableIncome, payeBands) + flatRateBonus * bonusFlatRate + (overtimeFlatRate == null ? 0 : overtime * overtimeFlatRate)) * 100) / 100;
-    const totalDeductions = employeeSSNIT + tier2Pension + payeTax + loanDeductions + otherDeductions;
+    const totalDeductions = employeeSSNIT + tier2Pension + payeTax + loanDeductions + otherDeductions + preTaxDeductions;
     const netPay = Math.max(0, Math.round((totalGross - totalDeductions + expenseReimbursements) * 100) / 100);
     return { grossPay: Math.round(totalGross * 100) / 100, employeeSSNIT,
         employerSSNIT, taxableIncome: Math.round(taxableIncome * 100) / 100,
@@ -170,6 +171,10 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
         _sum: { bonus: true },
     });
     const bonusYtdMap = new Map(priorBonuses.map((entry) => [entry.employeeId, Number(entry._sum.bonus || 0)]));
+    // Load all active custom deduction templates for this org
+    const deductionTemplates = await client_1.default.payrollDeductionTemplate.findMany({
+        where: { organizationId, isActive: true },
+    });
     const installmentMap = new Map();
     pendingInstallments.forEach(i => {
         if (employeeIds?.length && !employeeIds.includes(i.loan.employeeId))
@@ -192,7 +197,31 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
         const autoExpense = expenseMap.get(emp.id) || 0;
         const autoInstallment = installmentMap.get(emp.id) || 0;
         const allowances = adj?.allowances ?? 0;
-        const otherDeductions = (adj?.otherDeductions ?? 0) + autoInstallment;
+        // Apply custom deduction templates (GLOBAL + EMPLOYEE-scoped for this employee)
+        const applicableTemplates = deductionTemplates.filter((t) => t.type !== 'EMPLOYER_CONTRIBUTION' &&
+            (t.scope === 'GLOBAL' || (t.scope === 'EMPLOYEE' && t.employeeId === emp.id)));
+        const employerContribTemplates = deductionTemplates.filter((t) => t.type === 'EMPLOYER_CONTRIBUTION' &&
+            (t.scope === 'GLOBAL' || (t.scope === 'EMPLOYEE' && t.employeeId === emp.id)));
+        let customPreTaxTotal = 0;
+        let customPostTaxTotal = 0;
+        const customDeductionsSnapshot = [];
+        for (const tpl of applicableTemplates) {
+            const tplAmount = tpl.basis === 'PERCENTAGE_BASIC'
+                ? Math.round(base * (Number(tpl.amount) / 100) * 100) / 100
+                : Math.round(Number(tpl.amount) * 100) / 100;
+            if (tpl.taxTreatment === 'PRE_TAX')
+                customPreTaxTotal += tplAmount;
+            else
+                customPostTaxTotal += tplAmount;
+            customDeductionsSnapshot.push({ name: tpl.name, amount: tplAmount, type: tpl.type, taxTreatment: tpl.taxTreatment, basis: tpl.basis });
+        }
+        for (const tpl of employerContribTemplates) {
+            const tplAmount = tpl.basis === 'PERCENTAGE_BASIC'
+                ? Math.round(base * (Number(tpl.amount) / 100) * 100) / 100
+                : Math.round(Number(tpl.amount) * 100) / 100;
+            customDeductionsSnapshot.push({ name: tpl.name, amount: tplAmount, type: 'EMPLOYER_CONTRIBUTION', taxTreatment: tpl.taxTreatment, basis: tpl.basis });
+        }
+        const otherDeductions = (adj?.otherDeductions ?? 0) + autoInstallment + customPostTaxTotal;
         const calc = (0, exports.calculateGhanaPayroll)({
             grossSalary: base,
             bonus,
@@ -200,7 +229,8 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
             overtime,
             expenseReimbursements: autoExpense,
             loanDeductions: autoInstallment,
-            otherDeductions: adj?.otherDeductions ?? 0,
+            otherDeductions: (adj?.otherDeductions ?? 0) + customPostTaxTotal,
+            preTaxDeductions: customPreTaxTotal,
             ssnitRate,
             employerSsnitRate,
             payeBands,
@@ -220,7 +250,8 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
                 baseSalary: base, currency: DEFAULT_CURRENCY, overtime, bonus, allowances, expenseReimbursements: autoExpense, otherDeductions,
                 tax: calc.payeTax, ssnit: calc.employeeSSNIT, employerSsnit: calc.employerSSNIT, taxableIncome: calc.taxableIncome, tier2Pension: calc.tier2Pension,
                 grossPay: calc.grossPay, netPay: calc.netPay,
-                notes: adj?.notes
+                notes: adj?.notes,
+                ...(customDeductionsSnapshot.length ? { customDeductionsSnapshot } : {})
             }
         });
         items.push({ ...item, employee: emp });

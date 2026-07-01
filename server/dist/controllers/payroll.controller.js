@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.approveStatutoryRule = exports.createStatutoryRule = exports.getStatutoryRules = exports.exportBankCSV = exports.exportPayrollCSV = exports.downloadPayslipPDF = exports.getYearlySummary = exports.getMyPayslips = exports.getRunDetail = exports.getRuns = exports.updateItem = exports.deleteRun = exports.voidRun = exports.mdRejectRun = exports.releaseRun = exports.hrRejectRun = exports.hrApproveRun = exports.submitRun = exports.approveRun = exports.createRun = void 0;
+exports.approveStatutoryRule = exports.createStatutoryRule = exports.getStatutoryRules = exports.exportSsnitCsv = exports.exportGraPayeCsv = exports.exportBankCSV = exports.exportPayrollCSV = exports.downloadPayslipPDF = exports.getYearlySummary = exports.getMyPayslips = exports.getRunDetail = exports.getRuns = exports.updateItem = exports.deleteRun = exports.voidRun = exports.releaseRun = exports.mdRejectRun = exports.hrRejectRun = exports.hrApproveRun = exports.submitRun = exports.approveRun = exports.createRun = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const payrollService = __importStar(require("../services/payroll.service"));
 const audit_service_1 = require("../services/audit.service");
@@ -44,6 +44,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const pdf_service_1 = require("../services/pdf.service");
 const csv_writer_1 = require("csv-writer");
 const enterprise_controller_1 = require("./enterprise.controller");
+const email_service_1 = require("../services/email.service");
 const createRun = async (req, res) => {
     try {
         const { month, year, employeeIds, adjustments } = req.body;
@@ -105,8 +106,33 @@ const transitionRun = (action) => async (req, res) => {
 exports.submitRun = transitionRun('SUBMIT');
 exports.hrApproveRun = transitionRun('HR_APPROVE');
 exports.hrRejectRun = transitionRun('HR_REJECT');
-exports.releaseRun = transitionRun('RELEASE');
 exports.mdRejectRun = transitionRun('MD_REJECT');
+const releaseRun = async (req, res) => {
+    try {
+        const user = req.user;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+        const run = await payrollService.transitionPayrollRun(organizationId, req.params.id, user.id, 'RELEASE', req.body?.reason);
+        await (0, audit_service_1.logAction)(user.id, 'PAYROLL_RELEASE', 'PayrollRun', run.id, { period: run.period }, req.ip);
+        // Fire-and-forget payslip emails — do not block the HTTP response
+        client_1.default.payrollItem.findMany({
+            where: { runId: run.id, organizationId },
+            select: { employee: { select: { email: true, fullName: true } } }
+        }).then(items => {
+            const period = run.period;
+            for (const item of items) {
+                if (item.employee?.email) {
+                    (0, email_service_1.sendPayslipEmail)(item.employee.email, period, item.employee.fullName, organizationId)
+                        .catch(err => console.error('[payroll] payslip email failed:', item.employee?.email, err?.message));
+                }
+            }
+        }).catch(err => console.error('[payroll] payslip email fetch failed:', err?.message));
+        return res.json(run);
+    }
+    catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+};
+exports.releaseRun = releaseRun;
 const voidRun = async (req, res) => {
     try {
         const userReq = req.user;
@@ -340,6 +366,92 @@ const exportBankCSV = async (req, res) => {
     }
 };
 exports.exportBankCSV = exportBankCSV;
+const exportGraPayeCsv = async (req, res) => {
+    try {
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+        const run = await client_1.default.payrollRun.findFirst({
+            where: { id: req.params.id, organizationId },
+            include: {
+                items: {
+                    include: {
+                        employee: { select: { fullName: true, departmentObj: { select: { name: true } } } }
+                    }
+                }
+            }
+        });
+        if (!run)
+            return res.status(404).json({ error: 'Payroll run not found' });
+        const csvStringifier = (0, csv_writer_1.createObjectCsvStringifier)({
+            header: [
+                { id: 'name', title: 'Employee Name' },
+                { id: 'tin', title: 'TIN' },
+                { id: 'employmentIncome', title: 'Employment Income' },
+                { id: 'nonCashBenefits', title: 'Non-Cash Benefits' },
+                { id: 'totalGross', title: 'Total Gross' },
+                { id: 'allowableDeductions', title: 'Allowable Deductions' },
+                { id: 'chargeableIncome', title: 'Chargeable Income' },
+                { id: 'taxPayable', title: 'Tax Payable' },
+            ]
+        });
+        const records = run.items.map(item => ({
+            name: item.employee.fullName,
+            tin: '',
+            employmentIncome: +item.baseSalary + +item.overtime + +item.bonus,
+            nonCashBenefits: +item.allowances,
+            totalGross: +item.grossPay,
+            allowableDeductions: +item.ssnit,
+            chargeableIncome: Math.max(0, +item.grossPay - +item.ssnit),
+            taxPayable: +item.tax,
+        }));
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="gra-paye-${run.period}.csv"`);
+        res.send(csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records));
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.exportGraPayeCsv = exportGraPayeCsv;
+const exportSsnitCsv = async (req, res) => {
+    try {
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
+        const run = await client_1.default.payrollRun.findFirst({
+            where: { id: req.params.id, organizationId },
+            include: {
+                items: {
+                    include: {
+                        employee: { select: { fullName: true, ssnitNumber: true } }
+                    }
+                }
+            }
+        });
+        if (!run)
+            return res.status(404).json({ error: 'Payroll run not found' });
+        const csvStringifier = (0, csv_writer_1.createObjectCsvStringifier)({
+            header: [
+                { id: 'name', title: 'Employee Name' },
+                { id: 'ssnitNumber', title: 'SSNIT Number' },
+                { id: 'basicSalary', title: 'Basic Salary' },
+                { id: 'employeeContribution', title: 'Employee Contribution (5.5%)' },
+                { id: 'employerContribution', title: 'Employer Contribution (13%)' },
+            ]
+        });
+        const records = run.items.map(item => ({
+            name: item.employee.fullName,
+            ssnitNumber: item.employee.ssnitNumber || '',
+            basicSalary: item.baseSalary,
+            employeeContribution: item.ssnit,
+            employerContribution: +(+item.baseSalary * 0.13).toFixed(2),
+        }));
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="ssnit-${run.period}.csv"`);
+        res.send(csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records));
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.exportSsnitCsv = exportSsnitCsv;
 const getStatutoryRules = async (req, res) => {
     const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'mcb-ghana-tenant';
     const rules = await client_1.default.payrollStatutoryRule.findMany({ where: { organizationId }, orderBy: { effectiveFrom: 'desc' } });

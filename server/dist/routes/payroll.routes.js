@@ -4,6 +4,7 @@ const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const permissions_1 = require("../types/permissions");
 const payroll_controller_1 = require("../controllers/payroll.controller");
+const payroll_deductions_controller_1 = require("../controllers/payroll-deductions.controller");
 const validate_middleware_1 = require("../middleware/validate.middleware");
 const year_end_summary_service_1 = require("../services/year-end-summary.service");
 const enterprise_controller_1 = require("../controllers/enterprise.controller");
@@ -33,9 +34,11 @@ router.get('/my-tax-summary/:year', async (req, res) => {
 const payrollViewPermissions = [permissions_1.Permission.PAYROLL_PREPARE, permissions_1.Permission.PAYROLL_HR_APPROVE, permissions_1.Permission.PAYROLL_RELEASE];
 router.get('/summary', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.getYearlySummary);
 router.get('/', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.getRuns);
+// Statutory rule drafting/approval: Finance prepares, HR Director can also draft/approve per client requirements
+const statutoryRuleManagePermissions = [permissions_1.Permission.PAYROLL_PREPARE, permissions_1.Permission.PAYROLL_HR_APPROVE];
 router.get('/statutory-rules', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.getStatutoryRules);
-router.post('/statutory-rules', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), payroll_controller_1.createStatutoryRule);
-router.post('/statutory-rules/:id/approve', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), payroll_controller_1.approveStatutoryRule);
+router.post('/statutory-rules', (0, auth_middleware_1.requireAnyPermission)(statutoryRuleManagePermissions), payroll_controller_1.createStatutoryRule);
+router.post('/statutory-rules/:id/approve', (0, auth_middleware_1.requireAnyPermission)(statutoryRuleManagePermissions), payroll_controller_1.approveStatutoryRule);
 router.post('/runs', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollRunSchema), payroll_controller_1.createRun);
 router.post('/run', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollRunSchema), payroll_controller_1.createRun); // compatibility
 router.get('/:id', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.getRunDetail);
@@ -49,6 +52,14 @@ router.delete('/:id', (0, auth_middleware_1.requirePermission)(permissions_1.Per
 router.patch('/items/:itemId', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_PREPARE), (0, validate_middleware_1.validate)(validate_middleware_1.PayrollItemUpdateSchema), payroll_controller_1.updateItem);
 router.get('/:id/export/csv', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.exportPayrollCSV);
 router.get('/:id/bank-export/csv', (0, auth_middleware_1.requirePermission)(permissions_1.Permission.PAYROLL_EXPORT), payroll_controller_1.exportBankCSV);
+router.get('/:id/export/gra-paye-csv', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.exportGraPayeCsv);
+router.get('/:id/export/ssnit-csv', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_controller_1.exportSsnitCsv);
+// Custom deduction templates (Finance/MD manage)
+const deductionManagePermissions = [permissions_1.Permission.PAYROLL_PREPARE, permissions_1.Permission.PAYROLL_SUBMIT];
+router.get('/deduction-templates', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), payroll_deductions_controller_1.listDeductionTemplates);
+router.post('/deduction-templates', (0, auth_middleware_1.requireAnyPermission)(deductionManagePermissions), payroll_deductions_controller_1.createDeductionTemplate);
+router.patch('/deduction-templates/:id', (0, auth_middleware_1.requireAnyPermission)(deductionManagePermissions), payroll_deductions_controller_1.updateDeductionTemplate);
+router.delete('/deduction-templates/:id', (0, auth_middleware_1.requireAnyPermission)(deductionManagePermissions), payroll_deductions_controller_1.deleteDeductionTemplate);
 // Admin year-end summary for all employees
 router.get('/tax-summary/org/:year', (0, auth_middleware_1.requireAnyPermission)(payrollViewPermissions), async (req, res) => {
     try {

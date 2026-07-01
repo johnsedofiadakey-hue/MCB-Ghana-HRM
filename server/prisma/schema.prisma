@@ -380,6 +380,8 @@ model User {
   performedCardEvents         CardLifecycleEvent[]    @relation("CardEventPerformer")
   callCard                    CallCard?
   onboardingInviteToken       OnboardingInviteToken?
+  deductionRules              PayrollDeductionTemplate[] @relation("EmployeeDeductionRules")
+  createdDeductions           PayrollDeductionTemplate[] @relation("DeductionCreator")
 
   @@unique([employeeCode, organizationId])
   @@index([role, status])
@@ -873,7 +875,8 @@ model PayrollItem {
   employerSsnit         Decimal    @default(0)
   taxableIncome         Decimal    @default(0)
   tier2Pension          Decimal    @default(0)
-  otherDeductions       Decimal    @default(0)
+  otherDeductions              Decimal    @default(0)
+  customDeductionsSnapshot     Json?
   grossPay              Decimal
   netPay                Decimal
   notes                 String?
@@ -2081,4 +2084,33 @@ model OnboardingInviteToken {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── CUSTOM PAYROLL DEDUCTION RULES ──────────────────────────────────────────
+// Finance creates rules that auto-apply during payroll calculation.
+// scope=GLOBAL → all employees; scope=EMPLOYEE → one specific employee.
+// PRE_TAX deductions reduce taxable income before PAYE is calculated.
+// POST_TAX deductions are applied after all statutory calculations.
+// EMPLOYER_CONTRIBUTION type is an extra employer cost; does not reduce employee net.
+model PayrollDeductionTemplate {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  type           String   @default("DEDUCTION")     // DEDUCTION | EMPLOYER_CONTRIBUTION
+  scope          String   @default("GLOBAL")         // GLOBAL | EMPLOYEE
+  employeeId     String?
+  basis          String   @default("FIXED")          // FIXED | PERCENTAGE_BASIC
+  amount         Decimal  @default(0)
+  taxTreatment   String   @default("POST_TAX")       // PRE_TAX | POST_TAX
+  isActive       Boolean  @default(true)
+  notes          String?
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  employee        User?   @relation("EmployeeDeductionRules", fields: [employeeId], references: [id])
+  createdBy       User    @relation("DeductionCreator", fields: [createdById], references: [id])
+
+  @@index([organizationId, isActive])
+  @@index([organizationId, employeeId])
 }
