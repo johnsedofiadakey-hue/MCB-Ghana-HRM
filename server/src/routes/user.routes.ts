@@ -9,7 +9,8 @@ import {
   restoreEmployee,
   uploadImage, uploadSignature, getMyTeam, getSupervisors,
   assignRole, getUserRiskProfile, resetEmployeePassword, activateEmployeeLogin,
-  getCasualWorkerSummary
+  getCasualWorkerSummary,
+  getOnboardingProfileForm, submitOnboardingProfileForm, hrApproveOnboarding
 } from '../controllers/user.controller';
 
 const router = Router();
@@ -59,5 +60,8 @@ router.post('/:id/signature', uploadSignature);
 
 // Administrative reset (IT_MANAGER or MD >= 85)
 router.post('/:id/reset-password', requireSpecificRole(['IT_MANAGER', 'IT_ADMIN', 'MD', 'DEV']), resetEmployeePassword);
+
+// HR onboarding approval (activate account after self-onboarding review)
+router.post('/:id/hr-review-approve', requireSpecificRole(['HR_DIRECTOR', 'MD', 'DEV']), hrApproveOnboarding);
 
 export default router;

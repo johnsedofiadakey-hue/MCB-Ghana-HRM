@@ -4,9 +4,11 @@ import * as auditController from '../controllers/audit.controller';
 
 const router = Router();
 
-// Only MD can view audit logs
-router.get('/', authenticate, requireSpecificRole(['IT_MANAGER', 'MD', 'DEV']), auditController.getLogs);
-router.get('/logs', authenticate, requireSpecificRole(['IT_MANAGER', 'MD', 'DEV']), auditController.getLogs);
-router.get('/export', authenticate, requireSpecificRole(['IT_MANAGER', 'MD', 'DEV']), auditController.exportLogsCSV);
+const AUDIT_ROLES = ['IT_MANAGER', 'IT_ADMIN', 'MD', 'HR_DIRECTOR', 'DEV'];
+
+router.get('/', authenticate, requireSpecificRole(AUDIT_ROLES), auditController.getLogs);
+router.get('/logs', authenticate, requireSpecificRole(AUDIT_ROLES), auditController.getLogs);
+router.get('/export', authenticate, requireSpecificRole(AUDIT_ROLES), auditController.exportLogsCSV);
+router.get('/users', authenticate, requireSpecificRole(AUDIT_ROLES), auditController.getAuditUsers);
 
 export default router;

@@ -379,6 +379,7 @@ model User {
   cards                       Card[]                  @relation("UserCards")
   performedCardEvents         CardLifecycleEvent[]    @relation("CardEventPerformer")
   callCard                    CallCard?
+  onboardingInviteToken       OnboardingInviteToken?
 
   @@unique([employeeCode, organizationId])
   @@index([role, status])
@@ -1716,13 +1717,29 @@ model SupportTicket {
   resolutionSummary String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  assignedTo        User?            @relation("AssignedTickets", fields: [assignedToId], references: [id])
-  employee          User             @relation("EmployeeTickets", fields: [employeeId], references: [id], onDelete: Cascade)
+  assignedTo        User?             @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  employee          User              @relation("EmployeeTickets", fields: [employeeId], references: [id], onDelete: Cascade)
   comments          TicketComment[]
   activities        TicketActivity[]
+  attachments       TicketAttachment[]
 
   @@index([organizationId, status])
   @@index([employeeId])
+}
+
+model TicketAttachment {
+  id             String        @id @default(uuid())
+  organizationId String?       @default("mcb-ghana-tenant")
+  ticketId       String
+  commentId      String?
+  uploadedById   String
+  fileUrl        String
+  fileName       String
+  mimeType       String
+  createdAt      DateTime      @default(now())
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, ticketId])
 }
 
 model TicketComment {
@@ -2054,4 +2071,14 @@ model CallCardConnection {
   callCard   CallCard @relation(fields: [callCardId], references: [id], onDelete: Cascade)
 
   @@index([callCardId])
+}
+
+model OnboardingInviteToken {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

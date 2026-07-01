@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LifeBuoy, Search, Plus, 
+import {
+  LifeBuoy, Search, Plus,
   User,
   Send, Paperclip, ChevronLeft,
-  CheckCircle2, BarChart3, BookOpen, Clock, UserPlus, Lock
+  CheckCircle2, BarChart3, BookOpen, Clock, UserPlus, Lock, Activity, X
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import api from '../services/api';
@@ -12,6 +12,7 @@ import { getStoredUser } from '../utils/session';
 import CreateTicketModal from '../components/support/CreateTicketModal';
 import { toast } from '../utils/toast';
 import { useParams } from 'react-router-dom';
+import { useWebSocket } from '../services/websocket';
 
 const Support = () => {
   const { ticketId } = useParams();
@@ -20,7 +21,9 @@ const Support = () => {
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [attachFile, setAttachFile] = useState<File | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [search, setSearch] = useState('');
@@ -63,6 +66,13 @@ const Support = () => {
     if (ticketId) fetchTicketDetails(ticketId);
   }, [ticketId]);
 
+  // Live refresh when a websocket notification references the open ticket
+  useWebSocket(useCallback((type: string, data: any) => {
+    if (type === 'NOTIFICATION' && selectedTicket && data?.link?.includes(selectedTicket.id)) {
+      fetchTicketDetails(selectedTicket.id);
+    }
+  }, [selectedTicket?.id]));
+
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -104,7 +114,23 @@ const Support = () => {
   const handleSendComment = async () => {
     if (!comment.trim() || !selectedTicket) return;
     try {
-      await api.post(`/support/tickets/${selectedTicket.id}/comments`, { content: comment, attachmentUrl: attachmentUrl || undefined, isInternal: isAdmin && isInternalNote });
+      let finalAttachmentUrl = attachmentUrl || undefined;
+
+      // If a file is attached, upload it first
+      if (attachFile) {
+        const reader = new FileReader();
+        const base64 = await new Promise<string>(resolve => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(attachFile);
+        });
+        const resp = await api.post(`/support/tickets/${selectedTicket.id}/attach`, {
+          fileBase64: base64, fileName: attachFile.name, mimeType: attachFile.type,
+        });
+        finalAttachmentUrl = resp.data.fileUrl;
+        setAttachFile(null);
+      }
+
+      await api.post(`/support/tickets/${selectedTicket.id}/comments`, { content: comment, attachmentUrl: finalAttachmentUrl, isInternal: isAdmin && isInternalNote });
       setComment('');
       setAttachmentUrl('');
       setIsInternalNote(false);
@@ -410,6 +436,20 @@ const Support = () => {
 
                 {selectedTicket.resolutionSummary && <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5"><p className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Resolution summary</p><p className="mt-2 text-sm text-[var(--text-primary)]">{selectedTicket.resolutionSummary}</p></div>}
 
+                {/* Attachments */}
+                {selectedTicket.attachments?.length > 0 && (
+                  <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3 flex items-center gap-1"><Paperclip size={11} /> Attachments</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTicket.attachments.map((att: any) => (
+                        <a key={att.id} href={att.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--primary)] hover:border-[var(--primary)] transition-all">
+                          <Paperclip size={12} /> {att.fileName}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <AnimatePresence>
                   {selectedTicket.comments?.map((c: any) => (
                     <motion.div 
@@ -458,11 +498,34 @@ const Support = () => {
                   ))}
                   <div ref={chatEndRef} />
                 </AnimatePresence>
+
+                {/* Activity Timeline */}
+                {selectedTicket.activities?.length > 0 && (
+                  <div className="mt-6">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3 flex items-center gap-1"><Activity size={11} /> Activity Log</p>
+                    <div className="space-y-2">
+                      {selectedTicket.activities.map((act: any) => (
+                        <div key={act.id} className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+                          <span className="w-2 h-2 rounded-full bg-[var(--primary)]/40 flex-shrink-0" />
+                          <span className="font-semibold">{act.action.replace(/_/g, ' ')}</span>
+                          {act.metadata?.toName && <span className="text-[var(--text-muted)]">→ {act.metadata.toName}</span>}
+                          <span className="ml-auto text-[var(--text-muted)] text-[10px]">{new Date(act.createdAt).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Uplink Area */}
               <div className="p-6 md:p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-card)]">
                 {isAdmin && <label className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]"><input type="checkbox" checked={isInternalNote} onChange={e => setIsInternalNote(e.target.checked)} /> Internal note (hidden from requester)</label>}
+                {attachFile && (
+                  <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/20 text-xs font-semibold text-[var(--primary)] w-fit">
+                    <Paperclip size={12} /> {attachFile.name}
+                    <button onClick={() => setAttachFile(null)} className="ml-1 hover:text-red-400 transition-colors"><X size={12} /></button>
+                  </div>
+                )}
                 <div className="flex items-center gap-4 p-2 pl-6 pr-2 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] focus-within:border-[var(--primary)] focus-within:bg-[var(--bg-card)] focus-within:shadow-[0_0_20px_rgba(var(--primary-rgb),0.05)] transition-all">
                   <input 
                     type="text" 
@@ -473,8 +536,11 @@ const Support = () => {
                     className="flex-1 bg-transparent border-none outline-none text-sm font-bold py-4 text-[var(--text-primary)]"
                   />
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setAttachmentUrl(window.prompt('Paste a secure attachment URL:') || '')} className={cn('w-12 h-12 flex items-center justify-center hover:text-[var(--primary)] transition-colors rounded-2xl hover:bg-[var(--bg-card)]', attachmentUrl ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]')} title={attachmentUrl || 'Attach a secure URL'}><Paperclip size={20} /></button>
-                    <button 
+                    <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={e => setAttachFile(e.target.files?.[0] || null)} />
+                    <button onClick={() => fileInputRef.current?.click()} className={cn('w-12 h-12 flex items-center justify-center hover:text-[var(--primary)] transition-colors rounded-2xl hover:bg-[var(--bg-card)]', attachFile ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]')} title={attachFile?.name || 'Attach file'}>
+                      <Paperclip size={20} />
+                    </button>
+                    <button
                       onClick={handleSendComment}
                       className="w-14 h-14 bg-[var(--primary)] text-white rounded-2xl hover:shadow-[0_10px_30px_rgba(var(--primary-rgb),0.3)] hover:scale-105 transition-all flex items-center justify-center"
                     >

@@ -106,10 +106,12 @@ export default function EmployeeManagement() {
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const [modalTab, setModalTab] = useState<'identity' | 'corporate' | 'financial' | 'family' | 'academic'>('identity');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'hard_delete' | 'view' | null>(null);
+  const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'hard_delete' | 'view' | 'hr_review' | null>(null);
   const [selected, setSelected] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [sendOnboardingInvite, setSendOnboardingInvite] = useState(true);
+  const [showPendingReview, setShowPendingReview] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const modalAvatarRef = useRef<HTMLInputElement>(null);
 
@@ -301,9 +303,13 @@ export default function EmployeeManagement() {
       }
 
       if (modal === 'create') {
-        await api.post('/employees', submittedForm);
+        await api.post('/employees', { ...submittedForm, sendOnboardingInvite });
         toast.success(t('employees.personnel_deployment_success'));
-        toast.info('Starter password: unlockme — they\'ll be asked to set their own on first login.', 6000);
+        if (sendOnboardingInvite && submittedForm.email) {
+          toast.info(`Self-onboarding invite sent to ${submittedForm.email} — they have 7 days to complete their profile.`, 6000);
+        } else {
+          toast.info('Starter password: unlockme — they\'ll be asked to set their own on first login.', 6000);
+        }
       } else {
         await api.put(`/employees/${selected.id}`, submittedForm);
         toast.success(t('employees.dossier_updated_success'));
@@ -337,6 +343,18 @@ export default function EmployeeManagement() {
       fetchAll();
     } catch (err: any) { toast.error(t('employees.alerts.restore_error')); }
     finally { setSaving(false); }
+  };
+
+  const handleHrApproveOnboarding = async () => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await api.post(`/employees/${selected.id}/hr-review-approve`);
+      toast.success(`${selected.fullName}'s account has been activated. Password-set email sent.`);
+      setModal(null); fetchAll();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Approval failed');
+    } finally { setSaving(false); }
   };
 
   const handleHardDelete = async () => {
@@ -397,9 +415,10 @@ export default function EmployeeManagement() {
       // 🛡️ STEALTH PROTOCOL: Accounts with Rank 100 (Dev) are invisible to everyone except other Rank 100 users.
       const isDevAccount = (emp.rank || 0) >= 100;
       if (isDevAccount && rank < 100) return false;
+      if (showPendingReview) return emp.employeeLifecycleStage === 'PENDING_HR_REVIEW';
       return true;
     });
-  }, [employees, rank]);
+  }, [employees, rank, showPendingReview]);
 
   return (
     <div className="space-y-12 pb-32">
@@ -415,10 +434,13 @@ export default function EmployeeManagement() {
         
         <div className="flex flex-wrap items-center gap-4">
              <div className="flex bg-[var(--bg-elevated)]/40 p-1.5 rounded-2xl border border-[var(--border-subtle)]/50 backdrop-blur-sm shadow-sm">
-                <button onClick={() => setActiveTab('active')} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'active' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
+                <button onClick={() => { setActiveTab('active'); setShowPendingReview(false); }} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'active' && !showPendingReview ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
                     {t('employees.active_personnel')}
                 </button>
-                <button onClick={() => setActiveTab('archived')} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'archived' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
+                <button onClick={() => { setActiveTab('active'); setShowPendingReview(true); }} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", showPendingReview ? "bg-amber-500/20 text-amber-400 shadow-lg shadow-black/5 border border-amber-500/30" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
+                    Pending Review
+                </button>
+                <button onClick={() => { setActiveTab('archived'); setShowPendingReview(false); }} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'archived' && !showPendingReview ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-lg shadow-black/5 border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>
                     {t('employees.archived_personnel')}
                 </button>
              </div>
@@ -662,6 +684,10 @@ export default function EmployeeManagement() {
                          {activeTab === 'archived' ? (
                             <button onClick={() => handleRestore(emp)} className="flex-1 h-10 rounded-xl bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)] hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-[var(--success)]/20 shadow-sm">
                                 <ArrowRight size={14} /> {t('employees.restore_to_duty')}
+                            </button>
+                         ) : emp.employeeLifecycleStage === 'PENDING_HR_REVIEW' && rank >= 92 ? (
+                            <button onClick={() => { setSelected(emp); setModal('hr_review'); }} className="flex-1 h-10 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest border border-amber-500/20 shadow-sm flex items-center justify-center gap-1">
+                                Review Profile
                             </button>
                          ) : (
                             <button onClick={() => openView(emp)} className="flex-1 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-[var(--primary)] hover:text-[var(--text-inverse)] hover:border-[var(--primary)] transition-all font-black text-[9px] uppercase tracking-widest">
@@ -1067,11 +1093,60 @@ export default function EmployeeManagement() {
                  )}
               </form>
 
-              <div className="px-10 py-10 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-end gap-5">
-                 <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">{t('common.cancel')}</button>
-                 <button type="submit" form="emp-form" disabled={saving} className="px-12 py-4 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
-                    {saving ? t('common.syncing') : (modal === 'create' ? t('employees.deploy_button') : t('common.save_changes'))}
-                 </button>
+              <div className="px-10 py-10 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center justify-between gap-5">
+                 {modal === 'create' && (
+                   <label className="flex items-center gap-3 cursor-pointer select-none">
+                     <input
+                       type="checkbox"
+                       checked={sendOnboardingInvite}
+                       onChange={e => setSendOnboardingInvite(e.target.checked)}
+                       className="w-4 h-4 rounded accent-[var(--primary)]"
+                     />
+                     <span className="text-xs font-semibold text-[var(--text-secondary)]">Send self-onboarding invite email</span>
+                   </label>
+                 )}
+                 <div className="flex items-center gap-5 ml-auto">
+                   <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">{t('common.cancel')}</button>
+                   <button type="submit" form="emp-form" disabled={saving} className="px-12 py-4 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
+                      {saving ? t('common.syncing') : (modal === 'create' ? t('employees.deploy_button') : t('common.save_changes'))}
+                   </button>
+                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* HR Review Modal */}
+        {modal === 'hr_review' && selected && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModal(null)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
+              <h2 className="text-xl font-black text-[var(--text-primary)] mb-1">Review Profile Submission</h2>
+              <p className="text-sm text-[var(--text-secondary)] mb-6">{selected.fullName} has completed their self-onboarding profile.</p>
+              <div className="space-y-3 mb-8 text-sm">
+                {[
+                  ['Name', selected.fullName],
+                  ['Email', selected.email],
+                  ['Phone', selected.contactNumber],
+                  ['National ID', selected.nationalId],
+                  ['Gender', selected.gender],
+                  ['Date of Birth', selected.dob ? new Date(selected.dob).toLocaleDateString() : '—'],
+                  ['Address', selected.address],
+                  ['Bank', selected.bankName ? `${selected.bankName} — ${selected.bankAccountNumber}` : '—'],
+                  ['SSNIT', selected.ssnitNumber],
+                  ['Emergency Contact', selected.emergencyContactName ? `${selected.emergencyContactName} (${selected.emergencyContactPhone})` : '—'],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex items-start gap-4">
+                    <span className="w-32 flex-shrink-0 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">{label}</span>
+                    <span className="text-[var(--text-primary)] font-medium">{value || '—'}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-4">
+                <button onClick={() => setModal(null)} className="flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-wider text-[var(--text-muted)] border border-[var(--border)] hover:text-[var(--text-primary)] transition-all">Cancel</button>
+                <button onClick={handleHrApproveOnboarding} disabled={saving} className="flex-[2] py-3 rounded-xl text-sm font-black uppercase tracking-wider bg-[var(--primary)] text-white hover:opacity-90 transition-all">
+                  {saving ? 'Activating…' : 'Confirm & Activate Account'}
+                </button>
               </div>
             </motion.div>
           </div>

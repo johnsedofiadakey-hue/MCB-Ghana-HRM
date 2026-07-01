@@ -176,11 +176,10 @@ export const getAuditLogs = async (
   organizationId: string,
   page = 1,
   limit = 50,
-  filters?: { entity?: string; userId?: string }
+  filters?: { entity?: string; userId?: string; action?: string; dateFrom?: string; dateTo?: string }
 ) => {
-  const where: any = { 
+  const where: any = {
     organizationId,
-    // 🛡️ DEV ISOLATION: Hide actions performed by DEV accounts from standard audit trails
     user: {
       isNot: { role: 'DEV' }
     }
@@ -188,6 +187,12 @@ export const getAuditLogs = async (
 
   if (filters?.entity) where.entity = filters.entity;
   if (filters?.userId) where.userId = filters.userId;
+  if (filters?.action) where.action = filters.action;
+  if (filters?.dateFrom || filters?.dateTo) {
+    where.createdAt = {};
+    if (filters.dateFrom) where.createdAt.gte = new Date(filters.dateFrom);
+    if (filters.dateTo) { const end = new Date(filters.dateTo); end.setHours(23, 59, 59, 999); where.createdAt.lte = end; }
+  }
 
   const skip = (page - 1) * limit;
   const [logs, total] = await Promise.all([

@@ -4,6 +4,7 @@ import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
 import { PolicyService } from '../services/policy.service';
 import { Permission } from '../types/permissions';
+import { FirebaseStorageService } from '../services/firebase-storage.service';
 
 const queuePermissions: Record<string, string> = {
   IT: Permission.HELPDESK_IT,
@@ -108,6 +109,17 @@ export const createTicket = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Priority must be URGENT, HIGH, NORMAL, or LOW' });
     }
 
+    // Resolve the most-senior active user for this queue to auto-assign
+    const queueRoleMap: Record<string, string[]> = {
+      IT: ['IT_MANAGER', 'IT_ADMIN'], HR: ['HR_DIRECTOR', 'HR_MANAGER'], FINANCE: ['FINANCE_MANAGER'],
+      MARKETING: ['MARKETING_HEAD'], FACILITIES: ['DIRECTOR'], OTHER: ['HR_DIRECTOR'],
+    };
+    const queueOwner = await prisma.user.findFirst({
+      where: { organizationId, role: { in: queueRoleMap[queue] || ['HR_DIRECTOR'] }, isArchived: false, status: 'ACTIVE' },
+      orderBy: { rank: 'desc' },
+      select: { id: true },
+    });
+
     const ticket = await prisma.supportTicket.create({
       data: {
         organizationId,
@@ -118,26 +130,29 @@ export const createTicket = async (req: Request, res: Response) => {
         priority: normalizedPriority,
         status: 'OPEN',
         employeeId,
+        assignedToId: queueOwner?.id ?? null,
+        assignedAt: queueOwner ? new Date() : null,
         slaDueAt: addBusinessHours(new Date(), slaHours[normalizedPriority] || slaHours.NORMAL),
       }
     });
-    await prisma.ticketActivity.create({
-      data: { organizationId, ticketId: ticket.id, actorId: employeeId, action: 'CREATED', metadata: { queue, priority: normalizedPriority } },
+    await prisma.ticketActivity.createMany({
+      data: [
+        { organizationId, ticketId: ticket.id, actorId: employeeId, action: 'CREATED', metadata: { queue, priority: normalizedPriority } },
+        ...(queueOwner ? [{ organizationId, ticketId: ticket.id, actorId: employeeId, action: 'ASSIGNED', metadata: { to: queueOwner.id, reason: 'auto-routed to queue owner' } }] : []),
+      ],
     });
 
     await logAction(employeeId, 'CREATE_SUPPORT_TICKET', 'SupportTicket', ticket.id, { category, priority }, req.ip);
-    
-    const roleByQueue: Record<string, string[]> = {
-      IT: ['IT_MANAGER', 'IT_ADMIN'], HR: ['HR_DIRECTOR', 'HR_MANAGER'], FINANCE: ['FINANCE_MANAGER'],
-      MARKETING: ['MARKETING_HEAD'], FACILITIES: ['DIRECTOR'], OTHER: ['DIRECTOR'],
-    };
-    const queueOwners = await prisma.user.findMany({
-      where: { organizationId, role: { in: roleByQueue[queue] || [] } },
+
+    const allOwnerIds = await prisma.user.findMany({
+      where: { organizationId, role: { in: queueRoleMap[queue] || [] } },
       select: { id: true }
     });
-    
-    for (const admin of queueOwners) {
-      await notify(admin.id, 'New Support Ticket 🎫', `[${category}] ${subject}`, 'WARNING', `/support/tickets/${ticket.id}`);
+    for (const admin of allOwnerIds) {
+      await notify(admin.id, 'New Support Ticket', `[${category}] ${subject}`, 'WARNING', `/support?ticket=${ticket.id}`);
+    }
+    if (queueOwner) {
+      await notify(queueOwner.id, 'Ticket Assigned to You', `[${category}] ${subject}`, 'INFO', `/support?ticket=${ticket.id}`);
     }
 
     res.status(201).json(ticket);
@@ -213,19 +228,21 @@ export const getTicketDetails = async (req: Request, res: Response) => {
       where: { id, organizationId },
       include: {
         employee: { select: { fullName: true, email: true, avatarUrl: true } },
-        assignedTo: { select: { fullName: true, email: true } },
+        assignedTo: { select: { id: true, fullName: true, email: true, avatarUrl: true } },
         comments: {
           include: { user: { select: { fullName: true, avatarUrl: true, role: true } } },
           orderBy: { createdAt: 'asc' }
         },
         activities: { orderBy: { createdAt: 'asc' } },
-      }
+        attachments: { orderBy: { createdAt: 'asc' } } as any,
+      } as any
     });
 
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     if (!(await canAccessTicket(ticket, userId))) return res.status(403).json({ error: 'Access denied' });
     const isRequester = ticket.employeeId === userId;
-    res.json({ ...ticket, comments: isRequester ? ticket.comments.filter((comment) => !comment.isInternal) : ticket.comments });
+    const ticketData = ticket as any;
+    res.json({ ...ticketData, comments: isRequester ? ticketData.comments.filter((c: any) => !c.isInternal) : ticketData.comments });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -479,5 +496,64 @@ export const getLeads = async (req: Request, res: Response) => {
     res.json(leads);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const attachTicketFile = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { fileBase64, fileName, mimeType, commentId } = req.body;
+    const userId = req.user?.id!;
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+
+    if (!fileBase64 || !fileName || !mimeType) {
+      return res.status(400).json({ error: 'fileBase64, fileName, and mimeType are required' });
+    }
+
+    const ticket = await prisma.supportTicket.findFirst({ where: { id, organizationId } });
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    if (!(await canAccessTicket(ticket, userId))) return res.status(403).json({ error: 'Access denied' });
+
+    const buffer = Buffer.from(fileBase64.replace(/^data:[^;]+;base64,/, ''), 'base64');
+    const fileUrl = await FirebaseStorageService.uploadFile(buffer, fileName, 'ticket-attachments', mimeType);
+
+    const attachment = await (prisma as any).ticketAttachment.create({
+      data: { organizationId, ticketId: id, commentId: commentId || null, uploadedById: userId, fileUrl, fileName, mimeType },
+    });
+    await prisma.ticketActivity.create({
+      data: { organizationId, ticketId: id, actorId: userId, action: 'ATTACHMENT_ADDED', metadata: { fileName, mimeType } },
+    });
+
+    return res.status(201).json(attachment);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const assignTicket = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { assigneeId } = req.body;
+    const userId = req.user?.id!;
+    const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
+
+    const ticket = await prisma.supportTicket.findFirst({ where: { id, organizationId } });
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+
+    const assignee = await prisma.user.findFirst({ where: { id: assigneeId, organizationId, isArchived: false }, select: { id: true, fullName: true } });
+    if (!assignee) return res.status(404).json({ error: 'Assignee not found' });
+
+    const updated = await prisma.supportTicket.update({
+      where: { id },
+      data: { assignedToId: assigneeId, assignedAt: new Date() },
+    });
+    await prisma.ticketActivity.create({
+      data: { organizationId, ticketId: id, actorId: userId, action: 'REASSIGNED', metadata: { to: assigneeId, toName: assignee.fullName } },
+    });
+    await notify(assigneeId, 'Ticket Assigned to You', `[${ticket.queue}] ${ticket.subject}`, 'INFO', `/support?ticket=${id}`);
+
+    return res.json(updated);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
   }
 };

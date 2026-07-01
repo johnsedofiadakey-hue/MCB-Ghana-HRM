@@ -89,6 +89,7 @@ const PredictiveAnalytics = lazy(() => import('./pages/analytics/PredictiveAnaly
 const SharedCallCard = lazy(() => import('./pages/public/SharedCallCard'));
 const ResetPassword = lazy(() => import('./pages/public/ResetPassword'));
 const BillingLock = lazy(() => import('./pages/public/BillingLock'));
+const CompleteProfile = lazy(() => import('./pages/public/CompleteProfile'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64 bg-[var(--bg-main)]">
@@ -472,6 +473,7 @@ const AppContent = () => {
           <Route path="/shared-card/:id" element={<SharedCallCard />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/billing-lock" element={<BillingLock />} />
+          <Route path="/onboard/complete-profile" element={<CompleteProfile />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardRouter />} />
@@ -502,7 +504,7 @@ const AppContent = () => {
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/print/ids" element={<RoleGuard permissions={['card.production']} allowedRoles={['MARKETING_HEAD', 'DEV']}><PrintIDsPage /></RoleGuard>} />
             <Route path="/assets" element={<AssetManagement />} />
-            <Route path="/audit" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><AuditLogs /></RoleGuard>} />
+            <Route path="/audit" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'HR_DIRECTOR', 'DEV']}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
             <Route path="/settings" element={<RoleGuard allowedRoles={['IT_MANAGER', 'IT_ADMIN', 'IT', 'MD', 'DEV']}><SettingsHub /></RoleGuard>} />
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />

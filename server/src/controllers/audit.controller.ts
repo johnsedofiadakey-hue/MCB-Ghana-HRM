@@ -10,12 +10,31 @@ export const getLogs = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 50;
         const entity = req.query.entity as string | undefined;
         const userId = req.query.userId as string | undefined;
+        const action = req.query.action as string | undefined;
+        const dateFrom = req.query.dateFrom as string | undefined;
+        const dateTo = req.query.dateTo as string | undefined;
 
-        const data = await getAuditLogs(organizationId, page, limit, { entity, userId });
+        const data = await getAuditLogs(organizationId, page, limit, { entity, userId, action, dateFrom, dateTo });
         res.json(data);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
+};
+
+export const getAuditUsers = async (req: Request, res: Response) => {
+  try {
+    const organizationId = (req as any).user?.organizationId || 'mcb-ghana-tenant';
+    const users = await prisma.auditLog.findMany({
+      where: { organizationId, userId: { not: null } },
+      select: { userId: true, user: { select: { fullName: true, email: true } } },
+      distinct: ['userId'],
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
+    res.json(users.filter(u => u.user).map(u => ({ id: u.userId, fullName: u.user!.fullName, email: u.user!.email })));
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const exportLogsCSV = async (req: Request, res: Response) => {

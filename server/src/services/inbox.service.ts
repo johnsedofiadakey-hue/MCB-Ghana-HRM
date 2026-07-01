@@ -92,7 +92,8 @@ export class InboxService {
             title: 'Relief Request',
             subtitle: `${l.employee?.fullName || 'Staff Member'} requested you as a reliever.`,
             priority: 'MEDIUM',
-            link: '/leave',
+            link: `/leave?leaveId=${l.id}`,
+            data: { leaveId: l.id },
             createdAt: l.createdAt
           });
         }
@@ -111,7 +112,8 @@ export class InboxService {
               title: 'Leave Approval Required',
               subtitle: `${l.employee?.fullName || 'Staff Member'} — awaiting your review`,
               priority: 'HIGH',
-              link: '/leave',
+              link: `/leave?leaveId=${l.id}`,
+              data: { leaveId: l.id },
               createdAt: l.createdAt
             });
           } else if (isHrDirectorOverride) {
@@ -121,7 +123,8 @@ export class InboxService {
               title: 'Leave With Manager',
               subtitle: `${l.employee?.fullName || 'Staff Member'} — with their manager for review`,
               priority: 'LOW',
-              link: '/leave',
+              link: `/leave?leaveId=${l.id}`,
+              data: { leaveId: l.id },
               createdAt: l.createdAt,
               monitorOnly: true,
             });
@@ -141,7 +144,8 @@ export class InboxService {
             title: 'Leave Approval Required',
             subtitle: `${l.employee?.fullName || 'Staff Member'} - Stage: ${l.status.replace('_', ' ')}`,
             priority: 'HIGH',
-            link: '/leave',
+            link: `/leave?leaveId=${l.id}`,
+            data: { leaveId: l.id },
             createdAt: l.createdAt
           });
         }

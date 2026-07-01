@@ -576,6 +576,9 @@ const Leave = () => {
                                           <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center gap-2 w-fit", cfg.badge)}>
                                              <Icon size={12} className={cfg.color} /> {t(cfg.label)}
                                           </span>
+                                          <span className="text-[8px] font-bold text-[var(--text-muted)] flex items-center gap-1 opacity-50">
+                                            <Clock size={9} /> {format(new Date(leave.createdAt), 'dd MMM yyyy, HH:mm')}
+                                          </span>
                                           {(leave.status === 'MANAGER_REJECTED' || leave.status === 'MD_REJECTED' || leave.status === 'RELIEVER_DECLINED') && (
                                             <div className="flex items-center gap-2 text-[9px] font-bold text-[var(--error)] bg-[var(--error)]/5 px-3 py-1.5 rounded-lg border border-[var(--error)]/10 w-fit">
                                               <XCircle size={10} />
@@ -655,6 +658,9 @@ const Leave = () => {
                                      <div>
                                         <p className="text-[13px] font-black text-[var(--text-primary)] uppercase">{leave.employee?.fullName}</p>
                                         <p className="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest line-clamp-1 italic">{leave.reason}</p>
+                                        <p className="text-[9px] font-bold text-[var(--text-muted)] mt-1 flex items-center gap-1 opacity-50">
+                                          <Clock size={9} /> {format(new Date(leave.createdAt), 'dd MMM yyyy, HH:mm')}
+                                        </p>
                                      </div>
                                   </td>
                                   <td className="py-6" data-label={t('leave.force_dimension')}><span className="text-[13px] font-black text-[var(--primary)] uppercase italic tracking-tighter">{t('leave.rotation_days', { days: leave.leaveDays })}</span></td>
@@ -749,6 +755,9 @@ const Leave = () => {
                                <p className="mt-3 text-xs font-semibold text-[var(--text-secondary)] break-words">{request.reason}</p>
                                <p className="mt-2 text-[10px] font-black text-[var(--primary)] uppercase tracking-wider">
                                  {format(new Date(request.startDate), 'dd MMM')} — {format(new Date(request.endDate), 'dd MMM yyyy')} · {request.leaveDays} {t('leave.days')}
+                               </p>
+                               <p className="mt-1 text-[9px] font-bold text-[var(--text-muted)] flex items-center gap-1 opacity-50">
+                                 <Clock size={9} /> Submitted {format(new Date(request.createdAt), 'dd MMM yyyy, HH:mm')}
                                </p>
                              </div>
                              <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">

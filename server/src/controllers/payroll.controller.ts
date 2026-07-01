@@ -7,6 +7,7 @@ import { PdfExportService } from '../services/pdf.service';
 import { createObjectCsvStringifier } from 'csv-writer';
 import { getOrgId } from './enterprise.controller';
 import { i18n } from '../services/i18n.service';
+import { sendPayslipEmail } from '../services/email.service';
 
 export const createRun = async (req: Request, res: Response) => {
   try {
@@ -71,8 +72,34 @@ const transitionRun = (action: 'SUBMIT' | 'HR_APPROVE' | 'HR_REJECT' | 'RELEASE'
 export const submitRun = transitionRun('SUBMIT');
 export const hrApproveRun = transitionRun('HR_APPROVE');
 export const hrRejectRun = transitionRun('HR_REJECT');
-export const releaseRun = transitionRun('RELEASE');
 export const mdRejectRun = transitionRun('MD_REJECT');
+
+export const releaseRun = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const run = await payrollService.transitionPayrollRun(organizationId, req.params.id, user.id, 'RELEASE', req.body?.reason);
+    await logAction(user.id, 'PAYROLL_RELEASE', 'PayrollRun', run.id, { period: run.period }, req.ip);
+
+    // Fire-and-forget payslip emails — do not block the HTTP response
+    prisma.payrollItem.findMany({
+      where: { runId: run.id, organizationId },
+      select: { employee: { select: { email: true, fullName: true } } }
+    }).then(items => {
+      const period: string = (run as any).period;
+      for (const item of items) {
+        if (item.employee?.email) {
+          sendPayslipEmail(item.employee.email, period, item.employee.fullName, organizationId)
+            .catch(err => console.error('[payroll] payslip email failed:', item.employee?.email, err?.message));
+        }
+      }
+    }).catch(err => console.error('[payroll] payslip email fetch failed:', err?.message));
+
+    return res.json(run);
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message });
+  }
+};
 
 export const voidRun = async (req: Request, res: Response) => {
   try {
@@ -304,6 +331,94 @@ export const exportBankCSV = async (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="bank-transfer-${run.period}.csv"`);
     res.send(csvString);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const exportGraPayeCsv = async (req: Request, res: Response) => {
+  try {
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const run = await prisma.payrollRun.findFirst({
+      where: { id: req.params.id, organizationId },
+      include: {
+        items: {
+          include: {
+            employee: { select: { fullName: true, departmentObj: { select: { name: true } } } }
+          }
+        }
+      }
+    });
+    if (!run) return res.status(404).json({ error: 'Payroll run not found' });
+
+    const csvStringifier = createObjectCsvStringifier({
+      header: [
+        { id: 'name', title: 'Employee Name' },
+        { id: 'tin', title: 'TIN' },
+        { id: 'employmentIncome', title: 'Employment Income' },
+        { id: 'nonCashBenefits', title: 'Non-Cash Benefits' },
+        { id: 'totalGross', title: 'Total Gross' },
+        { id: 'allowableDeductions', title: 'Allowable Deductions' },
+        { id: 'chargeableIncome', title: 'Chargeable Income' },
+        { id: 'taxPayable', title: 'Tax Payable' },
+      ]
+    });
+
+    const records = run.items.map(item => ({
+      name: item.employee.fullName,
+      tin: '',
+      employmentIncome: +item.baseSalary + +item.overtime + +item.bonus,
+      nonCashBenefits: +item.allowances,
+      totalGross: +item.grossPay,
+      allowableDeductions: +item.ssnit,
+      chargeableIncome: Math.max(0, +item.grossPay - +item.ssnit),
+      taxPayable: +item.tax,
+    }));
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="gra-paye-${run.period}.csv"`);
+    res.send(csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const exportSsnitCsv = async (req: Request, res: Response) => {
+  try {
+    const organizationId = getOrgId(req) || 'mcb-ghana-tenant';
+    const run = await prisma.payrollRun.findFirst({
+      where: { id: req.params.id, organizationId },
+      include: {
+        items: {
+          include: {
+            employee: { select: { fullName: true, ssnitNumber: true } }
+          }
+        }
+      }
+    });
+    if (!run) return res.status(404).json({ error: 'Payroll run not found' });
+
+    const csvStringifier = createObjectCsvStringifier({
+      header: [
+        { id: 'name', title: 'Employee Name' },
+        { id: 'ssnitNumber', title: 'SSNIT Number' },
+        { id: 'basicSalary', title: 'Basic Salary' },
+        { id: 'employeeContribution', title: 'Employee Contribution (5.5%)' },
+        { id: 'employerContribution', title: 'Employer Contribution (13%)' },
+      ]
+    });
+
+    const records = run.items.map(item => ({
+      name: item.employee.fullName,
+      ssnitNumber: item.employee.ssnitNumber || '',
+      basicSalary: item.baseSalary,
+      employeeContribution: item.ssnit,
+      employerContribution: +(+item.baseSalary * 0.13).toFixed(2),
+    }));
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="ssnit-${run.period}.csv"`);
+    res.send(csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

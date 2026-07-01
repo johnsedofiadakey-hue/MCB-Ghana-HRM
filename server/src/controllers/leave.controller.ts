@@ -637,6 +637,49 @@ export const adjustLeaveBalance = async (req: Request, res: Response) => {
   }
 };
 
+// ── GET SINGLE LEAVE (for approval modal) ────────────────────────────────────
+export const getLeaveById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const orgId = getOrgId(req);
+    const actorId = (req as any).user.id;
+    const actorRank = getRoleRank((req as any).user.role);
+
+    const leave = await prisma.leaveRequest.findFirst({
+      where: { id, organizationId: orgId, isArchived: false },
+      include: {
+        employee: {
+          select: {
+            id: true, fullName: true, jobTitle: true, email: true,
+            leaveBalance: true, leaveAllowance: true,
+            departmentObj: { select: { name: true } },
+          }
+        },
+        reliever: { select: { id: true, fullName: true, jobTitle: true } },
+        days: { orderBy: { date: 'asc' }, select: { date: true } },
+      }
+    });
+
+    if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+
+    // Permit: the employee themselves, their supervisor, any HR/MD rank, or managers 75+
+    const isEmployee = leave.employeeId === actorId;
+    const isSupervisor = (await prisma.user.findUnique({ where: { id: leave.employeeId }, select: { supervisorId: true } }))?.supervisorId === actorId;
+    if (!isEmployee && !isSupervisor && actorRank < 75) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    return res.json({
+      ...leave,
+      leaveDays: Number(leave.leaveDays),
+      leaveDaysArr: leave.days,
+      employee: { ...leave.employee, leaveBalance: Number(leave.employee?.leaveBalance || 0), leaveAllowance: Number(leave.employee?.leaveAllowance || 0) },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 // ── UPLOAD MEDICAL CERTIFICATE ────────────────────────────────────────────────
 export const uploadMedicalCertificate = async (req: Request, res: Response) => {
   try {

@@ -13,6 +13,7 @@ router.get('/my-tickets', authenticate, supportController.getMyTickets);
 router.get('/tickets/:id', authenticate, supportController.getTicketDetails);
 router.post('/tickets/:ticketId/comments', authenticate, supportController.addComment); // Param alignment
 router.post('/tickets/:id/reopen', authenticate, supportController.reopenTicket);
+router.post('/tickets/:id/attach', authenticate, supportController.attachTicketFile);
 router.get('/knowledge', authenticate, supportController.listKnowledgeArticles);
 
 // Admin / IT endpoints (Rank 85+ for IT Admin, MD, HR Manager)
@@ -23,6 +24,7 @@ router.get('/dashboard', authenticate, requireAnyPermission(queuePermissions), s
 router.post('/knowledge', authenticate, requireAnyPermission(queuePermissions), supportController.createKnowledgeArticle);
 router.patch('/tickets/:id/status', authenticate, requireAnyPermission(queuePermissions), supportController.updateTicketStatus);
 router.patch('/tickets/:id', authenticate, requireAnyPermission(queuePermissions), supportController.updateTicketStatus);
+router.patch('/tickets/:id/assign', authenticate, requireAnyPermission(queuePermissions), supportController.assignTicket);
 
 // Lead Management (NOC & Public)
 router.post('/leads', supportController.createLead);

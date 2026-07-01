@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { playNotificationSound } from './notification.service';
 
 export interface WSNotification {
   id: string; title: string; message: string;
@@ -53,6 +54,7 @@ export const useWebSocket = (onMessage?: (type: string, data: any) => void) => {
           setNotifications(prev => [msg.data, ...prev]);
           setUnreadCount(c => c + 1);
           showToast(msg.data);
+          playNotificationSound();
         }
 
         if (msg.type === 'PENDING_NOTIFICATIONS') {

@@ -4,7 +4,7 @@ import { Permission } from '../types/permissions';
 import {
   createRun, submitRun, hrApproveRun, hrRejectRun, releaseRun, mdRejectRun, voidRun, deleteRun, updateItem,
   getRuns, getRunDetail, getMyPayslips,
-  downloadPayslipPDF, exportPayrollCSV, exportBankCSV, getYearlySummary,
+  downloadPayslipPDF, exportPayrollCSV, exportBankCSV, exportGraPayeCsv, exportSsnitCsv, getYearlySummary,
   getStatutoryRules, createStatutoryRule, approveStatutoryRule
 } from '../controllers/payroll.controller';
 import { validate, PayrollRunSchema, PayrollItemUpdateSchema } from '../middleware/validate.middleware';
@@ -58,6 +58,8 @@ router.delete('/:id', requirePermission(Permission.PAYROLL_PREPARE), deleteRun);
 router.patch('/items/:itemId', requirePermission(Permission.PAYROLL_PREPARE), validate(PayrollItemUpdateSchema), updateItem);
 router.get('/:id/export/csv', requireAnyPermission(payrollViewPermissions), exportPayrollCSV);
 router.get('/:id/bank-export/csv', requirePermission(Permission.PAYROLL_EXPORT), exportBankCSV);
+router.get('/:id/export/gra-paye-csv', requireAnyPermission(payrollViewPermissions), exportGraPayeCsv);
+router.get('/:id/export/ssnit-csv', requireAnyPermission(payrollViewPermissions), exportSsnitCsv);
 
 // Admin year-end summary for all employees
 router.get('/tax-summary/org/:year', requireAnyPermission(payrollViewPermissions), async (req, res) => {

@@ -259,7 +259,33 @@ cron.schedule('30 8 * * 1', async () => {
   } catch (e) { console.error('[Cron] OKR check-in failed:', e); }
 });
 
-/* 
+// Auto-close RESOLVED support tickets older than 48 hours
+cron.schedule('0 * * * *', async () => {
+  try {
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const stale = await prisma.supportTicket.findMany({
+      where: { status: 'RESOLVED', resolvedAt: { lt: cutoff } },
+      select: { id: true, organizationId: true, employeeId: true },
+    });
+    for (const t of stale) {
+      await prisma.supportTicket.update({
+        where: { id: t.id },
+        data: { status: 'CLOSED', closedAt: new Date() },
+      });
+      await prisma.ticketActivity.create({
+        data: {
+          organizationId: t.organizationId || 'mcb-ghana-tenant',
+          ticketId: t.id, actorId: t.employeeId,
+          action: 'AUTO_CLOSED',
+          metadata: { reason: 'Resolved for >48h without re-open' },
+        },
+      });
+    }
+    if (stale.length) console.log(`[Cron] Auto-closed ${stale.length} resolved tickets`);
+  } catch (e) { console.error('[Cron] Ticket auto-close failed:', e); }
+});
+
+/*
 cron.schedule('0 2 * * *', async () => {
   try {
     const { resetDemoTenant } = await import('./scripts/reset-demo-tenant');
@@ -370,6 +396,11 @@ app.use('/api/manager', managerCockpitRoutes);
 app.use('/api', cardRoutes);
 app.use('/api', callCardRoutes);
 app.use('/api/competencies', competencyRoutes);
+
+// ─── Public self-onboarding routes (no auth) ────────────────────────────────
+import { getOnboardingProfileForm, submitOnboardingProfileForm } from './controllers/user.controller';
+app.get('/api/onboard/profile-form/:token', getOnboardingProfileForm);
+app.patch('/api/onboard/profile-form/:token', submitOnboardingProfileForm);
 
 // ─── DEBUG ROUTE (Development Only) ─────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {

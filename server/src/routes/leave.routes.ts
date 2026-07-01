@@ -16,6 +16,7 @@ import {
   deleteHandover,
   adjustLeaveBalance,
   uploadMedicalCertificate,
+  getLeaveById,
 } from '../controllers/leave.controller';
 
 const router = Router();
@@ -24,6 +25,7 @@ router.use(authenticate);
 // Employee self-service
 router.post('/apply', validate(LeaveRequestSchema), applyForLeave);
 router.get('/my', getMyLeaves);
+router.get('/:id/detail', getLeaveById);
 router.get('/balance', getMyLeaveBalance);
 router.get('/my-relief-requests', getMyReliefRequests);
 router.get('/handover/history', getHandoverHistory);

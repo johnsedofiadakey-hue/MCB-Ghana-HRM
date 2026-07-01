@@ -234,6 +234,31 @@ export const createEmployee = async (req: Request, res: Response) => {
       console.error('[Onboarding Trigger Error]:', onboardErr);
     }
 
+    // Self-onboarding invite
+    if (req.body.sendOnboardingInvite && user.email) {
+      try {
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        await (prisma as any).onboardingInviteToken.upsert({
+          where: { userId: user.id },
+          create: { userId: user.id, token: rawToken, expiresAt },
+          update: { token: rawToken, expiresAt, usedAt: null },
+        });
+        const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+        const inviteUrl = `${frontendUrl}/onboard/complete-profile?token=${rawToken}`;
+        await sendEmail({
+          to: user.email,
+          subject: 'Complete Your MCB Ghana HRM Profile',
+          html: `<p>Hi <strong>${user.fullName}</strong>,</p>
+<p>Your HR team has created your employee account. Please click the link below to complete your profile details. This link expires in 7 days.</p>
+<p><a href="${inviteUrl}" style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block">Complete My Profile</a></p>
+<p style="color:#64748b;font-size:12px">If the button doesn't work, copy this link: ${inviteUrl}</p>`,
+        });
+      } catch (inviteErr) {
+        console.error('[Self-Onboarding invite error]:', inviteErr);
+      }
+    }
+
     res.status(201).json(withDepartment(getSafeUser(safeUser, actorRole)));
   } catch (err: any) {
     res.status(400).json({ message: err.message });
@@ -1092,3 +1117,122 @@ export const resetEmployeePassword = async (req: Request, res: Response) => {
 
 // Legacy alias
 export const createEmployeeWithNotifications = createEmployee;
+
+// ---------- Self-Onboarding Public Endpoints (no auth) ----------
+
+const ONBOARD_ALLOWED_FIELDS = [
+  'contactNumber', 'bankAccountNumber', 'bankBranch', 'bankName', 'address',
+  'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact',
+  'emergencyContactName', 'emergencyContactPhone',
+  'gender', 'maritalStatus', 'bloodGroup', 'dob', 'nationalId',
+  'education', 'ssnitNumber', 'nationality',
+];
+
+const resolveInviteToken = async (rawToken: string) => {
+  const record = await (prisma as any).onboardingInviteToken.findUnique({
+    where: { token: rawToken },
+    include: {
+      user: {
+        select: {
+          id: true, fullName: true, email: true, jobTitle: true,
+          departmentObj: { select: { name: true } },
+        }
+      }
+    }
+  });
+  if (!record) return { error: 'Invalid invite link.', status: 400 };
+  if (record.usedAt) return { error: 'This invite link has already been used.', status: 410 };
+  if (record.expiresAt < new Date()) return { error: 'This invite link has expired. Contact HR for a new one.', status: 410 };
+  return { record };
+};
+
+export const getOnboardingProfileForm = async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const { error, status, record } = await resolveInviteToken(token);
+  if (error) return res.status(status!).json({ error });
+  const { id, fullName, email, jobTitle, departmentObj } = record!.user;
+  return res.json({ id, fullName, email, jobTitle, department: departmentObj?.name });
+};
+
+export const submitOnboardingProfileForm = async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const { error, status, record } = await resolveInviteToken(token);
+  if (error) return res.status(status!).json({ error });
+
+  const userId = record!.user.id;
+  const data: Record<string, any> = {};
+  for (const field of ONBOARD_ALLOWED_FIELDS) {
+    if (req.body[field] !== undefined) data[field] = req.body[field];
+  }
+  if (data.dob) data.dob = new Date(data.dob);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { ...data, employeeLifecycleStage: 'PENDING_HR_REVIEW' },
+    }),
+    (prisma as any).onboardingInviteToken.update({
+      where: { id: record!.id },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+
+  // Notify HR Directors
+  const hrDirectors = await prisma.user.findMany({
+    where: { role: 'HR_DIRECTOR', isArchived: false },
+    select: { id: true },
+  });
+  await Promise.all(
+    hrDirectors.map(hr =>
+      notify(hr.id, 'Profile Review Required', `${record!.user.fullName} has completed their self-onboarding profile and is awaiting HR review.`, 'INFO', `/employees/${userId}`)
+    )
+  );
+
+  return res.json({ success: true, message: 'Profile submitted successfully. HR will review and activate your account.' });
+};
+
+export const hrApproveOnboarding = async (req: Request, res: Response) => {
+  try {
+    const actor = (req as any).user;
+    const organizationId = actor.organizationId || 'mcb-ghana-tenant';
+    const employee = await prisma.user.findFirst({
+      where: { id: req.params.id, organizationId },
+      select: { id: true, email: true, fullName: true, employeeLifecycleStage: true },
+    });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+    if (employee.employeeLifecycleStage !== 'PENDING_HR_REVIEW') {
+      return res.status(409).json({ error: 'Employee is not pending HR review.' });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await prisma.$transaction([
+      prisma.passwordResetToken.deleteMany({ where: { userId: employee.id } }),
+      prisma.passwordResetToken.create({
+        data: { userId: employee.id, token: tokenHash, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+      }),
+      prisma.user.update({
+        where: { id: employee.id },
+        data: { loginEnabled: true, mustChangePassword: true, employeeLifecycleStage: 'ONBOARDING' },
+      }),
+    ]);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://mcb-hrm-ghana.web.app';
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+    if (employee.email) {
+      await sendEmail({
+        to: employee.email,
+        subject: 'Your MCB Ghana HRM Account is Ready',
+        html: `<p>Hi <strong>${employee.fullName}</strong>,</p>
+<p>Your profile has been reviewed and your account is now active. Click below to set your password and log in.</p>
+<p><a href="${resetUrl}" style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block">Set My Password</a></p>
+<p style="color:#64748b;font-size:12px">This link expires in 24 hours.</p>`,
+      });
+    }
+
+    await logAction(actor.id, 'EMPLOYEE_ONBOARDING_APPROVED', 'User', employee.id, {}, req.ip);
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
