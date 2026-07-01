@@ -297,10 +297,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 </NavGroup>
               )}
 
-              {(isFinance || isMD) && (
+              {(isFinance || isHR || isMD) && (
                 <NavGroup label={t('common.financial_operations')} isCollapsed={isCollapsed} accent={true}>
                   <NavItem to="/payroll" icon={DollarSign} label={t('common.payroll_label')} isCollapsed={isCollapsed} />
-                  <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
+                  {(isFinance || isMD) && <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />}
                 </NavGroup>
               )}
 
