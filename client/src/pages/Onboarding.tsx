@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket, ShieldCheck, Flag, Building2, Zap, GraduationCap, ListChecks, LayoutList } from 'lucide-react';
+import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket, ShieldCheck, Flag, Building2, Zap, GraduationCap, ListChecks, LayoutList, Package, CreditCard, ExternalLink, Monitor } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -7,6 +7,7 @@ import { getStoredUser } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 import { getSafeAvatarUrl } from '../utils/avatar';
 import { toast } from '../utils/toast';
+import { useNavigate } from 'react-router-dom';
 
 const categoryColors: Record<string, string> = {
   HR: 'text-[var(--primary)] border-[var(--primary)]/20 bg-[var(--primary)]/5',
@@ -31,7 +32,12 @@ const Onboarding = () => {
   const [viewMode, setViewMode] = useState<'PERSONAL' | 'MANAGEMENT'>('PERSONAL');
   const [mgmtTab, setMgmtTab] = useState<'sessions' | 'queue'>('queue');
   const [myTasks, setMyTasks] = useState<any[]>([]);
+  const [assetPanelItemId, setAssetPanelItemId] = useState<string | null>(null);
+  const [availableAssets, setAvailableAssets] = useState<any[]>([]);
+  const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [assigning, setAssigning] = useState(false);
 
+  const navigate = useNavigate();
   const user = getStoredUser();
   const permissions = user.permissions || [];
   const has = (permission: string) => permissions.includes('*') || permissions.includes(permission);
@@ -105,6 +111,39 @@ const Onboarding = () => {
       console.error(e);
     } finally {
       setCompleting(null);
+    }
+  };
+
+  const isEquipmentTask = (title: string) =>
+    /workstation|equipment|device|laptop|computer|hardware/i.test(title);
+
+  const isIdCardTask = (title: string) =>
+    /id card|access card|photo id|building access/i.test(title);
+
+  const openAssetPanel = async (itemId: string) => {
+    setAssetPanelItemId(itemId);
+    setSelectedAssetId('');
+    try {
+      const res = await api.get('/assets?status=AVAILABLE');
+      setAvailableAssets(Array.isArray(res.data) ? res.data : (res.data?.assets || []));
+    } catch {
+      setAvailableAssets([]);
+    }
+  };
+
+  const handleAssignAndComplete = async (itemId: string, employeeId: string) => {
+    setAssigning(true);
+    try {
+      if (selectedAssetId) {
+        await api.post('/assets/assign', { assetId: selectedAssetId, userId: employeeId });
+        toast.success('Asset assigned to employee');
+      }
+      await handleComplete(itemId);
+      setAssetPanelItemId(null);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || 'Assignment failed');
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -418,45 +457,117 @@ const Onboarding = () => {
                   const isDone = !!item.completedAt;
                   const isOverdue = !isDone && item.dueDate && new Date(item.dueDate) < new Date();
                   const Theme = categoryColors[item.category] || categoryColors.General;
+                  const isEquip = isEquipmentTask(item.title);
+                  const isCard = isIdCardTask(item.title);
+                  const employeeId = item.session?.employee?.id;
+                  const isPanelOpen = assetPanelItemId === item.id;
+
                   return (
                     <motion.div
                       key={item.id}
                       layout
                       className={cn(
-                        "nx-card p-5 flex items-start gap-4 border transition-all",
-                        isDone ? "opacity-60 border-emerald-500/10" : isOverdue ? "border-rose-500/20" : "border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
+                        "nx-card border transition-all",
+                        isDone ? "opacity-60 border-emerald-500/10" : isOverdue ? "border-rose-500/20" : isPanelOpen ? "border-[var(--primary)]/40" : "border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
                       )}
                     >
-                      <button
-                        onClick={() => !isDone && handleComplete(item.id)}
-                        disabled={isDone || completing === item.id}
-                        className={cn(
-                          "mt-0.5 flex-shrink-0 w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all",
-                          isDone ? "bg-emerald-500 border-emerald-500 text-white" : "border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)] hover:text-[var(--primary)]"
-                        )}
-                      >
-                        {completing === item.id ? <Loader2 size={14} className="animate-spin" /> : isDone ? <CheckCircle size={14} /> : <Circle size={14} />}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          <p className={cn("font-black text-[13px]", isDone ? "line-through text-[var(--text-muted)]" : "text-[var(--text-primary)]")}>{item.title}</p>
-                          <span className={cn("px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border", Theme)}>{item.category}</span>
-                          {item.isRequired && !isDone && <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">Required</span>}
-                          {isOverdue && !isDone && <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">Overdue</span>}
-                        </div>
-                        <p className="text-[11px] text-[var(--text-muted)] mb-2">{item.description || item.title}</p>
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                            For: <span className="text-[var(--text-primary)]">{item.session?.employee?.fullName}</span>
-                          </span>
-                          {item.dueDate && (
-                            <span className={cn("text-[10px] font-black uppercase tracking-widest flex items-center gap-1", isOverdue ? "text-rose-500" : "text-[var(--text-muted)]")}>
-                              <Clock size={10} /> Due {new Date(item.dueDate).toLocaleDateString()}
-                            </span>
+                      <div className="p-5 flex items-start gap-4">
+                        <button
+                          onClick={() => {
+                            if (isDone) return;
+                            if (isEquip && !isPanelOpen) { openAssetPanel(item.id); return; }
+                            if (isPanelOpen) { setAssetPanelItemId(null); return; }
+                            handleComplete(item.id);
+                          }}
+                          disabled={isDone || completing === item.id}
+                          className={cn(
+                            "mt-0.5 flex-shrink-0 w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all",
+                            isDone ? "bg-emerald-500 border-emerald-500 text-white" : isPanelOpen ? "border-[var(--primary)] text-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)] hover:text-[var(--primary)]"
                           )}
-                          {isDone && <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1"><CheckCircle size={10} /> Done {new Date(item.completedAt).toLocaleDateString()}</span>}
+                        >
+                          {completing === item.id ? <Loader2 size={14} className="animate-spin" /> : isDone ? <CheckCircle size={14} /> : isEquip ? <Package size={14} /> : <Circle size={14} />}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            <p className={cn("font-black text-[13px]", isDone ? "line-through text-[var(--text-muted)]" : "text-[var(--text-primary)]")}>{item.title}</p>
+                            <span className={cn("px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border", Theme)}>{item.category}</span>
+                            {item.isRequired && !isDone && <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">Required</span>}
+                            {isOverdue && !isDone && <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">Overdue</span>}
+                            {isEquip && !isDone && <span className="text-[9px] font-black uppercase text-[var(--info)] bg-[var(--info)]/5 px-2 py-0.5 rounded-lg border border-[var(--info)]/20 flex items-center gap-1"><Package size={9} /> Asset Required</span>}
+                          </div>
+                          <p className="text-[11px] text-[var(--text-muted)] mb-2">{item.description || item.title}</p>
+                          <div className="flex items-center gap-4 flex-wrap">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                              For: <span className="text-[var(--text-primary)]">{item.session?.employee?.fullName}</span>
+                            </span>
+                            {item.dueDate && (
+                              <span className={cn("text-[10px] font-black uppercase tracking-widest flex items-center gap-1", isOverdue ? "text-rose-500" : "text-[var(--text-muted)]")}>
+                                <Clock size={10} /> Due {new Date(item.dueDate).toLocaleDateString()}
+                              </span>
+                            )}
+                            {isDone && <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1"><CheckCircle size={10} /> Done {new Date(item.completedAt).toLocaleDateString()}</span>}
+                            {isCard && !isDone && (
+                              <button
+                                onClick={() => navigate(`/cards?employeeId=${employeeId}`)}
+                                className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] flex items-center gap-1 hover:underline"
+                              >
+                                <CreditCard size={10} /> Go to Card Production <ExternalLink size={9} />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
+
+                      {/* Asset Assignment Panel */}
+                      <AnimatePresence>
+                        {isPanelOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden border-t border-[var(--border-subtle)]"
+                          >
+                            <div className="p-5 bg-[var(--bg-elevated)]/40 space-y-4">
+                              <div className="flex items-center gap-2">
+                                <Package size={14} className="text-[var(--info)]" />
+                                <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)]">Assign Asset from Inventory</p>
+                              </div>
+                              {availableAssets.length === 0 ? (
+                                <p className="text-[11px] text-[var(--text-muted)]">No available assets found in inventory. You can still complete the task without assigning an asset.</p>
+                              ) : (
+                                <select
+                                  value={selectedAssetId}
+                                  onChange={(e) => setSelectedAssetId(e.target.value)}
+                                  className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-[13px] font-bold text-[var(--text-primary)] outline-none focus:border-[var(--primary)]/50"
+                                >
+                                  <option value="">— Select an asset to assign —</option>
+                                  {availableAssets.map((asset: any) => (
+                                    <option key={asset.id} value={asset.id}>
+                                      {asset.name} {asset.make ? `· ${asset.make}` : ''} {asset.model ? `${asset.model}` : ''} · S/N: {asset.serialNumber}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                              <div className="flex gap-3">
+                                <button
+                                  onClick={() => { setAssetPanelItemId(null); handleComplete(item.id); }}
+                                  className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                                >
+                                  Skip & Complete
+                                </button>
+                                <button
+                                  onClick={() => handleAssignAndComplete(item.id, employeeId)}
+                                  disabled={assigning}
+                                  className="flex-1 px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
+                                >
+                                  {assigning ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                                  {selectedAssetId ? 'Assign & Complete' : 'Complete Task'}
+                                </button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   );
                 })

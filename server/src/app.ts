@@ -259,6 +259,49 @@ cron.schedule('30 8 * * 1', async () => {
   } catch (e) { console.error('[Cron] OKR check-in failed:', e); }
 });
 
+// Probation end alert — 14 days before end date
+cron.schedule('0 9 * * *', async () => {
+  try {
+    const fourteenDaysFromNow = new Date();
+    fourteenDaysFromNow.setDate(fourteenDaysFromNow.getDate() + 14);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const expiring = await prisma.probationRecord.findMany({
+      where: {
+        status: 'IN_PROGRESS',
+        alertSentAt: null,
+        endDate: { gte: tomorrow, lte: fourteenDaysFromNow },
+      },
+      include: { employee: { select: { id: true, fullName: true, organizationId: true } } },
+    });
+
+    if (!expiring.length) return;
+
+    const { notify } = await import('./services/websocket.service');
+
+    for (const record of expiring) {
+      const orgId = record.employee?.organizationId || 'mcb-ghana-tenant';
+      const hrDirectors = await prisma.user.findMany({
+        where: { organizationId: orgId, role: 'HR_DIRECTOR', status: 'ACTIVE', isArchived: false },
+        select: { id: true },
+      });
+      const daysLeft = Math.ceil((record.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      for (const hr of hrDirectors) {
+        await notify(
+          hr.id,
+          '⏰ Probation Ending Soon',
+          `${record.employee?.fullName}'s probation ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}. Please review and update status.`,
+          'WARNING',
+          `/employees/${record.employeeId}`
+        ).catch(() => {});
+      }
+      await prisma.probationRecord.update({ where: { id: record.id }, data: { alertSentAt: new Date() } });
+    }
+    console.log(`[CRON] Probation alerts sent for ${expiring.length} employee(s)`);
+  } catch (e) { console.error('[Cron] Probation alert failed:', e); }
+});
+
 // Auto-close RESOLVED support tickets older than 48 hours
 cron.schedule('0 * * * *', async () => {
   try {
