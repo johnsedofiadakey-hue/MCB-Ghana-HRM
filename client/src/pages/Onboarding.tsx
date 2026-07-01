@@ -32,7 +32,7 @@ const Onboarding = () => {
   const user = getStoredUser();
   const permissions = user.permissions || [];
   const has = (permission: string) => permissions.includes('*') || permissions.includes(permission);
-  const canManage = has('onboarding.manage');
+  const canManage = has('onboarding.manage') || user?.role === 'IT_MANAGER' || user?.role === 'IT_ADMIN' || user?.role === 'HR_DIRECTOR' || user?.role === 'HR_MANAGER' || user?.role === 'MD' || user?.role === 'DEV';
   const isAdmin = canManage || has('account.provision') || has('card.production');
 
   const fetchData = async () => {

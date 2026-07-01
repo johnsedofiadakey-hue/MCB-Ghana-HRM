@@ -54,8 +54,11 @@ export const PERMISSION_BUNDLES = {
   IT_OPERATIONS_ADMIN: [
     Permission.ACCOUNT_PROVISION,
     Permission.ACCOUNT_ACTIVATE,
+    Permission.ONBOARDING_MANAGE,
     Permission.ASSET_MANAGE,
     Permission.CARD_ACCESS,
+    Permission.CARD_PRODUCTION,
+    Permission.CARD_DESIGN,
     Permission.HELPDESK_IT,
   ],
   MARKETING_CARD_ADMIN: [
