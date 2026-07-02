@@ -135,8 +135,8 @@ const Support = () => {
       setAttachmentUrl('');
       setIsInternalNote(false);
       fetchTicketDetails(selectedTicket.id);
-    } catch (err) {
-      toast.error('Uplink failed');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Uplink failed');
     }
   };
 
@@ -536,7 +536,15 @@ const Support = () => {
                     className="flex-1 bg-transparent border-none outline-none text-sm font-bold py-4 text-[var(--text-primary)]"
                   />
                   <div className="flex items-center gap-2">
-                    <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={e => setAttachFile(e.target.files?.[0] || null)} />
+                    <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={e => {
+                      const file = e.target.files?.[0] || null;
+                      if (file && file.size > 6 * 1024 * 1024) {
+                        toast.error('Attachment is too large — please keep it under 6MB');
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                        return;
+                      }
+                      setAttachFile(file);
+                    }} />
                     <button onClick={() => fileInputRef.current?.click()} className={cn('w-12 h-12 flex items-center justify-center hover:text-[var(--primary)] transition-colors rounded-2xl hover:bg-[var(--bg-card)]', attachFile ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]')} title={attachFile?.name || 'Attach file'}>
                       <Paperclip size={20} />
                     </button>

@@ -25,7 +25,8 @@ const PolicyLibrary: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filterCat, setFilterCat] = useState('');
-    const [filterStatus, setFilterStatus] = useState('PUBLISHED');
+    // Managers see everything (including their own drafts) by default; regular staff default to Published only.
+    const [filterStatus, setFilterStatus] = useState(canManage ? '' : 'PUBLISHED');
     const [showCreate, setShowCreate] = useState(false);
     const [showAckModal, setShowAckModal] = useState<any>(null);
     const [acks, setAcks] = useState<any>(null);
@@ -54,7 +55,7 @@ const PolicyLibrary: React.FC = () => {
         setSaving(true);
         try {
             await api.post('/hr/policies', form);
-            toast.success('Policy created');
+            toast.success('Policy created as a draft — click the eye icon to publish it to employees');
             setShowCreate(false);
             setForm({ title: '', description: '', content: '', category: 'GENERAL', version: '1.0', isRequired: true });
             fetchPolicies();

@@ -7,6 +7,8 @@ import {
     createDisciplinaryCase,
     updateDisciplinaryCase,
     deleteDisciplinaryCase,
+    getMyDisciplinaryCases,
+    acknowledgeDisciplinaryCase,
     // Policy Library
     listPolicies,
     createPolicy,
@@ -29,6 +31,8 @@ const router = Router();
 router.use(authenticate);
 
 // ── Disciplinary & Grievance ─────────────────────────────────────────────────
+router.get('/disciplinary/mine', getMyDisciplinaryCases);
+router.post('/disciplinary/:id/acknowledge', acknowledgeDisciplinaryCase);
 router.get('/disciplinary', requirePermission(Permission.EMPLOYEE_HISTORY_READ), listDisciplinaryCases);
 router.post('/disciplinary', requirePermission(Permission.EMPLOYEE_HISTORY_WRITE), createDisciplinaryCase);
 router.patch('/disciplinary/:id', requirePermission(Permission.EMPLOYEE_HISTORY_WRITE), updateDisciplinaryCase);

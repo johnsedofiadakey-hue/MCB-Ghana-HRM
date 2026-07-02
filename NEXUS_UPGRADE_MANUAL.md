@@ -1,6 +1,6 @@
-# Nexus HR Platform Technical Upgrade Manual (v3.2.0)
+# Nexus HR Platform Technical Upgrade Manual (v3.3.0)
 
-This document provides a comprehensive guide to the features, architectural changes, and operational protocols implemented during the **March 2026 Appraisal Lifecycle Hardening** phase.
+This document provides a comprehensive guide to the features, architectural changes, and operational protocols implemented during the **March 2026 Appraisal Lifecycle Hardening** phase, plus the **July 2026 PDF Branding & Platform Hardening** phase (section 6–7).
 
 ---
 
@@ -60,6 +60,7 @@ Resolved critical "Refresh-Loss" issues:
 *   **Access**: Click "Export PDF" on any Employee Profile.
 *   **Content**: Includes a 5-cycle historic performance log, academic credentials, corporate placement, and the latest arbitrated appraisal results.
 *   **Security**: Includes a footer signature block for institutional verification.
+*   **Update (v3.3.0)**: This is now a server-generated PDFKit document (not a browser print), matching the branded header/footer/logo used by payslips and leave certificates. See section 6.
 
 ---
 
@@ -76,5 +77,57 @@ Resolved critical "Refresh-Loss" issues:
 
 ---
 
-**Last Documented Version: 3.2.0-STABLE**
+## 🧾 6. PDF Branding & Rendering Fixes (2026-07-02)
+
+### 🖼️ Company Logo Rendering
+*   **Root cause**: PDFKit only supports PNG/JPEG, but uploaded logos were stored as WebP; the Firebase bucket also has uniform bucket-level access, so `makePublic()` silently failed and a plain HTTP `GET` returned 403.
+*   **Fix**: `pdf.service.ts` now resolves logo bytes via the Firebase **Admin SDK** (`FirebaseStorageService.downloadByUrl()`, bypasses HTTP auth) and converts every source format to PNG with `sharp` before handing it to `doc.image()`.
+
+### 📄 Phantom Second Page
+*   **Root cause**: With `bufferPages: true`, an explicit-Y `doc.text()` call near the bottom margin (`Y=790`) tripped PDFKit's page-break check (`Y + lineHeight > page.maxY()`) and silently started a second page for the footer.
+*   **Fix**: Footer line/text moved up to `Y=762`/`Y=770`, safely inside the A4 content area — every generated PDF (payslips, leave certificates, appraisals, employee dossiers) is now a clean single page (or exact multi-page count with no trailing blank sheet).
+
+### 🪪 Employee Dossier — now a real branded PDF
+*   The old "Export PDF" button rendered a browser `window.print()` of an on-page component — unreliable across browsers/mobile and inconsistent with the rest of the document system.
+*   Replaced with a server-side `EMPLOYEE_DOSSIER` PDFKit renderer (`pdf.service.ts`) sharing the same header/footer/branding engine as payslips: photo hero, identity & contact, employment, leave balance, financial & compensation, emergency contacts, academic credentials, performance snapshot, and a sign-off block.
+*   `GET /export/employee/:id/pdf` is now gated to the employee themselves or rank 75+ (previously anyone authenticated could pull anyone's dossier).
+
+---
+
+## 🏛️ 7. Platform Hardening & UX Fixes (2026-07-02)
+
+### 🔐 Sessions now persist until explicit logout
+*   Removed the blanket 2-hour idle-activity auto-logout in `App.tsx`.
+*   Extended the refresh-token window from 24 hours to **30 days** (`auth.controller.ts`). The existing axios refresh interceptor silently renews the 1-hour access token in the background, so a user only signs out when they explicitly click Log Out (or their account is suspended/password changed).
+
+### 🔑 Forced password change is a deliberate, global gate
+*   Confirmed by design: `mustChangePassword` blocks every route except `/profile` until the user sets a new password — there's no allowlist for Support or any other page. This is intentional (HR/IT-initiated resets and first-time onboarding logins must be resolved before anything else).
+
+### 🎫 Help-desk attachment upload
+*   `CreateTicketModal.tsx` gained a real file-attach field (previously tickets could only be created without an attachment; files could only be added afterward via a reply).
+*   `attachTicketFile` (and the new create-time `attachmentData` path) now fall back to storing a base64 data URI if Firebase Storage throws, matching the resiliency pattern already used for document-vault and medical-certificate uploads — a transient storage outage no longer 500s the upload.
+*   Both upload surfaces now enforce a 6MB client-side size guard and surface the real backend error message instead of a generic "Uplink failed" toast.
+
+### 📦 Multi-asset onboarding assignment
+*   The onboarding "assign asset" step (`Onboarding.tsx`) is now a checkbox multi-select instead of a single dropdown — HR can hand a new hire a laptop, monitor, and access card in one action. Backend already modeled `AssetAssignment` as one row per asset, so the frontend now just fires one `/assets/assign` call per selected asset via `Promise.allSettled`.
+
+### 🏢 Department-scoped visibility
+*   Backend (`GET /users` / `GET /employees`) already restricted rank <80 staff to their own department + direct reports — confirmed no cross-department leak.
+*   The gap was the `/departments` page: non-managers could see every department's card/headcount but had **no roster view at all**, even for their own team. Added a read-only "View Team" roster (visible only for the viewer's own department) alongside the existing manager-only edit flow — the underlying employee list was already correctly scoped, so this is safe by construction.
+
+### 📋 Policy Library draft visibility
+*   Root cause: `listPolicies` returns every status for managers only when no `status` filter is passed, but the frontend hard-defaulted the filter to `PUBLISHED` for everyone — so an HR Director's own just-created (default `DRAFT`) policy was invisible even to them.
+*   Fix: managers now default to the "All Statuses" filter; the create-success toast explicitly says the policy is a draft and needs the eye-icon Publish action.
+
+### ⚖️ Disciplinary case notifications
+*   `createDisciplinaryCase` never called the notification service — the affected employee had no way to find out a case existed, and there was no employee-facing surface at all.
+*   Added: a `notify()` call on create (and on status change) with a generic, non-sensitive message (case details stay behind the authenticated profile view, not in an email/push preview); a self-scoped `GET /hr/disciplinary/mine` endpoint (always filtered to the caller, ignores any `employeeId` param); a `POST /hr/disciplinary/:id/acknowledge` endpoint; and a new "Disciplinary Records" section on the employee's own profile page with an Acknowledge action.
+
+### ⚡ Bundle size / perceived speed
+*   `App.tsx` eagerly imported several overlay components that are mounted on every authenticated page but rarely visible (Command Palette, Help Guide, First-Run Welcome, AI Insight panel, Sandbox HUD, Demo Persona Switcher). Converted to `React.lazy()` behind a `Suspense`+`ChunkErrorBoundary` pair.
+*   Result: the main JS chunk dropped from 779.8 kB → 687.6 kB (215.1 kB → 187.2 kB gzip); the 1,294-line Help Guide component (67.8 kB / 22.1 kB gzip) now only loads the first time a user opens Help instead of on every page load.
+
+---
+
+**Last Documented Version: 3.3.0-STABLE**
 *Date: March 2026*

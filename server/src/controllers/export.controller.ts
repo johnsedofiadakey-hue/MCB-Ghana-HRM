@@ -157,64 +157,43 @@ export const exportEmployeePdf = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const { id } = req.params;
+    const requester = (req as any).user;
+
+    // Only the employee themselves, or a manager-tier+ viewer, may pull the full dossier
+    if (requester?.id !== id && (requester?.rank || 0) < 75 && requester?.role !== 'DEV') {
+      return res.status(403).json({ error: 'Not authorized to export this employee dossier' });
+    }
 
     const employee = await prisma.user.findFirst({
       where: { id, organizationId: orgId },
       include: {
-        departmentObj: true,
-        subUnit: true,
-        supervisor: { select: { fullName: true, email: true } },
+        departmentObj: { select: { name: true } },
+        supervisor: { select: { fullName: true } },
+        appraisalPackets: {
+          where: { status: { not: 'CANCELLED' } },
+          include: {
+            cycle: { select: { title: true, period: true } },
+            reviews: { select: { reviewStage: true, overallRating: true } }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        },
+        targetsAssignedToMe: {
+          where: { isArchived: false },
+          select: { title: true, progress: true, status: true },
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }
       }
     });
 
     if (!employee) return res.status(404).json({ error: 'Employee not found' });
 
-    const org = await prisma.organization.findUnique({
-      where: { id: orgId },
-      select: { name: true, address: true, phone: true, email: true, city: true, country: true, primaryColor: true }
-    });
+    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, 'Official Personnel Dossier', employee as any, 'EMPLOYEE_DOSSIER');
 
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    const buffers: Buffer[] = [];
-
-    doc.on('data', chunk => buffers.push(chunk));
-    doc.on('end', () => {
-      const pdf = Buffer.concat(buffers);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=Employee_${employee.employeeCode || employee.id}.pdf`);
-      res.send(pdf);
-    });
-
-    const primary = org?.primaryColor || '#4F46E5';
-    doc.fillColor(primary).fontSize(20).font('Helvetica-Bold').text(org?.name || 'MC-BAUCHEMIE GHANA', { align: 'center' });
-    doc.moveDown(0.5);
-    doc.fillColor('#111827').fontSize(16).text('Employee Dossier', { align: 'center' });
-    doc.moveDown(2);
-
-    const row = (label: string, value: any) => {
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#374151').text(label, { continued: true, width: 160 });
-      doc.font('Helvetica').fillColor('#111827').text(String(value ?? 'N/A'));
-      doc.moveDown(0.6);
-    };
-
-    row('Full Name: ', employee.fullName);
-    row('Employee Code: ', employee.employeeCode);
-    row('Email: ', employee.email);
-    row('Role: ', employee.role);
-    row('Job Title: ', employee.jobTitle);
-    row('Status: ', employee.status);
-    row('Department: ', employee.departmentObj?.name);
-    row('Sub Unit: ', employee.subUnit?.name);
-    row('Supervisor: ', employee.supervisor?.fullName);
-    row('Employment Type: ', employee.employmentType);
-    row('Join Date: ', employee.joinDate ? employee.joinDate.toISOString().slice(0, 10) : null);
-    row('Phone: ', employee.contactNumber);
-    row('Address: ', employee.address);
-    row('Nationality: ', employee.nationality || employee.countryOfOrigin);
-
-    doc.moveDown(2);
-    doc.fontSize(8).fillColor('#6B7280').text(`Generated ${new Date().toISOString()} by ${(req as any).user?.name || 'MC-BAUCHEMIE GHANA'}`, { align: 'center' });
-    doc.end();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Employee_Dossier_${employee.employeeCode || employee.id}.pdf`);
+    return res.send(pdfBuffer);
   } catch (err: any) {
     errorLogger.log('ExportController.exportEmployeePdf', err);
     return res.status(500).json({ error: 'Failed to generate employee dossier PDF' });

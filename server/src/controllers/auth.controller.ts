@@ -17,7 +17,7 @@ if (!process.env.JWT_SECRET) {
 }
 const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = '1h';
-const REFRESH_TOKEN_WINDOW_HOURS = 24; // Standard 24-hour workday session
+const REFRESH_TOKEN_WINDOW_HOURS = 24 * 30; // 30 days — users stay signed in until they explicitly log out
 
 // Corporate Password Guard: 8+ chars, 1 number, 1 special char
 const isStrongPassword = (pass: string) => 

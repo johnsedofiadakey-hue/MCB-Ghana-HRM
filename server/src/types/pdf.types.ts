@@ -104,3 +104,49 @@ export interface PdfBoardReportContent {
   payrollTotal: number;
   insights?: { label: string; description: string }[];
 }
+
+export interface PdfEmployeeDossierContent {
+  id: string;
+  fullName: string;
+  employeeCode?: string | null;
+  jobTitle?: string | null;
+  role?: string | null;
+  status?: string | null;
+  avatarUrl?: string | null;
+  email: string;
+  contactNumber?: string | null;
+  address?: string | null;
+  gender?: string | null;
+  dob?: string | Date | null;
+  nationality?: string | null;
+  countryOfOrigin?: string | null;
+  maritalStatus?: string | null;
+  nationalId?: string | null;
+  departmentObj?: { name: string } | null;
+  employmentType?: string | null;
+  joinDate?: string | Date | null;
+  supervisor?: { fullName: string } | null;
+  leaveBalance?: number | any;
+  leaveAllowance?: number | any;
+  salary?: number | any;
+  currency?: string | null;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankBranch?: string | null;
+  ssnitNumber?: string | null;
+  nextOfKinName?: string | null;
+  nextOfKinRelation?: string | null;
+  nextOfKinContact?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  education?: string | null;
+  certifications?: string | null;
+  appraisalPackets?: {
+    id: string;
+    status: string;
+    finalScore?: number | any;
+    cycle?: { title: string; period?: string } | null;
+    reviews?: { reviewStage: string; overallRating?: number | any }[] | null;
+  }[] | null;
+  targetsAssignedToMe?: { title: string; progress: number | any; status: string }[] | null;
+}

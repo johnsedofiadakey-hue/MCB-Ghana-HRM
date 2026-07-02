@@ -3,6 +3,7 @@ import prisma from '../prisma/client';
 import { PolicyService } from '../services/policy.service';
 import { Permission } from '../types/permissions';
 import { ROLE_RANK_MAP } from '../types/roles';
+import { notify } from '../services/websocket.service';
 
 const getOrgId = (req: Request): string =>
     (req as any).user?.organizationId || 'mcb-ghana-tenant';
@@ -68,6 +69,16 @@ export const createDisciplinaryCase = async (req: Request, res: Response) => {
             },
         });
 
+        // Keep the notification/email generic — the case's reason/details are sensitive
+        // and stay behind the authenticated employee-profile view, not in an email preview.
+        await notify(
+            employeeId,
+            'Disciplinary Matter Logged',
+            `A ${String(type).replace(/_/g, ' ').toLowerCase()} record has been logged against your employee file${newCase.hearingDate ? `, with a hearing scheduled for ${new Date(newCase.hearingDate).toLocaleDateString()}` : ''}. Please review it in your profile.`,
+            'WARNING',
+            `/employees/${employeeId}`
+        );
+
         res.status(201).json(newCase);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -80,7 +91,7 @@ export const updateDisciplinaryCase = async (req: Request, res: Response) => {
         const orgId = getOrgId(req);
         const { status, outcome, resolvedAt, acknowledgedAt, hearingDate } = req.body;
 
-        const existing = await prisma.disciplinaryCase.findFirst({ where: { id, organizationId: orgId }, select: { id: true } });
+        const existing = await prisma.disciplinaryCase.findFirst({ where: { id, organizationId: orgId }, select: { id: true, employeeId: true, status: true } });
         if (!existing) return res.status(404).json({ error: 'Disciplinary case not found' });
         const updated = await prisma.disciplinaryCase.update({
             where: { id: existing.id },
@@ -92,6 +103,16 @@ export const updateDisciplinaryCase = async (req: Request, res: Response) => {
                 ...(hearingDate !== undefined ? { hearingDate: hearingDate ? new Date(hearingDate) : null } : {}),
             },
         });
+
+        if (status !== undefined && status !== existing.status) {
+            await notify(
+                existing.employeeId!,
+                'Disciplinary Case Updated',
+                `The status of your disciplinary record has changed to ${String(status).replace(/_/g, ' ').toLowerCase()}. Please review it in your profile.`,
+                'INFO',
+                `/employees/${existing.employeeId}`
+            );
+        }
 
         res.json(updated);
     } catch (err: any) {
@@ -106,6 +127,52 @@ export const deleteDisciplinaryCase = async (req: Request, res: Response) => {
         const deleted = await prisma.disciplinaryCase.deleteMany({ where: { id, organizationId: orgId } });
         if (!deleted.count) return res.status(404).json({ error: 'Disciplinary case not found' });
         res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Self-service: an employee viewing their own record. Deliberately ignores any
+// employeeId query param — always scoped to the authenticated caller.
+export const getMyDisciplinaryCases = async (req: Request, res: Response) => {
+    try {
+        const orgId = getOrgId(req);
+        const user = getUser(req);
+
+        const cases = await prisma.disciplinaryCase.findMany({
+            where: { organizationId: orgId, employeeId: user.id },
+            include: {
+                issuedBy: { select: { id: true, fullName: true, jobTitle: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        res.json(cases);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+export const acknowledgeDisciplinaryCase = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const orgId = getOrgId(req);
+        const user = getUser(req);
+
+        const existing = await prisma.disciplinaryCase.findFirst({ where: { id, organizationId: orgId }, select: { id: true, employeeId: true, issuedById: true } });
+        if (!existing) return res.status(404).json({ error: 'Disciplinary case not found' });
+        if (existing.employeeId !== user.id) return res.status(403).json({ error: 'You can only acknowledge your own disciplinary record' });
+
+        const updated = await prisma.disciplinaryCase.update({
+            where: { id: existing.id },
+            data: { acknowledgedAt: new Date() },
+        });
+
+        if (existing.issuedById) {
+            await notify(existing.issuedById, 'Disciplinary Case Acknowledged', `${user.name} has acknowledged their disciplinary record.`, 'INFO', `/employees/${existing.employeeId}`);
+        }
+
+        res.json(updated);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

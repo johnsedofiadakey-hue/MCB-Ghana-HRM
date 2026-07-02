@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import PulseModal from '../common/PulseModal';
-import { LifeBuoy, FileQuestion, Layers, AlertTriangle, Send } from 'lucide-react';
+import { LifeBuoy, FileQuestion, Layers, AlertTriangle, Send, Paperclip, X } from 'lucide-react';
 import api from '../../services/api';
 import { motion } from 'framer-motion';
 import { toast } from '../../utils/toast';
@@ -11,6 +11,8 @@ interface CreateTicketModalProps {
   onSuccess: () => void;
 }
 
+const MAX_ATTACHMENT_BYTES = 6 * 1024 * 1024; // 6MB — stays comfortably under the 10mb JSON body limit once base64-encoded
+
 const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProps) => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -19,13 +21,36 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProp
     priority: 'NORMAL',
     description: ''
   });
+  const [attachFile, setAttachFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (file: File | null) => {
+    if (file && file.size > MAX_ATTACHMENT_BYTES) {
+      toast.error('Attachment is too large — please keep it under 6MB');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    setAttachFile(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/support/tickets', form);
+      let attachmentData: { fileBase64: string; fileName: string; mimeType: string } | undefined;
+      if (attachFile) {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Could not read attachment'));
+          reader.readAsDataURL(attachFile);
+        });
+        attachmentData = { fileBase64: base64, fileName: attachFile.name, mimeType: attachFile.type };
+      }
+
+      await api.post('/support/tickets', { ...form, attachmentData });
       setForm({ subject: '', category: 'IT', priority: 'NORMAL', description: '' });
+      setAttachFile(null);
       toast.success('Support ticket created');
       onSuccess();
       onClose();
@@ -105,9 +130,32 @@ const CreateTicketModal = ({ isOpen, onClose, onSuccess }: CreateTicketModalProp
           />
         </div>
 
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Attachment (optional)</label>
+          <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={e => handleFileSelect(e.target.files?.[0] || null)} />
+          {attachFile ? (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+              <span className="flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] truncate">
+                <Paperclip size={14} className="text-[var(--primary)] flex-shrink-0" /> {attachFile.name}
+              </span>
+              <button type="button" onClick={() => { setAttachFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} className="text-[var(--text-muted)] hover:text-[var(--error)] transition-colors flex-shrink-0">
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-[var(--border-subtle)] text-[11px] font-bold text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)]/40 transition-colors"
+            >
+              <Paperclip size={14} /> Attach a screenshot or document
+            </button>
+          )}
+        </div>
+
         <div className="flex justify-end gap-3 pt-6 border-t border-[var(--border-subtle)]">
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={onClose}
             className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >

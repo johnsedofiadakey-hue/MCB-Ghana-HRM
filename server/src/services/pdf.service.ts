@@ -4,13 +4,14 @@ import prisma from '../prisma/client';
 import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 import { FirebaseStorageService } from './firebase-storage.service';
 import { errorLogger } from './error-log.service';
-import { 
-  PdfOrganization, 
-  PdfTargetContent, 
-  PdfAppraisalContent, 
-  PdfLeaveContent, 
-  PdfPayslipContent, 
-  PdfBoardReportContent 
+import {
+  PdfOrganization,
+  PdfTargetContent,
+  PdfAppraisalContent,
+  PdfLeaveContent,
+  PdfPayslipContent,
+  PdfBoardReportContent,
+  PdfEmployeeDossierContent
 } from '../types/pdf.types';
 
 export class PdfExportService {
@@ -21,10 +22,10 @@ export class PdfExportService {
    * Generates a premium, branded PDF for various document types.
    */
   static async generateBrandedPdf(
-    organizationId: string, 
-    title: string, 
-    content: PdfTargetContent | PdfTargetContent[] | PdfAppraisalContent | PdfLeaveContent | PdfPayslipContent | PdfBoardReportContent, 
-    type: 'TARGET' | 'APPRAISAL' | 'LEAVE' | 'PAYSLIP' | 'TARGET_ROADMAP' | 'BOARD_REPORT'
+    organizationId: string,
+    title: string,
+    content: PdfTargetContent | PdfTargetContent[] | PdfAppraisalContent | PdfLeaveContent | PdfPayslipContent | PdfBoardReportContent | PdfEmployeeDossierContent,
+    type: 'TARGET' | 'APPRAISAL' | 'LEAVE' | 'PAYSLIP' | 'TARGET_ROADMAP' | 'BOARD_REPORT' | 'EMPLOYEE_DOSSIER'
   ): Promise<Buffer> {
     const org = await prisma.organization.findUnique({
       where: { id: organizationId || 'mcb-ghana-tenant' },
@@ -100,6 +101,9 @@ export class PdfExportService {
             break;
           case 'BOARD_REPORT':
             this.renderBoardReportContent(doc, content as PdfBoardReportContent, primaryColor);
+            break;
+          case 'EMPLOYEE_DOSSIER':
+            await this.renderEmployeeDossierContent(doc, content as PdfEmployeeDossierContent, primaryColor);
             break;
         }
 
@@ -466,9 +470,47 @@ export class PdfExportService {
          });
          doc.image(response.data, centeredX, yPos - 35, { width: imgWidth, height: 40, fit: [imgWidth, 40] });
        }
-     } catch (e) { 
+     } catch (e) {
         console.warn('[PdfExportService] Signature render failed', e);
      }
+  }
+
+  private static async renderAvatarImage(doc: PDFKit.PDFDocument, avatarUrl: string | null | undefined, fullName: string, x: number, y: number, size: number) {
+    const initials = fullName ? fullName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() : '??';
+    try {
+      let rawBuffer: Buffer | null = null;
+      let sourceUrl = avatarUrl;
+      if (!sourceUrl) {
+        sourceUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=6366f1&color=fff&bold=true&size=256`;
+      }
+
+      if (sourceUrl.startsWith('data:image')) {
+        const b64 = sourceUrl.split(',')[1];
+        if (b64) rawBuffer = Buffer.from(b64, 'base64');
+      } else if (sourceUrl.includes('storage.googleapis.com')) {
+        rawBuffer = await FirebaseStorageService.downloadByUrl(sourceUrl);
+      } else {
+        const response = await axios.get(sourceUrl, { responseType: 'arraybuffer', timeout: 8000 });
+        rawBuffer = Buffer.from(response.data);
+      }
+
+      if (!rawBuffer) throw new Error('No avatar bytes resolved');
+
+      const sharp = (await import('sharp')).default;
+      const pngBuffer = await sharp(rawBuffer).resize(size * 2, size * 2, { fit: 'cover' }).png().toBuffer();
+
+      doc.save();
+      doc.roundedRect(x, y, size, size, 12).clip();
+      doc.image(pngBuffer, x, y, { width: size, height: size });
+      doc.restore();
+      doc.roundedRect(x, y, size, size, 12).strokeColor('#e2e8f0').lineWidth(1.5).stroke();
+    } catch (err) {
+      console.warn('[PdfExportService] Avatar render failed, using placeholder:', (err as any)?.message);
+      doc.save();
+      doc.roundedRect(x, y, size, size, 12).fillColor('#f1f5f9').fill();
+      doc.fillColor('#94a3b8').fontSize(size * 0.32).font('Helvetica-Bold').text(initials, x, y + size / 2 - size * 0.18, { width: size, align: 'center' });
+      doc.restore();
+    }
   }
 
   private static async renderLeaveContent(doc: PDFKit.PDFDocument, leave: PdfLeaveContent, brandColor: string) {
@@ -594,6 +636,158 @@ export class PdfExportService {
     doc.fillColor('#0f172a').rect(50, summaryTop, 500, 110).fill();
     doc.fillColor(brandColor).fontSize(9).font('Helvetica-Bold').text('NET PAYOUT', 360, summaryTop + 30, { characterSpacing: 2 });
     doc.fillColor('#fff').fontSize(28).font('Helvetica-Bold').text(`${currency} ${formatAmount(Number(item.netPay))}`, 360, summaryTop + 45);
+  }
+
+  private static async renderEmployeeDossierContent(doc: PDFKit.PDFDocument, employee: PdfEmployeeDossierContent, brandColor: string) {
+    const margin = this.SAFE_MARGIN;
+    const width = this.CONTENT_WIDTH;
+    const photoSize = 80;
+
+    // --- Identity Hero ---
+    const heroTop = doc.y;
+    await this.renderAvatarImage(doc, employee.avatarUrl, employee.fullName, margin, heroTop, photoSize);
+
+    const infoX = margin + photoSize + 25;
+    const infoWidth = width - photoSize - 25;
+    doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text('OFFICIAL PERSONNEL RECORD', infoX, heroTop, { characterSpacing: 1.5 });
+    doc.fillColor('#0f172a').fontSize(19).font('Helvetica-Bold').text(employee.fullName.toUpperCase(), infoX, heroTop + 13, { width: infoWidth });
+    doc.fillColor(brandColor).fontSize(11).font('Helvetica-Bold').text(employee.jobTitle || 'Staff Member', infoX, heroTop + 37, { width: infoWidth });
+    doc.fillColor('#64748b').fontSize(9).font('Helvetica').text(
+      `${employee.departmentObj?.name || 'Unassigned Department'}  |  ${employee.employeeCode || employee.id.slice(0, 8).toUpperCase()}  |  ${employee.status || 'ACTIVE'}`,
+      infoX, heroTop + 53, { width: infoWidth }
+    );
+
+    doc.y = heroTop + photoSize + 20;
+    doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(margin, doc.y).lineTo(margin + width, doc.y).stroke();
+    doc.moveDown(1.5);
+
+    const sectionTitle = (label: string) => {
+      doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text(label.toUpperCase(), margin, doc.y, { characterSpacing: 1.5 });
+      doc.moveDown(0.7);
+    };
+
+    const twoColRow = (leftLabel: string, leftVal: any, rightLabel: string, rightVal: any) => {
+      const y = doc.y;
+      this.keyValGrid(doc, margin + 15, y, leftLabel, leftVal != null && leftVal !== '' ? String(leftVal) : 'N/A');
+      this.keyValGrid(doc, margin + 15 + width / 2, y, rightLabel, rightVal != null && rightVal !== '' ? String(rightVal) : 'N/A');
+      doc.y = y + 32;
+    };
+
+    const listRow = (label: string, valueText: string, color: string, valueWidth = 135) => {
+      const y = doc.y;
+      doc.fillColor('#1e293b').fontSize(9).font('Helvetica-Bold').text(label, margin + 15, y, { width: width - 30 - valueWidth });
+      doc.fillColor(color).font('Helvetica-Bold').text(valueText, margin + 15 + width - 30 - valueWidth, y, { width: valueWidth, align: 'right' });
+      doc.y = y + 16;
+    };
+
+    // --- 1. Identity & Contact ---
+    sectionTitle('Identity & Contact');
+    twoColRow('Gender', employee.gender, 'Date of Birth', employee.dob ? new Date(employee.dob).toLocaleDateString([], { dateStyle: 'long' }) : null);
+    twoColRow('Nationality', employee.nationality, 'Country of Origin', employee.countryOfOrigin);
+    twoColRow('Marital Status', employee.maritalStatus, 'National ID', employee.nationalId);
+    twoColRow('Email Address', employee.email, 'Phone Number', employee.contactNumber);
+    this.keyValGrid(doc, margin + 15, doc.y, 'Residential Address', employee.address || 'N/A');
+    doc.y += 32;
+    doc.moveDown(1);
+
+    // --- 2. Employment ---
+    if (doc.y > 640) doc.addPage();
+    sectionTitle('Employment Details');
+    twoColRow('Department', employee.departmentObj?.name, 'Employment Type', employee.employmentType);
+    twoColRow('Join Date', employee.joinDate ? new Date(employee.joinDate).toLocaleDateString([], { dateStyle: 'long' }) : null, 'Reporting Manager', employee.supervisor?.fullName);
+    doc.moveDown(1);
+
+    // --- 3. Leave Balance Summary ---
+    if (doc.y > 640) doc.addPage();
+    sectionTitle('Leave Balance Summary');
+    const allowance = Number(employee.leaveAllowance || 0);
+    const balance = Number(employee.leaveBalance || 0);
+    const consumed = Math.max(0, allowance - balance);
+    const cardY = doc.y;
+    const cardW = (width - 30) / 3;
+    this.drawMetricCard(doc, 'Allowance', `${allowance} Days`, margin, cardY, cardW, '#64748b');
+    this.drawMetricCard(doc, 'Remaining', `${balance} Days`, margin + cardW + 15, cardY, cardW, '#f59e0b');
+    this.drawMetricCard(doc, 'Consumed', `${consumed} Days`, margin + (cardW + 15) * 2, cardY, cardW, brandColor);
+    doc.y = cardY + 78;
+
+    // --- 4. Financial & Compensation ---
+    if (doc.y > 620) doc.addPage();
+    sectionTitle('Financial & Compensation');
+    twoColRow('Base Salary', employee.salary != null ? `${employee.currency || 'GHS'} ${Number(employee.salary).toLocaleString()}` : null, 'Bank', employee.bankName);
+    twoColRow('Account Number', employee.bankAccountNumber, 'Branch', employee.bankBranch);
+    this.keyValGrid(doc, margin + 15, doc.y, 'SSNIT Number', employee.ssnitNumber || 'N/A');
+    doc.y += 32;
+    doc.moveDown(1);
+
+    // --- 5. Emergency & Next of Kin ---
+    if (doc.y > 630) doc.addPage();
+    sectionTitle('Emergency & Next of Kin');
+    twoColRow('Next of Kin', employee.nextOfKinName, 'Relationship', employee.nextOfKinRelation);
+    twoColRow('Next of Kin Contact', employee.nextOfKinContact, 'Emergency Contact', employee.emergencyContactName);
+    this.keyValGrid(doc, margin + 15, doc.y, 'Emergency Phone', employee.emergencyContactPhone || 'N/A');
+    doc.y += 32;
+    doc.moveDown(1);
+
+    // --- 6. Academic & Certifications ---
+    if (employee.education || employee.certifications) {
+      if (doc.y > 620) doc.addPage();
+      sectionTitle('Academic & Certifications');
+      this.keyValGrid(doc, margin + 15, doc.y, 'Highest Qualification', employee.education || 'N/A');
+      doc.y += 32;
+      try {
+        const certs = typeof employee.certifications === 'string' ? JSON.parse(employee.certifications) : employee.certifications;
+        if (Array.isArray(certs) && certs.length) {
+          certs.slice(0, 6).forEach((c: any) => {
+            listRow(c.name || 'Certification', `${c.authority || 'N/A'}  •  ${c.issueDate || 'n/d'}`, '#64748b', 220);
+          });
+        }
+      } catch { /* malformed certifications JSON — skip */ }
+      doc.moveDown(1);
+    }
+
+    // --- 7. Performance Snapshot ---
+    if (doc.y > 600) doc.addPage();
+    sectionTitle('Performance Snapshot');
+    const packets = (employee.appraisalPackets || []).filter((p) => p.status !== 'CANCELLED').slice(0, 4);
+    if (packets.length) {
+      packets.forEach((p) => {
+        const score = p.finalScore ?? p.reviews?.find((r) => r.reviewStage === 'MANAGER_REVIEW' || r.reviewStage === 'SUPERVISOR')?.overallRating;
+        const scoreNum = score != null ? Number(score) : null;
+        listRow(
+          p.cycle?.title || 'Review Cycle',
+          scoreNum != null ? `${scoreNum}%` : 'Pending',
+          scoreNum != null && scoreNum >= 80 ? '#10b981' : scoreNum != null && scoreNum >= 60 ? '#f59e0b' : scoreNum != null ? '#ef4444' : '#94a3b8'
+        );
+      });
+    } else {
+      doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Oblique').text('No appraisal cycles recorded.', margin + 15, doc.y);
+      doc.moveDown(0.8);
+    }
+    doc.moveDown(0.8);
+
+    const targets = (employee.targetsAssignedToMe || []).slice(0, 4);
+    if (targets.length) {
+      doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('ACTIVE STRATEGIC TARGETS', margin + 15, doc.y, { characterSpacing: 1 });
+      doc.moveDown(0.6);
+      targets.forEach((t) => {
+        listRow(t.title, `${Math.round(Number(t.progress) || 0)}%`, brandColor, 80);
+      });
+    }
+
+    // --- Sign-off block ---
+    doc.moveDown(3);
+    if (doc.y > 700) doc.addPage();
+    const sigY = doc.y + 30;
+    doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(margin, sigY).lineTo(margin + 180, sigY).stroke();
+    doc.fontSize(8).fillColor('#64748b').font('Helvetica-Bold').text('EMPLOYEE SIGNATURE', margin, sigY + 8);
+    doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(margin + 320, sigY).lineTo(margin + 500, sigY).stroke();
+    doc.fontSize(8).fillColor('#64748b').font('Helvetica-Bold').text('HR / MANAGING DIRECTOR', margin + 320, sigY + 8);
+
+    doc.y = sigY + 30;
+    doc.fillColor('#94a3b8').fontSize(7).font('Helvetica-Oblique').text(
+      'This document is a confidential internal record containing sensitive personal data. Unauthorized duplication or distribution is strictly prohibited under organizational security protocols.',
+      margin, doc.y, { width, align: 'center' }
+    );
   }
 
   private static renderBoardReportContent(doc: PDFKit.PDFDocument, data: PdfBoardReportContent, brandColor: string) {

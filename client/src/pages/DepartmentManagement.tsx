@@ -204,20 +204,27 @@ const DepartmentManagement = () => {
                       <Users size={14} className="text-[var(--primary)] shrink-0" />
                       <span className="truncate">{dept.memberCount || 0} {t('department_details.members', t('DEPARTMENTS.MEMBERS', 'Staff'))}</span>
                     </div>
-                    {canManageDept && (
+                    {(canManageDept || dept.id === currentUser.departmentId) && (
                       <div className="flex gap-4 shrink-0">
-                        <button
-                          onClick={() => setManagingSubUnits(dept)}
-                          className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline whitespace-nowrap"
-                        >
-                          {t('department_details.sub_units', t('departments.sub_units', 'Sub-Units'))}
-                        </button>
-                        <button
-                          onClick={() => setManagingMembers(dept)}
-                          className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline whitespace-nowrap"
-                        >
-                          {t('department_details.team', 'Team')}
-                        </button>
+                        {canManageDept && (
+                          <button
+                            onClick={() => setManagingSubUnits(dept)}
+                            className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline whitespace-nowrap"
+                          >
+                            {t('department_details.sub_units', t('departments.sub_units', 'Sub-Units'))}
+                          </button>
+                        )}
+                        {/* Non-managers can only view the roster of their OWN department — the underlying
+                            /users fetch is already backend-restricted to their department + reports, so
+                            this never exposes other departments' members. */}
+                        {(canManageDept || dept.id === currentUser.departmentId) && (
+                          <button
+                            onClick={() => setManagingMembers(dept)}
+                            className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline whitespace-nowrap"
+                          >
+                            {canManageDept ? t('department_details.team', 'Team') : t('department_details.view_team', 'View Team')}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -311,77 +318,106 @@ const DepartmentManagement = () => {
                     <Users size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight truncate">{t('department_details.manage_team')}: {managingMembers.name}</h2>
+                    <h2 className="text-2xl font-bold tracking-tight truncate">{canManageDept ? t('department_details.manage_team') : t('department_details.view_team', 'Team')}: {managingMembers.name}</h2>
                     <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{managingMembers.memberCount || 0} {t('department_details.members')}</p>
                   </div>
                 </div>
                 <button onClick={() => setManagingMembers(null)} className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
               </div>
 
-              <div className="flex flex-1 overflow-hidden">
-                <div className="w-1/2 p-8 border-r border-[var(--border-subtle)] flex flex-col gap-6">
-                  <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-4 ml-1">{t('department_details.add_members')}</h4>
-                    <input 
-                      type="text" 
-                      className="nx-input" 
-                      placeholder={t('department_details.search_employees')}
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-                     {employees
-                      .filter(e => e?.departmentId !== managingMembers?.id && e?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || ''))
-                      .map(emp => (
-                        <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-[var(--growth)]/10 text-[var(--growth-light)] flex items-center justify-center text-[11px] font-bold">
-                              {emp?.fullName?.charAt(0) || emp?.id?.slice(0, 1) || '?'}
+              {canManageDept ? (
+                <div className="flex flex-1 overflow-hidden">
+                  <div className="w-1/2 p-8 border-r border-[var(--border-subtle)] flex flex-col gap-6">
+                    <div>
+                      <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-4 ml-1">{t('department_details.add_members')}</h4>
+                      <input
+                        type="text"
+                        className="nx-input"
+                        placeholder={t('department_details.search_employees')}
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                       {employees
+                        .filter(e => e?.departmentId !== managingMembers?.id && e?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || ''))
+                        .map(emp => (
+                          <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-[var(--growth)]/10 text-[var(--growth-light)] flex items-center justify-center text-[11px] font-bold">
+                                {emp?.fullName?.charAt(0) || emp?.id?.slice(0, 1) || '?'}
+                              </div>
+                              <div>
+                                <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
+                                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
-                              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
-                            </div>
+                            <button
+                              onClick={() => handleTransfer(emp.id, managingMembers.id)}
+                              className="w-8 h-8 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center hover:scale-105 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <Plus size={14} />
+                            </button>
                           </div>
-                          <button 
-                            onClick={() => handleTransfer(emp.id, managingMembers.id)}
-                            className="w-8 h-8 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center hover:scale-105 transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Plus size={14} />
-                          </button>
-                        </div>
-                      ))}
+                        ))}
+                    </div>
+                  </div>
+
+                  <div className="w-1/2 p-8 flex flex-col gap-6 bg-[var(--bg-elevated)]/20">
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">{t('department_details.current_team')}</h4>
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                      {employees
+                        .filter(e => e.departmentId === managingMembers.id)
+                        .map(emp => (
+                          <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--primary)]/20 group">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[11px] font-bold">
+                                {emp?.fullName?.charAt(0) || '?'}
+                              </div>
+                              <div>
+                                <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
+                                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleTransfer(emp.id, null)}
+                              className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
                   </div>
                 </div>
-
-                <div className="w-1/2 p-8 flex flex-col gap-6 bg-[var(--bg-elevated)]/20">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">{t('department_details.current_team')}</h4>
-                  <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+              ) : (
+                // Read-only roster for non-manager employees viewing their own department.
+                // `employees` here is already backend-scoped to this user's department + reports.
+                <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {employees
                       .filter(e => e.departmentId === managingMembers.id)
                       .map(emp => (
-                        <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--primary)]/20 group">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[11px] font-bold">
+                        <div key={emp.id} className="flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                          {emp.avatarUrl ? (
+                            <img src={emp.avatarUrl} alt={emp.fullName} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[12px] font-bold flex-shrink-0">
                               {emp?.fullName?.charAt(0) || '?'}
                             </div>
-                            <div>
-                              <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
-                              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
-                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-bold text-[var(--text-primary)] truncate">{emp.fullName}</p>
+                            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider truncate">{emp.jobTitle}</p>
                           </div>
-                          <button 
-                            onClick={() => handleTransfer(emp.id, null)}
-                            className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 size={14} />
-                          </button>
                         </div>
                       ))}
+                    {employees.filter(e => e.departmentId === managingMembers.id).length === 0 && (
+                      <p className="col-span-full text-center py-10 text-[13px] text-[var(--text-muted)]">No colleagues found in this department yet.</p>
+                    )}
                   </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           </div>
         )}

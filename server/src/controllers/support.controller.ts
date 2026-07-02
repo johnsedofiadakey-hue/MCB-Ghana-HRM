@@ -99,7 +99,7 @@ const canAccessTicket = async (ticket: any, userId: string) => {
 
 export const createTicket = async (req: Request, res: Response) => {
   try {
-    const { subject, description, category, priority } = req.body;
+    const { subject, description, category, priority, attachmentData } = req.body;
     const organizationId = req.user?.organizationId || 'mcb-ghana-tenant';
     const employeeId = req.user?.id!;
     const queue = normalizeQueue(category);
@@ -141,6 +141,28 @@ export const createTicket = async (req: Request, res: Response) => {
         ...(queueOwner ? [{ organizationId, ticketId: ticket.id, actorId: employeeId, action: 'ASSIGNED', metadata: { to: queueOwner.id, reason: 'auto-routed to queue owner' } }] : []),
       ],
     });
+
+    // Optional attachment supplied at creation time — same Firebase-first/fallback pattern as attachTicketFile
+    if (attachmentData?.fileBase64 && attachmentData?.fileName && attachmentData?.mimeType) {
+      try {
+        const buffer = Buffer.from(attachmentData.fileBase64.replace(/^data:[^;]+;base64,/, ''), 'base64');
+        let fileUrl: string;
+        try {
+          fileUrl = await FirebaseStorageService.uploadFile(buffer, attachmentData.fileName, 'ticket-attachments', attachmentData.mimeType);
+        } catch (storageErr) {
+          console.warn('[Support] Firebase upload failed, storing base64 in DB:', storageErr);
+          fileUrl = `data:${attachmentData.mimeType};base64,${buffer.toString('base64')}`;
+        }
+        await (prisma as any).ticketAttachment.create({
+          data: { organizationId, ticketId: ticket.id, uploadedById: employeeId, fileUrl, fileName: attachmentData.fileName, mimeType: attachmentData.mimeType },
+        });
+        await prisma.ticketActivity.create({
+          data: { organizationId, ticketId: ticket.id, actorId: employeeId, action: 'ATTACHMENT_ADDED', metadata: { fileName: attachmentData.fileName, mimeType: attachmentData.mimeType } },
+        });
+      } catch (attachErr) {
+        console.warn('[Support] Ticket-creation attachment failed, ticket created without it:', attachErr);
+      }
+    }
 
     await logAction(employeeId, 'CREATE_SUPPORT_TICKET', 'SupportTicket', ticket.id, { category, priority }, req.ip);
 
@@ -515,7 +537,15 @@ export const attachTicketFile = async (req: Request, res: Response) => {
     if (!(await canAccessTicket(ticket, userId))) return res.status(403).json({ error: 'Access denied' });
 
     const buffer = Buffer.from(fileBase64.replace(/^data:[^;]+;base64,/, ''), 'base64');
-    const fileUrl = await FirebaseStorageService.uploadFile(buffer, fileName, 'ticket-attachments', mimeType);
+
+    // Firebase-first, with a data-URI fallback so a transient storage outage never blocks the upload
+    let fileUrl: string;
+    try {
+      fileUrl = await FirebaseStorageService.uploadFile(buffer, fileName, 'ticket-attachments', mimeType);
+    } catch (storageErr) {
+      console.warn('[Support] Firebase upload failed, storing base64 in DB:', storageErr);
+      fileUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    }
 
     const attachment = await (prisma as any).ticketAttachment.create({
       data: { organizationId, ticketId: id, commentId: commentId || null, uploadedById: userId, fileUrl, fileName, mimeType },

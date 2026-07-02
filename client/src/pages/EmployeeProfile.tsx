@@ -5,7 +5,7 @@ import {
   Shield, Edit2, ChevronLeft, Download, FileText,
   Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe, Clock, Umbrella,
   UserCheck, Award, QrCode, Copy, CheckCheck, RefreshCw, Link2, MoreHorizontal,
-  Send, UserPlus, TrendingUp, Users, ChevronRight
+  Send, UserPlus, TrendingUp, Users, ChevronRight, AlertOctagon
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +17,6 @@ import { useAI } from '../context/AIContext';
 import { useTheme } from '../context/ThemeContext';
 import { getSafeAvatarUrl } from '../utils/avatar';
 import HistoryLog from '../components/profile/HistoryLog';
-import EmployeePrintDossier from '../components/profile/EmployeePrintDossier';
 import EmployeeIDCard from '../components/profile/EmployeeIDCard';
 import DocumentVault from '../components/employee/DocumentVault';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -162,7 +161,8 @@ const EmployeeProfile = () => {
     const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', reason: '' });
     const [adjustingLeave, setAdjustingLeave] = useState(false);
     const [riskProfile, setRiskProfile] = useState<any>(null);
-    const [printType, setPrintType] = useState<'dossier' | 'idcard' | null>(null);
+    const [printType, setPrintType] = useState<'idcard' | null>(null);
+    const [exportingPdf, setExportingPdf] = useState(false);
     const [showPromotionModal, setShowPromotionModal] = useState(false);
     const [submittingPromotion, setSubmittingPromotion] = useState(false);
     const [promotionForm, setPromotionForm] = useState({
@@ -178,6 +178,8 @@ const EmployeeProfile = () => {
     const [loadingInvite, setLoadingInvite] = useState(false);
     const [regeneratingInvite, setRegeneratingInvite] = useState(false);
     const [showMoreActions, setShowMoreActions] = useState(false);
+    const [myDisciplinaryCases, setMyDisciplinaryCases] = useState<any[]>([]);
+    const [acknowledgingCaseId, setAcknowledgingCaseId] = useState<string | null>(null);
     const { t } = useTranslation();
     const { setContextData } = useAI();
     const { settings } = useTheme();
@@ -239,6 +241,34 @@ const EmployeeProfile = () => {
             fetchConnections();
         }
     }, [employee, currentUser, fetchConnections]);
+
+    const fetchMyDisciplinaryCases = useCallback(async () => {
+        try {
+            const res = await api.get('/hr/disciplinary/mine');
+            setMyDisciplinaryCases(Array.isArray(res.data) ? res.data : []);
+        } catch {
+            setMyDisciplinaryCases([]);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (employee && currentUser?.id === employee.id) {
+            fetchMyDisciplinaryCases();
+        }
+    }, [employee, currentUser, fetchMyDisciplinaryCases]);
+
+    const handleAcknowledgeCase = async (caseId: string) => {
+        setAcknowledgingCaseId(caseId);
+        try {
+            await api.post(`/hr/disciplinary/${caseId}/acknowledge`);
+            toast.success('Acknowledged');
+            fetchMyDisciplinaryCases();
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || 'Failed to acknowledge');
+        } finally {
+            setAcknowledgingCaseId(null);
+        }
+    };
 
     const handleWriteNFC = async () => {
         if (!userCard?.id) {
@@ -337,6 +367,25 @@ const EmployeeProfile = () => {
             toast.error(err.response?.data?.error || 'Adjustment failed');
         } finally {
             setAdjustingLeave(false);
+        }
+    };
+
+    const handleExportDossier = async () => {
+        setExportingPdf(true);
+        try {
+            const res = await api.get(`/export/employee/${id}/pdf`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Employee_Dossier_${employee.fullName.replace(/\s+/g, '_')}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            toast.error('Failed to generate employee dossier PDF');
+        } finally {
+            setExportingPdf(false);
         }
     };
 
@@ -449,7 +498,6 @@ const EmployeeProfile = () => {
         <div className="space-y-10 pb-32 print:p-0">
             {/* Print components — hidden in UI */}
             <div className="print:block hidden">
-                {printType === 'dossier' && <EmployeePrintDossier employee={employee} />}
                 {printType === 'idcard' && <EmployeeIDCard employee={employee} />}
             </div>
 
@@ -465,11 +513,12 @@ const EmployeeProfile = () => {
                     </button>
                     <div className="flex items-center gap-2 flex-wrap">
                         <motion.button
-                            onClick={() => { setPrintType('dossier'); setTimeout(() => window.print(), 500); }}
+                            onClick={handleExportDossier}
+                            disabled={exportingPdf}
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                            className="px-4 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
+                            className="px-4 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2 disabled:opacity-50"
                         >
-                            <Download size={13} /> Export PDF
+                            {exportingPdf ? <RefreshCw size={13} className="animate-spin" /> : <Download size={13} />} {exportingPdf ? 'Generating...' : 'Export PDF'}
                         </motion.button>
 
                         {((currentUser?.rank || 0) >= 75 || currentUser?.role === 'DEV') && (
@@ -930,6 +979,50 @@ const EmployeeProfile = () => {
                         </div>
                     )}
                 </motion.div>
+
+                {/* ── Disciplinary Records (self-view only) ── */}
+                {isOwnProfile && myDisciplinaryCases.length > 0 && (
+                    <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="space-y-6">
+                        <SectionHeading icon={AlertOctagon} title="Disciplinary Records" />
+                        <div className="space-y-4">
+                            {myDisciplinaryCases.map((c: any) => (
+                                <div key={c.id} className={cn(
+                                    "nx-card p-6 border space-y-4",
+                                    c.status === 'CLOSED' ? "border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20" : "border-amber-500/20 bg-amber-500/[0.03]"
+                                )}>
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-600 border border-amber-500/20">{c.type?.replace(/_/g, ' ')}</span>
+                                                <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-subtle)]">{c.status}</span>
+                                                {c.acknowledgedAt && <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1"><CheckCheck size={10} /> Acknowledged</span>}
+                                            </div>
+                                            <p className="text-[13px] font-bold text-[var(--text-primary)] mt-2">{c.reason}</p>
+                                            {c.details && <p className="text-[11px] text-[var(--text-muted)] mt-1">{c.details}</p>}
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--border-subtle)]/50">
+                                        <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                            <span>Issued by {c.issuedBy?.fullName || 'HR'}</span>
+                                            <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                                            {c.hearingDate && <span className="text-amber-600">Hearing: {new Date(c.hearingDate).toLocaleDateString()}</span>}
+                                        </div>
+                                        {!c.acknowledgedAt && (
+                                            <button
+                                                onClick={() => handleAcknowledgeCase(c.id)}
+                                                disabled={acknowledgingCaseId === c.id}
+                                                className="px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                                            >
+                                                {acknowledgingCaseId === c.id ? <RefreshCw size={11} className="animate-spin" /> : <CheckCheck size={11} />}
+                                                Acknowledge
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.section>
+                )}
 
                 {/* ── Performance ── */}
                 <section ref={performanceRef} className="space-y-6">

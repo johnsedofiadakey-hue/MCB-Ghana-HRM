@@ -34,7 +34,7 @@ const Onboarding = () => {
   const [myTasks, setMyTasks] = useState<any[]>([]);
   const [assetPanelItemId, setAssetPanelItemId] = useState<string | null>(null);
   const [availableAssets, setAvailableAssets] = useState<any[]>([]);
-  const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [assigning, setAssigning] = useState(false);
 
   const navigate = useNavigate();
@@ -122,7 +122,7 @@ const Onboarding = () => {
 
   const openAssetPanel = async (itemId: string) => {
     setAssetPanelItemId(itemId);
-    setSelectedAssetId('');
+    setSelectedAssetIds([]);
     try {
       const res = await api.get('/assets?status=AVAILABLE');
       setAvailableAssets(Array.isArray(res.data) ? res.data : (res.data?.assets || []));
@@ -131,12 +131,23 @@ const Onboarding = () => {
     }
   };
 
+  const toggleAssetSelection = (assetId: string) => {
+    setSelectedAssetIds((prev) => prev.includes(assetId) ? prev.filter((id) => id !== assetId) : [...prev, assetId]);
+  };
+
   const handleAssignAndComplete = async (itemId: string, employeeId: string) => {
     setAssigning(true);
     try {
-      if (selectedAssetId) {
-        await api.post('/assets/assign', { assetId: selectedAssetId, userId: employeeId });
-        toast.success('Asset assigned to employee');
+      if (selectedAssetIds.length) {
+        const results = await Promise.allSettled(
+          selectedAssetIds.map((assetId) => api.post('/assets/assign', { assetId, userId: employeeId }))
+        );
+        const failed = results.filter((r) => r.status === 'rejected').length;
+        if (failed) {
+          toast.error(`${selectedAssetIds.length - failed} of ${selectedAssetIds.length} assets assigned — ${failed} failed`);
+        } else {
+          toast.success(`${selectedAssetIds.length} asset${selectedAssetIds.length > 1 ? 's' : ''} assigned to employee`);
+        }
       }
       await handleComplete(itemId);
       setAssetPanelItemId(null);
@@ -528,25 +539,42 @@ const Onboarding = () => {
                             className="overflow-hidden border-t border-[var(--border-subtle)]"
                           >
                             <div className="p-5 bg-[var(--bg-elevated)]/40 space-y-4">
-                              <div className="flex items-center gap-2">
-                                <Package size={14} className="text-[var(--info)]" />
-                                <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)]">Assign Asset from Inventory</p>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Package size={14} className="text-[var(--info)]" />
+                                  <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text-primary)]">Assign Assets from Inventory</p>
+                                </div>
+                                {selectedAssetIds.length > 0 && (
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">{selectedAssetIds.length} selected</span>
+                                )}
                               </div>
                               {availableAssets.length === 0 ? (
                                 <p className="text-[11px] text-[var(--text-muted)]">No available assets found in inventory. You can still complete the task without assigning an asset.</p>
                               ) : (
-                                <select
-                                  value={selectedAssetId}
-                                  onChange={(e) => setSelectedAssetId(e.target.value)}
-                                  className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-[13px] font-bold text-[var(--text-primary)] outline-none focus:border-[var(--primary)]/50"
-                                >
-                                  <option value="">— Select an asset to assign —</option>
-                                  {availableAssets.map((asset: any) => (
-                                    <option key={asset.id} value={asset.id}>
-                                      {asset.name} {asset.make ? `· ${asset.make}` : ''} {asset.model ? `${asset.model}` : ''} · S/N: {asset.serialNumber}
-                                    </option>
-                                  ))}
-                                </select>
+                                <div className="max-h-56 overflow-y-auto rounded-xl border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)]">
+                                  {availableAssets.map((asset: any) => {
+                                    const checked = selectedAssetIds.includes(asset.id);
+                                    return (
+                                      <label
+                                        key={asset.id}
+                                        className={cn(
+                                          "flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all",
+                                          checked ? "bg-[var(--primary)]/5" : "bg-[var(--bg-card)] hover:bg-[var(--bg-elevated)]"
+                                        )}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={() => toggleAssetSelection(asset.id)}
+                                          className="w-4 h-4 rounded accent-[var(--primary)] flex-shrink-0"
+                                        />
+                                        <span className="text-[13px] font-bold text-[var(--text-primary)] flex-1 min-w-0 truncate">
+                                          {asset.name} {asset.make ? `· ${asset.make}` : ''} {asset.model ? `${asset.model}` : ''} · S/N: {asset.serialNumber}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
                               )}
                               <div className="flex gap-3">
                                 <button
@@ -561,7 +589,7 @@ const Onboarding = () => {
                                   className="flex-1 px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
                                 >
                                   {assigning ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
-                                  {selectedAssetId ? 'Assign & Complete' : 'Complete Task'}
+                                  {selectedAssetIds.length ? `Assign ${selectedAssetIds.length} & Complete` : 'Complete Task'}
                                 </button>
                               </div>
                             </div>

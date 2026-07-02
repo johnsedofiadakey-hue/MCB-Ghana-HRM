@@ -3,8 +3,6 @@ import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
-import DemoPersonaSwitcher from './components/DemoPersonaSwitcher';
-import CommandPalette from './components/layout/CommandPalette';
 import PageErrorBoundary from './components/layout/PageErrorBoundary';
 import ChunkErrorBoundary from './components/common/ChunkErrorBoundary';
 import AnnouncementBanner from './components/dashboard/AnnouncementBanner';
@@ -16,15 +14,21 @@ import { Shield, HelpCircle, Clock } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { cn } from './utils/cn';
 import { useAI } from './context/AIContext';
-import FirstRunWelcome from './components/layout/FirstRunWelcome';
-import CoreGuide from './components/layout/CoreGuide';
 import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
-import MCBAIInsight from './components/layout/MCBAIInsight';
 import { getLogoUrl } from './utils/logo';
 import { getStoredUser } from './utils/session';
-import SandboxHUD from './components/layout/SandboxHUD';
 import { storage, StorageKey } from './services/storage';
+
+// Deferred: overlay/chrome components that are always mounted but rarely visible
+// (help guide, command palette, AI insight panel, etc). Lazy-loading keeps them
+// out of the critical initial bundle — they fetch in the background after paint.
+const DemoPersonaSwitcher = lazy(() => import('./components/DemoPersonaSwitcher'));
+const CommandPalette = lazy(() => import('./components/layout/CommandPalette'));
+const FirstRunWelcome = lazy(() => import('./components/layout/FirstRunWelcome'));
+const CoreGuide = lazy(() => import('./components/layout/CoreGuide'));
+const MCBAIInsight = lazy(() => import('./components/layout/MCBAIInsight'));
+const SandboxHUD = lazy(() => import('./components/layout/SandboxHUD'));
 
 
 // Eager-loaded (always needed)
@@ -203,9 +207,13 @@ const Layout = () => {
         </div>
       </div>
 
-      <CommandPalette />
-      <CoreGuide isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
-      <FirstRunWelcome />
+      <ChunkErrorBoundary>
+        <Suspense fallback={null}>
+          <CommandPalette />
+          <CoreGuide isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+          <FirstRunWelcome />
+        </Suspense>
+      </ChunkErrorBoundary>
       {settings?.maintenanceMode && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-[var(--warning)] text-black py-2 px-4 flex justify-between items-center font-black uppercase tracking-widest text-[10px]">
           <span>{t('common.maintenance_active')}</span>
@@ -285,14 +293,18 @@ const Layout = () => {
         </div>
       </div>
       <MobileNav />
-      <DemoPersonaSwitcher />
-      {rank >= 70 && (
-        <MCBAIInsight 
-          isOpen={isAIOpen} 
-          onClose={() => setIsAIOpen(false)} 
-        />
-      )}
-      <SandboxHUD />
+      <ChunkErrorBoundary>
+        <Suspense fallback={null}>
+          <DemoPersonaSwitcher />
+          {rank >= 70 && (
+            <MCBAIInsight
+              isOpen={isAIOpen}
+              onClose={() => setIsAIOpen(false)}
+            />
+          )}
+          <SandboxHUD />
+        </Suspense>
+      </ChunkErrorBoundary>
     </div>
   );
 };
@@ -337,133 +349,13 @@ const AppContent = () => {
     document.title = `${baseTitle} | Personnel Operations`;
   }, [settings?.companyName]);
 
-  // ─── 2-HOUR IDLE TIMER (Enterprise Security Dominion) ─────────────────────
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
-  const [remainingSeconds, setRemainingSeconds] = useState(60);
-  const IDLE_LIMIT = (2 * 60 * 60 - 60) * 1000; // 1h 59m in ms
-  const WARNING_LIMIT = 60 * 1000; // 60s warning
-
-  useEffect(() => {
-    const token = storage.getItem(StorageKey.AUTH_TOKEN, null);
-    if (!token) return;
-
-    let warningTimer: any;
-    let logoutTimer: any;
-    let countdownInterval: any;
-
-    const resetTimers = () => {
-      setShowTimeoutWarning(false);
-      setRemainingSeconds(60);
-      if (warningTimer) clearTimeout(warningTimer);
-      if (logoutTimer) clearTimeout(logoutTimer);
-      if (countdownInterval) clearInterval(countdownInterval);
-
-      warningTimer = setTimeout(() => {
-        setShowTimeoutWarning(true);
-        countdownInterval = setInterval(() => {
-          setRemainingSeconds((prev) => {
-            if (prev <= 1) {
-              clearInterval(countdownInterval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      }, IDLE_LIMIT);
-
-      logoutTimer = setTimeout(() => {
-        handleGlobalLogout();
-      }, IDLE_LIMIT + WARNING_LIMIT);
-    };
-
-    // --- DEBOUNCED ACTIVITY SHIELD ---
-    let debounceTimer: any;
-    const throttledReset = () => {
-      if (debounceTimer) return;
-      debounceTimer = setTimeout(() => {
-        resetTimers();
-        debounceTimer = null;
-      }, 5000); // Only re-calc timers every 5 seconds of activity for performance
-    };
-
-
-    const handleGlobalLogout = () => {
-      storage.clearSession();
-      window.location.replace('/?reason=timeout');
-    };
-
-    // PERFORMANCE: Use passive listeners and remove high-frequency mousemove/touchstart from activity tracking
-    // Keydown and Mousedown are sufficient for intentful activity detection without lag
-    const activityEvents = ['mousedown', 'keydown', 'click'];
-    activityEvents.forEach(evt => window.addEventListener(evt, throttledReset, { passive: true }));
-    resetTimers();
-
-    return () => {
-      activityEvents.forEach(evt => window.removeEventListener(evt, throttledReset));
-      if (warningTimer) clearTimeout(warningTimer);
-      if (logoutTimer) clearTimeout(logoutTimer);
-      if (countdownInterval) clearInterval(countdownInterval);
-      if (debounceTimer) clearTimeout(debounceTimer);
-    };
-  }, []);
+  // Session persistence: users stay signed in until they explicitly log out.
+  // No idle-activity auto-logout — the axios refresh interceptor (api.ts) silently
+  // renews the access token off the long-lived refresh token instead.
 
   return (
     <>
       {/* Favicon controlled by ThemeContext */}
-
-      {/* Session Timeout Warning Overlay */}
-      <AnimatePresence>
-        {showTimeoutWarning && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--primary)]/30 rounded-[2.5rem] p-10 shadow-2xl text-center relative overflow-hidden"
-            >
-              {/* Progress Bar */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-[var(--primary)]/10">
-                <motion.div 
-                  initial={{ width: '100%' }}
-                  animate={{ width: '0%' }}
-                  transition={{ duration: 60, ease: 'linear' }}
-                  className="h-full bg-[var(--primary)]"
-                />
-              </div>
-
-              <div className="w-20 h-20 bg-[var(--warning)]/10 border border-[var(--warning)]/20 rounded-2xl flex items-center justify-center text-[var(--warning)] mx-auto mb-6">
-                <Shield size={40} />
-              </div>
-              
-              <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-2">Session Expiring</h2>
-              <p className="text-sm text-[var(--text-muted)] font-medium mb-8">
-                Your session will terminate in <span className="text-[var(--primary)] font-black">{remainingSeconds}s</span> due to corporate security protocols.
-              </p>
-
-              <div className="flex flex-col gap-3">
-                <button 
-                  onClick={() => {
-                    // Triggers the activity listener
-                    window.dispatchEvent(new Event('mousedown'));
-                  }}
-                  className="bg-[var(--primary)] text-white w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform"
-                >
-                  Stay Connected
-                </button>
-                <button 
-                  onClick={() => {
-                    storage.clearSession();
-                    window.location.href = '/';
-                  }}
-                  className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
-                >
-                  {t('common.force_logout')}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <PageErrorBoundary>
         <Routes>
