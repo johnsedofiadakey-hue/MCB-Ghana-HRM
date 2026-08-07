@@ -5,17 +5,21 @@ import { logAction } from '../services/audit.service';
 import { PolicyService } from '../services/policy.service';
 import { Permission } from '../types/permissions';
 
-// Which ownerRole values each system role is responsible for
+// Which ownerRole values each system role is responsible for.
+// Templates store ownerRole at both a granular level (e.g. 'IT_MANAGER') and a
+// generic category level (e.g. 'IT') depending on how they were authored, so each
+// role must be mapped to both forms or its tasks silently vanish from every queue.
 const roleOwnerMap: Record<string, string[]> = {
-  HR_DIRECTOR:  ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER'],
-  HR_MANAGER:   ['HR_MANAGER', 'HR_OFFICER'],
-  HR_OFFICER:   ['HR_OFFICER'],
-  IT_MANAGER:   ['IT_MANAGER', 'IT_ADMIN'],
-  IT_ADMIN:     ['IT_ADMIN'],
-  MANAGER:      ['MANAGER'],
-  DIRECTOR:     ['MANAGER', 'DIRECTOR'],
-  MD:           ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'DIRECTOR', 'Admin'],
-  DEV:          ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'DIRECTOR', 'Admin'],
+  HR_DIRECTOR:    ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR'],
+  HR_MANAGER:     ['HR_MANAGER', 'HR_OFFICER', 'HR'],
+  HR_OFFICER:     ['HR_OFFICER', 'HR'],
+  IT_MANAGER:     ['IT_MANAGER', 'IT_ADMIN', 'IT'],
+  IT_ADMIN:       ['IT_ADMIN', 'IT'],
+  MARKETING_HEAD: ['MARKETING_HEAD', 'MARKETING'],
+  MANAGER:        ['MANAGER'],
+  DIRECTOR:       ['MANAGER', 'DIRECTOR'],
+  MD:             ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MARKETING_HEAD', 'MARKETING', 'MANAGER', 'DIRECTOR', 'Admin'],
+  DEV:            ['HR_DIRECTOR', 'HR_MANAGER', 'HR_OFFICER', 'HR', 'IT_MANAGER', 'IT_ADMIN', 'IT', 'MARKETING_HEAD', 'MARKETING', 'MANAGER', 'DIRECTOR', 'Admin'],
 };
 
 // Legacy permission-key map kept for any future policy checks
